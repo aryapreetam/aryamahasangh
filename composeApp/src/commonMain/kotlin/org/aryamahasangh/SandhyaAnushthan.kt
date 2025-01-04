@@ -9,6 +9,6 @@ import androidx.compose.runtime.Composable
 @Preview
 fun SandhyaAnushthan(){
   Column {
-    Text("Sandhya Anushthan")
+
   }
 }
