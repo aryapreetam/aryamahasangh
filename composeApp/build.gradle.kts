@@ -1,4 +1,5 @@
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
+import org.jetbrains.compose.reload.ComposeHotRun
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -9,6 +10,7 @@ plugins {
   alias(libs.plugins.androidApplication)
   alias(libs.plugins.composeMultiplatform)
   alias(libs.plugins.composeCompiler)
+  alias(libs.plugins.composeHotReload)
 }
 
 kotlin {
@@ -58,6 +60,9 @@ kotlin {
     androidMain.dependencies {
       implementation(compose.preview)
       implementation(libs.androidx.activity.compose)
+//      implementation(libs.compose.ui.tooling.preview)
+      implementation("androidx.compose.ui:ui:1.7.6")
+      implementation("androidx.compose.ui:ui-tooling-preview:1.7.6")
     }
     commonMain.dependencies {
       implementation(compose.runtime)
@@ -69,6 +74,7 @@ kotlin {
       implementation(libs.androidx.lifecycle.viewmodel)
       implementation(libs.androidx.lifecycle.runtime.compose)
       implementation(projects.shared)
+//      api(libs.components.ui.tooling.preview)
     }
     desktopMain.dependencies {
       implementation(compose.desktop.currentOs)
@@ -106,7 +112,10 @@ android {
 }
 
 dependencies {
+   implementation(libs.androidx.ui.tooling.preview.android)
   debugImplementation(compose.uiTooling)
+//  debugImplementation(libs.compose.ui.tooling)
+  debugImplementation("androidx.compose.ui:ui-tooling:1.7.6")
 }
 
 compose.desktop {
@@ -119,4 +128,8 @@ compose.desktop {
       packageVersion = "1.0.0"
     }
   }
+}
+
+tasks.register<ComposeHotRun>("runHot"){
+  mainClass.set("org.aryamahasangh.MainKt")
 }

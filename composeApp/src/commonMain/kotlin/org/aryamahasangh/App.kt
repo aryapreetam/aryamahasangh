@@ -22,41 +22,49 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.mahasangh_logo_without_background
+import org.jetbrains.compose.reload.DevelopmentEntryPoint
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
 @Preview
 fun App() {
-  AppTheme {
+  DevelopmentEntryPoint {
+    AppTheme {
+      SandhyaAnushthan()
+    }
+  }
+}
+
+@Composable
+fun AboutUs(){
+  Column(
+    Modifier.fillMaxSize(1.0f).padding(24.dp).verticalScroll(rememberScrollState()),
+    horizontalAlignment = Alignment.CenterHorizontally
+  ) {
+    Text(
+      text = "|| ओ३म् ||",
+      letterSpacing = 0.sp,
+      color = Color.Red,
+      modifier = Modifier.padding(PaddingValues(0.dp, 0.dp, 0.dp, 24.dp))
+    )
     Column(
-      Modifier.fillMaxSize(1.0f).padding(24.dp).verticalScroll(rememberScrollState()),
+      Modifier.fillMaxWidth(),
       horizontalAlignment = Alignment.CenterHorizontally
     ) {
-      Text(
-        text = "|| ओ३म् ||",
-        letterSpacing = 0.sp,
-        color = Color.Red,
-        modifier = Modifier.padding(PaddingValues(0.dp,0.dp,0.dp, 24.dp))
+      Image(
+        painter = painterResource(Res.drawable.mahasangh_logo_without_background),
+        contentDescription = "arya mahasangh",
+        modifier = Modifier.width(250.dp).padding(16.dp)
       )
-      Column(
-        Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally
-      ) {
-        Image(
-          painter = painterResource(Res.drawable.mahasangh_logo_without_background),
-          contentDescription = "arya mahasangh",
-          modifier = Modifier.width(250.dp).padding(16.dp)
-        )
-        Text(
-          "सनातन धर्म का साक्षात् प्रतिनिधि 'आर्य' ही होता है। आर्य ही धर्म को जीता है, समाज को मर्यादाओं में बांधता है और राष्ट्र को सम्पूर्ण भूमण्डल में प्रतिष्ठित करता है। आर्य के जीवन में अनेकता नहीं एकता रहती है अर्थात् एक ईश्वर, एक धर्म, एक धर्मग्रन्थ और एक उपासना पद्धति। ऐसे आर्यजन लाखों की संख्या में मिलकर संगठित, सुव्यवस्थित और सुनियोजित रीति से आगे बढ़ रहे हैं - आर्यावर्त की ओर--- यही है - आर्य महासंघ ।।\n" +
-              "\n" +
-              "आचार्य हनुमत प्रसाद\n" +
-              "अध्यक्ष, आर्य महासंघ",
-          fontWeight = FontWeight.SemiBold,
-          letterSpacing = 0.sp,
-          textAlign = TextAlign.Center
-        )
-      }
+      Text(
+        "सनातन धर्म का साक्षात् प्रतिनिधि 'आर्य' ही होता है। आर्य ही धर्म को जीता है, समाज को मर्यादाओं में बांधता है और राष्ट्र को सम्पूर्ण भूमण्डल में प्रतिष्ठित करता है। आर्य के जीवन में अनेकता नहीं एकता रहती है अर्थात् एक ईश्वर, एक धर्म, एक धर्मग्रन्थ और एक उपासना पद्धति। ऐसे आर्यजन लाखों की संख्या में मिलकर संगठित, सुव्यवस्थित और सुनियोजित रीति से आगे बढ़ रहे हैं - आर्यावर्त की ओर--- यही है - आर्य महासंघ ।।\n" +
+            "\n" +
+            "आचार्य हनुमत प्रसाद\n" +
+            "अध्यक्ष, आर्य महासंघ",
+        fontWeight = FontWeight.SemiBold,
+        letterSpacing = 0.sp,
+        textAlign = TextAlign.Center
+      )
     }
   }
 }

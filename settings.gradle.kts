@@ -10,11 +10,12 @@ pluginManagement {
         includeGroupAndSubgroups("com.google")
       }
     }
-    maven {
-      url = uri("https://maven.pkg.jetbrains.space/public/p/ktor/eap")
-    }
-    mavenCentral()
+    maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+    maven("https://maven.pkg.jetbrains.space/public/p/ktor/eap")
+    google()
     gradlePluginPortal()
+    mavenCentral()
+    maven("https://packages.jetbrains.team/maven/p/firework/dev")
   }
 }
 
@@ -27,11 +28,15 @@ dependencyResolutionManagement {
         includeGroupAndSubgroups("com.google")
       }
     }
-    maven {
-      url = uri("https://maven.pkg.jetbrains.space/public/p/ktor/eap")
-    }
+    maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+    maven("https://maven.pkg.jetbrains.space/public/p/ktor/eap")
     mavenCentral()
+    maven("https://packages.jetbrains.team/maven/p/firework/dev")
   }
+}
+
+plugins {
+  id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
 }
 
 include(":composeApp")
