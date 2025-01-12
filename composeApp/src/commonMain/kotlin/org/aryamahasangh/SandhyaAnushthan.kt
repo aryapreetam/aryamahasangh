@@ -15,26 +15,31 @@ import androidx.compose.ui.unit.dp
 fun SandhyaAnushthan(){
   Scaffold(
     topBar = {Text("Top Bar")},
-    bottomBar = {Text("Bottom Bar ")}
+    bottomBar = {Text("Bottom Bar ")},
   ) {
-    Column(modifier = Modifier.padding(16.dp)) {
-      var inputVal by remember { mutableStateOf("") }
-      Text("Now it is fixed")
-      Card(
-        modifier = Modifier.safeContentPadding(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-      ) {
-        Text("Simple card", modifier = Modifier.padding(16.dp))
-      }
-      OutlinedTextField(
-        modifier = Modifier.fillMaxWidth(1f),
-        label = {Text("Label")},
-        placeholder = {Text("Placeholder")},
-        value = inputVal,
-        onValueChange = {
-          inputVal = it
-        }
-      )
+    SampleContent()
+  }
+}
+
+@Composable
+fun SampleContent() {
+  Column(modifier = Modifier.padding(16.dp)) {
+    var inputVal by remember { mutableStateOf("") }
+    Text("Now it is fixed")
+    Card(
+      modifier = Modifier.safeContentPadding(),
+      elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+      Text("Simple card", modifier = Modifier.padding(16.dp))
     }
+    OutlinedTextField(
+      modifier = Modifier.fillMaxWidth(1f),
+      label = {Text("Label")},
+      placeholder = {Text("Placeholder")},
+      value = inputVal,
+      onValueChange = {
+        inputVal = it
+      }
+    )
   }
 }
