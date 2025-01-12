@@ -56,14 +56,6 @@ kotlin {
 
   sourceSets {
     val desktopMain by getting
-
-    androidMain.dependencies {
-      implementation(compose.preview)
-      implementation(libs.androidx.activity.compose)
-//      implementation(libs.compose.ui.tooling.preview)
-      implementation("androidx.compose.ui:ui:1.7.6")
-      implementation("androidx.compose.ui:ui-tooling-preview:1.7.6")
-    }
     commonMain.dependencies {
       implementation(compose.runtime)
       implementation(compose.foundation)
@@ -75,11 +67,27 @@ kotlin {
       implementation(libs.androidx.lifecycle.runtime.compose)
       implementation(projects.shared)
 //      api(libs.components.ui.tooling.preview)
+
+      implementation(libs.coil.compose)
+      implementation(libs.coil.network.ktor3)
+    }
+    androidMain.dependencies {
+      implementation(compose.preview)
+      implementation(libs.androidx.activity.compose)
+//      implementation(libs.compose.ui.tooling.preview)
+      implementation("androidx.compose.ui:ui:1.7.6")
+      implementation("androidx.compose.ui:ui-tooling-preview:1.7.6")
+
+      implementation(libs.ktor.client.android)
+    }
+    iosMain.dependencies {
+      implementation(libs.ktor.client.darwin)
     }
     desktopMain.dependencies {
       implementation(compose.desktop.currentOs)
       implementation(libs.kotlinx.coroutines.swing)
       implementation(libs.ui.tooling.preview.desktop)
+      implementation(libs.ktor.client.java)
     }
   }
 }
