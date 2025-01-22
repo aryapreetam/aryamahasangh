@@ -30,7 +30,7 @@ fun drawableFromImageName(imageName: String) = when(imageName){
   "chatra_sabha" -> Res.drawable.chatra_sabha
   "kshatriya_sabha" -> Res.drawable.kshatriya_sabha
   "sanrakshini_sabha" -> Res.drawable.sanrakshini_sabha
-  "sanvardhini_sabha" -> Res.drawable.nirmatri_sabha
+  "sanvardhini_sabha" -> Res.drawable.sanvardhini_sabha
   "dalitoddharini_sabha" -> Res.drawable.dalitoddharini_sabha
   "arya_parishad" -> Res.drawable.arya_parishad
   "vanprasth_ayog" -> Res.drawable.vanprasth_ayog
@@ -54,8 +54,14 @@ fun Organisation(sabha: Sabha){
   val (name, logo, description, keyPeople, campaigns ) = sabha
   Column {
     Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-      Image(painter = painterResource(resource = drawableFromImageName(logo)), contentDescription = "logo $logo", modifier = Modifier.size(150.dp))
-      Text(name, style = MaterialTheme.typography.headlineMedium)
+      Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+      ){
+        Image(painter = painterResource(resource = drawableFromImageName(logo)), contentDescription = "logo $logo", modifier = Modifier.size(150.dp))
+        Text(name, style = MaterialTheme.typography.headlineMedium)
+      }
       Text(description)
     }
 
@@ -75,7 +81,7 @@ fun Organisation(sabha: Sabha){
               model = it.member.profileImage ?: "",
               contentDescription = "profile image ${it.member.name}",
               contentScale = ContentScale.Crop,
-              modifier = Modifier.clip(CircleShape).size(96.dp),
+              modifier = Modifier.clip(CircleShape).size(80.dp),
               placeholder = BrushPainter(
                 Brush.linearGradient(
                   listOf(
@@ -84,8 +90,10 @@ fun Organisation(sabha: Sabha){
                   )
                 )
               ),
+              fallback = painterResource(Res.drawable.error_profile_image),
+              error = painterResource(Res.drawable.error_profile_image)
             )
-            Column(modifier = Modifier.padding(16.dp, 16.dp)) {
+            Column(modifier = Modifier.padding(12.dp, 8.dp)) {
               Text(it.member.name, style = MaterialTheme.typography.bodyLarge)
               Text(it.post)
             }

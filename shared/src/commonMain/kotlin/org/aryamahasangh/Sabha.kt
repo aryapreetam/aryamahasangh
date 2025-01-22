@@ -114,12 +114,13 @@ val listOfSabha = listOf(
   Sabha(
     name = "राष्ट्रीय आर्य संरक्षिणी सभा",
     logo = "sanrakshini_sabha",
-    description = "राष्ट्रीय आर्य संवर्धिनी सभा  एकमात्र वह संस्था है जो आर्य परिवारों के निर्माण, संरक्षण और उनके संवर्धन के लिए सदा प्रयासरत है। इस सभा की स्थापना आश्विन मास, शुक्लपक्ष, दशमी तिथि, विजयादशमी पर्व तदनुसार 24 अक्टूबर 2023 को आर्यसमाज शिवाजी कालोनी, रोहतक हरियाणा में सम्पन्न हुई थी। यह सभा आर्य महासंघ के अन्तर्गत  और उसके उद्देश्य अनुसार गतिविधियों को सम्पन्न करने के लिए बनाई गई है। वर्तमान में इस सभा के राष्ट्रीय अध्यक्ष आचार्य वर्चस्पति हिसार, राष्ट्रीय उपाध्यक्ष आर्य वेदप्रकाश रोहतक, राष्ट्रीय महासचिव आचार्य चरण सिंह भरतपुर , राष्ट्रीय कोषाध्यक्ष आर्य वेद गुरुग्राम, हरियाणा प्रान्त सचिव आर्य मनीराम, दिल्ली प्रान्त अध्यक्ष आचार्य राजेश और सचिव आर्य कप्तान, उत्तर प्रदेश प्रान्त अध्यक्ष आर्य भारत शास्त्री और सचिव आर्य रोबिन को मनोनीत किया गया है। इस सभा का राष्ट्रीय कार्यालय क्षात्र गुरुकुल, भाली आनन्दपुर, रोहतक में स्थित है। किसी भी देश, राष्ट्र और समाज की प्रथम इकाई परिवार ही होती है और परिवार श्रेष्ठ अर्थात् आर्य होना चाहिए, इसी उद्देश्य की पूर्ति के लिए यह सभा और इसके कार्यकर्ता अहर्निश कार्यरत हैं, धन्यवाद!",
+    description = "(आर्य महासंघ का एक अति महत्वपूर्ण घटक)\n" +
+        " आर्य निर्माण की सुदीर्घ और अत्यंत महत्वपूर्ण प्रक्रिया में राष्ट्रीय आर्य संरक्षिणी सभा और उसका कार्य बहुत महत्व रखता है । 'राष्ट्रीय आर्य निर्मात्री सभा' के द्वारा आर्य निर्माण किए जाने के पश्चात् आर्य सिद्धांतों से सहमत हुए सद्योपवीति आर्यों का संरक्षण और आर्यों /आर्याओं को स्थानीय स्तर पर एक सूत्र में बाँधकर संगठित करने के लिए आर्य समाजों की स्थापना और उनका संचालन /संरक्षण इस सभा का प्रमुख कार्य है । साथ ही सभा का उद्देश्य है कि संसार भर में कहीं भी कोई आर्य हो उसका संरक्षण किया जा सके, उसके लिए सभा सर्वाधिक उपाय करती रहती है । आर्य निर्माण से राष्ट्र निर्माण की शुभेच्छा और संकल्प को यदि सिद्ध करना है तो हमें 'आर्यसमाज' नाम की संस्था से वास्तविक आर्यसमाज बनना होगा उसके लिए एक आर्य का विवाह आर्या और आर्या का विवाह आर्य के साथ गुणकर्म -स्वभावानुसार करके प्रत्येक आर्य की संतान का आर्य/आर्या बनना अत्यंत आवश्यक है और राष्ट्रीय आर्य संरक्षिणी सभा आर्य समाजों के माध्यम से इस आधारभूत कार्य को करने के लिए कृत संकल्पित है।",
     keyPeople = listOf(
       OrganisationalMember(
         Member(
           name = "आर्य प्रवेश 'प्रघोष'",
-          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
+          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/arya_pravesh_ji.webp",
           phoneNumber = "7419002189",
           email = "aacharyaji@hotmail.com"
         ),
@@ -129,7 +130,7 @@ val listOfSabha = listOf(
       OrganisationalMember(
         Member(
           name = "आचार्य संजीव आर्य",
-          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
+          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_sanjiv.webp",
           phoneNumber = "9045353309",
           email = "prachetas Arya@gmail.com"
         ),
@@ -139,7 +140,7 @@ val listOfSabha = listOf(
       OrganisationalMember(
         Member(
           name = "आर्य सुशील",
-          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
+          profileImage = "",
           phoneNumber = "9410473224",
           email = ""
         ),
@@ -156,7 +157,7 @@ val listOfSabha = listOf(
       OrganisationalMember(
         Member(
           name = "आचार्य वर्चस्पति",
-          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
+          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_varchaspati.webp",
           phoneNumber = "9053347826",
           email = "acharyavarchaspati@gmail.com"
         ),
@@ -166,7 +167,7 @@ val listOfSabha = listOf(
       OrganisationalMember(
         Member(
           name = "आर्य वेदप्रकाश",
-          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
+          profileImage = "",
           phoneNumber = "8168491108",
           email = ""
         ),
@@ -193,7 +194,7 @@ val listOfSabha = listOf(
       OrganisationalMember(
         Member(
           name = "सुखविंदर आर्य",
-          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
+          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/anil_arya.webp",
           phoneNumber = "8529616314",
           email = "sukhvinderarya@gmail.com"
         ),
@@ -213,7 +214,7 @@ val listOfSabha = listOf(
       OrganisationalMember(
         Member(
           name = "आर्य संदीप शास्त्री",
-          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
+          profileImage = "",
           phoneNumber = "9812492102",
           email = "deepphotostatebk@gmail.com"
         ),
@@ -225,12 +226,29 @@ val listOfSabha = listOf(
   Sabha(
     name = "आर्य गुरुकुल महाविद्यालय",
     logo = "ary_gurukul_mahavidyalaya",
-    description = "सृष्टि के आदि से लेकर आजतक सत्यज्ञान हमें ऋषियों के द्वारा मिलता रहा है | ज्ञान के वाहक ऋषिगण होते हैं | कर्तव्य-अकर्तव्य, पुण्य-पाप, धर्म-अधर्म, गुण-अवगुण, लाभ-हानि, सत्य-असत्य, हितकर-अहितकर, आस्तिक-नास्तिक आदि तथा ईश्वर का परिज्ञान हम मनुष्यों को ऋषि मुनि ही बतलाते हैं | ऋषिगण अपूर्व मेधा सम्पन्न, ईश्वर के संविधान के महाविद्वान, निस्वार्थी और परम दयालु होते हैं | इनका प्रत्येक उपदेश और कार्य प्राणिमात्र के हित के लिये होता है | वर्तमान कालीन देश-प्रान्त आदि की सीमाओं में इनका ज्ञान और कार्य बंधा हुआ नहीं होता है, परन्तु इस विश्व में प्रत्येक मनुष्यमात्र के लिये इनका उपदेश और कार्य होता है, यथार्थ में ये ऋषि – मुनि ही देश काल की सीमाओं से परे जाकर मनुष्य मात्र के कल्याण और उन्नयन के लिये कर्म और उपदेश करते हैं, वास्तव में ये ऋषि – मुनि ही मनुष्य ही नहीं अपितु प्राणिमात्र के सच्चे हितैषी होते हैं, इनका उपदेश हिन्दु, मुस्लिम, ईसाई, पारसी, जैनी, बौद्ध आदि-आदि विश्व भर में प्रचलित समस्त मत – पन्थों एवं सम्प्रदायों के अनुयायियों के लिये भी एक जैसा होता है, ये ही सच्चे अर्थों में मानवीय होते हैं| ऋषियों का ज्ञान सत्य, तथ्य, तर्क और यथार्थ वैज्ञानिक सिद्धान्तों पर आधारित होता है| जिनके सिद्धान्तों को किसी भी काल में और किसी के भी द्वारा काटा नहीं जा सकता है, इनका सिद्धान्त ईश्वरीय सिद्धान्तों एवं उनके द्वारा प्रदत्त ज्ञान पर अवलम्बित है| सृष्टि के प्रारम्भ के ऋषियों से लेकर महाभारत कालीन ऋषियों यथा ऋषि व्यास , ऋषि जैमिनि, ऋषि पतन्जलि, ऋषि कणाद, ऋषि कपिल, ऋषि गौतम, ऋषि यास्क और पराधीनता के काल में ऋषि दयानन्द से हमें विश्व भर के मनुष्यमात्र के लिये करणीय और धारणीय ईश्वरीय ज्ञान मिला है|",
+    description = "आर्य गुरुकुल महाविद्यालय (आर्य महासंघ द्वारा संचालित आर्य विद्या का उपक्रम)\n" +
+        " आर्य गुरुकुल महाविद्यालय हजारों वर्षों से बाधित आर्य विद्या के प्रवाह को ऋषि दयानंद और पूरी ऋषि परंपरा के अनुसार स्थापित करने के लिए प्रयत्नरतऔर प्रतिबद्ध है उसके लिए आर्य गुरुकुल महाविद्यालय विभिन्न प्रकार के विशिष्ट प्रशिक्षण एवं कक्षाएं संचालित करता है वह पाठ्यक्रम निम्न है \n" +
+        "(१) आर्य संरक्षक प्रशिक्षण \n" +
+        "(२) आर्य समाज संचालक प्रशिक्षण \n" +
+        "(३) आर्य समाज संरक्षक प्रशिक्षण \n" +
+        "(४) आर्य समाज संरक्षक प्रशिक्षण \n" +
+        "(५) संध्या प्रशिक्षण \n" +
+        "(६) अग्निहोत्र प्रशिक्षण \n" +
+        "(७) आर्य जीवन शाला \n" +
+        "(८) योग शिविर (अष्टांग योग प्रशिक्षण ) \n" +
+        "(९) वानप्रस्थ प्रशिक्षण (१०) पंचवर्षीय क्षात्र प्रशिक्षण (छात्र गुरुकुल) \n" +
+        "(११) छात्र शिक्षक प्रशिक्षण \n" +
+        "(१२) सिद्धांतालंकार कक्षा \n" +
+        "(१३) आर्य पुरोहित कक्षा \n" +
+        "(१४) आर्य प्रवक्ता कक्षा \n" +
+        "(१५) आचार्य पात्रता (पूरक प्रशिक्षण) \n" +
+        "(१६) आचार्य कक्षा\n" +
+        " इन सभी कक्षाओं और भविष्य में भी संचालित होने वाले पाठ्यक्रमों के लिए सभी आर्यों से सक्रिय सहयोग की आकांक्षा करते हैं",
     keyPeople = listOf(
       OrganisationalMember(
         Member(
           name = "आचार्य संजीव आर्य ",
-          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
+          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_sanjiv.webp",
           phoneNumber = "9045353309",
           email = "deepphotostatebk@gmail.com"
         ),
@@ -240,7 +258,7 @@ val listOfSabha = listOf(
       OrganisationalMember(
         Member(
           name = "अश्विनी आर्य",
-          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
+          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_ashvani.webp",
           phoneNumber = "9719375460",
           email = "saini.ashvani0@gmail.com"
         ),
@@ -252,12 +270,15 @@ val listOfSabha = listOf(
   Sabha(
     name = "आर्या गुरुकुल महाविद्यालय",
     logo = "arya_gurukul_mahavidyalaya",
-    description = "सृष्टि के आदि से लेकर आजतक सत्यज्ञान हमें ऋषियों के द्वारा मिलता रहा है | ज्ञान के वाहक ऋषिगण होते हैं | कर्तव्य-अकर्तव्य, पुण्य-पाप, धर्म-अधर्म, गुण-अवगुण, लाभ-हानि, सत्य-असत्य, हितकर-अहितकर, आस्तिक-नास्तिक आदि तथा ईश्वर का परिज्ञान हम मनुष्यों को ऋषि मुनि ही बतलाते हैं | ऋषिगण अपूर्व मेधा सम्पन्न, ईश्वर के संविधान के महाविद्वान, निस्वार्थी और परम दयालु होते हैं | इनका प्रत्येक उपदेश और कार्य प्राणिमात्र के हित के लिये होता है | वर्तमान कालीन देश-प्रान्त आदि की सीमाओं में इनका ज्ञान और कार्य बंधा हुआ नहीं होता है, परन्तु इस विश्व में प्रत्येक मनुष्यमात्र के लिये इनका उपदेश और कार्य होता है, यथार्थ में ये ऋषि – मुनि ही देश काल की सीमाओं से परे जाकर मनुष्य मात्र के कल्याण और उन्नयन के लिये कर्म और उपदेश करते हैं, वास्तव में ये ऋषि – मुनि ही मनुष्य ही नहीं अपितु प्राणिमात्र के सच्चे हितैषी होते हैं, इनका उपदेश हिन्दु, मुस्लिम, ईसाई, पारसी, जैनी, बौद्ध आदि-आदि विश्व भर में प्रचलित समस्त मत – पन्थों एवं सम्प्रदायों के अनुयायियों के लिये भी एक जैसा होता है, ये ही सच्चे अर्थों में मानवीय होते हैं| ऋषियों का ज्ञान सत्य, तथ्य, तर्क और यथार्थ वैज्ञानिक सिद्धान्तों पर आधारित होता है| जिनके सिद्धान्तों को किसी भी काल में और किसी के भी द्वारा काटा नहीं जा सकता है, इनका सिद्धान्त ईश्वरीय सिद्धान्तों एवं उनके द्वारा प्रदत्त ज्ञान पर अवलम्बित है| सृष्टि के प्रारम्भ के ऋषियों से लेकर महाभारत कालीन ऋषियों यथा ऋषि व्यास , ऋषि जैमिनि, ऋषि पतन्जलि, ऋषि कणाद, ऋषि कपिल, ऋषि गौतम, ऋषि यास्क और पराधीनता के काल में ऋषि दयानन्द से हमें विश्व भर के मनुष्यमात्र के लिये करणीय और धारणीय ईश्वरीय ज्ञान मिला है|",
+    description = "आर्य महासंघ के तत्वाधान में आर्या निर्माण ग्राम-ग्राम, नगर-नगर चल रहा है। अब तक ५० हजार से ऊपर महिलाओं का आर्याकरण हो चूका है। इस अभियान की निरंतरता के लिए वैदिक विदुषियों की आवश्यकता है। जिसके लिए आर्या गुरुकुल का निर्माण किया गया है। ६ अक्टूबर २०१९ को इसका उद्घाटन हुआ तब से यहाँ आर्या निर्माण, आचार्या निर्माण की कक्षाएं निरंतर चल रही है।  आर्य परिवारों की बालिकाओं के बौद्धिक व शारीरिक उन्नति के लिए क्षात्र प्रशिक्षण शिविरों का आयोजन गुरुकुल में होता है। ५ अप्रैल २०२४ से आर्या गुरुकुल महाविद्यालय के अंतर्गत आर्ष कन्या गुरुकुल का प्रारम्भ हुआ है। \n" +
+        "अष्टाध्यायी व्याकरण आदि विषयों के माध्यम से संस्कृत को प्राथमिकता देकर छात्राओं को विदुषी बनाना गुरुकुल का उद्देश्य है। \n" +
+        "वर्तमान में आचार्या डॉ. सुशीला गुरुकुल की आचार्या है।  \n" +
+        "यह गुरुकुल आर्य महासंघ के निर्देशानुसार संचालित हो रहा है।",
     keyPeople = listOf(
       OrganisationalMember(
         Member(
           name = "आचार्या इन्द्रा",
-          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
+          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/acharya_indra.webp",
           phoneNumber = "9868912128",
           email = "deepphotostatebk@gmail.com"
         ),
@@ -267,7 +288,7 @@ val listOfSabha = listOf(
       OrganisationalMember(
         Member(
           name = "आचार्या डॉ० सुशीला",
-          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
+          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/acharya_suman.webp",
           phoneNumber = "9719375460",
           email = "saini.ashvani0@gmail.com"
         ),
@@ -277,7 +298,7 @@ val listOfSabha = listOf(
       OrganisationalMember(
         Member(
           name = "आर्या रेनु",
-          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
+          profileImage = "",
           phoneNumber = "9999999999",
           email = "" +
               ""
@@ -290,12 +311,18 @@ val listOfSabha = listOf(
   Sabha(
     name = "आर्या परिषद्",
     logo = "arya_parishad",
-    description = "सृष्टि के आदि से लेकर आजतक सत्यज्ञान हमें ऋषियों के द्वारा मिलता रहा है | ज्ञान के वाहक ऋषिगण होते हैं | कर्तव्य-अकर्तव्य, पुण्य-पाप, धर्म-अधर्म, गुण-अवगुण, लाभ-हानि, सत्य-असत्य, हितकर-अहितकर, आस्तिक-नास्तिक आदि तथा ईश्वर का परिज्ञान हम मनुष्यों को ऋषि मुनि ही बतलाते हैं | ऋषिगण अपूर्व मेधा सम्पन्न, ईश्वर के संविधान के महाविद्वान, निस्वार्थी और परम दयालु होते हैं | इनका प्रत्येक उपदेश और कार्य प्राणिमात्र के हित के लिये होता है | वर्तमान कालीन देश-प्रान्त आदि की सीमाओं में इनका ज्ञान और कार्य बंधा हुआ नहीं होता है, परन्तु इस विश्व में प्रत्येक मनुष्यमात्र के लिये इनका उपदेश और कार्य होता है, यथार्थ में ये ऋषि – मुनि ही देश काल की सीमाओं से परे जाकर मनुष्य मात्र के कल्याण और उन्नयन के लिये कर्म और उपदेश करते हैं, वास्तव में ये ऋषि – मुनि ही मनुष्य ही नहीं अपितु प्राणिमात्र के सच्चे हितैषी होते हैं, इनका उपदेश हिन्दु, मुस्लिम, ईसाई, पारसी, जैनी, बौद्ध आदि-आदि विश्व भर में प्रचलित समस्त मत – पन्थों एवं सम्प्रदायों के अनुयायियों के लिये भी एक जैसा होता है, ये ही सच्चे अर्थों में मानवीय होते हैं| ऋषियों का ज्ञान सत्य, तथ्य, तर्क और यथार्थ वैज्ञानिक सिद्धान्तों पर आधारित होता है| जिनके सिद्धान्तों को किसी भी काल में और किसी के भी द्वारा काटा नहीं जा सकता है, इनका सिद्धान्त ईश्वरीय सिद्धान्तों एवं उनके द्वारा प्रदत्त ज्ञान पर अवलम्बित है| सृष्टि के प्रारम्भ के ऋषियों से लेकर महाभारत कालीन ऋषियों यथा ऋषि व्यास , ऋषि जैमिनि, ऋषि पतन्जलि, ऋषि कणाद, ऋषि कपिल, ऋषि गौतम, ऋषि यास्क और पराधीनता के काल में ऋषि दयानन्द से हमें विश्व भर के मनुष्यमात्र के लिये करणीय और धारणीय ईश्वरीय ज्ञान मिला है|",
+    description = "आर्या परिषद् का गठन आर्याओं के हित, आर्याओं के निर्माण व् आर्याओं के संरक्षण के लिए किया गया है। \n" +
+        "\n" +
+        "इसके अंतर्गत केंद्रीय आर्या परिषद्, प्रांतीय आर्या परिषद् व् जनपद आर्या परिषद् का गठन किया गया है।  \n" +
+        "आर्या परिषद्  की केंद्रीय अध्यक्षा आचार्या डॉ. सुशीला जी, केंद्रीय सचिव आचार्या डॉ मोनिका जी व केंद्रीय कोषाध्यक्ष आचार्या डॉ सुमन जी है।  \n" +
+        "प्रान्त और जनपद स्तर पर आर्या परिषद् की १. अध्यक्षा २. निर्मात्री सचिव ३. संरक्षिणी सचिव ४. संवर्धनी सचिव नियुक्त की गई है।  \n" +
+        "\n" +
+        "इन पदाधिकारियों के साथ इनकी सहयोगी संस्थाएँ भी टीम में है। ये सभी पदाधिकारी व इनकी टीम की सदस्याएं महिलाओं के निर्माण व संरक्षण का कार्य करती है। ",
     keyPeople = listOf(
       OrganisationalMember(
         Member(
           name = "आचार्या डॉ० सुशीला",
-          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
+          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/acharya_indra.webp",
           phoneNumber = "9719375460",
           email = "saini.ashvani0@gmail.com"
         ),
@@ -316,7 +343,7 @@ val listOfSabha = listOf(
       OrganisationalMember(
         Member(
           name = "पंडित लोकनाथजी आर्य",
-          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
+          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_loknath.webp",
           phoneNumber = "9868912128",
           email = "deepphotostatebk@gmail.com"
         ),
@@ -326,7 +353,7 @@ val listOfSabha = listOf(
       OrganisationalMember(
         Member(
           name = "श्री वेदप्रकाश आर्य",
-          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
+          profileImage = "",
           phoneNumber = "9719375460",
           email = "saini.ashvani0@gmail.com"
         ),
@@ -336,7 +363,7 @@ val listOfSabha = listOf(
       OrganisationalMember(
         Member(
           name = "श्री शिवनारायणजी आर्य",
-          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
+          profileImage = "",
           phoneNumber = "9999999999",
           email = ""
         ),
@@ -386,7 +413,7 @@ val listOfSabha = listOf(
       OrganisationalMember(
         Member(
           name = "अनिल आर्य",
-          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
+          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/anil_arya.webp",
           phoneNumber = "9416037102",
           email = ""
         ),
