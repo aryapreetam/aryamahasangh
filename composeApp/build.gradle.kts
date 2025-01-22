@@ -11,6 +11,7 @@ plugins {
   alias(libs.plugins.composeMultiplatform)
   alias(libs.plugins.composeCompiler)
   alias(libs.plugins.composeHotReload)
+  alias(libs.plugins.kotlinx.serialization)
 }
 
 kotlin {
@@ -66,10 +67,21 @@ kotlin {
       implementation(libs.androidx.lifecycle.viewmodel)
       implementation(libs.androidx.lifecycle.runtime.compose)
       implementation(projects.shared)
-//      api(libs.components.ui.tooling.preview)
-
       implementation(libs.coil.compose)
       implementation(libs.coil.network.ktor3)
+      implementation(libs.navigation.compose)
+      implementation(libs.kotlinx.serialization.json)
+      implementation(libs.kermit)
+
+      implementation("org.jetbrains.compose.material3.adaptive:adaptive:1.0.0-alpha03")
+      implementation("org.jetbrains.compose.material3.adaptive:adaptive-layout:1.0.0-alpha03")
+      implementation("org.jetbrains.compose.material3.adaptive:adaptive-navigation:1.0.0-alpha03")
+      implementation("org.jetbrains.compose.material3:material3-window-size-class:1.8.0-alpha01")
+      implementation("org.jetbrains.androidx.navigation:navigation-compose:2.8.0-alpha10")
+      implementation("org.jetbrains.compose.material:material-navigation:1.7.0-beta02")
+      implementation(compose.material3AdaptiveNavigationSuite)
+
+      implementation("de.drick.compose:hotpreview:0.1.3")
     }
     androidMain.dependencies {
       implementation(compose.preview)
