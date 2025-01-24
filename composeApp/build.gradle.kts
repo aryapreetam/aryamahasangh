@@ -80,8 +80,6 @@ kotlin {
       implementation("org.jetbrains.androidx.navigation:navigation-compose:2.8.0-alpha10")
       implementation("org.jetbrains.compose.material:material-navigation:1.7.0-beta02")
       implementation(compose.material3AdaptiveNavigationSuite)
-
-      implementation("de.drick.compose:hotpreview:0.1.3")
     }
     androidMain.dependencies {
       implementation(compose.preview)
