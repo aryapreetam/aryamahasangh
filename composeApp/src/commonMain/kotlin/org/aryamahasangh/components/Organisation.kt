@@ -17,24 +17,17 @@ import androidx.compose.ui.graphics.painter.BrushPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import aryamahasangh.composeapp.generated.resources.*
+import aryamahasangh.composeapp.generated.resources.Res
+import aryamahasangh.composeapp.generated.resources.baseline_groups
+import aryamahasangh.composeapp.generated.resources.error_profile_image
+import aryamahasangh.composeapp.generated.resources.mahasangh_logo_without_background
 import coil3.compose.AsyncImage
 import org.aryamahasangh.Sabha
 import org.aryamahasangh.listOfSabha
 import org.jetbrains.compose.resources.painterResource
 
 fun drawableFromImageName(imageName: String) = when(imageName){
-  "nirmatri_sabha" -> Res.drawable.nirmatri_sabha
-  "ary_gurukul_mahavidyalaya" -> Res.drawable.ary_gurukul_mahavidyalaya
-  "arya_gurukul_mahavidyalaya" -> Res.drawable.arya_gurukul_mahavidyalaya
-  "chatra_sabha" -> Res.drawable.chatra_sabha
-  "kshatriya_sabha" -> Res.drawable.kshatriya_sabha
-  "sanrakshini_sabha" -> Res.drawable.sanrakshini_sabha
-  "sanvardhini_sabha" -> Res.drawable.sanvardhini_sabha
-  "dalitoddharini_sabha" -> Res.drawable.dalitoddharini_sabha
-  "arya_parishad" -> Res.drawable.arya_parishad
-  "vanprasth_ayog" -> Res.drawable.vanprasth_ayog
-  "sanchar_parishad" -> Res.drawable.sanchar_parishad
+//  "sanchar_parishad" -> Res.drawable.sanchar_parishad
   else -> Res.drawable.mahasangh_logo_without_background
 }
 
@@ -59,7 +52,30 @@ fun Organisation(sabha: Sabha){
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
       ){
-        Image(painter = painterResource(resource = drawableFromImageName(logo)), contentDescription = "logo $logo", modifier = Modifier.size(150.dp))
+        if(logo == "mahasangh_logo_without_background") {
+          Image(
+            painter = painterResource(resource = drawableFromImageName(logo)),
+            contentDescription = "logo $logo",
+            modifier = Modifier.size(150.dp)
+          )
+        }else {
+          AsyncImage(
+            model = logo,
+            contentDescription = "logo for $name",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.size(150.dp),
+            placeholder = BrushPainter(
+              Brush.linearGradient(
+                listOf(
+                  Color(color = 0xFFFFFFFF),
+                  Color(color = 0xFFDDDDDD),
+                )
+              )
+            ),
+            fallback = painterResource(Res.drawable.baseline_groups),
+            error = painterResource(Res.drawable.baseline_groups)
+          )
+        }
         Text(name, style = MaterialTheme.typography.headlineMedium)
       }
       Text(description)
