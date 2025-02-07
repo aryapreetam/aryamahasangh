@@ -7,7 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import org.aryamahasangh.components.OrgItem
-import org.aryamahasangh.listOfSabha
+import org.aryamahasangh.listOfOrganisations
 import org.aryamahasangh.navigation.Screen
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -21,7 +21,7 @@ fun Orgs(navController: NavHostController, onNavigateToOrgDetails: (String) -> U
       verticalArrangement = Arrangement.spacedBy(8.dp),
       horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-      listOfSabha.take(10).forEach {
+      listOfOrganisations.take(10).forEach {
         OrgItem(it.name, it.description){
           onNavigateToOrgDetails(it.name)
           navController.navigate(Screen.OrgDetails(it.name))

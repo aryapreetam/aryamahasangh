@@ -2,9 +2,9 @@ package org.aryamahasangh.screens
 
 import androidx.compose.runtime.Composable
 import org.aryamahasangh.components.Organisation
-import org.aryamahasangh.listOfSabha
+import org.aryamahasangh.listOfOrganisations
 
 @Composable
 fun AboutUs() {
-  Organisation(listOfSabha[11])
+  Organisation(listOfOrganisations[11])
 }

@@ -1,6 +1,6 @@
 package org.aryamahasangh
 
-data class Sabha(
+data class Organisation(
   val name: String,
   val logo: String,
   val description: String,
@@ -41,8 +41,8 @@ data class Member(
   val email: String? = ""
 )
 
-val listOfSabha = listOf(
-  Sabha(
+val listOfOrganisations = listOf(
+  Organisation(
     name = "राष्ट्रीय आर्य निर्मात्री सभा",
     logo = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image//nirmatri_sabha.webp",
     description = "प्रत्येक बुद्धिमान व्यक्ति यह समझ सकता है कि मानवीय जीवन अति दुर्लभ है। " +
@@ -89,7 +89,7 @@ val listOfSabha = listOf(
       )
     )
   ),
-  Sabha(
+  Organisation(
     name = "राष्ट्रीय आर्य क्षत्रिय सभा",
     logo = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image//kshatriya_sabha.webp",
     description = "राष्ट्रीय कर्तव्य के प्रति सजग, सबल और चरित्रवान युवा वर्ग का निर्माण करना।\n" +
@@ -111,7 +111,7 @@ val listOfSabha = listOf(
       )
     )
   ),
-  Sabha(
+  Organisation(
     name = "राष्ट्रीय आर्य संरक्षिणी सभा",
     logo = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image//sanrakshini_sabha.webp",
     description = "(आर्य महासंघ का एक अति महत्वपूर्ण घटक)\n" +
@@ -149,7 +149,7 @@ val listOfSabha = listOf(
       )
     )
   ),
-  Sabha(
+  Organisation(
     name = "राष्ट्रीय आर्य संवर्धिनी सभा",
     logo = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image//sanvardhini_sabha.webp",
     description = "राष्ट्रीय आर्य संवर्धिनी सभा  एकमात्र वह संस्था है जो आर्य परिवारों के निर्माण, संरक्षण और उनके संवर्धन के लिए सदा प्रयासरत है। इस सभा की स्थापना आश्विन मास, शुक्लपक्ष, दशमी तिथि, विजयादशमी पर्व तदनुसार 24 अक्टूबर 2023 को आर्यसमाज शिवाजी कालोनी, रोहतक हरियाणा में सम्पन्न हुई थी। यह सभा आर्य महासंघ के अन्तर्गत  और उसके उद्देश्य अनुसार गतिविधियों को सम्पन्न करने के लिए बनाई गई है। वर्तमान में इस सभा के राष्ट्रीय अध्यक्ष आचार्य वर्चस्पति हिसार, राष्ट्रीय उपाध्यक्ष आर्य वेदप्रकाश रोहतक, राष्ट्रीय महासचिव आचार्य चरण सिंह भरतपुर , राष्ट्रीय कोषाध्यक्ष आर्य वेद गुरुग्राम, हरियाणा प्रान्त सचिव आर्य मनीराम, दिल्ली प्रान्त अध्यक्ष आचार्य राजेश और सचिव आर्य कप्तान, उत्तर प्रदेश प्रान्त अध्यक्ष आर्य भारत शास्त्री और सचिव आर्य रोबिन को मनोनीत किया गया है। इस सभा का राष्ट्रीय कार्यालय क्षात्र गुरुकुल, भाली आनन्दपुर, रोहतक में स्थित है। किसी भी देश, राष्ट्र और समाज की प्रथम इकाई परिवार ही होती है और परिवार श्रेष्ठ अर्थात् आर्य होना चाहिए, इसी उद्देश्य की पूर्ति के लिए यह सभा और इसके कार्यकर्ता अहर्निश कार्यरत हैं, धन्यवाद!",
@@ -186,7 +186,7 @@ val listOfSabha = listOf(
       )
     )
   ),
-  Sabha(
+  Organisation(
     name = "राष्ट्रीय आर्य दलितोद्धारिणी सभा",
     logo = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image//dalitoddharini_sabha.webp",
     description = "हजारों वर्षों से शोषित और पीड़ित एक बहुत बड़ा समुदाय जिसको समाज से अलग-थलग कर दिया गया जो कभी आर्यों का एक भाग होता था और उसको भी वही सम्मान अधिकार प्राप्त था जो ब्राह्मण क्षत्रिय वैश्य को था आज उसको अलग कर दिया गया। उसी के उद्धार के लिए राष्ट्रीय दलितोद्धारिणी सभा बनाई गई है ताकि प्रत्येक मनुष्य समानता का अधिकार प्राप्त कर सके।",
@@ -223,7 +223,7 @@ val listOfSabha = listOf(
       )
     )
   ),
-  Sabha(
+  Organisation(
     name = "आर्य गुरुकुल महाविद्यालय",
     logo = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image//ary_gurukul_mahavidyalaya.webp",
     description = "आर्य गुरुकुल महाविद्यालय (आर्य महासंघ द्वारा संचालित आर्य विद्या का उपक्रम)\n" +
@@ -267,7 +267,7 @@ val listOfSabha = listOf(
       )
     )
   ),
-  Sabha(
+  Organisation(
     name = "आर्या गुरुकुल महाविद्यालय",
     logo = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image//arya_gurukul_mahavidyalaya.webp",
     description = "आर्य महासंघ के तत्वाधान में आर्या निर्माण ग्राम-ग्राम, नगर-नगर चल रहा है। अब तक ५० हजार से ऊपर महिलाओं का आर्याकरण हो चूका है। इस अभियान की निरंतरता के लिए वैदिक विदुषियों की आवश्यकता है। जिसके लिए आर्या गुरुकुल का निर्माण किया गया है। ६ अक्टूबर २०१९ को इसका उद्घाटन हुआ तब से यहाँ आर्या निर्माण, आचार्या निर्माण की कक्षाएं निरंतर चल रही है।  आर्य परिवारों की बालिकाओं के बौद्धिक व शारीरिक उन्नति के लिए क्षात्र प्रशिक्षण शिविरों का आयोजन गुरुकुल में होता है। ५ अप्रैल २०२४ से आर्या गुरुकुल महाविद्यालय के अंतर्गत आर्ष कन्या गुरुकुल का प्रारम्भ हुआ है। \n" +
@@ -308,7 +308,7 @@ val listOfSabha = listOf(
       )
     )
   ),
-  Sabha(
+  Organisation(
     name = "आर्या परिषद्",
     logo = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image//arya_parishad.webp",
     description = "आर्या परिषद् का गठन आर्याओं के हित, आर्याओं के निर्माण व् आर्याओं के संरक्षण के लिए किया गया है। \n" +
@@ -331,7 +331,7 @@ val listOfSabha = listOf(
       ),
     )
   ),
-  Sabha(
+  Organisation(
     name = "वानप्रस्थ आयोग",
     logo = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image//vanprasth_ayog.webp",
     description = "\"ब्रह्मचर्याश्रमं समाप्य गृही भवेद् गृही भूत्वा वनी भवेद्\"\n" +
@@ -372,7 +372,7 @@ val listOfSabha = listOf(
       )
     )
   ),
-  Sabha(
+  Organisation(
     name = "राष्ट्रीय आर्य छात्र सभा",
     logo = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image//chatra_sabha.webp",
     description = "छात्र सभा का उद्देश्य आर्य संतति अर्थात विश्व भर के आर्य परिवार के बालक बालिकाओं को सही समय पर आर्यत्व में स्थापित करना है जिससे आर्य परिवार की भावी पीढ़ी उच्च आधुनिक शिक्षा के साथ- साथ अपनी वैदिक संस्कृति, श्रेष्ठ परंपराओं, मानव मूल्यों से युक्त स्वस्थ व सबल बने" +
@@ -405,7 +405,7 @@ val listOfSabha = listOf(
       )
     )
   ),
-  Sabha(
+  Organisation(
     name = "राष्ट्रीय आर्य संचार परिषद",
     logo = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image//sanchar_parishad.webp",
     description = "आर्य महासंघ का संचार प्रकल्प",
@@ -422,7 +422,7 @@ val listOfSabha = listOf(
       )
     )
   ),
-  Sabha(
+  Organisation(
     name = "आर्य महासंघ",
     logo = "mahasangh_logo_without_background",
     description = "सनातन धर्म का साक्षात् प्रतिनिधि 'आर्य' ही होता है। आर्य ही धर्म को जीता है, समाज को मर्यादाओं में बांधता है और राष्ट्र को सम्पूर्ण भूमण्डल में प्रतिष्ठित करता है। आर्य के जीवन में अनेकता नहीं एकता रहती है अर्थात् एक ईश्वर, एक धर्म, एक धर्मग्रन्थ और एक उपासना पद्धति। ऐसे आर्यजन लाखों की संख्या में मिलकर संगठित, सुव्यवस्थित और सुनियोजित रीति से आगे बढ़ रहे हैं - आर्यावर्त की ओर--- यही है - आर्य महासंघ ।।\n" +
@@ -462,5 +462,4 @@ val listOfSabha = listOf(
       )
     )
   )
-//  Sabha(name = "केंद्रिय वित्तीय प्रबंधन परिषद", logo = "", description = ""),
 )
