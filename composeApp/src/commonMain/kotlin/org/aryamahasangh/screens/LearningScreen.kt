@@ -11,5 +11,6 @@ import androidx.compose.ui.unit.dp
 fun LearningScreen() {
   Column(modifier = Modifier.padding(16.dp)) {
     Text("यह पृष्ठ निर्माणाधीन है")
+
   }
 }

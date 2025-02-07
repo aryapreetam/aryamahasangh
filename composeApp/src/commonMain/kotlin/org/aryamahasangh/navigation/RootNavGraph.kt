@@ -5,8 +5,8 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
-import org.aryamahasangh.*
 import org.aryamahasangh.navigation.Screen.OrgDetails
+import org.aryamahasangh.screens.*
 
 @Composable
 fun RootNavGraph(navController: NavHostController, onNavigateToOrgDetails: (String) -> Unit) {
@@ -29,9 +29,6 @@ fun RootNavGraph(navController: NavHostController, onNavigateToOrgDetails: (Stri
     }
     composable<Screen.Learning> {
       LearningScreen()
-    }
-    composable<Screen.ContactUs> {
-      ContactUs()
     }
   }
 }
