@@ -8,22 +8,22 @@ data class Organisation(
   val activities: List<OrganisationActivity> = listOf(),
 )
 
+
 sealed class OrganisationActivity {
   /**
    * Karyakram:
    */
-  data class Event(val name: String): OrganisationActivity()
+  class Event(val name: String): OrganisationActivity()
 
   /**
    * Satr:
    */
-  data class Session(val name: String): OrganisationActivity()
+  class Session(val name: String): OrganisationActivity()
 
   /**
    * Abhiyan:
    */
-  data class Campaign(val name: String): OrganisationActivity()
-  data class Misc(val description: String): OrganisationActivity()
+  class Campaign(val name: String): OrganisationActivity()
 }
 
 
@@ -41,7 +41,7 @@ data class Member(
   val email: String? = ""
 )
 
-val listOfOrganisations = listOf(
+val listOfOrganisations = mutableListOf(
   Organisation(
     name = "राष्ट्रीय आर्य निर्मात्री सभा",
     logo = "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image//nirmatri_sabha.webp",
