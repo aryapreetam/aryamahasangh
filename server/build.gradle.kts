@@ -18,4 +18,7 @@ dependencies {
     implementation(libs.ktor.server.netty)
     implementation(libs.ktor.server.cors)
     implementation("com.expediagroup:graphql-kotlin-ktor-server:8.3.0")
+    implementation(libs.ktor.server.statuspages)
+    implementation(libs.ktor.server.websockets)
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
 }

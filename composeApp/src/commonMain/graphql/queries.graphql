@@ -28,3 +28,25 @@ query learnings {
     thumbnailUrl
   }
 }
+
+query organisationalActivities{
+  activities{
+    name
+    description
+    associatedOrganisation
+    activityType
+    startDateTime
+    endDateTime
+    mediaFiles
+    additionalInstructions
+    contactPeople{
+      member{
+        name
+        profileImage
+        phoneNumber
+      }
+      post
+      priority
+    }
+  }
+}

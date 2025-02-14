@@ -1,0 +1,3 @@
+subscription counter {
+  counter(limit: 10)
+}
