@@ -11,7 +11,6 @@ pluginManagement {
       }
     }
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
-    maven("https://maven.pkg.jetbrains.space/public/p/ktor/eap")
     google()
     gradlePluginPortal()
     mavenCentral()
@@ -29,7 +28,6 @@ dependencyResolutionManagement {
       }
     }
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
-    maven("https://maven.pkg.jetbrains.space/public/p/ktor/eap")
     mavenCentral()
     maven("https://packages.jetbrains.team/maven/p/firework/dev")
   }

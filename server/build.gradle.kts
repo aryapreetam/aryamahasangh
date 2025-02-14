@@ -16,8 +16,6 @@ dependencies {
     implementation(libs.logback)
     //implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
+    implementation(libs.ktor.server.cors)
     implementation("com.expediagroup:graphql-kotlin-ktor-server:8.3.0")
-
-    testImplementation(libs.ktor.server.tests)
-    testImplementation(libs.kotlin.test.junit)
 }

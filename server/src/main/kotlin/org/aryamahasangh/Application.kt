@@ -1,18 +1,18 @@
 package org.aryamahasangh
 
-import com.expediagroup.graphql.server.ktor.GraphQL
-import com.expediagroup.graphql.server.ktor.graphQLPostRoute
-import com.expediagroup.graphql.server.ktor.graphQLSDLRoute
-import com.expediagroup.graphql.server.ktor.graphiQLRoute
+import com.expediagroup.graphql.server.ktor.*
 import com.expediagroup.graphql.server.operations.Mutation
 import com.expediagroup.graphql.server.operations.Query
+import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
+import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.routing.*
 import org.aryamahasangh.OrganisationActivity.*
 
-const val SERVER_PORT = 8080
+const val SERVER_PORT = 4000
 
 fun main() {
     embeddedServer(Netty, port = SERVER_PORT, host = "0.0.0.0", module = Application::module)
@@ -30,6 +30,20 @@ fun Application.module() {
             )
         }
     }
+    install(StatusPages){
+        defaultGraphQLStatusPages()
+    }
+    install(CORS){
+        allowHeader(HttpHeaders.AccessControlAllowOrigin)
+        allowMethod(HttpMethod.Get)
+        allowMethod(HttpMethod.Post)
+        allowMethod(HttpMethod.Options) // Needed for preflight requests
+
+        allowHeader(HttpHeaders.ContentType)
+        allowHeader(HttpHeaders.Authorization)
+        allowHeader(HttpHeaders.Accept)
+        allowHost("localhost:8080", schemes = listOf("http"))
+    }
     routing {
         graphQLPostRoute()
         graphiQLRoute()
@@ -38,9 +52,9 @@ fun Application.module() {
 }
 
 class OrgsQuery : Query {
-    fun orgs(): List<Organisation> = listOfOrganisations
-    fun org(name: String): Organisation? = listOfOrganisations.find { it.name == name }
-    fun videos(): List<Video> = videosList
+    fun organisations(): List<Organisation> = listOfOrganisations
+    fun organisation(name: String): Organisation? = listOfOrganisations.find { it.name == name }
+    fun learning(): List<Video> = videosList
 }
 
 data class OrganisationInput(
