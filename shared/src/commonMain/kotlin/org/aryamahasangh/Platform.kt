@@ -1,7 +1,10 @@
 package org.aryamahasangh
 
-interface Platform {
-    val name: String
+enum class Platform {
+    ANDROID,
+    IOS,
+    WEB,
+    DESKTOP
 }
 
 expect fun getPlatform(): Platform

@@ -9,5 +9,6 @@ plugins {
   alias(libs.plugins.kotlinMultiplatform) apply false
   alias(libs.plugins.composeHotReload) apply false
   alias(libs.plugins.kotlinx.serialization).apply(false)
+  alias(libs.plugins.apollo).apply(false)
 }
 

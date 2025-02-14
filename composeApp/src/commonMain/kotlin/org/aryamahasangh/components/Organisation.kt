@@ -22,8 +22,7 @@ import aryamahasangh.composeapp.generated.resources.baseline_groups
 import aryamahasangh.composeapp.generated.resources.error_profile_image
 import aryamahasangh.composeapp.generated.resources.mahasangh_logo_without_background
 import coil3.compose.AsyncImage
-import org.aryamahasangh.Organisation
-import org.aryamahasangh.listOfOrganisations
+import org.aryamahasangh.OrganisationQuery
 import org.jetbrains.compose.resources.painterResource
 
 fun drawableFromImageName(imageName: String) = when(imageName){
@@ -37,14 +36,14 @@ fun SabhaPreview(){
   Column(modifier = Modifier
     .verticalScroll(rememberScrollState())
   ) {
-    Organisation(listOfOrganisations[11])
+    //OrganisationDetail(listOfOrganisations[11])
   }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun Organisation(organisation: Organisation){
-  val (name, logo, description, keyPeople, campaigns ) = organisation
+fun OrganisationDetail(organisation: OrganisationQuery.Organisation){
+  val (name, logo, description, keyPeople ) = organisation
   Column {
     Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
       Column(
@@ -116,9 +115,6 @@ fun Organisation(organisation: Organisation){
           }
         }
       }
-    }
-    if(campaigns.isNotEmpty()){
-
     }
   }
 }

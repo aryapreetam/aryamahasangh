@@ -1,0 +1,30 @@
+query organisations{
+  organisations{
+    name
+    description
+  }
+}
+
+query organisation($name: String!) {
+  organisation(name: $name){
+    name
+    logo
+    description
+    keyPeople{
+      member{
+        name
+        profileImage
+      }
+      post
+      priority
+    }
+  }
+}
+
+query learnings {
+  learning{
+    title
+    description
+    thumbnailUrl
+  }
+}

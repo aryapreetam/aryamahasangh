@@ -12,6 +12,7 @@ plugins {
   alias(libs.plugins.composeCompiler)
   alias(libs.plugins.composeHotReload)
   alias(libs.plugins.kotlinx.serialization)
+  alias(libs.plugins.apollo)
 }
 
 kotlin {
@@ -71,6 +72,11 @@ kotlin {
       implementation(libs.coil.network.ktor3)
       implementation(libs.navigation.compose)
       implementation(libs.kotlinx.serialization.json)
+      implementation(compose.components.uiToolingPreview)
+
+//      implementation("com.apollographql.apollo:apollo-runtime-kotlin:2.5.14")
+      implementation("com.apollographql.apollo:apollo-runtime:4.1.1")
+      implementation("com.apollographql.apollo:apollo-normalized-cache:4.1.1")
     }
     androidMain.dependencies {
       implementation(compose.preview)
@@ -89,6 +95,9 @@ kotlin {
       implementation(libs.kotlinx.coroutines.swing)
       implementation(libs.ui.tooling.preview.desktop)
       implementation(libs.ktor.client.java)
+    }
+
+    wasmJsMain.dependencies {
     }
   }
 }
@@ -141,4 +150,14 @@ compose.desktop {
 
 tasks.register<ComposeHotRun>("runHot"){
   mainClass.set("org.aryamahasangh.MainKt")
+}
+
+apollo {
+  service("service") {
+    packageName.set("org.aryamahasangh")
+    introspection {
+      endpointUrl.set("http://localhost:4000/graphql")
+      schemaFile.set(file("src/commonMain/graphql/schema.json"))
+    }
+  }
 }
