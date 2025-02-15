@@ -9,13 +9,21 @@ import org.aryamahasangh.navigation.Screen.OrgDetails
 import org.aryamahasangh.screens.*
 
 @Composable
-fun RootNavGraph(navController: NavHostController, onNavigateToOrgDetails: (String) -> Unit) {
+fun RootNavGraph(
+  navController: NavHostController,
+  onNavigateToOrgDetails: (String) -> Unit,
+  onNavigateToActivityDetails: (String) -> Unit
+) {
   NavHost(navController = navController, startDestination = Screen.AboutUs){
     composable<Screen.AboutUs> {
       AboutUs()
     }
     composable<Screen.Activities> {
-      Activities()
+      Activities(navController, onNavigateToActivityDetails)
+    }
+    composable<Screen.ActivityDetails> {
+      val id = it.toRoute<Screen.ActivityDetails>().id
+      ActivityDetailScreen(id)
     }
     composable<Screen.JoinUs> {
       JoinUsScreen()

@@ -1,7 +1,9 @@
 package org.aryamahasangh
 
 import com.expediagroup.graphql.generator.hooks.FlowSubscriptionSchemaGeneratorHooks
+import com.expediagroup.graphql.generator.scalars.ID
 import com.expediagroup.graphql.server.ktor.*
+import com.expediagroup.graphql.server.ktor.subscriptions.KtorGraphQLSubscriptionHooks
 import com.expediagroup.graphql.server.operations.Mutation
 import com.expediagroup.graphql.server.operations.Query
 import graphql.GraphQLContext
@@ -19,7 +21,10 @@ import io.ktor.server.netty.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.routing.*
+import io.ktor.server.sse.*
 import io.ktor.server.websocket.*
+import io.ktor.sse.*
+import kotlinx.coroutines.delay
 import kotlinx.datetime.LocalDateTime
 import java.util.*
 import kotlin.reflect.KClass
@@ -50,6 +55,9 @@ fun Application.module() {
     }
     server {
       contextFactory = DefaultKtorGraphQLContextFactory()
+      subscriptions {
+        hooks = CustomGraphqlSubscriptionHooks()
+      }
     }
   }
   install(WebSockets) {
@@ -58,6 +66,9 @@ fun Application.module() {
   }
   install(StatusPages) {
     defaultGraphQLStatusPages()
+  }
+  install(SSE){
+
   }
   install(CORS) {
     allowHeader(HttpHeaders.AccessControlAllowOrigin)
@@ -75,13 +86,32 @@ fun Application.module() {
     graphiQLRoute()
     graphQLSDLRoute()
     graphQLSubscriptionsRoute()
+    sse("/events"){
+      repeat(6) {
+        send(ServerSentEvent("this is SSE #$it"))
+        delay(1000)
+      }
+    }
   }
 }
 
+class CustomGraphqlSubscriptionHooks : KtorGraphQLSubscriptionHooks {
+  override fun onConnect(
+    connectionParams: Any?,
+    session: WebSocketServerSession,
+    graphQLContext: GraphQLContext
+  ): GraphQLContext {
+    println("onConnect ${session}")
+    return super.onConnect(connectionParams, session, graphQLContext)
+  }
+}
+
+@OptIn(ExperimentalUuidApi::class)
 class OrgsQuery : Query {
   fun organisations(): List<Organisation> = listOfOrganisations
   fun organisation(name: String): Organisation? = listOfOrganisations.find { it.name == name }
-  fun activities(): List<OrganisationalActivity> = activities
+  fun organisationalActivities(): List<OrganisationalActivity> = activities
+  fun organisationalActivity(id: ID) =  activities.find { it.id == id }
   fun learning(): List<Video> = videosList
 }
 

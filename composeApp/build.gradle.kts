@@ -77,6 +77,9 @@ kotlin {
 //      implementation("com.apollographql.apollo:apollo-runtime-kotlin:2.5.14")
       implementation("com.apollographql.apollo:apollo-runtime:4.1.1")
       implementation("com.apollographql.apollo:apollo-normalized-cache:4.1.1")
+      implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+
+      implementation(libs.ktor.client.core)
     }
     androidMain.dependencies {
       implementation(compose.preview)

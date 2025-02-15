@@ -1,5 +1,6 @@
 package org.aryamahasangh
 
+import com.expediagroup.graphql.generator.scalars.ID
 import kotlinx.datetime.LocalDateTime
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
@@ -29,9 +30,11 @@ enum class ActivityType {
 
 @OptIn(ExperimentalUuidApi::class)
 data class OrganisationalActivity(
+  val id: ID,
   val name: String,
   val description: String,
   val activityType: ActivityType,
+  val place: String,
   /**
    * list of organisations associated with this activity.
    * represented by orgId

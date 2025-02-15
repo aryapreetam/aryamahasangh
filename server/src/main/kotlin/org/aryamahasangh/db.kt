@@ -1,5 +1,6 @@
 package org.aryamahasangh
 
+import com.expediagroup.graphql.generator.scalars.ID
 import kotlinx.datetime.*
 import kotlin.random.Random
 import kotlin.uuid.ExperimentalUuidApi
@@ -9,10 +10,19 @@ val activities = generateRandomActivities(20)
 
 @OptIn(ExperimentalUuidApi::class)
 fun generateRandomActivities(count: Int): List<OrganisationalActivity> {
-  val activityNames = listOf("Leadership Workshop", "Community Cleanup", "Tech Conference", "Health Awareness Drive", "Sports Meet")
-  val descriptions = listOf("An event to develop leadership skills.", "A drive to clean the local community.", "Annual technology conference with keynote speakers.", "Campaign for spreading awareness about health and hygiene.", "Inter-organizational sports competition.")
+  val activityNames =
+    listOf("Leadership Workshop", "Community Cleanup", "Tech Conference", "Health Awareness Drive", "Sports Meet")
+  val descriptions = listOf(
+    "An event to develop leadership skills.",
+    "A drive to clean the local community.",
+    "Annual technology conference with keynote speakers.",
+    "Campaign for spreading awareness about health and hygiene.",
+    "Inter-organizational sports competition."
+  )
   val mediaUrls = listOf("https://example.com/image1.jpg", "https://example.com/video1.mp4")
   val posts = listOf("Coordinator", "Volunteer", "Manager", "Organizer")
+  val cities = listOf("Delhi", "Mumbai", "Kolkāta", "Bangalore", "Chennai", "Hyderābād", "Pune", "Ahmedabad", "Sūrat", "Lucknow", "Jaipur", "Kanpur", "Mirzāpur", "Nāgpur", "Ghāziābād", "Supaul", "Vadodara", "Rājkot", "Vishākhapatnam", "Indore", "Thāne", "Bhopāl", "Pimpri-Chinchwad", "Patna", "Bilāspur", "Ludhiāna", "Āgra")
+
 
   return List(count) {
     val now = Clock.System.now()
@@ -21,9 +31,11 @@ fun generateRandomActivities(count: Int): List<OrganisationalActivity> {
     val end = start.plus(Random.nextLong(2, 288), DateTimeUnit.DAY, systemTZ)
 
     OrganisationalActivity(
+      id = ID(Uuid.random().toString()),
       name = activityNames.random(),
       description = descriptions.random(),
       activityType = ActivityType.entries.toTypedArray().random(),
+      place = cities.random(),
       associatedOrganisation = List(Random.nextInt(1, 5)) { Uuid.random() },
       startDateTime = start.toLocalDateTime(systemTZ),
       endDateTime = end.toLocalDateTime(systemTZ),

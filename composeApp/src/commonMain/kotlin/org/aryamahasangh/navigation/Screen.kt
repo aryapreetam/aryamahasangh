@@ -9,6 +9,10 @@ sealed class Screen {
   @Serializable
   data object Activities: Screen()
   @Serializable
+  data class ActivityDetails(val id: String): Screen()
+  @Serializable
+  object Navigation: Screen()
+  @Serializable
   data object JoinUs: Screen()
   @Serializable
   data object Learning: Screen()

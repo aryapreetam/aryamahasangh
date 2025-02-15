@@ -1,7 +1,6 @@
 package org.aryamahasangh
 
 import AppTheme
-import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.*
@@ -25,26 +24,34 @@ import org.aryamahasangh.navigation.Screen
 import org.jetbrains.compose.reload.DevelopmentEntryPoint
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 @Preview
 fun App() {
   DevelopmentEntryPoint {
     AppTheme {
-      val navController = rememberNavController()
-      BoxWithConstraints(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-        val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-        var (selectedOption, setValue) = remember { mutableStateOf(drawerOptions[0].title) }
+      // for quickly testing the components
+      // DemoComposable()
+      AppDrawer()
+    }
+  }
+}
 
-        val isLargeScreen = maxWidth > 840.dp
-        if (isLargeScreen) {
-          Box(modifier = Modifier.width(1024.dp)){
-            LargeScreens("", drawerState, selectedOption, setValue, navController)
-          }
-        } else {
-          SmallScreens("", drawerState, selectedOption, setValue, navController)
-        }
+@Composable
+fun AppDrawer(){
+  val navController = rememberNavController()
+  BoxWithConstraints(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    var (selectedOption, setValue) = remember { mutableStateOf(drawerOptions[0].title) }
+
+    val isLargeScreen = maxWidth > 840.dp
+    if (isLargeScreen) {
+      Box(modifier = Modifier.width(1024.dp)){
+        LargeScreens("", drawerState, selectedOption, setValue, navController)
       }
+    } else {
+      SmallScreens("", drawerState, selectedOption, setValue, navController)
     }
   }
 }
@@ -200,6 +207,7 @@ fun MainContent(
 ) {
   val scope = rememberCoroutineScope()
   val (orgDetails, selectedOrgDetails) = remember { mutableStateOf("") }
+  val (activityDetails, selectedActivityDetails) = remember { mutableStateOf("") }
   LaunchedEffect(selectedOption) {
     selectedOrgDetails("")
   }
@@ -216,9 +224,10 @@ fun MainContent(
           }
         },
         navigationIcon = {
-          if(orgDetails.isNotEmpty()) {
+          if(orgDetails.isNotEmpty() || activityDetails.isNotEmpty()) {
             IconButton(onClick = {
               selectedOrgDetails("")
+              selectedActivityDetails("")
               navController1.navigateUp()
             }) {
               Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back Arrow")
@@ -243,6 +252,9 @@ fun MainContent(
           navController = navController1,
           onNavigateToOrgDetails = { orgId ->
             selectedOrgDetails(orgId)
+          },
+          onNavigateToActivityDetails = { id ->
+            selectedActivityDetails(id)
           }
         )
       }

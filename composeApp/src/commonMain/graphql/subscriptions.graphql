@@ -1,3 +1,7 @@
-subscription counter {
-  counter(limit: 10)
+subscription OnOrganisationCreated{
+  onOrganisationCreated{
+    name
+    description
+    logo
+  }
 }

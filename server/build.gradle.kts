@@ -20,5 +20,6 @@ dependencies {
     implementation("com.expediagroup:graphql-kotlin-ktor-server:8.3.0")
     implementation(libs.ktor.server.statuspages)
     implementation(libs.ktor.server.websockets)
+    implementation(libs.ktor.server.sse)
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
 }
