@@ -14,6 +14,9 @@ query organisation($name: String!) {
       member{
         name
         profileImage
+        email
+        phoneNumber
+        educationalQualification
       }
       post
       priority
@@ -29,12 +32,28 @@ query learnings {
   }
 }
 
-query organisationalActivities{
-  activities{
+query organisationalActivities {
+  organisationalActivities{
+    id
+    name
+    description
+    startDateTime
+    endDateTime
+    activityType
+    place
+  }
+}
+
+
+
+query organisationalActivityDetail($id: ID!){
+  organisationalActivity(id: $id){
+    id,
     name
     description
     associatedOrganisation
     activityType
+    place
     startDateTime
     endDateTime
     mediaFiles

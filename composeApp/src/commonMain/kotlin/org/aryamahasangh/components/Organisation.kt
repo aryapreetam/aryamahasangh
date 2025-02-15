@@ -1,6 +1,5 @@
 package org.aryamahasangh.components
 
-import androidx.compose.desktop.ui.tooling.preview.Preview
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -24,6 +23,7 @@ import aryamahasangh.composeapp.generated.resources.mahasangh_logo_without_backg
 import coil3.compose.AsyncImage
 import org.aryamahasangh.OrganisationQuery
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 fun drawableFromImageName(imageName: String) = when(imageName){
 //  "sanchar_parishad" -> Res.drawable.sanchar_parishad
