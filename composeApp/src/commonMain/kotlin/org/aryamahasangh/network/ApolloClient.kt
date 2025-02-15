@@ -5,10 +5,9 @@ import com.apollographql.apollo.api.http.HttpRequest
 import com.apollographql.apollo.api.http.HttpResponse
 import com.apollographql.apollo.network.http.HttpInterceptor
 import com.apollographql.apollo.network.http.HttpInterceptorChain
-import org.aryamahasangh.Platform
-import org.aryamahasangh.getPlatform
+import org.aryamahasangh.isAndroid
 
-val host = if(getPlatform() == Platform.ANDROID) "10.0.2.2" else "localhost"
+val host = if(isAndroid()) "10.0.2.2" else "localhost"
 
 val apolloClient = ApolloClient.Builder()
   .serverUrl("http://${host}:4000/graphql")

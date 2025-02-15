@@ -1,17 +1,24 @@
 package org.aryamahasangh.utils
 
 import androidx.compose.runtime.Composable
-import org.aryamahasangh.OrganisationQuery.KeyPeople
-import org.aryamahasangh.OrganisationQuery.Organisation
-import org.aryamahasangh.OrganisationalActivityDetailQuery.ContactPeople
-import org.aryamahasangh.OrganisationalActivityDetailQuery.Member
-import org.aryamahasangh.OrganisationalActivityDetailQuery.OrganisationalActivity
+import org.aryamahasangh.OrganisationalActivityDetailQuery.*
+import org.aryamahasangh.screens.JoinUsScreen
 import org.aryamahasangh.screens.OrganisationalActivityForm
 import org.aryamahasangh.type.ActivityType
 
 @Composable
 fun DemoComposable(){
-//  val sampleOrganisation = Organisation(
+  JoinUsComponent()
+}
+
+@Composable
+fun JoinUsComponent(){
+  JoinUsScreen()
+}
+
+@Composable
+fun AddOrganisationInputForm(){
+  //  val sampleOrganisation = Organisation(
 //    name = "राष्ट्रीय आर्य निर्मात्री सभा",
 //    description = "प्रत्येक बुद्धिमान व्यक्ति यह समझ सकता है कि मानवीय जीवन अति दुर्लभ है...",
 //    logo = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image//nirmatri_sabha.webp",
@@ -30,6 +37,10 @@ fun DemoComposable(){
 //    )
 //  )
 //      OrganisationForm(organisation = sampleOrganisation)
+}
+
+@Composable
+fun OrganisationActivityForm(){
   val sampleActivity = OrganisationalActivity(
     id = "eb179afc-aec7-4c87-8e51-9a9f192d4551",
     name = "Health Awareness Drive",
