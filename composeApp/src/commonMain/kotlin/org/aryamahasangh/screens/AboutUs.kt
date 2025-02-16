@@ -8,6 +8,7 @@ import org.aryamahasangh.network.apolloClient
 
 @Composable
 fun AboutUs() {
+  val scope = rememberCoroutineScope()
   val organisation = remember { mutableStateOf<OrganisationQuery.Organisation?>(null) }
 //  val organisationAddedFlow = remember { apolloClient.subscription(OnOrganisationCreatedSubscription()).toFlow() }
 //  val organisationAddedResponse = organisationAddedFlow.collectAsState(initial = null)
@@ -24,6 +25,15 @@ fun AboutUs() {
 //    }
 //    println("$message")
 //  }
+
+  LaunchedEffect(Unit) {
+    val subscription = OnOrganisationCreatedSubscription()
+    apolloClient.subscription(subscription).toFlow().collect { response ->
+      response.data?.onOrganisationCreated.let {
+        println("onOrganisationCreated: $it ")
+      }
+    }
+  }
 
   LaunchedEffect(Unit) {
     val res = apolloClient.query(OrganisationQuery("आर्य महासंघ")).execute()

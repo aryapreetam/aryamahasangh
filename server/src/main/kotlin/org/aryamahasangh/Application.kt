@@ -21,10 +21,7 @@ import io.ktor.server.netty.*
 import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.routing.*
-import io.ktor.server.sse.*
 import io.ktor.server.websocket.*
-import io.ktor.sse.*
-import kotlinx.coroutines.delay
 import kotlinx.datetime.LocalDateTime
 import java.util.*
 import kotlin.reflect.KClass
@@ -67,9 +64,6 @@ fun Application.module() {
   install(StatusPages) {
     defaultGraphQLStatusPages()
   }
-  install(SSE){
-
-  }
   install(CORS) {
     allowHeader(HttpHeaders.AccessControlAllowOrigin)
     allowMethod(HttpMethod.Get)
@@ -79,19 +73,14 @@ fun Application.module() {
     allowHeader(HttpHeaders.ContentType)
     allowHeader(HttpHeaders.Authorization)
     allowHeader(HttpHeaders.Accept)
-    allowHost("localhost:8080", schemes = listOf("http"))
+    //allowHost("localhost:8080", schemes = listOf("http"))
+    anyHost()
   }
   routing {
     graphQLPostRoute()
     graphiQLRoute()
     graphQLSDLRoute()
     graphQLSubscriptionsRoute()
-    sse("/events"){
-      repeat(6) {
-        send(ServerSentEvent("this is SSE #$it"))
-        delay(1000)
-      }
-    }
   }
 }
 

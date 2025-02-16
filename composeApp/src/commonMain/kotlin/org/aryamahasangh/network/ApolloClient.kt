@@ -7,15 +7,18 @@ import com.apollographql.apollo.network.http.HttpInterceptor
 import com.apollographql.apollo.network.http.HttpInterceptorChain
 import org.aryamahasangh.isAndroid
 
-val host = if(isAndroid()) "10.0.2.2" else "localhost"
+val localDev = true
 
+val host = if(isAndroid()) "10.0.2.2" else "localhost"
+var serverUrl = if(localDev) "http://${host}:4000" else "https://sandhya-anushthan-api.onrender.com"
+var webSocketUrl = if(localDev) "ws://${host}:4000" else "wss://sandhya-anushthan-api.onrender.com"
 val apolloClient = ApolloClient.Builder()
-  .serverUrl("http://${host}:4000/graphql")
-  .webSocketServerUrl("ws://${host}:4000/graphql")
-//  .interceptors(listOf(MyApolloInterceptor()))
+  .serverUrl("$serverUrl/graphql")
+  .webSocketServerUrl("$webSocketUrl/subscriptions")
   .addHttpHeader("Access-Control-Allow-Origin", "*")
   //.addHttpInterceptor(SampleInterceptor())
   .build()
+
 
 //class MyApolloInterceptor : ApolloInterceptor {
 //  override fun <D : Operation.Data> intercept(
