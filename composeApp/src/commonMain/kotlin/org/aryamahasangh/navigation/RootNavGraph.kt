@@ -12,14 +12,15 @@ import org.aryamahasangh.screens.*
 fun RootNavGraph(
   navController: NavHostController,
   onNavigateToOrgDetails: (String) -> Unit,
-  onNavigateToActivityDetails: (String) -> Unit
+  onNavigateToActivityDetails: (String) -> Unit,
+  onNavigateToVideoDetails: (String) -> Unit
 ) {
   NavHost(navController = navController, startDestination = Screen.AboutUs){
     composable<Screen.AboutUs> {
       AboutUs()
     }
     composable<Screen.Activities> {
-      Activities(navController, onNavigateToActivityDetails)
+      ActivitiesScreen(navController, onNavigateToActivityDetails)
     }
     composable<Screen.ActivityDetails> {
       val id = it.toRoute<Screen.ActivityDetails>().id
@@ -36,7 +37,11 @@ fun RootNavGraph(
       OrgDetailScreen(orgId, navController)
     }
     composable<Screen.Learning> {
-      LearningScreen()
+      LearningScreen(navController, onNavigateToActivityDetails)
+    }
+    composable<Screen.VideoDetails> {
+      val id = it.toRoute<Screen.VideoDetails>().learningItemId
+      VideoDetailsScreen(id)
     }
   }
 }

@@ -99,7 +99,6 @@ kotlin {
       implementation(libs.ui.tooling.preview.desktop)
       implementation(libs.ktor.client.java)
     }
-
     wasmJsMain.dependencies {
     }
   }

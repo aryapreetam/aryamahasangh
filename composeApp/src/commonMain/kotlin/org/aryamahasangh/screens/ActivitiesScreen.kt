@@ -14,15 +14,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import org.aryamahasangh.OrganisationalActivitiesQuery
+import org.aryamahasangh.components.ActivityListItem
 import org.aryamahasangh.navigation.Screen
 import org.aryamahasangh.network.apolloClient
 
 @Composable
-fun Activities(navController: NavHostController, onNavigateToActivityDetails: (String) -> Unit) {
+fun ActivitiesScreen(navController: NavHostController, onNavigateToActivityDetails: (String) -> Unit) {
   val activities = remember { mutableStateOf(emptyList<OrganisationalActivitiesQuery.OrganisationalActivity>()) }
   LaunchedEffect(Unit) {
     val res = apolloClient.query(OrganisationalActivitiesQuery()).execute()
-    activities.value = res.data?.organisationalActivities!!
+    activities.value = res.data?.organisationalActivities ?: emptyList()
   }
   Column(modifier = Modifier
     .fillMaxSize()

@@ -206,8 +206,12 @@ fun MainContent(
   val scope = rememberCoroutineScope()
   val (orgDetails, selectedOrgDetails) = remember { mutableStateOf("") }
   val (activityDetails, selectedActivityDetails) = remember { mutableStateOf("") }
+  val (videoDetails, selectedVideoDetails) = remember { mutableStateOf("") }
+
   LaunchedEffect(selectedOption) {
     selectedOrgDetails("")
+    selectedActivityDetails("")
+    selectedVideoDetails("")
   }
   Scaffold(
     topBar = {
@@ -222,10 +226,11 @@ fun MainContent(
           }
         },
         navigationIcon = {
-          if(orgDetails.isNotEmpty() || activityDetails.isNotEmpty()) {
+          if(orgDetails.isNotEmpty() || activityDetails.isNotEmpty() || videoDetails.isNotEmpty()) {
             IconButton(onClick = {
               selectedOrgDetails("")
               selectedActivityDetails("")
+              selectedVideoDetails("")
               navController1.navigateUp()
             }) {
               Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back Arrow")
@@ -252,6 +257,9 @@ fun MainContent(
           },
           onNavigateToActivityDetails = { id ->
             selectedActivityDetails(id)
+          },
+          onNavigateToVideoDetails = { id ->
+            selectedVideoDetails(id)
           }
         )
       }

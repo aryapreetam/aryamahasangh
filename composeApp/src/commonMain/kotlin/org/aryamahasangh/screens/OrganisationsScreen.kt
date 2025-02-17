@@ -24,7 +24,7 @@ fun Orgs(navController: NavHostController, onNavigateToOrgDetails: (String) -> U
   LaunchedEffect(Unit) {
     val res = apolloClient.query(OrganisationsQuery()).execute()
     val orgs = res.data?.organisations
-    organisations.value = orgs!!
+    organisations.value = orgs ?: emptyList()
   }
 
   Column(
@@ -35,7 +35,7 @@ fun Orgs(navController: NavHostController, onNavigateToOrgDetails: (String) -> U
       verticalArrangement = Arrangement.spacedBy(8.dp),
       horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-      organisations.value.take(10).forEach {
+      organisations.value.forEach {
         OrgItem(it.name, it.description){
           onNavigateToOrgDetails(it.name)
           navController.navigate(Screen.OrgDetails(it.name))
