@@ -15,6 +15,8 @@ pluginManagement {
     gradlePluginPortal()
     mavenCentral()
     maven("https://packages.jetbrains.team/maven/p/firework/dev")
+    // Desktop target has to add this repo. for compose-webview-multiplatform
+    maven("https://jogamp.org/deployment/maven")
   }
 }
 
@@ -30,6 +32,8 @@ dependencyResolutionManagement {
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
     mavenCentral()
     maven("https://packages.jetbrains.team/maven/p/firework/dev")
+    // Desktop target has to add this repo. for compose-webview-multiplatform
+    maven("https://jogamp.org/deployment/maven")
   }
 }
 

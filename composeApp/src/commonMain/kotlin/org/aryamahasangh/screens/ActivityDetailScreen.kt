@@ -1,5 +1,6 @@
 package org.aryamahasangh.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -18,17 +19,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.BrushPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import aryamahasangh.composeapp.generated.resources.Res
+import aryamahasangh.composeapp.generated.resources.error_profile_image
 import coil3.compose.AsyncImage
 import org.aryamahasangh.OrganisationalActivityDetailQuery
 import org.aryamahasangh.OrganisationalActivityDetailQuery.ContactPeople
 import org.aryamahasangh.OrganisationalActivityDetailQuery.OrganisationalActivity
+import org.aryamahasangh.components.activityTypeData
 import org.aryamahasangh.network.apolloClient
+import org.aryamahasangh.type.ActivityType
 import org.aryamahasangh.utils.format
-import kotlin.random.Random
+import org.aryamahasangh.utils.formatDateTime
+import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun ActivityDetailScreen(id: String) {
@@ -47,77 +56,50 @@ fun ActivityDetailScreen(id: String) {
   ActivityDisplay(data)
 }
 
-val profileImagesList = listOf(
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_jitendra.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_mahesh.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/dr_mahesh_arya.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/arya_pravesh_ji.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_sanjiv.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_varchaspati.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/anil_arya.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_sanjiv.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_ashvani.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/acharya_indra.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/acharya_suman.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/acharya_indra.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_loknath.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/arya_vedprakash.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/arya_shivnarayan.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/anil_arya.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_hanumat_prasad.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_satish.webp",
-  "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
-)
+@Preview
+@Composable
+fun ActivityDisplayPreview(){
+  val activity = OrganisationalActivityDetailQuery.OrganisationalActivity(
+    id = "",
+    name =  "नियमित संध्या अनुष्ठान अभियान",
+    description = "ईश के ज्ञान से लोक में जांच के आर्य कार्य आगे बढ़ाते रहें। नित्य है ना मिटे ना हटे ले चले प्रार्थना प्रेम से भाव लाते रहें।",
+        associatedOrganisation =  listOf(
+        "राष्ट्रीय आर्य निर्मात्री सभा"
+        ),
+        activityType = ActivityType.EVENT,
+        place =  "रोहतक",
+        startDateTime = "2025-02-25T09:04:42.006965",
+        endDateTime = "2025-05-15T09:04:42.006965",
+        mediaFiles = listOf(
+        "https://images.pexels.com/photos/209831/pexels-photo-209831.jpeg?auto=compress&cs=tinysrgb&w=200&dpr=1&fit=crop&h=150",
+        "https://images.pexels.com/photos/1402787/pexels-photo-1402787.jpeg?auto=compress&cs=tinysrgb&w=200&dpr=1&fit=crop&h=150"
+        ),
+        additionalInstructions = "शान्तिपाठ + जयघोष अभिवादन + प्रसाद वितरण।\nसभी आर्यसमाज पदाधिकारी अवश्य पहुंचें और संगठित स्वरूप को प्रकाशित करें !!",
+        contactPeople = listOf(
+          ContactPeople(
+            member = OrganisationalActivityDetailQuery.Member(
+              name = "आचार्य संजीव आर्य",
+              profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_sanjiv.webp",
+              phoneNumber = "9045353309"
+            ),
+            post = "अध्यक्ष",
+            priority = 1
+          )
+        )
+  )
+  Surface(Modifier.background(Color.White)){
+    ActivityDisplay(activity)
+  }
+}
 
-
-
-//Data Classes
-
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ActivityDisplay(activity: OrganisationalActivity) {
-
-  //Organisation Mapping
-  val organisationList = listOf(
-    "राष्ट्रीय आर्य निर्मात्री सभा",
-    "राष्ट्रीय आर्य क्षत्रिय सभा",
-    "राष्ट्रीय आर्य संरक्षिणी सभा",
-    "राष्ट्रीय आर्य संवर्धिनी सभा",
-    "राष्ट्रीय आर्य दलितोद्धारिणी सभा",
-    "आर्य गुरुकुल महाविद्यालय",
-    "आर्या गुरुकुल महाविद्यालय",
-    "आर्या परिषद्",
-    "वानप्रस्थ आयोग",
-    "राष्ट्रीय आर्य छात्र सभा",
-    "राष्ट्रीय आर्य संचार परिषद",
-    "आर्य महासंघ"
-  )
-
   //Profile Image URLS
-  val profileImageList = profileImagesList
-
-  // Mock Nature-Themed Thumbnail URLs (Replace with actual URLs)
-  val natureImageUrls = remember {
-    listOf(
-      "https://images.pexels.com/photos/209831/pexels-photo-209831.jpeg?auto=compress&cs=tinysrgb&w=200&dpr=1&fit=crop&h=150",
-      "https://images.pexels.com/photos/106415/pexels-photo-106415.jpeg?auto=compress&cs=tinysrgb&w=200&dpr=1&fit=crop&h=150",
-      "https://images.pexels.com/photos/1624496/pexels-photo-1624496.jpeg?auto=compress&cs=tinysrgb&w=200&dpr=1&fit=crop&h=150",
-      "https://images.pexels.com/photos/1402787/pexels-photo-1402787.jpeg?auto=compress&cs=tinysrgb&w=200&dpr=1&fit=crop&h=150"
-    ).shuffled()
-  }
-  val randomImage = remember {
-    natureImageUrls.take(Random.nextInt(1, natureImageUrls.size)).toMutableList()
-  }
-
   Column(
     modifier = Modifier
       .fillMaxSize()
-      .padding(16.dp)
+      .padding(8.dp)
       .verticalScroll(rememberScrollState())
   ) {
     // Name and Activity Type
@@ -128,10 +110,9 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
         fontWeight = FontWeight.Bold
       )
       Spacer(modifier = Modifier.width(8.dp))
-      AssistChip(
-        onClick = { },
-        label = { Text(activity.activityType.toString()) }
-      )
+      Text(
+        modifier = Modifier.background(Color.LightGray).padding(vertical = 4.dp, horizontal = 16.dp),
+        text = "${activityTypeData[activity.activityType]}", style = MaterialTheme.typography.bodyLarge)
     }
 
     // Description
@@ -140,21 +121,23 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
       style = MaterialTheme.typography.bodyLarge,
       modifier = Modifier.padding(vertical = 8.dp)
     )
+    Spacer(modifier = Modifier.height(4.dp))
 
     // Associated Organisations
     Text(
-      text = "Associated Organisations:",
+      text = "संबधित संस्थाएँ:",
       style = MaterialTheme.typography.titleMedium,
       fontWeight = FontWeight.Bold,
-      modifier = Modifier.padding(top = 16.dp)
     )
-
-    val associatedOrgNames = activity.associatedOrganisation.mapNotNull { orgId ->
-      val index = activity.associatedOrganisation.indexOf(orgId)
-      organisationList.getOrNull(index) ?: "Unknown Organisation"
+    FlowRow(horizontalArrangement =  Arrangement.spacedBy(4.dp),
+      verticalArrangement =  Arrangement.spacedBy(4.dp)) {
+      activity.associatedOrganisation.forEach { associatedOrg ->
+        AssistChip(
+          onClick = { },
+          label = { Text(associatedOrg) }
+        )
+      }
     }
-
-    Text(text = associatedOrgNames.joinToString(", "))
 
 
     // Place
@@ -164,7 +147,7 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
     ) {
       Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Place", tint = Color.Gray)
       Spacer(modifier = Modifier.width(4.dp))
-      Text(text = "Place: ${activity.place}", style = MaterialTheme.typography.bodyMedium)
+      Text(text = "स्थान: ${activity.place}", style = MaterialTheme.typography.bodyMedium)
     }
 
     // Start and End Date/Time
@@ -174,7 +157,7 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
     ) {
       Icon(imageVector = Icons.Default.DateRange, contentDescription = "Start Date", tint = Color.Gray)
       Spacer(modifier = Modifier.width(4.dp))
-      Text(text = "Start: ${formatDateTime(activity.startDateTime)}", style = MaterialTheme.typography.bodyMedium)
+      Text(text = "प्रारंभ: ${formatDateTime(activity.startDateTime)}", style = MaterialTheme.typography.bodyMedium)
     }
 
     Row(
@@ -183,46 +166,48 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
     ) {
       Icon(imageVector = Icons.Default.DateRange, contentDescription = "End Date", tint = Color.Gray)
       Spacer(modifier = Modifier.width(4.dp))
-      Text(text = "End: ${formatDateTime(activity.endDateTime)}", style = MaterialTheme.typography.bodyMedium)
+      Text(text = "समाप्ति: ${formatDateTime(activity.endDateTime)}", style = MaterialTheme.typography.bodyMedium)
     }
 
     // Media Files
-    if (randomImage.isNotEmpty()) {
-      Text(
-        text = "Media Files",
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
-      )
-      LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(randomImage) { imageUrl ->
+    if (activity.mediaFiles.isNotEmpty()) {
+      LazyRow(
+        modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(activity.mediaFiles) { imageUrl ->
           AsyncImage(
             model = imageUrl,
             contentDescription = "Thumbnail ",
             contentScale = ContentScale.Crop,
-            modifier = Modifier.size(150.dp)
+            modifier = Modifier.size(150.dp),
           )
         }
       }
     }
 
+    Spacer(modifier = Modifier.height(4.dp))
     // Contact People
     Text(
-      text = "Contact People",
+      text = "संपर्क सूत्र:",
       style = MaterialTheme.typography.titleMedium,
       fontWeight = FontWeight.Bold,
-      modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+      modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
     )
 
     val sortedContactPeople = activity.contactPeople.sortedBy { it.priority }
-    sortedContactPeople.forEach { contactPerson ->
-      ContactPersonItem(contactPerson = contactPerson, profileImageList = profileImageList)
+    FlowRow(
+      horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+      sortedContactPeople.forEach { contactPerson ->
+        ContactPersonItem(contactPerson = contactPerson)
+      }
     }
+
 
     // Additional Instructions
     if (activity.additionalInstructions.isNotEmpty()) {
       Text(
-        text = "Additional Instructions",
+        text = "अतिरिक्त निर्देश:",
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold,
         modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
@@ -241,64 +226,72 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
   }
 }
 
+@Preview
 @Composable
-fun ContactPersonItem(contactPerson: ContactPeople, profileImageList: List<String>) {
-  val randomProfileImage = remember {
-    profileImageList.getOrNull(Random.nextInt(0, profileImageList.size)) ?: ""
-  }
+fun ContactPersonPreview() {
+  val contact = ContactPeople(
+    member = OrganisationalActivityDetailQuery.Member(
+      name = "आचार्य संजीव आर्य",
+      profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_sanjiv.webp",
+      phoneNumber = "9045353309"
+    ),
+    post = "अध्यक्ष",
+    priority = 1
+  )
+  ContactPersonItem(contact)
+}
+
+@Composable
+fun ContactPersonItem(contactPerson: ContactPeople) {
   Row(
+    modifier = Modifier.heightIn(48.dp, 65.dp).padding(vertical = 8.dp),
     verticalAlignment = Alignment.CenterVertically,
-    modifier = Modifier.padding(vertical = 8.dp)
   ) {
     // Profile Image
     AsyncImage(
-      model = randomProfileImage,
+      model = contactPerson.member.profileImage,
       contentDescription = "Profile Image",
       contentScale = ContentScale.Crop,
       modifier = Modifier
         .size(50.dp)
-        .clip(CircleShape)
+        .clip(CircleShape),
+      placeholder = BrushPainter(
+        Brush.linearGradient(
+          listOf(
+            Color(color = 0xFFFFFFFF),
+            Color(color = 0xFFDDDDDD),
+          )
+        )
+      ),
+      fallback = painterResource(Res.drawable.error_profile_image),
+      error = painterResource(Res.drawable.error_profile_image)
     )
 
     Spacer(modifier = Modifier.width(8.dp))
 
     Column {
-      // Name (Highlighted) and Call Icon
-      Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
           text = contactPerson.member.name,
           style = MaterialTheme.typography.bodyLarge,
           fontWeight = FontWeight.Bold
         )
         Spacer(modifier = Modifier.width(4.dp))
-        IconButton(onClick = {
-          val phoneNumber = contactPerson.member.phoneNumber
-          try {
-//            val encodedPhoneNumber = URLEncoder.encode(phoneNumber, StandardCharsets.UTF_8.toString())
-//            val intent = android.content.Intent(android.content.Intent.ACTION_DIAL).apply {
-//              data = android.net.Uri.parse("tel:$encodedPhoneNumber")
-//            }
-//            context.startActivity(intent)
-
-          } catch (e: Exception) {
-            println("exception while dialing $e")
-          }
-        }) {
-          Icon(imageVector = Icons.Default.Call, contentDescription = "Call", tint = Color.Blue)
-        }
-      }
-
-      // Phone Number
-      Text(
-        text = "Phone: ${contactPerson.member.phoneNumber}",
-        style = MaterialTheme.typography.bodySmall,
-        modifier = Modifier.padding(bottom = 2.dp)
-      )
-
-      // Post
-      Text(
-        text = "Post: ${contactPerson.post}",
-        style = MaterialTheme.typography.bodySmall
+        Text(
+          text = contactPerson.post,
+          style = MaterialTheme.typography.bodySmall
+        )
+    }
+    VerticalDivider(
+      modifier = Modifier.padding(top = 12.dp, bottom = 12.dp, start = 12.dp),
+      thickness = 2.dp,
+      color = Color.LightGray
+    )
+    IconButton(
+      onClick = {  }
+    ){
+      Icon(
+        imageVector = Icons.Default.Call,
+        contentDescription = "Call", tint = Color.Gray
       )
     }
   }

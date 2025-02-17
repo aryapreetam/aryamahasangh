@@ -24,10 +24,21 @@ query organisation($name: String!) {
   }
 }
 
-query learnings {
-  learning{
+query learningsItems {
+  learningItems{
+    id
+    thumbnailUrl
+    title
+  }
+}
+
+query LearningItemDetail($id: ID!){
+  learningItem(id: $id){
+    id
     title
     description
+    videoId
+    url
     thumbnailUrl
   }
 }

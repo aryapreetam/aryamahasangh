@@ -15,19 +15,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
-import org.aryamahasangh.LearningsQuery
-import org.aryamahasangh.LearningsQuery.Learning
+import org.aryamahasangh.LearningsItemsQuery
+import org.aryamahasangh.LearningsItemsQuery.LearningItem
+import org.aryamahasangh.navigation.Screen
 import org.aryamahasangh.network.apolloClient
 
 @Composable
-fun LearningScreen() {
-  val learnings = remember { mutableStateOf(emptyList<Learning>()) } // ✅ Correct
+fun LearningScreen(navController: NavHostController, onNavigateToActivityDetails: (String) -> Unit) {
+  val learnings = remember { mutableStateOf(emptyList<LearningItem>()) } // ✅ Correct
   LaunchedEffect(Unit) {
-    val res = apolloClient.query(LearningsQuery()).execute()
-    learnings.value = res.data?.learning!!
+    val res = apolloClient.query(LearningsItemsQuery()).execute()
+    learnings.value = res.data?.learningItems ?: emptyList()
   }
-  Column(modifier = Modifier.padding(start =16.dp, end = 16.dp, bottom = 16.dp).fillMaxSize(1f).verticalScroll(rememberScrollState())) {
+  Column(modifier = Modifier.padding(start =8.dp, end = 8.dp, bottom = 8.dp).fillMaxSize(1f).verticalScroll(rememberScrollState())) {
     Text("सत्यार्थ प्रकाश",
       style =  MaterialTheme.typography.titleLarge,
       modifier = Modifier.padding(vertical = 8.dp),
@@ -40,12 +42,15 @@ fun LearningScreen() {
         horizontalArrangement = Arrangement.spacedBy(8.dp)
       ) {
         learnings.value.forEach { video ->
-          val modifier = Modifier.clickable {  }
+          val modifier = Modifier.clickable {
+            onNavigateToActivityDetails(video.id)
+            navController.navigate(Screen.VideoDetails(video.id))
+          }
           Column(modifier = if(isSmallScreen) modifier.fillMaxWidth() else modifier.width(240.dp)) {
             AsyncImage(
               modifier = Modifier.aspectRatio(16f / 9f),
               model = video.thumbnailUrl,
-              contentDescription = video.description,
+              contentDescription = video.title,
             )
             Text(video.title, modifier = Modifier.padding(top = 4.dp),)
           }

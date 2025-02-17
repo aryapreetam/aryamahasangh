@@ -125,7 +125,6 @@ val profileImagesList = listOf(
 
 @Composable
 fun ActivityDisplay(activity: OrganisationalActivity) {
-
   //Organisation Mapping
   val organisationList = listOf(
     "राष्ट्रीय आर्य निर्मात्री सभा",
