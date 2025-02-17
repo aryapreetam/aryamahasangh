@@ -101,7 +101,8 @@ class OrgsQuery : Query {
   fun organisation(name: String): Organisation? = listOfOrganisations.find { it.name == name }
   fun organisationalActivities(): List<OrganisationalActivity> = activities
   fun organisationalActivity(id: ID) =  activities.find { it.id == id }
-  fun learning(): List<Video> = videosList
+  fun learningItems(): List<Video> = videosList
+  fun learningItem(id: ID) = videosList.find { it.id == id }
 }
 
 data class OrganisationInput(
