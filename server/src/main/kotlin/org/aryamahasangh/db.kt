@@ -6,29 +6,52 @@ import kotlin.random.Random
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
+val activityNamesData = listOf(
+  "आर्य प्रशिक्षण सत्र",
+  "आर्या प्रशिक्षण सत्र",
+  "भव्य शिलान्यास समारोह",
+  "नियमित संध्या अनुष्ठान अभियान",
+  "सिद्धालंकार कक्षा",
+  "सिद्धालंकार कक्षा -(आर्यााओं के लिए)",
+  "आत्मरक्षा प्रशिक्षण - आर्य बालिकाओं के लिए",
+  "छात्र आत्मरक्षा प्रशिक्षण",
+  "श्रावणी उपाकर्म",
+  "आर्ष गुरुकुल - उद्गाठन एवं नवसंवत्सर यज्ञ",
+  "विजयादशी पर्व",
+  "सनातन धर्म संस्कार शिविर",
+  "सांगठनिक बैठक"
+)
+
+val listOfCities = "फरीदाबाद, गुड़गांव, मेवात, रोहतक, सोनीपत, रेवाड़ी, झज्जर, पानीपत, पलवल, महेंद्रगढ़, भिवानी,जींद, मेरठ, गाजियाबाद, गौतम बुद्ध नगर (नोएडा), ग्रेटर नोएडा, बुलंदशहर, बागपत, हापुड़, मुजफ्फरनगर"
+
 val activities = generateRandomActivities(20)
+
+
 
 @OptIn(ExperimentalUuidApi::class)
 fun generateRandomActivities(count: Int): List<OrganisationalActivity> {
-  val activityNames =
-    listOf("Leadership Workshop", "Community Cleanup", "Tech Conference", "Health Awareness Drive", "Sports Meet")
+  val activityNames = activityNamesData
   val descriptions = listOf(
-    "An event to develop leadership skills.",
-    "A drive to clean the local community.",
-    "Annual technology conference with keynote speakers.",
-    "Campaign for spreading awareness about health and hygiene.",
-    "Inter-organizational sports competition."
+    "महान सनातन परम्पराओं को जानने का प्रकल्प",
+    "आप सभी को सूचित करते हुए बड़ी प्रसन्नता हो रही है कि ईश्वरानुकम्पा से आर्य पदाधिकारी परिषद के प्रथम अधिवेशन का भव्य आयोजन 03 सितम्बर 2023 रविवार को क्षात्र गुरुकुल भाली आनन्दपुर, रोहतक हरियाणा में किया जा रहा है।",
+    "आर्य महासंघ के तत्वावधान में राष्ट्रीय आर्य निर्मात्री सभा द्वारा दो दिवसीय आर्य प्रशिक्षण शिविर का आयोजन हरियाणा प्रान्त के नूह जनपद के पुन्हाना शहर में किया गया, जिसमे आदरणीय आचार्या मोनिका जी सभी माताओं-बहनों कों अपने ऋषि मुनियों की श्रेष्ठ विद्या अर्थात वेद विद्या से अवगत करवाती हुई",
+    "ईश के ज्ञान से लोक में जांच के आर्य कार्य आगे बढ़ाते रहें। नित्य है ना मिटे ना हटे ले चले प्रार्थना प्रेम से भाव लाते रहें।",
+    "सिद्धांतालंकारा कक्षा के दूसरे समैस्टर की कक्षा का समापन हुआ।"
   )
-  val mediaUrls = listOf("https://example.com/image1.jpg", "https://example.com/video1.mp4")
+  val mediaUrls = listOf(
+    "https://images.pexels.com/photos/209831/pexels-photo-209831.jpeg?auto=compress&cs=tinysrgb&w=200&dpr=1&fit=crop&h=150",
+    "https://images.pexels.com/photos/1624496/pexels-photo-1624496.jpeg?auto=compress&cs=tinysrgb&w=200&dpr=1&fit=crop&h=150",
+    "https://images.pexels.com/photos/1402787/pexels-photo-1402787.jpeg?auto=compress&cs=tinysrgb&w=200&dpr=1&fit=crop&h=150"
+  )
   val posts = listOf("Coordinator", "Volunteer", "Manager", "Organizer")
-  val cities = listOf("Delhi", "Mumbai", "Kolkāta", "Bangalore", "Chennai", "Hyderābād", "Pune", "Ahmedabad", "Sūrat", "Lucknow", "Jaipur", "Kanpur", "Mirzāpur", "Nāgpur", "Ghāziābād", "Supaul", "Vadodara", "Rājkot", "Vishākhapatnam", "Indore", "Thāne", "Bhopāl", "Pimpri-Chinchwad", "Patna", "Bilāspur", "Ludhiāna", "Āgra")
-
+  val cities = listOfCities.split(", ")
 
   return List(count) {
     val now = Clock.System.now()
     val systemTZ = TimeZone.currentSystemDefault()
     val start = now.plus(Random.nextLong(1, 30), DateTimeUnit.DAY, systemTZ)
     val end = start.plus(Random.nextLong(2, 288), DateTimeUnit.DAY, systemTZ)
+      .plus(Random.nextLong(1, 10), DateTimeUnit.HOUR, systemTZ)
 
     OrganisationalActivity(
       id = ID(Uuid.random().toString()),
@@ -36,24 +59,140 @@ fun generateRandomActivities(count: Int): List<OrganisationalActivity> {
       description = descriptions.random(),
       activityType = ActivityType.entries.toTypedArray().random(),
       place = cities.random(),
-      associatedOrganisation = List(Random.nextInt(1, 5)) { Uuid.random() },
+      associatedOrganisation = listOf(
+        "राष्ट्रीय आर्य निर्मात्री सभा",
+        "राष्ट्रीय आर्य क्षत्रिय सभा",
+        "राष्ट्रीय आर्य संरक्षिणी सभा",
+        "राष्ट्रीय आर्य संवर्धिनी सभा",
+        "राष्ट्रीय आर्य दलितोद्धारिणी सभा",
+        "आर्य गुरुकुल महाविद्यालय",
+        "आर्या गुरुकुल महाविद्यालय",
+        "आर्या परिषद्",
+        "वानप्रस्थ आयोग",
+        "राष्ट्रीय आर्य छात्र सभा",
+        "राष्ट्रीय आर्य संचार परिषद",
+        "आर्य महासंघ"
+      ).shuffled().takeLast(Random.nextInt(1, 3)),
       startDateTime = start.toLocalDateTime(systemTZ),
       endDateTime = end.toLocalDateTime(systemTZ),
-      mediaFiles = List(Random.nextInt(0, 3)) { mediaUrls.random() },
-      contactPeople = List(Random.nextInt(1, 3)) {
+      mediaFiles = List(Random.nextInt(1, 3)) { mediaUrls.random() },
+      contactPeople = listOf(
         OrganisationalMember(
           member = Member(
-            name = "Member ${Random.nextInt(1, 100)}",
-            educationalQualification = listOf("B.Sc", "M.A", "Ph.D", "B.Tech").random(),
-            profileImage = "https://example.com/profile${Random.nextInt(1, 50)}.jpg",
-            phoneNumber = "+12345678${Random.nextInt(100, 999)}",
-            email = "member${Random.nextInt(1, 100)}@example.com"
+            name = "आचार्य जितेन्द्र आर्य",
+            profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_jitendra.webp",
+            phoneNumber = "9416201731",
           ),
-          post = posts.random(),
-          priority = Random.nextInt(1, 5)
+          post = "अध्यक्ष",
+          priority = 1
+        ),
+        OrganisationalMember(
+          member = Member(
+            name = "आचार्य डॉ० महेशचन्द्र आर्य",
+            profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_mahesh.webp",
+            email = "aryamaheshchander@gmail.com",
+            phoneNumber = "9416201731",
+          ),
+          post = "सत्र संयोजक",
+          priority = 2
+        ),
+        OrganisationalMember(
+          member = Member(
+            name = "डॉ० महेश आर्य",
+            profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/dr_mahesh_arya.webp",
+            email = "Mahesh.arya1975@gmail.com",
+            phoneNumber = "9416201731",
+          ),
+          post = "महासचिव",
+          priority = 3
+        ),
+        OrganisationalMember(
+          member = Member(
+            name = "उपाचार्य जसबीर आर्य",
+            profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
+            phoneNumber = "9416201731",
+          ),
+          post = "सचिव",
+          priority = 4
+        ),
+        OrganisationalMember(
+          member = Member(
+            name = "सौम्य आर्य",
+            profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
+            phoneNumber = "9466944880",
+            email = "Sonurana.rana@gmail.com"
+          ),
+          post = "सचिव",
+          priority = 1
+        ),
+        OrganisationalMember(
+          member = Member(
+            name = "आर्य प्रवेश 'प्रघोष'",
+            profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/arya_pravesh_ji.webp",
+            phoneNumber = "7419002189",
+            email = "aacharyaji@hotmail.com"
+          ),
+          post = "महासचिव",
+          priority = 2
+        ),
+        OrganisationalMember(
+          member = Member(
+            name = "आचार्य संजीव आर्य",
+            profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_sanjiv.webp",
+            phoneNumber = "9045353309",
+            email = "prachetas Arya@gmail.com"
+          ),
+          post = "अध्यक्ष",
+          priority = 1
+        ),
+        OrganisationalMember(
+          member = Member(
+            name = "आर्य सुशील",
+            profileImage = "",
+            phoneNumber = "9410473224",
+            email = ""
+          ),
+          post = "कोषाध्यक्ष",
+          priority = 3
+        ),
+        OrganisationalMember(
+          member = Member(
+            name = "आचार्य वर्चस्पति",
+            profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_varchaspati.webp",
+            phoneNumber = "9053347826",
+            email = "acharyavarchaspati@gmail.com"
+          ),
+          post = "अध्यक्ष",
+          priority = 1
+        ),
+        OrganisationalMember(
+          member = Member(
+            name = "आर्य वेदप्रकाश",
+            profileImage = "",
+            phoneNumber = "8168491108",
+            email = ""
+          ),
+          post = "उपाध्यक्ष",
+          priority = 2
+        ),
+        OrganisationalMember(
+          member = Member(
+            name = "उपाचार्य जसबीर आर्य ",
+            profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp",
+            phoneNumber = "9871092222",
+            email = ""
+          ),
+          post = "सचिव",
+          priority = 3
         )
-      },
-      additionalInstructions = "Please follow COVID-19 protocols."
+      ).shuffled().takeLast(Random.nextInt(1,4)),
+      additionalInstructions = listOf(
+        "सत्यार्थ प्रकाश का पढ़ना और पढ़ाना।",
+        "सन्ध्या करना और करवाना।",
+        "शान्तिपाठ + जयघोष अभिवादन + प्रसाद वितरण।",
+        "सभी आर्यगण आचार्य जी को सुनने के लिए लिंक पर क्लिक करके समय से जुड़ें व आर्य महासंघ के फ़ेसबुक पेज को अभी फॉलो करें।",
+        "सभी आर्यसमाज पदाधिकारी अवश्य पहुंचें और संगठित स्वरूप को प्रकाशित करें !!"
+      ).shuffled().take(Random.nextInt(2,4)).joinToString(separator = "\n")
     )
   }
 }
@@ -442,10 +581,7 @@ val listOfOrganisations = mutableListOf(
   Organisation(
     name = "आर्य महासंघ",
     logo = "mahasangh_logo_without_background",
-    description = "सनातन धर्म का साक्षात् प्रतिनिधि 'आर्य' ही होता है। आर्य ही धर्म को जीता है, समाज को मर्यादाओं में बांधता है और राष्ट्र को सम्पूर्ण भूमण्डल में प्रतिष्ठित करता है। आर्य के जीवन में अनेकता नहीं एकता रहती है अर्थात् एक ईश्वर, एक धर्म, एक धर्मग्रन्थ और एक उपासना पद्धति। ऐसे आर्यजन लाखों की संख्या में मिलकर संगठित, सुव्यवस्थित और सुनियोजित रीति से आगे बढ़ रहे हैं - आर्यावर्त की ओर--- यही है - आर्य महासंघ ।।\n" +
-        "\n" +
-        "आचार्य हनुमत प्रसाद\n" +
-        "अध्यक्ष, आर्य महासंघ",
+    description = "सनातन धर्म का साक्षात् प्रतिनिधि 'आर्य' ही होता है। आर्य ही धर्म को जीता है, समाज को मर्यादाओं में बांधता है और राष्ट्र को सम्पूर्ण भूमण्डल में प्रतिष्ठित करता है। आर्य के जीवन में अनेकता नहीं एकता रहती है अर्थात् एक ईश्वर, एक धर्म, एक धर्मग्रन्थ और एक उपासना पद्धति। ऐसे आर्यजन लाखों की संख्या में मिलकर संगठित, सुव्यवस्थित और सुनियोजित रीति से आगे बढ़ रहे हैं - आर्यावर्त की ओर--- यही है - आर्य महासंघ ।।",
     keyPeople = listOf(
       OrganisationalMember(
         Member(
