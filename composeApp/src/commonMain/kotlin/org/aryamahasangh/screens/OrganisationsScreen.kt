@@ -33,7 +33,7 @@ fun Orgs(navController: NavHostController, onNavigateToOrgDetails: (String) -> U
     verticalArrangement = Arrangement.spacedBy(16.dp)) {
     FlowRow(
       verticalArrangement = Arrangement.spacedBy(8.dp),
-      horizontalArrangement = Arrangement.spacedBy(16.dp)
+      horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
       organisations.value.forEach {
         OrgItem(it.name, it.description){

@@ -25,5 +25,7 @@ If you face any issues, please report them on [GitHub](https://github.com/JetBra
 
 You can open the web application by running the `:composeApp:wasmJsBrowserDevelopmentRun` Gradle task.
 
+./gradlew :composeApp:assembleRelease
+
 ## Download graphql schema
 ./gradlew downloadApolloSchema --endpoint="http://localhost:4000/graphql" --schema="composeApp/src/commonMain/graphql/schema.json"

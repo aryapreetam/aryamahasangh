@@ -1,9 +1,6 @@
 package org.aryamahasangh.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -18,6 +15,7 @@ import org.aryamahasangh.components.ActivityListItem
 import org.aryamahasangh.navigation.Screen
 import org.aryamahasangh.network.apolloClient
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ActivitiesScreen(navController: NavHostController, onNavigateToActivityDetails: (String) -> Unit) {
   val activities = remember { mutableStateOf(emptyList<OrganisationalActivitiesQuery.OrganisationalActivity>()) }
@@ -28,12 +26,16 @@ fun ActivitiesScreen(navController: NavHostController, onNavigateToActivityDetai
   Column(modifier = Modifier
     .fillMaxSize()
     .padding(8.dp)
-    .verticalScroll(rememberScrollState()),
-    verticalArrangement = Arrangement.spacedBy(8.dp)) {
-    activities.value.forEach { activity ->
-      ActivityListItem(activity){
-        onNavigateToActivityDetails(activity.id)
-        navController.navigate(Screen.ActivityDetails(activity.id))
+    .verticalScroll(rememberScrollState())) {
+    FlowRow(
+      verticalArrangement =  Arrangement.spacedBy(8.dp),
+      horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+      activities.value.forEach { activity ->
+        ActivityListItem(activity){
+          onNavigateToActivityDetails(activity.id)
+          navController.navigate(Screen.ActivityDetails(activity.id))
+        }
       }
     }
   }

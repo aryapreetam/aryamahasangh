@@ -3,6 +3,7 @@ package org.aryamahasangh.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.MaterialTheme
@@ -25,13 +26,14 @@ fun OrgThumbnailPreview(){
 @Composable
 fun OrgItem(name: String, description: String, navigateToOrgDetails: () -> Unit) {
   ElevatedCard(onClick = navigateToOrgDetails,
+    modifier = Modifier.width(500.dp),
     shape = RoundedCornerShape(4.dp),
   ) {
     Column(
       verticalArrangement = Arrangement.spacedBy(4.dp),
       modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp)) {
       Text(text = name,
-        style = MaterialTheme.typography.bodyLarge,
+        style = MaterialTheme.typography.titleLarge,
         fontWeight = FontWeight.Bold)
       Text(
         text = description,

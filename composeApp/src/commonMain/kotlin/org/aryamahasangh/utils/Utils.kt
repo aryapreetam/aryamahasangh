@@ -1,6 +1,9 @@
 package org.aryamahasangh.utils
 
+import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 
 fun LocalDateTime.toHumanReadable(): String {
   val daysOfWeek = listOf("रविवार", "सोमवार", "मंगलवार", "बुधवार", "गुरुवार", "शुक्रवार", "शनिवार")
@@ -38,4 +41,20 @@ fun format(dateTime: Any): String {
 }
 fun formatShort(dateTime: Any): String {
   return LocalDateTime.parse(dateTime as String).toShortHumanReadable()
+}
+
+fun epochToDate(epochMillis: Long): String {
+  // Convert epoch milliseconds to Instant
+  val instant = Instant.fromEpochMilliseconds(epochMillis)
+
+  // Convert Instant to LocalDateTime in the system's default time zone
+  val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+
+  // Extract the date part (year, month, day)
+  val date = localDateTime.date
+
+  // Format the date as dd/mm/yyyy
+  return "${date.dayOfMonth.toString().padStart(2, '0')}/" +
+          "${date.monthNumber.toString().padStart(2, '0')}/" +
+          date.year
 }
