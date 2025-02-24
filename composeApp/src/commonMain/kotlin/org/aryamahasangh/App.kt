@@ -45,7 +45,7 @@ fun AppDrawer(){
 
     val isLargeScreen = maxWidth > 840.dp
     if (isLargeScreen) {
-      Box(modifier = Modifier.width(1024.dp)){
+      Box(modifier = Modifier.width(1280.dp)){
         LargeScreens("", drawerState, selectedOption, setValue, navController)
       }
     } else {

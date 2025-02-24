@@ -50,7 +50,7 @@ fun ActivityListItem(activity: OrganisationalActivity, handleOnClick: () -> Unit
   val endDate = formatShort(activity.endDateTime)
 
   ElevatedCard(
-    modifier = Modifier.fillMaxWidth(),
+    modifier = Modifier.width(500.dp),
     shape = RoundedCornerShape(4.dp),
     onClick = handleOnClick
   ) {

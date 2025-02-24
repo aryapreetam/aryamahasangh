@@ -7,7 +7,7 @@ import com.apollographql.apollo.network.http.HttpInterceptor
 import com.apollographql.apollo.network.http.HttpInterceptorChain
 import org.aryamahasangh.isAndroid
 
-const val localDev = true
+const val localDev = false
 // "10.0.2.2"
 val host = if(isAndroid()) "192.168.250.26" else "localhost"
 var serverUrl = if(localDev) "http://${host}:4000" else "https://sandhya-anushthan-api.onrender.com"

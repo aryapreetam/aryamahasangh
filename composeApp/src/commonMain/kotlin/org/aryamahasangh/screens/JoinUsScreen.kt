@@ -76,7 +76,7 @@ fun ActivityForm() {
 
   val showActivitiesEnabled = selectedState != null
 
-  Column(modifier = Modifier.padding(top = 8.dp)) {
+  Column(modifier = Modifier.padding(top = 8.dp).width(500.dp)) {
     // State Selection
 //    Text(
 //      text = "Select State",
@@ -144,8 +144,7 @@ fun StateDropdown(states: List<String>, selectedState: String?, onStateSelected:
         modifier = Modifier.fillMaxWidth().clickable { expanded = true },
         value = selectedState ?: "राज्य चुनें",
         label = { Text("राज्य") },
-        onValueChange = {
-        },
+        onValueChange = {},
         placeholder = { Text("Color") },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
         colors = ExposedDropdownMenuDefaults.textFieldColors(),
