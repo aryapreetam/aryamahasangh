@@ -81,6 +81,11 @@ kotlin {
       implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
 
       implementation(libs.ktor.client.core)
+
+      // Enables FileKit without Compose dependencies
+      implementation("io.github.vinceglb:filekit-core:0.8.8")
+      // Enables FileKit with Composable utilities
+      implementation("io.github.vinceglb:filekit-compose:0.8.8")
     }
     androidMain.dependencies {
       implementation(compose.preview)
@@ -147,6 +152,9 @@ compose.desktop {
       targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
       packageName = "org.aryamahasangh"
       packageVersion = "1.0.0"
+      linux {
+        modules("jdk.security.auth")
+      }
     }
   }
 }

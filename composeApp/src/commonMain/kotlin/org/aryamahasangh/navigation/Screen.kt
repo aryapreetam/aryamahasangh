@@ -11,8 +11,6 @@ sealed class Screen {
   @Serializable
   data class ActivityDetails(val id: String): Screen()
   @Serializable
-  object Navigation: Screen()
-  @Serializable
   data object JoinUs: Screen()
   @Serializable
   data object Learning: Screen()
@@ -23,5 +21,5 @@ sealed class Screen {
   @Serializable
   data object AboutUs: Screen()
   @Serializable
-  data object ContactUs: Screen()
+  data object AdmissionForm: Screen()
 }

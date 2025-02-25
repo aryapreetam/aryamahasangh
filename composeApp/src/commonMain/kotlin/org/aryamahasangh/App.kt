@@ -58,8 +58,9 @@ data class DrawerOption(val title: String, val icon: DrawableResource, val route
 val drawerOptions = listOf(
   DrawerOption("हमारे बारे मे", Res.drawable.info, Screen.AboutUs),
   DrawerOption("गतिविधियां", Res.drawable.local_activity, Screen.Activities),
-  DrawerOption("हमसें जुडें", Res.drawable.handshake, Screen.JoinUs),
   DrawerOption("संलग्न संस्थाएं", Res.drawable.account_tree, Screen.Orgs),
+  DrawerOption("हमसें जुडें", Res.drawable.handshake, Screen.JoinUs),
+  DrawerOption("छात्रा प्रवेश", Res.drawable.local_library, Screen.AdmissionForm),
   DrawerOption("स्वाध्याय", Res.drawable.local_library, Screen.Learning),
 )
 
@@ -119,6 +120,7 @@ fun DrawerContent(
       )
       if(option.title == "हमसें जुडें"){
         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+        Text("गुरुकुल", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), style = MaterialTheme.typography.titleMedium)
       }
     }
   }
@@ -265,14 +267,7 @@ fun MainContent(
       }
     },
     bottomBar = {
-//      if (getPlatform().name == PLATFORM_WEB || getPlatform().name.startsWith("Java")) {
-//        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-//          Column(horizontalAlignment = Alignment.CenterHorizontally) {
-//            Text("जय आर्य - जय आर्यावर्त")
-//            Text("© आर्य महासंघ")
-//          }
-//        }
-//      }
+
     }
   )
 }

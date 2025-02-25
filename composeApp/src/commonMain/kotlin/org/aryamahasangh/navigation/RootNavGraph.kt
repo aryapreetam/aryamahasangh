@@ -43,5 +43,8 @@ fun RootNavGraph(
       val id = it.toRoute<Screen.VideoDetails>().learningItemId
       VideoDetailsScreen(id)
     }
+    composable<Screen.AdmissionForm> {
+      RegistrationForm()
+    }
   }
 }
