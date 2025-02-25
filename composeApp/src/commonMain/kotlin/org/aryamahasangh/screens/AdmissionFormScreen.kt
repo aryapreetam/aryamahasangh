@@ -2,8 +2,6 @@ package org.aryamahasangh.screens
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -14,7 +12,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -28,9 +25,19 @@ import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
-import androidx.compose.ui.zIndex
-import kotlinx.datetime.*
+import aryamahasangh.composeapp.generated.resources.Res
+import aryamahasangh.composeapp.generated.resources.error_profile_image
+import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.core.PickerMode
+import io.github.vinceglb.filekit.core.PickerType
+import io.github.vinceglb.filekit.core.PlatformFile
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import org.aryamahasangh.components.PhotoItem
 import org.aryamahasangh.utils.epochToDate
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 data class FormData(
@@ -115,6 +122,92 @@ fun AadharVisualTransformation(): VisualTransformation {
   }
 }
 
+class DateTransformation : VisualTransformation {
+  override fun filter(text: AnnotatedString): TransformedText {
+    println("filter text: $text, ${text.text}")
+    val formattedText = formatDate(text.text)
+    val offsetMapping = DateOffsetMapping(text.text, formattedText)
+
+    return TransformedText(
+      text = AnnotatedString(formattedText),
+      offsetMapping = offsetMapping
+    )
+  }
+
+  private fun formatDate(input: String): String {
+    val builder = StringBuilder()
+    var i = 0
+
+    if(input.length in 6..10 && input.count { it == '/' } == 2) return input
+
+    // Rule 1: When user enters 1 character and appends '/', prepend '0'
+    if (input.length == 2 && input.endsWith("/")) {
+      builder.append("0").append(input[0]).append("/")
+      i = 2
+    }
+    // Rule 2: When user enters two digits, append '/' automatically
+    else if (input.length == 2 && !input.endsWith("/")) {
+      builder.append(input).append("/")
+      i = 3
+    }
+    else if (input.length == 3) {
+      builder.append(input.substring(0, 2)).append("/").append(input.substring(2))
+      i = 3
+    }
+    else if (input.length == 4) {
+      builder.append(input.substring(0, 2)).append("/").append(input.substring(2)).append("/")
+      i = 3
+    }
+    else if (input.length >= 5) {
+      val first = input.substring(0, 2)
+      val second = input.substring(2, 4)
+      val third = input.substring(4)
+      builder.append(first).append("/").append(second).append("/").append(third)
+      i = 3
+    }
+    // Default case: Append the remaining characters
+    else {
+      builder.append(input)
+    }
+
+    return builder.toString()
+  }
+
+  private class DateOffsetMapping(
+    private val originalText: String,
+    private val formattedText: String
+  ) : OffsetMapping {
+    override fun originalToTransformed(offset: Int): Int {
+      println("originalToTransformed originalText: $originalText, formattedText: $formattedText offset: $offset")
+      // Calculate the transformed offset based on the original text
+      val toTransformOff =  when {
+        offset < 2 -> offset // First part (day)
+        offset == 2 -> offset + 1
+        offset == 3 -> offset + 1
+        offset == 4 -> offset + 2
+        offset == 5 -> offset + 2
+        offset in 6..8 -> offset + 2
+        offset in 9..10 -> offset
+        else -> offset + 2 // Third part (year)
+      }
+      println("toTransformOff: $toTransformOff")
+      return toTransformOff
+    }
+
+    override fun transformedToOriginal(offset: Int): Int {
+      println("transformedToOriginal originalText: $originalText, formattedText: $formattedText offset: $offset")
+      // Calculate the original offset based on the formatted text
+      val toOriginalOff =  when {
+        offset <= 2 -> offset // First part (day)
+        offset <= 5 -> offset - 1 // Second part (month)
+        else -> offset - 2 // Third part (year)
+      }
+      println("transformedToOriginal return $toOriginalOff")
+      return toOriginalOff
+    }
+  }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DatePickerTextField(
@@ -129,7 +222,8 @@ fun DatePickerTextField(
     modifier = modifier,
     value = value,
     label = { Text("Date of birth") },
-    onValueChange = { onValueChange(it) },
+    onValueChange = { onValueChange(it.take(10)) },
+//    visualTransformation = DateTransformation(),
     trailingIcon = {
       IconButton(onClick = { showDatePickerDialog.value = true }) {
         Icon(Icons.Filled.DateRange, contentDescription = "Select Date")
@@ -223,60 +317,32 @@ fun BloodGroupDropdown(
   }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun DocumentGrid(
-  documents: List<String>,
-  onDocumentRemoved: (String) -> Unit
+  documents: List<PlatformFile>,
+  onDocumentRemoved: (PlatformFile) -> Unit
 ) {
   if (documents.isEmpty()) {
-    Text("No documents attached.")
+    Text("No documents attached.",
+      modifier = Modifier.padding(vertical = 24.dp, horizontal = 8.dp).background(MaterialTheme.colorScheme.surfaceVariant),
+      textAlign = TextAlign.Start)
     return
   }
-  LazyVerticalGrid(
-    columns = GridCells.Adaptive(minSize = 120.dp),
-    contentPadding = PaddingValues(16.dp)
+  FlowRow(
+    verticalArrangement =  Arrangement.spacedBy(8.dp),
+    horizontalArrangement =  Arrangement.spacedBy(8.dp)
   ) {
-    items(documents.size) { index ->
-      val document = documents[index]
-      Box(
-        modifier = Modifier
-          .padding(4.dp)
-          .aspectRatio(1f)
-      ) {
-        // Attempt to load the image based on file extension
-        val imageBitmap = try {
-          // Load image from file
-          // val bufferedImage = org.jetbrains.skia.Image.makeFromEncoded(document.readBytes()).toBitmap()
-          // bufferedImage.asImageBitmap()
-          null
-        } catch (e: Exception) {
-          e.printStackTrace()
-          null // Handle loading errors
-        }
-
-        if (imageBitmap != null) {
-          Image(
-            bitmap = imageBitmap,
-            contentDescription = "Attached Document",
-            modifier = Modifier
-              .fillMaxSize()
-              .clip(RoundedCornerShape(8.dp)),
-            contentScale = ContentScale.Crop
+    for (document in documents) {
+      val docName = document.name
+      Box(modifier = Modifier.width(120.dp).padding(8.dp)) {
+        Column {
+          PhotoItem(document, onRemoveFile = onDocumentRemoved)
+          Text(text = docName,
+            maxLines = 2,
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.padding(4.dp)
           )
-        } else {
-          // Display a placeholder or error message
-          Text("Unsupported File Format", textAlign = TextAlign.Center)
-        }
-
-        IconButton(
-          onClick = { onDocumentRemoved(document) },
-          modifier = Modifier
-            .align(Alignment.TopEnd)
-            .padding(4.dp)
-            .size(24.dp)
-            .zIndex(1f) // Ensure the button is on top
-        ) {
-          Icon(Icons.Filled.Close, "Remove", tint = Color.Red)
         }
       }
     }
@@ -291,63 +357,50 @@ fun rememberFilePicker(): FilePicker {
 }
 
 @Composable
-fun ButtonForFilePicker(onFileSelected: (String?) -> Unit) {
-  Button(onClick = { onFileSelected("path") }) {
-    Text("Select File")
+fun ButtonForFilePicker(onFilesSelected: (List<PlatformFile>?) -> Unit) {
+  val launcher = rememberFilePickerLauncher(
+    type = PickerType.File(extensions = listOf("png", "jpg", "jpeg", "webp", "pdf", "docx")),
+    mode = PickerMode.Multiple(),
+    title = "Select documents",
+  ) { files ->
+    println(files)
+    onFilesSelected(files)
+  }
+  Button(onClick = {
+    launcher.launch()
+  }) {
+    Text("Select Documents")
   }
 }
 
 @Composable
 fun StudentPhotoSection(
-  studentPhoto: String?,
-  onPhotoSelected: (String?) -> Unit
+  studentPhoto: PlatformFile?,
+  onPhotoSelected: (PlatformFile?) -> Unit,
+  onPhotoRemoved: (PlatformFile) -> Unit
 ) {
-  Column(horizontalAlignment = Alignment.CenterHorizontally) {
-    Text("Student Photo:")
-
-    if (studentPhoto != null) {
-      // TODO: Load the ImageBitmap from the file path
-      val imageBitmap: ImageBitmap? = null // Replace with actual image loading logic
-
-      if (imageBitmap != null) {
-        Box(modifier = Modifier.size(150.dp)) {
-          Image(
-            bitmap = imageBitmap,
-            contentDescription = "Student Photo",
-            modifier = Modifier
-              .fillMaxSize()
-              .clip(RoundedCornerShape(8.dp)),
-            contentScale = ContentScale.Crop
-          )
-          IconButton(
-            onClick = { onPhotoSelected(null) },
-            modifier = Modifier
-              .align(Alignment.TopEnd)
-              .padding(4.dp)
-              .size(24.dp)
-              .zIndex(1f)
-          ) {
-            Icon(Icons.Filled.Close, "Remove Photo", tint = Color.Red)
-          }
-        }
-      } else {
-        Text("Error loading image")
-      }
-    } else {
-      Box(
-        modifier = Modifier
-          .size(150.dp)
-          .clip(RoundedCornerShape(8.dp))
-          .background(MaterialTheme.colorScheme.surfaceVariant),
-        contentAlignment = Alignment.Center
-      ) {
-        Text("No photo selected")
+  Column(horizontalAlignment = Alignment.Start) {
+    val launcher = rememberFilePickerLauncher(
+      type = PickerType.Image,
+      mode = PickerMode.Single,
+      title = "Select photo",
+    ) { file ->
+      onPhotoSelected(file)
+    }
+    Box(modifier = Modifier.size(120.dp)) {
+      if(studentPhoto != null){
+        PhotoItem(studentPhoto, onRemoveFile = onPhotoRemoved)
+      }else{
+        Image(
+          painter = painterResource(resource = Res.drawable.error_profile_image),
+          contentDescription = "Error profile image",
+          contentScale = ContentScale.Crop,
+        )
       }
     }
 
     Button(onClick = {
-      // TODO: Implement photo selection (camera or gallery)
-      onPhotoSelected("path")
+      launcher.launch()
     }) {
       Text("Select Photo")
     }
@@ -357,68 +410,60 @@ fun StudentPhotoSection(
 
 @Composable
 fun SignatureSection(
-  signatureFile: String?,
-  onSignatureSelected: (String?) -> Unit,
-  label: String
+  signatureFile: PlatformFile?,
+  onSignatureSelected: (PlatformFile?) -> Unit,
+  label: String,
+  onRemoveSignature: (PlatformFile) -> Unit
 ) {
-  Column(horizontalAlignment = Alignment.CenterHorizontally) {
-    Text("$label Signature:")
-
-    if (signatureFile != null) {
-      // TODO: Load the ImageBitmap from the file path
-      val imageBitmap: ImageBitmap? = null // Replace with actual image loading logic
-
-      if (imageBitmap != null) {
-        Box(modifier = Modifier.size(150.dp)) {
-          Image(
-            bitmap = imageBitmap,
-            contentDescription = "$label Signature",
-            modifier = Modifier
-              .fillMaxSize()
-              .clip(RoundedCornerShape(8.dp)),
-            contentScale = ContentScale.Crop
-          )
-          IconButton(
-            onClick = { onSignatureSelected(null) },
-            modifier = Modifier
-              .align(Alignment.TopEnd)
-              .padding(4.dp)
-              .size(24.dp)
-              .zIndex(1f)
-          ) {
-            Icon(Icons.Filled.Close, "Remove Signature", tint = Color.Red)
-          }
+  Column() {
+    Text(
+      modifier = Modifier.padding(vertical = 8.dp),
+      text = "$label Signature:",
+      style = MaterialTheme.typography.labelLarge
+    )
+    Row(
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+      if (signatureFile != null) {
+        Box(
+          modifier = Modifier
+            .size(150.dp)){
+          PhotoItem(signatureFile, onRemoveFile = onRemoveSignature)
         }
       } else {
-        Text("Error loading image")
+        Box(
+          modifier = Modifier
+            .size(150.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+          contentAlignment = Alignment.Center
+        ) {
+          Text(text = "No signature added",
+            modifier = Modifier.fillMaxWidth(1f).padding(8.dp),
+            textAlign = TextAlign.Center
+          )
+        }
       }
-    } else {
-      Box(
-        modifier = Modifier
-          .size(150.dp)
-          .clip(RoundedCornerShape(8.dp))
-          .background(MaterialTheme.colorScheme.surfaceVariant),
-        contentAlignment = Alignment.Center
-      ) {
-        Text("No signature selected")
-      }
-    }
-    Row(
-      horizontalArrangement = Arrangement.spacedBy(8.dp),
-      verticalAlignment = Alignment.CenterVertically
-    ) {
-      Button(onClick = {
-        // TODO: Implement file upload for signature
-        onSignatureSelected("path")
-      }) {
-        Text("Upload Image")
-      }
+      Column() {
+        val launcher = rememberFilePickerLauncher(
+          type = PickerType.Image,
+          mode = PickerMode.Single,
+          title = "Select photo",
+        ) { file ->
+          onSignatureSelected(file)
+        }
+        Button(onClick = {
+          launcher.launch()
+        }) {
+          Text("Upload Image")
+        }
 
-      Button(onClick = {
-        // TODO: Implement signature drawing
-        onSignatureSelected("path")
-      }) {
-        Text("Draw Signature")
+        Button(onClick = {
+          //onSignatureSelected("path")
+        }) {
+          Text("Draw Signature")
+        }
       }
     }
   }
@@ -444,10 +489,10 @@ fun RegistrationForm() {
   var fullAddress by remember { mutableStateOf("") }
   var mobileNo by remember { mutableStateOf("") }
   var alternateMobileNo by remember { mutableStateOf("") }
-  var attachedDocuments by remember { mutableStateOf(listOf<String>("Test")) }
-  var studentPhoto by remember { mutableStateOf<String?>("") }
-  var studentSignature by remember { mutableStateOf<String?>(null) }
-  var parentSignature by remember { mutableStateOf<String?>(null) }
+  var attachedDocuments by remember { mutableStateOf(emptyList<PlatformFile>()) }
+  var studentPhoto by remember { mutableStateOf<PlatformFile?>(null) }
+  var studentSignature by remember { mutableStateOf<PlatformFile?>(null) }
+  var parentSignature by remember { mutableStateOf<PlatformFile?>(null) }
 
   var isFormValid by remember { mutableStateOf(false) }
 
@@ -744,29 +789,42 @@ fun RegistrationForm() {
         singleLine = true
       )
 
-      Text("Attached Documents:")
-//      DocumentGrid(
-//        documents = attachedDocuments,
-//        onDocumentRemoved = { documentToRemove ->
-//          attachedDocuments = attachedDocuments.toMutableList().apply {
-//            remove(documentToRemove)
-//          }.toList()
-//          formData = formData.copy(attachedDocuments = attachedDocuments)
-//        }
-//      )
+      Text(
+        modifier = Modifier.padding(top = 8.dp),
+        text = "Attached Documents:",
+        style = MaterialTheme.typography.labelLarge
+      )
+      DocumentGrid(
+        documents = attachedDocuments,
+        onDocumentRemoved = { documentToRemove ->
+          attachedDocuments = attachedDocuments.toMutableList().apply {
+            remove(documentToRemove)
+          }.toList()
+          formData = formData.copy(attachedDocuments = attachedDocuments.map { it.name })
+        }
+      )
 
-      ButtonForFilePicker(onFileSelected = { filePath ->
+      ButtonForFilePicker(onFilesSelected = { filePath ->
         if (filePath != null) {
           attachedDocuments = (attachedDocuments + filePath).distinct()
-          formData = formData.copy(attachedDocuments = attachedDocuments)
+          formData = formData.copy(attachedDocuments = attachedDocuments.map { it.name })
         }
       })
 
+      Text(
+        modifier = Modifier.padding(top = 8.dp),
+        text = "Student Photo:",
+        style = MaterialTheme.typography.labelLarge
+      )
       StudentPhotoSection(
         studentPhoto = studentPhoto,
         onPhotoSelected = { file ->
           studentPhoto = file
-          formData = formData.copy(studentPhoto = studentPhoto)
+          formData = formData.copy(studentPhoto = studentPhoto?.name)
+        },
+        onPhotoRemoved = { photo ->
+          studentPhoto = null
+          formData = formData.copy(studentPhoto = null)
         }
       )
 
@@ -774,19 +832,27 @@ fun RegistrationForm() {
         signatureFile = studentSignature,
         onSignatureSelected = { file ->
           studentSignature = file
-          formData = formData.copy(studentSignature = studentSignature)
+          formData = formData.copy(studentSignature = studentSignature?.name)
         },
-        label = "Student"
+        label = "Student",
+        onRemoveSignature = {
+          studentSignature = null
+        }
       )
 
       SignatureSection(
         signatureFile = parentSignature,
         onSignatureSelected = { file ->
           parentSignature = file
-          formData = formData.copy(parentSignature = parentSignature)
+          formData = formData.copy(parentSignature = parentSignature?.name)
         },
-        label = "Parent"
+        label = "Parent",
+        onRemoveSignature = {
+          parentSignature = null
+        }
       )
+
+      HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
       Button(
         onClick = {
@@ -808,10 +874,10 @@ fun RegistrationForm() {
               fullAddress = fullAddress,
               mobileNo = mobileNo,
               alternateMobileNo = alternateMobileNo,
-              attachedDocuments = attachedDocuments,
-              studentPhoto = studentPhoto,
-              studentSignature = studentSignature,
-              parentSignature = parentSignature
+              attachedDocuments = attachedDocuments.map { it.name },
+              studentPhoto = studentPhoto?.name,
+              studentSignature = studentSignature?.name,
+              parentSignature = parentSignature?.name
             )
             println("Form Data: $formData") // Print form data
           } else {
@@ -820,9 +886,8 @@ fun RegistrationForm() {
           }
         },
         enabled = isFormValid,
-        modifier = Modifier.align(Alignment.CenterHorizontally)
       ) {
-        Text("Submit")
+        Text("Submit", modifier = Modifier.padding(horizontal = 24.dp))
       }
     }
   }

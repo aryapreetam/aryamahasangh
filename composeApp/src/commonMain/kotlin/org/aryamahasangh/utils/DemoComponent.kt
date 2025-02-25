@@ -24,14 +24,14 @@ import coil3.compose.AsyncImage
 import org.aryamahasangh.OrganisationalActivityDetailQuery.*
 import org.aryamahasangh.screens.JoinUsScreen
 import org.aryamahasangh.screens.OrganisationalActivityForm
-import org.aryamahasangh.screens.RegistrationForm
 import org.aryamahasangh.type.ActivityType
 import kotlin.random.Random
 
 @Composable
 fun DemoComposable(){
   //OrganisationActivityForm()
-  RegistrationForm()
+  //RegistrationForm()
+  JoinUsComponent()
 }
 
 @Composable

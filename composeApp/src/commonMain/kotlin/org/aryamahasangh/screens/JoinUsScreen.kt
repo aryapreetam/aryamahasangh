@@ -2,7 +2,6 @@
 
 package org.aryamahasangh.screens
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -77,31 +76,20 @@ fun ActivityForm() {
   val showActivitiesEnabled = selectedState != null
 
   Column(modifier = Modifier.padding(top = 8.dp).width(500.dp)) {
-    // State Selection
-//    Text(
-//      text = "Select State",
-//      style = MaterialTheme.typography.labelLarge,
-//      modifier = Modifier.padding(bottom = 8.dp)
-//    )
-    StateDropdown(
-      states = indianStatesToDistricts.keys.toList(),
-      selectedState = selectedState,
-      onStateSelected = { selectedState = it }
-    )
-    Spacer(modifier = Modifier.height(4.dp))
-
-    // District Selection (Conditional)
-    if (selectedState != null) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+      StateDropdown(
+        states = indianStatesToDistricts.keys.toList(),
+        selectedState = selectedState,
+        onStateSelected = { selectedState = it },
+        modifier = Modifier.weight(1f)
+      )
+      // District Selection (Conditional)
       val districts = indianStatesToDistricts[selectedState] ?: emptyList()
-//      Text(
-//        text = "Select District (Optional)",
-//        style = MaterialTheme.typography.labelLarge,
-//        modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
-//      )
       DistrictDropdown(
         districts = districts,
         selectedDistrict = selectedDistrict,
-        onDistrictSelected = { selectedDistrict = it }
+        onDistrictSelected = { selectedDistrict = it },
+        modifier = Modifier.weight(1f)
       )
     }
 
@@ -131,24 +119,22 @@ fun ActivityForm() {
 }
 
 @Composable
-fun StateDropdown(states: List<String>, selectedState: String?, onStateSelected: (String) -> Unit) {
+fun StateDropdown(states: List<String>, selectedState: String?, onStateSelected: (String) -> Unit, modifier: Modifier = Modifier) {
   var expanded by remember { mutableStateOf(false) }
-
-  Column {
+  Column(modifier = modifier) {
     ExposedDropdownMenuBox(
       expanded = false,
       onExpandedChange = { expanded = !expanded },
     ) {
       OutlinedTextField(
         readOnly = true,
-        modifier = Modifier.fillMaxWidth().clickable { expanded = true },
+        modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
         value = selectedState ?: "राज्य चुनें",
         label = { Text("राज्य") },
         onValueChange = {},
         placeholder = { Text("Color") },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
         colors = ExposedDropdownMenuDefaults.textFieldColors(),
-        enabled = false // to display as a dropdown
       )
       ExposedDropdownMenu(
         expanded = expanded,
@@ -200,17 +186,17 @@ fun StateDropdown(states: List<String>, selectedState: String?, onStateSelected:
 }
 
 @Composable
-fun DistrictDropdown(districts: List<String>, selectedDistrict: String?, onDistrictSelected: (String?) -> Unit) {
+fun DistrictDropdown(districts: List<String>, selectedDistrict: String?, onDistrictSelected: (String?) -> Unit, modifier: Modifier = Modifier) {
   var expanded by remember { mutableStateOf(false) }
 
-  Column {
+  Column(modifier = modifier) {
     ExposedDropdownMenuBox(
       expanded = false,
       onExpandedChange = { expanded = !expanded },
     ) {
       OutlinedTextField(
         readOnly = true,
-        modifier = Modifier.fillMaxWidth().clickable { expanded = true },
+        modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
         value = selectedDistrict ?: "जनपद चुनें (वैकल्पिक)",
         label = { Text("जनपद") },
         onValueChange = {
@@ -218,7 +204,6 @@ fun DistrictDropdown(districts: List<String>, selectedDistrict: String?, onDistr
         placeholder = { Text("Color") },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
         colors = ExposedDropdownMenuDefaults.textFieldColors(),
-        enabled = false // to display as a dropdown
       )
       ExposedDropdownMenu(
         expanded = expanded,
