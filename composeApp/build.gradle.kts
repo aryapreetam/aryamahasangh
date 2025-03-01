@@ -73,7 +73,6 @@ kotlin {
       implementation(libs.coil.network.ktor3)
       implementation(libs.navigation.compose)
       implementation(libs.kotlinx.serialization.json)
-      implementation(compose.components.uiToolingPreview)
 
 //      implementation("com.apollographql.apollo:apollo-runtime-kotlin:2.5.14")
       implementation("com.apollographql.apollo:apollo-runtime:4.1.1")
@@ -88,7 +87,6 @@ kotlin {
       implementation("io.github.vinceglb:filekit-compose:0.8.8")
     }
     androidMain.dependencies {
-      implementation(compose.preview)
       implementation(libs.androidx.activity.compose)
 //      implementation(libs.compose.ui.tooling.preview)
       implementation("androidx.compose.ui:ui:1.7.6")
@@ -102,7 +100,6 @@ kotlin {
     desktopMain.dependencies {
       implementation(compose.desktop.currentOs)
       implementation(libs.kotlinx.coroutines.swing)
-      implementation(libs.ui.tooling.preview.desktop)
       implementation(libs.ktor.client.java)
     }
     wasmJsMain.dependencies {
@@ -138,10 +135,7 @@ android {
 }
 
 dependencies {
-   implementation(libs.androidx.ui.tooling.preview.android)
   debugImplementation(compose.uiTooling)
-//  debugImplementation(libs.compose.ui.tooling)
-  debugImplementation("androidx.compose.ui:ui-tooling:1.7.6")
 }
 
 compose.desktop {
