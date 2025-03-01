@@ -62,6 +62,7 @@ fun JoinUsScreen() {
 }
 
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ActivityForm() {
   var selectedState by remember { mutableStateOf<String?>(null) }
@@ -75,13 +76,16 @@ fun ActivityForm() {
 
   val showActivitiesEnabled = selectedState != null
 
-  Column(modifier = Modifier.padding(top = 8.dp).width(500.dp)) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+  Column(modifier = Modifier.padding(top = 8.dp)) {
+    FlowRow(
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
+      verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
       StateDropdown(
         states = indianStatesToDistricts.keys.toList(),
         selectedState = selectedState,
         onStateSelected = { selectedState = it },
-        modifier = Modifier.weight(1f)
+        modifier = Modifier.widthIn(min = 200.dp, max = 400.dp)
       )
       // District Selection (Conditional)
       val districts = indianStatesToDistricts[selectedState] ?: emptyList()
@@ -89,7 +93,7 @@ fun ActivityForm() {
         districts = districts,
         selectedDistrict = selectedDistrict,
         onDistrictSelected = { selectedDistrict = it },
-        modifier = Modifier.weight(1f)
+        modifier = Modifier.widthIn(min = 200.dp, max = 400.dp)
       )
     }
 
@@ -109,7 +113,7 @@ fun ActivityForm() {
     if (activities.isNotEmpty()) {
       Box(
         modifier = Modifier
-          .fillMaxWidth()
+          .fillMaxSize()
           .weight(1f) // Limits height to remaining space
       ) {
         ActivitiesList(activities = activities)
@@ -275,12 +279,23 @@ fun ActivityListPreview(){
   ActivitiesList(fetchActivities("Maharashtra", "Mumbai"))
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ActivitiesList(activities: List<OrganisationalActivity>) {
-  LazyColumn(modifier = Modifier.fillMaxSize()) {
-    items(activities){
-      ActivityListItem(it)
-      VerticalDivider(modifier = Modifier.padding(vertical = 4.dp))
+  LazyColumn(
+    modifier = Modifier.fillMaxSize(),
+    verticalArrangement = Arrangement.spacedBy(8.dp)
+  ) {
+    items(activities.chunked(2)) { chunk ->
+      FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+        chunk.forEach { activity ->
+          ActivityListItem(activity)
+        }
+      }
     }
   }
 }
@@ -354,7 +369,7 @@ fun fetchActivities(state: String?, district: String?): List<OrganisationalActiv
   }
 
 
-  return allActivities.take(Random.nextInt(1,allActivities.size))
+  return allActivities.take(Random.nextInt(2,allActivities.size))
 }
 
 @Preview

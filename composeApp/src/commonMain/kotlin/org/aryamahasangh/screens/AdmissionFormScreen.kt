@@ -221,7 +221,7 @@ fun DatePickerTextField(
   OutlinedTextField(
     modifier = modifier,
     value = value,
-    label = { Text("Date of birth") },
+    label = { Text("जन्म तिथि") },
     onValueChange = { onValueChange(it.take(10)) },
 //    visualTransformation = DateTransformation(),
     trailingIcon = {
@@ -284,17 +284,17 @@ fun BloodGroupDropdown(
       onExpandedChange = { expanded = !expanded },
     ) {
       OutlinedTextField(
-        value = selectedBloodGroup ?: "Select",
+        value = selectedBloodGroup ?: "चुनें",
         onValueChange = { /* Do nothing, read-only */ },
         readOnly = true,
         singleLine = true,
-        placeholder = { Text("Select") },
+        placeholder = { Text("चुनें") },
         modifier = Modifier
             .fillMaxWidth()
             .onGloballyPositioned { coordinates ->
               textFieldSize = coordinates.size.toSize()
             }.menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
-        label = { Text("Blood Group") },
+        label = { Text("रक्त वर्ग") },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
       )
       ExposedDropdownMenu(
@@ -418,7 +418,7 @@ fun SignatureSection(
   Column() {
     Text(
       modifier = Modifier.padding(vertical = 8.dp),
-      text = "$label Signature:",
+      text = "$label के हस्ताक्षर:",
       style = MaterialTheme.typography.labelLarge
     )
     Row(
@@ -550,7 +550,7 @@ fun RegistrationForm() {
         .verticalScroll(scrollState),
       verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-      Text("Student Registration Form", style = MaterialTheme.typography.headlineMedium)
+      Text("छात्रा प्रवेश प्रपत्र", style = MaterialTheme.typography.headlineMedium)
 
       OutlinedTextField(
         value = studentName,
@@ -558,7 +558,7 @@ fun RegistrationForm() {
           studentName = text.split(" ").joinToString(" ") { it.capitalize(Locale.current) }
           formData = formData.copy(studentName = studentName)
         },
-        label = { Text("Name of the Student") },
+        label = { Text("छात्रा का नाम") },
         modifier = Modifier.fillMaxWidth(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
         maxLines = 1,
@@ -573,7 +573,7 @@ fun RegistrationForm() {
             formData = formData.copy(aadharNo = aadharNo)
           }
         },
-        label = { Text("Aadhar No") },
+        label = { Text("आधार संख्या") },
         modifier = Modifier.fillMaxWidth(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         visualTransformation = AadharVisualTransformation(),
@@ -611,7 +611,7 @@ fun RegistrationForm() {
             formData = formData.copy(previousClass = previousClass)
           }
         },
-        label = { Text("Previous Class Passed") },
+        label = { Text("पिछली उत्तीर्ण कक्षा") },
         modifier = Modifier.fillMaxWidth(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
         maxLines = 1,
@@ -626,7 +626,7 @@ fun RegistrationForm() {
             formData = formData.copy(marksObtained = marksObtained)
           }
         },
-        label = { Text("Marks Obtained") },
+        label = { Text("प्राप्त अंक") },
         modifier = Modifier.fillMaxWidth(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
         maxLines = 1,
@@ -641,7 +641,7 @@ fun RegistrationForm() {
             formData = formData.copy(schoolName = schoolName)
           }
         },
-        label = { Text("Name of School") },
+        label = { Text("विद्यालय का नाम") },
         modifier = Modifier.fillMaxWidth(),
         leadingIcon = { Icon(Icons.Filled.School, contentDescription = "Address") },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
@@ -657,7 +657,7 @@ fun RegistrationForm() {
             formData = formData.copy(fatherName = fatherName)
           }
         },
-        label = { Text("Father's Name") },
+        label = { Text("पिता का नाम") },
         modifier = Modifier.fillMaxWidth(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
         maxLines = 1,
@@ -672,7 +672,7 @@ fun RegistrationForm() {
             formData = formData.copy(fatherOccupation = fatherOccupation)
           }
         },
-        label = { Text("Occupation") },
+        label = { Text("व्यवसाय") },
         modifier = Modifier.fillMaxWidth(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
         maxLines = 1,
@@ -687,7 +687,7 @@ fun RegistrationForm() {
             formData = formData.copy(fatherQualification = fatherQualification)
           }
         },
-        label = { Text("Qualification") },
+        label = { Text("योग्यता") },
         modifier = Modifier.fillMaxWidth(),
         leadingIcon = { Icon(Icons.Filled.HistoryEdu, contentDescription = "Education history") },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
@@ -703,7 +703,7 @@ fun RegistrationForm() {
             formData = formData.copy(motherName = motherName)
           }
         },
-        label = { Text("Mother's Name") },
+        label = { Text("माता का नाम") },
         modifier = Modifier.fillMaxWidth(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
         maxLines = 1,
@@ -718,7 +718,7 @@ fun RegistrationForm() {
             formData = formData.copy(motherOccupation = motherOccupation)
           }
         },
-        label = { Text("Occupation") },
+        label = { Text("व्यवसाय") },
         modifier = Modifier.fillMaxWidth(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
         maxLines = 1,
@@ -733,7 +733,7 @@ fun RegistrationForm() {
             formData = formData.copy(motherQualification = motherQualification)
           }
         },
-        label = { Text("Qualification") },
+        label = { Text("योग्यता") },
         modifier = Modifier.fillMaxWidth(),
         leadingIcon = { Icon(Icons.Filled.HistoryEdu, contentDescription = "Education history") },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
@@ -750,7 +750,7 @@ fun RegistrationForm() {
           }
         },
         leadingIcon = { Icon(Icons.Filled.Place, contentDescription = "Address") },
-        label = { Text("Full Address") },
+        label = { Text("घर का पता") },
         modifier = Modifier.fillMaxWidth(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
         minLines = 3, // Use minLines instead of singleLine for a text area
@@ -765,7 +765,7 @@ fun RegistrationForm() {
             formData = formData.copy(mobileNo = mobileNo)
           }
         },
-        label = { Text("Mobile No.") },
+        label = { Text("दूरभाष संख्या") },
         leadingIcon = { Icon(Icons.Filled.Phone, contentDescription = "Phone") },
         modifier = Modifier.fillMaxWidth(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -782,7 +782,7 @@ fun RegistrationForm() {
           }
         },
         leadingIcon = { Icon(Icons.Filled.Phone, contentDescription = "Phone") },
-        label = { Text("Alternate Mobile No. (In Case of Emergency)") },
+        label = { Text("वैकल्पिक दूरभाष संख्या(आपात्कालीन स्थिति के लिये)") },
         modifier = Modifier.fillMaxWidth(),
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         maxLines = 1,
@@ -791,7 +791,7 @@ fun RegistrationForm() {
 
       Text(
         modifier = Modifier.padding(top = 8.dp),
-        text = "Attached Documents:",
+        text = "संलग्न प्रलेख(Documents):",
         style = MaterialTheme.typography.labelLarge
       )
       DocumentGrid(
@@ -813,7 +813,7 @@ fun RegistrationForm() {
 
       Text(
         modifier = Modifier.padding(top = 8.dp),
-        text = "Student Photo:",
+        text = "छात्रा का फोटो:",
         style = MaterialTheme.typography.labelLarge
       )
       StudentPhotoSection(
@@ -834,7 +834,7 @@ fun RegistrationForm() {
           studentSignature = file
           formData = formData.copy(studentSignature = studentSignature?.name)
         },
-        label = "Student",
+        label = "छात्रा",
         onRemoveSignature = {
           studentSignature = null
         }
@@ -846,7 +846,7 @@ fun RegistrationForm() {
           parentSignature = file
           formData = formData.copy(parentSignature = parentSignature?.name)
         },
-        label = "Parent",
+        label = "माता/पिता",
         onRemoveSignature = {
           parentSignature = null
         }

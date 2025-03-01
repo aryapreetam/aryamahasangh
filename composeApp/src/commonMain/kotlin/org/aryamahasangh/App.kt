@@ -6,6 +6,8 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,6 +19,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import aryamahasangh.composeapp.generated.resources.*
 import kotlinx.coroutines.launch
+import org.aryamahasangh.components.LoginDialog
 import org.aryamahasangh.navigation.RootNavGraph
 import org.aryamahasangh.navigation.Screen
 import org.jetbrains.compose.reload.DevelopmentEntryPoint
@@ -30,7 +33,7 @@ fun App() {
   DevelopmentEntryPoint {
     AppTheme {
       // for quickly testing the components
-//       DemoComposable()
+      // DemoComposable()
       AppDrawer()
     }
   }
@@ -185,15 +188,33 @@ fun getScreenTitle(route: String?): String{
   }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview
 fun TopBarContentPreview() {
-  val screenTitle = ""
-  BoxWithConstraints {
-    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-      Text(if(screenTitle.isNotEmpty()) screenTitle else "॥ ओ३म् ॥")
-    }
-  }
+  val isLoggedIn = false
+  TopAppBar(title = {"॥ ओ३म् ॥"}, navigationIcon = {},
+    actions = {
+      if(isLoggedIn){
+        IconButton(
+          onClick = {  }
+        ) {
+          Icon(
+            Icons.AutoMirrored.Filled.Logout,
+            contentDescription = "logout"
+          )
+        }
+      }else{
+        IconButton(
+          onClick = {  }
+        ) {
+          Icon(
+            Icons.AutoMirrored.Filled.Login,
+            contentDescription = "login"
+          )
+        }
+      }
+    })
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -209,6 +230,10 @@ fun MainContent(
   val (orgDetails, selectedOrgDetails) = remember { mutableStateOf("") }
   val (activityDetails, selectedActivityDetails) = remember { mutableStateOf("") }
   val (videoDetails, selectedVideoDetails) = remember { mutableStateOf("") }
+
+  var isLoggedIn by remember { mutableStateOf(false) }
+  var showLoginDialog by remember { mutableStateOf(false) }
+  var showLogoutDialog by remember { mutableStateOf(false) }
 
   LaunchedEffect(selectedOption) {
     selectedOrgDetails("")
@@ -242,6 +267,27 @@ fun MainContent(
               Icon(Icons.Default.Menu, contentDescription = "Open Drawer")
             }
           }
+        },
+        actions = {
+          if(isLoggedIn){
+            IconButton(
+              onClick = { showLogoutDialog = true }
+            ) {
+              Icon(
+                Icons.AutoMirrored.Filled.Logout,
+                contentDescription = "logout"
+              )
+            }
+          }else{
+            IconButton(
+              onClick = { showLoginDialog = true }
+            ) {
+              Icon(
+                Icons.AutoMirrored.Filled.Login,
+                contentDescription = "login"
+              )
+            }
+          }
         }
       )
     },
@@ -270,4 +316,33 @@ fun MainContent(
 
     }
   )
+  // Login Dialog
+  if (showLoginDialog) {
+    LoginDialog(
+      onDismiss = { showLoginDialog = false },
+      onLoginSuccess = { isLoggedIn = true }
+    )
+  }
+
+  // Logout Dialog
+  if (showLogoutDialog) {
+    AlertDialog(
+      onDismissRequest = { showLogoutDialog = false },
+      title = { Text("Logout") },
+      text = { Text("Are you sure you want to logout?") },
+      confirmButton = {
+        TextButton(onClick = {
+          isLoggedIn = false
+          showLogoutDialog = false
+        }) {
+          Text("Yes")
+        }
+      },
+      dismissButton = {
+        TextButton(onClick = { showLogoutDialog = false }) {
+          Text("No")
+        }
+      }
+    )
+  }
 }
