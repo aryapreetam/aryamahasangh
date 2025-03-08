@@ -77,7 +77,9 @@ kotlin {
 //      implementation("com.apollographql.apollo:apollo-runtime-kotlin:2.5.14")
       implementation("com.apollographql.apollo:apollo-runtime:4.1.1")
       implementation("com.apollographql.apollo:apollo-normalized-cache:4.1.1")
+      implementation("com.apollographql.ktor:apollo-engine-ktor:0.1.1")
       implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+
 
       implementation(libs.ktor.client.core)
 
@@ -85,6 +87,12 @@ kotlin {
       implementation("io.github.vinceglb:filekit-core:0.8.8")
       // Enables FileKit with Composable utilities
       implementation("io.github.vinceglb:filekit-compose:0.8.8")
+
+      implementation(platform("io.github.jan-tennert.supabase:bom:VERSION"))
+
+      implementation(platform("io.github.jan-tennert.supabase:bom:3.1.2"))
+      implementation("io.github.jan-tennert.supabase:auth-kt")
+      implementation("io.github.jan-tennert.supabase:storage-kt")
     }
     androidMain.dependencies {
       implementation(libs.androidx.activity.compose)
@@ -103,6 +111,7 @@ kotlin {
       implementation(libs.ktor.client.java)
     }
     wasmJsMain.dependencies {
+      implementation(libs.ktor.client.wasm)
     }
   }
 }

@@ -21,6 +21,13 @@ import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun AboutUs() {
+
+//  LaunchedEffect(Unit){
+//    apolloClient.subscription(CounterSubSubscription()).toFlow().collect {
+//      println("counter: ${it.data?.counter}")
+//    }
+//  }
+
   Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
     Column(
       modifier = Modifier.fillMaxWidth(),

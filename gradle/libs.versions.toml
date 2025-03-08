@@ -38,6 +38,8 @@ composeWebviewMultiplatform = "1.9.40"
 androidYoutubePlayerCore = "12.1.1"
 androidx-activityCompose = "1.10.0"
 
+supabase = "3.1.2"
+
 [libraries]
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
 coil-network-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coilCompose" }
