@@ -205,14 +205,20 @@ fun TopBarContentPreview() {
           )
         }
       }else{
-        IconButton(
-          onClick = {  }
-        ) {
-          Icon(
-            Icons.AutoMirrored.Filled.Login,
-            contentDescription = "login"
-          )
-        }
+//        TooltipBox(
+//          positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+//          tooltip = { PlainTooltip { Text("Add to favorites") } },
+//          state = rememberTooltipState()
+//        ) {
+          IconButton(
+            onClick = {  }
+          ) {
+            Icon(
+              Icons.AutoMirrored.Filled.Login,
+              contentDescription = "login"
+            )
+          }
+//        }
       }
     })
 }
@@ -270,22 +276,34 @@ fun MainContent(
         },
         actions = {
           if(isLoggedIn){
-            IconButton(
-              onClick = { showLogoutDialog = true }
+            TooltipBox(
+              positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+              tooltip = { PlainTooltip { Text("Logout") } },
+              state = rememberTooltipState()
             ) {
-              Icon(
-                Icons.AutoMirrored.Filled.Logout,
-                contentDescription = "logout"
-              )
+              IconButton(
+                onClick = { showLogoutDialog = true }
+              ) {
+                Icon(
+                  Icons.AutoMirrored.Filled.Logout,
+                  contentDescription = "logout"
+                )
+              }
             }
           }else{
-            IconButton(
-              onClick = { showLoginDialog = true }
+            TooltipBox(
+              positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+              tooltip = { PlainTooltip { Text("Login") } },
+              state = rememberTooltipState()
             ) {
-              Icon(
-                Icons.AutoMirrored.Filled.Login,
-                contentDescription = "login"
-              )
+              IconButton(
+                onClick = { showLoginDialog = true }
+              ) {
+                Icon(
+                  Icons.AutoMirrored.Filled.Login,
+                  contentDescription = "login"
+                )
+              }
             }
           }
         }

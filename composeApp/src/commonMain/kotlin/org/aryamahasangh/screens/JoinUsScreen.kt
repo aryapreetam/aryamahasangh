@@ -138,7 +138,7 @@ fun StateDropdown(states: List<String>, selectedState: String?, onStateSelected:
         onValueChange = {},
         placeholder = { Text("Color") },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-        colors = ExposedDropdownMenuDefaults.textFieldColors(),
+//        colors = ExposedDropdownMenuDefaults.textFieldColors(),
       )
       ExposedDropdownMenu(
         expanded = expanded,
@@ -158,34 +158,6 @@ fun StateDropdown(states: List<String>, selectedState: String?, onStateSelected:
         }
       }
     }
-//    OutlinedTextField(
-//      readOnly = true,
-//      value = selectedState ?: "Select State",
-//      onValueChange = { },
-//      label = { Text("State") },
-//      trailingIcon = {
-//        ExposedDropdownMenuDefaults.TrailingIcon(
-//          expanded = expanded
-//        )
-//      },
-//      modifier = Modifier.fillMaxWidth().clickable { expanded = true },
-//      enabled = false // to display as a dropdown
-//    )
-//    DropdownMenu(
-//      expanded = expanded,
-//      onDismissRequest = { expanded = false },
-//    ) {
-//      states.forEach { state ->
-//        DropdownMenuItem(
-//          text = { Text(state) },
-//          onClick = {
-//            onStateSelected(state)
-//            expanded = false
-//          },
-//          contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
-//        )
-//      }
-//    }
   }
 }
 
@@ -207,7 +179,7 @@ fun DistrictDropdown(districts: List<String>, selectedDistrict: String?, onDistr
         },
         placeholder = { Text("Color") },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-        colors = ExposedDropdownMenuDefaults.textFieldColors(),
+//        colors = ExposedDropdownMenuDefaults.textFieldColors(),
       )
       ExposedDropdownMenu(
         expanded = expanded,
@@ -234,42 +206,6 @@ fun DistrictDropdown(districts: List<String>, selectedDistrict: String?, onDistr
         }
       }
     }
-
-//    OutlinedTextField(
-//      readOnly = true,
-//      value = selectedDistrict ?: "Select District (Optional)",
-//      onValueChange = { },
-//      label = { Text("District") },
-//      trailingIcon = {
-//        ExposedDropdownMenuDefaults.TrailingIcon(
-//          expanded = expanded
-//        )
-//      },
-//      modifier = Modifier.fillMaxWidth().clickable { expanded = true },
-//      enabled = false // To display as a dropdown
-//    )
-
-//    DropdownMenu(
-//      expanded = expanded,
-//      onDismissRequest = { expanded = false },
-//    ) {
-//      DropdownMenuItem(
-//        text = { Text("None") },
-//        onClick = {
-//          onDistrictSelected(null)
-//          expanded = false
-//        }
-//      )
-//      districts.forEach { district ->
-//        DropdownMenuItem(
-//          text = { Text(district) },
-//          onClick = {
-//            onDistrictSelected(district)
-//            expanded = false
-//          }
-//        )
-//      }
-//    }
   }
 }
 
@@ -368,7 +304,13 @@ fun fetchActivities(state: String?, district: String?): List<OrganisationalActiv
     return stateActivities;
   }
 
-
+//  val aa = buildList {
+//    repeat(100) {
+//      val ac = allActivities[0].copy(id = "$it")
+//      add(ac)
+//    }
+//  }
+//  return aa.take(Random.nextInt(20,aa.size))
   return allActivities.take(Random.nextInt(2,allActivities.size))
 }
 
