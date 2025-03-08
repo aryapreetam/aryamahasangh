@@ -40,10 +40,14 @@ fun Application.module() {
   install(GraphQL) {
     schema {
       packages = listOf("org.aryamahasangh")
-      queries = listOf(OrgsQuery())
+      queries = listOf(
+        OrgsQuery(),
+        StudentAdmissionQuery()
+      )
       mutations = listOf(
         OrgsMutation(),
-        ActivityMutation()
+        ActivityMutation(),
+        StudentAdmissionMutations()
       )
       subscriptions = listOf(
         OrgSubscriptionService()
@@ -111,6 +115,20 @@ data class OrganisationInput(
   val description: String,
   val people: List<OrganisationalMember>
 )
+
+@OptIn(ExperimentalUuidApi::class)
+class StudentAdmissionMutations : Mutation {
+  fun addStudentAdmissionData(input: AdmissionFormData): Boolean{
+    println("student_data: $input")
+    return studentsData.add(input)
+  }
+}
+
+val studentsData = mutableListOf<AdmissionFormData>()
+
+class StudentAdmissionQuery : Query {
+  fun studentsApplied(): List<AdmissionFormData> = studentsData
+}
 
 @OptIn(ExperimentalUuidApi::class)
 class OrgsMutation : Mutation {

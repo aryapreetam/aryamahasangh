@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.error_profile_image
+import com.dokar.sonner.rememberToasterState
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.core.PickerMode
 import io.github.vinceglb.filekit.core.PickerType
@@ -37,11 +38,17 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import org.aryamahasangh.AddStudentAdmissionDataMutation
+import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.components.PhotoItem
+import org.aryamahasangh.network.apolloClient
 import org.aryamahasangh.network.bucket
+import org.aryamahasangh.type.AdmissionFormDataInput
 import org.aryamahasangh.utils.epochToDate
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 data class FormData(
   val studentName: String = "",
@@ -338,30 +345,36 @@ fun BloodGroupDropdown(
 @Composable
 fun DocumentGrid(
   documents: List<PlatformFile>,
-  onDocumentRemoved: (PlatformFile) -> Unit
+  onDocumentRemoved: (PlatformFile) -> Unit,
+  isError: Boolean,
+  errorMessage: String
 ) {
-  if (documents.isEmpty()) {
-    Text("No documents attached.",
-      modifier = Modifier.padding(vertical = 24.dp, horizontal = 8.dp).background(MaterialTheme.colorScheme.surfaceVariant),
-      textAlign = TextAlign.Start)
-    return
-  }
-  FlowRow(
-    verticalArrangement =  Arrangement.spacedBy(8.dp),
-    horizontalArrangement =  Arrangement.spacedBy(8.dp)
-  ) {
-    for (document in documents) {
-      val docName = document.name
-      Box(modifier = Modifier.width(120.dp).padding(8.dp)) {
-        Column {
-          PhotoItem(document, onRemoveFile = onDocumentRemoved)
-          Text(text = docName,
-            maxLines = 2,
-            style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.padding(4.dp)
-          )
+  Column(horizontalAlignment = Alignment.Start) {
+    if (documents.isEmpty()) {
+      Text("No documents attached.",
+        modifier = Modifier.padding(vertical = 24.dp, horizontal = 8.dp).background(MaterialTheme.colorScheme.surfaceVariant),
+        textAlign = TextAlign.Start)
+    }
+    FlowRow(
+      verticalArrangement =  Arrangement.spacedBy(8.dp),
+      horizontalArrangement =  Arrangement.spacedBy(8.dp)
+    ) {
+      for (document in documents) {
+        val docName = document.name
+        Box(modifier = Modifier.width(120.dp).padding(8.dp)) {
+          Column {
+            PhotoItem(document, onRemoveFile = onDocumentRemoved)
+            Text(text = docName,
+              maxLines = 2,
+              style = MaterialTheme.typography.labelSmall,
+              modifier = Modifier.padding(4.dp)
+            )
+          }
         }
       }
+    }
+    if (isError) {
+      Text(text = errorMessage, color = MaterialTheme.colorScheme.error)
     }
   }
 }
@@ -489,13 +502,16 @@ fun SignatureSection(
   }
 }
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class, ExperimentalUuidApi::class)
 @Composable
 fun RegistrationForm() {
 
   val scope = rememberCoroutineScope()
+  val snackbarHostState = LocalSnackbarHostState.current
 
   var formData by remember { mutableStateOf(FormData()) }
+  var isSubmittingData by remember { mutableStateOf(false) }
+  var formSubmittingProgress by remember { mutableStateOf("")}
 
   // State for each field and its error status
   var studentName by remember { mutableStateOf("") }
@@ -584,6 +600,8 @@ fun RegistrationForm() {
 
   val scrollState = rememberScrollState()
 
+  val toaster = rememberToasterState()
+
   //Validation function
   fun validateForm(): Boolean {
     var isValid = true
@@ -613,7 +631,7 @@ fun RegistrationForm() {
     // Set error messages
     studentNameErrorMessage = if (studentNameError) "Student name is required" else ""
     aadharNoErrorMessage = if (aadharNoError) "Invalid Aadhar number" else ""
-    dobErrorMessage = if (dobError) "Invalid date format" else ""
+    dobErrorMessage = if (dobError) "Invalid date" else ""
     bloodGroupErrorMessage = if (bloodGroupError) "Please select a blood group" else ""
     previousClassErrorMessage = if (previousClassError) "Previous class is required" else ""
     marksObtainedErrorMessage = if (marksObtainedError) "Marks obtained are required" else ""
@@ -986,11 +1004,14 @@ fun RegistrationForm() {
             remove(documentToRemove)
           }.toList()
           formData = formData.copy(attachedDocuments = attachedDocuments.map { it.name })
-        }
+        },
+        isError = attachedDocumentsError,
+        errorMessage = attachedDocumentsErrorMessage
       )
 
       ButtonForFilePicker(onFilesSelected = { filePath ->
         if (filePath != null) {
+          attachedDocumentsError = false
           attachedDocuments = (attachedDocuments + filePath).distinct()
           formData = formData.copy(attachedDocuments = attachedDocuments.map { it.name })
         }
@@ -1058,7 +1079,9 @@ fun RegistrationForm() {
 
       Button(
         onClick = {
+
           if (validateForm()) {
+            isSubmittingData = true
             formData = FormData(
               studentName = studentName,
               aadharNo = aadharNo,
@@ -1081,14 +1104,109 @@ fun RegistrationForm() {
               studentSignature = studentSignature?.name,
               parentSignature = parentSignature?.name
             )
-            println("Form Data: $formData") // Print form data
+
             scope.launch {
-              println("uploading file")
-              val uploadResponse = bucket.upload(
-                path = "student_photo.jpg",
-                data = studentPhoto?.readBytes()!!
-              )
-              println("file upload complete :$uploadResponse")
+
+              val filesToUpload = buildMap<String, List<PlatformFile>> {
+                put("document", attachedDocuments)
+                put("student_photo", listOf(studentPhoto!!))
+                put("student_signature", listOf(studentSignature!!))
+                put("parent_signature", listOf(parentSignature!!))
+              }
+
+              filesToUpload.forEach {
+                val (index, files) = it
+                val docList = mutableListOf<String>()
+                files.forEach { file ->
+                  val uploadResponse = bucket.upload(
+                    path = "${aadharNo}_${index}_${Clock.System.now().epochSeconds}.jpg",
+                    data = file.readBytes()
+                  )
+                  docList.add(bucket.publicUrl( uploadResponse.path))
+                  println("file upload complete :$uploadResponse")
+                }
+                when(index){
+                  "document" -> {
+                    formData = formData.copy(attachedDocuments = docList)
+                  }
+                  "student_photo" -> {
+                    formData = formData.copy(studentPhoto = docList[0])
+                  }
+                  "student_signature" -> {
+                    formData = formData.copy(studentSignature = docList[0])
+                  }
+                  "parent_signature" -> {
+                    formData = formData.copy(parentSignature = docList[0])
+                  }
+                }
+              }
+              println("Form Data: $formData") // Print form data
+              val res = apolloClient.mutation(AddStudentAdmissionDataMutation(
+                input = AdmissionFormDataInput(
+                  id = Uuid.random().toString(),
+                  studentName = formData.studentName,
+                  aadharNo = formData.aadharNo,
+                  dob = formData.dob,
+                  bloodGroup = formData.bloodGroup,
+                  previousClass = formData.previousClass,
+                  marksObtained = formData.marksObtained,
+                  schoolName = formData.schoolName,
+                  fatherName = formData.fatherName,
+                  fatherOccupation = formData.fatherOccupation,
+                  fatherQualification = formData.fatherQualification,
+                  motherName = formData.motherName,
+                  motherOccupation = formData.motherOccupation,
+                  motherQualification = formData.motherQualification,
+                  fullAddress = formData.fullAddress,
+                  mobileNo = formData.mobileNo,
+                  alternateMobileNo = formData.alternateMobileNo,
+                  attachedDocuments = formData.attachedDocuments,
+                  studentPhoto = formData.studentPhoto!!,
+                  studentSignature = formData.studentSignature!!,
+                  parentSignature = formData.parentSignature!!,
+                )
+              )).execute()
+              isSubmittingData = false
+              if(res.data?.addStudentAdmissionData == true){
+                // student form submission successful
+                snackbarHostState.showSnackbar(
+                  message = "Admission form data successfully submitted",
+                )
+//                toaster.show(
+//                  message = "Admission form data successfully submitted",
+//                  type = ToastType.Success
+//                )
+                studentName = ""
+                aadharNo = ""
+                dob = ""
+                selectedBloodGroup = ""
+                previousClass = ""
+                marksObtained = ""
+                schoolName = ""
+                fatherName = ""
+                fatherOccupation = ""
+                fatherQualification = ""
+                motherName = ""
+                motherOccupation = ""
+                motherQualification = ""
+                fullAddress = ""
+                mobileNo = ""
+                alternateMobileNo = ""
+                attachedDocuments = listOf()
+                studentPhoto = null
+                studentSignature = null
+                parentSignature = null
+              }else{
+                // error submitting data
+                snackbarHostState.showSnackbar(
+                  message = "Error submitting form ${res.errors?.get(0)?.message}",
+                  actionLabel = "Close"
+                )
+//                toaster.show(
+//                  message = "Error submitting form ${res.errors?.get(0)?.message}",
+//                  type = ToastType.Error
+//                )
+              }
             }
           } else {
             // Form is invalid, errors are already displayed, just scroll to top
@@ -1099,7 +1217,15 @@ fun RegistrationForm() {
           }
         }
       ) {
-        Text("Submit", modifier = Modifier.padding(horizontal = 24.dp))
+        if(isSubmittingData){
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            CircularProgressIndicator(modifier = Modifier.size(16.dp))
+            Spacer(Modifier.width(8.dp))
+            Text("Submitting admission data...")
+          }
+        }else {
+          Text("Submit", modifier = Modifier.padding(horizontal = 24.dp))
+        }
       }
     }
   }

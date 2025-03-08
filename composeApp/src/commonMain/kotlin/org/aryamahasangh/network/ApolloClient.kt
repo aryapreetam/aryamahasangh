@@ -14,7 +14,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.aryamahasangh.isAndroid
 
-const val localDev = false
+const val localDev = true
 // "10.0.2.2"
 val host = if(isAndroid()) "192.168.250.26" else "localhost"
 var serverUrl = if(localDev) "http://${host}:4000" else "https://sandhya-anushthan-api.onrender.com"

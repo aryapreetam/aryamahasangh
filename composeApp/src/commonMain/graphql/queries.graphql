@@ -80,3 +80,13 @@ query organisationalActivityDetail($id: ID!){
     }
   }
 }
+
+query StudentApplications{
+  studentsApplied{
+    id
+    studentPhoto
+    studentName
+    previousClass
+    marksObtained
+  }
+}

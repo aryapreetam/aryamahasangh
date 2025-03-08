@@ -93,6 +93,7 @@ kotlin {
       implementation(platform("io.github.jan-tennert.supabase:bom:3.1.2"))
       implementation("io.github.jan-tennert.supabase:auth-kt")
       implementation("io.github.jan-tennert.supabase:storage-kt")
+      implementation("io.github.dokar3:sonner:0.3.8")
     }
     androidMain.dependencies {
       implementation(libs.androidx.activity.compose)
