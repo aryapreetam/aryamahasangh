@@ -1,6 +1,7 @@
 package org.aryamahasangh
 
 import AppTheme
+import LocalThemeIsDark
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.*
@@ -8,6 +9,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -38,6 +41,9 @@ fun App() {
     }
   }
 }
+
+val LocalSnackbarHostState =
+  compositionLocalOf<SnackbarHostState> { error("SnackbarHostState is not found") }
 
 @Composable
 fun AppDrawer(){
@@ -240,6 +246,7 @@ fun MainContent(
   var isLoggedIn by remember { mutableStateOf(false) }
   var showLoginDialog by remember { mutableStateOf(false) }
   var showLogoutDialog by remember { mutableStateOf(false) }
+  val snackbarHostState = remember { SnackbarHostState() }
 
   LaunchedEffect(selectedOption) {
     selectedOrgDetails("")
@@ -247,6 +254,9 @@ fun MainContent(
     selectedVideoDetails("")
   }
   Scaffold(
+    snackbarHost = {
+      SnackbarHost(hostState = snackbarHostState)
+    },
     topBar = {
       val currentRoute = navController1.currentDestination?.route
       val screenTitle = getScreenTitle(currentRoute)
@@ -275,6 +285,22 @@ fun MainContent(
           }
         },
         actions = {
+          var isDark by LocalThemeIsDark.current
+          TooltipBox(
+            positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+            tooltip = { PlainTooltip { Text(if(isDark) "Toggle to light" else "Toggle to dark") } },
+            state = rememberTooltipState()
+          ){
+            IconButton(
+              onClick = { isDark = !isDark }
+            ) {
+              Icon(
+                if (isDark) Icons.Default.LightMode else Icons.Default.DarkMode,
+                contentDescription = "Toggle brightness"
+              )
+            }
+          }
+
           if(isLoggedIn){
             TooltipBox(
               positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
@@ -316,18 +342,22 @@ fun MainContent(
           .padding(paddingValues)
       ) {
         println("Selected Option: $selectedOption")
-        RootNavGraph(
-          navController = navController1,
-          onNavigateToOrgDetails = { orgId ->
-            selectedOrgDetails(orgId)
-          },
-          onNavigateToActivityDetails = { id ->
-            selectedActivityDetails(id)
-          },
-          onNavigateToVideoDetails = { id ->
-            selectedVideoDetails(id)
-          }
-        )
+        CompositionLocalProvider(
+          LocalSnackbarHostState provides snackbarHostState,
+        ){
+          RootNavGraph(
+            navController = navController1,
+            onNavigateToOrgDetails = { orgId ->
+              selectedOrgDetails(orgId)
+            },
+            onNavigateToActivityDetails = { id ->
+              selectedActivityDetails(id)
+            },
+            onNavigateToVideoDetails = { id ->
+              selectedVideoDetails(id)
+            }
+          )
+        }
       }
     },
     bottomBar = {

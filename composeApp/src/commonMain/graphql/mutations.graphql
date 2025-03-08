@@ -1,3 +1,7 @@
 mutation addOrganisation($input: OrganisationInput!) {
   addOrganisation(input: $input)
 }
+
+mutation AddStudentAdmissionData($input: AdmissionFormDataInput!) {
+  addStudentAdmissionData(input: $input)
+}
