@@ -1,10 +1,14 @@
 package org.aryamahasangh.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
+import dev.burnoo.compose.remembersetting.rememberBooleanSetting
+import org.aryamahasangh.SettingKeys
 import org.aryamahasangh.navigation.Screen.OrgDetails
 import org.aryamahasangh.screens.*
 
@@ -44,7 +48,12 @@ fun RootNavGraph(
       VideoDetailsScreen(id)
     }
     composable<Screen.AdmissionForm> {
-      RegistrationForm()
+      var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
+      if(isLoggedIn){
+        AdmissionScreen()
+      }else{
+        RegistrationForm()
+      }
     }
   }
 }

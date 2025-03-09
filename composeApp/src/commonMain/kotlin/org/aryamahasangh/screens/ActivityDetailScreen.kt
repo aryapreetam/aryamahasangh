@@ -111,7 +111,7 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
       )
       Spacer(modifier = Modifier.width(8.dp))
       Text(
-        modifier = Modifier.background(Color.LightGray).padding(vertical = 4.dp, horizontal = 16.dp),
+        modifier = Modifier.background(MaterialTheme.colorScheme.outlineVariant).padding(vertical = 4.dp, horizontal = 16.dp),
         text = "${activityTypeData[activity.activityType]}", style = MaterialTheme.typography.bodyLarge)
     }
 

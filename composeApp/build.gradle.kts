@@ -94,6 +94,7 @@ kotlin {
       implementation("io.github.jan-tennert.supabase:auth-kt")
       implementation("io.github.jan-tennert.supabase:storage-kt")
       implementation("io.github.dokar3:sonner:0.3.8")
+      implementation("dev.burnoo:compose-remember-setting:1.0.3")
     }
     androidMain.dependencies {
       implementation(libs.androidx.activity.compose)

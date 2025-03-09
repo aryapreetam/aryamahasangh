@@ -1114,32 +1114,42 @@ fun RegistrationForm() {
                 put("parent_signature", listOf(parentSignature!!))
               }
 
-              filesToUpload.forEach {
-                val (index, files) = it
-                val docList = mutableListOf<String>()
-                files.forEach { file ->
-                  val uploadResponse = bucket.upload(
-                    path = "${aadharNo}_${index}_${Clock.System.now().epochSeconds}.jpg",
-                    data = file.readBytes()
-                  )
-                  docList.add(bucket.publicUrl( uploadResponse.path))
-                  println("file upload complete :$uploadResponse")
+              try{
+                filesToUpload.forEach {
+                  val (index, files) = it
+                  val docList = mutableListOf<String>()
+                  files.forEach { file ->
+                    val uploadResponse = bucket.upload(
+                      path = "${aadharNo}_${index}_${Clock.System.now().epochSeconds}.jpg",
+                      data = file.readBytes()
+                    )
+                    docList.add(bucket.publicUrl( uploadResponse.path))
+                    println("file upload complete :$uploadResponse")
+                  }
+                  when(index){
+                    "document" -> {
+                      formData = formData.copy(attachedDocuments = docList)
+                    }
+                    "student_photo" -> {
+                      formData = formData.copy(studentPhoto = docList[0])
+                    }
+                    "student_signature" -> {
+                      formData = formData.copy(studentSignature = docList[0])
+                    }
+                    "parent_signature" -> {
+                      formData = formData.copy(parentSignature = docList[0])
+                    }
+                  }
                 }
-                when(index){
-                  "document" -> {
-                    formData = formData.copy(attachedDocuments = docList)
-                  }
-                  "student_photo" -> {
-                    formData = formData.copy(studentPhoto = docList[0])
-                  }
-                  "student_signature" -> {
-                    formData = formData.copy(studentSignature = docList[0])
-                  }
-                  "parent_signature" -> {
-                    formData = formData.copy(parentSignature = docList[0])
-                  }
-                }
+              } catch (e:Exception){
+                bucket.delete()
+                snackbarHostState.showSnackbar(
+                  message = "Error uploading files ${e.message}",
+                  actionLabel = "Close"
+                )
+                return@launch
               }
+
               println("Form Data: $formData") // Print form data
               val res = apolloClient.mutation(AddStudentAdmissionDataMutation(
                 input = AdmissionFormDataInput(
