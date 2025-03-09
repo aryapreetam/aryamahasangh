@@ -85,7 +85,7 @@ fun ActivityForm() {
         states = indianStatesToDistricts.keys.toList(),
         selectedState = selectedState,
         onStateSelected = { selectedState = it },
-        modifier = Modifier.widthIn(min = 200.dp, max = 400.dp)
+        modifier = Modifier.width( 160.dp)
       )
       // District Selection (Conditional)
       val districts = indianStatesToDistricts[selectedState] ?: emptyList()
@@ -93,7 +93,7 @@ fun ActivityForm() {
         districts = districts,
         selectedDistrict = selectedDistrict,
         onDistrictSelected = { selectedDistrict = it },
-        modifier = Modifier.widthIn(min = 200.dp, max = 400.dp)
+        modifier = Modifier.width(200.dp)
       )
     }
 

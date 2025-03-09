@@ -18,7 +18,9 @@ fun LoginDialog(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
   var username by remember { mutableStateOf("") }
   var password by remember { mutableStateOf("") }
   var usernameError by remember { mutableStateOf(false) }
+  var usernameErrorMessage by remember { mutableStateOf("Username is required") }
   var passwordError by remember { mutableStateOf(false) }
+  var passwordErrorMessage by remember { mutableStateOf("Password is required (min 8 chars, 1 special char)") }
   var isLoggingIn by remember { mutableStateOf(false) }
   val coroutineScope = rememberCoroutineScope()
 
@@ -34,7 +36,7 @@ fun LoginDialog(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
         OutlinedTextField(
           value = username,
           onValueChange = {
-            if(it.length < 50){
+            if (it.length < 50) {
               username = it
             }
             if (usernameError && it.isNotEmpty()) {
@@ -44,7 +46,7 @@ fun LoginDialog(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
           label = { Text("Username") },
           leadingIcon = { Icon(Icons.Filled.AccountCircle, contentDescription = "Username") },
           isError = usernameError,
-          supportingText = { if (usernameError) Text("Username is required") },
+          supportingText = { if (usernameError) Text(usernameErrorMessage) },
           modifier = Modifier.fillMaxWidth(),
           singleLine = true,
         )
@@ -52,7 +54,7 @@ fun LoginDialog(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
         OutlinedTextField(
           value = password,
           onValueChange = {
-            if(it.length <30)
+            if (it.length < 30)
               password = it
             if (passwordError && it.length >= 8 && it.matches(Regex(".*[!@#\$%^&*()].*"))) {
               passwordError = false // Clear error on valid input
@@ -62,7 +64,7 @@ fun LoginDialog(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
           leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = "Password") },
           visualTransformation = PasswordVisualTransformation(),
           isError = passwordError,
-          supportingText = { if (passwordError) Text("Password is required (min 8 chars, 1 special char)") },
+          supportingText = { if (passwordError) Text(passwordErrorMessage) },
           modifier = Modifier.fillMaxWidth(),
           singleLine = true,
         )
@@ -71,7 +73,8 @@ fun LoginDialog(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
     confirmButton = {
       Button(
         onClick = {
-          val isValidPassword = password.isNotEmpty() && password.length >= 8 && password.matches(Regex(".*[!@#\$%^&*()].*"))
+          val isValidPassword =
+            password.isNotEmpty() && password.length >= 8 && password.matches(Regex(".*[!@#\$%^&*()].*"))
           usernameError = username.isEmpty()
           passwordError = !isValidPassword
 
@@ -80,9 +83,22 @@ fun LoginDialog(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
             coroutineScope.launch {
               delay(2000)
               isLoggingIn = false
-              println("Login successful")
-              onLoginSuccess()
-              onDismiss()
+              if (username == "admin" && password == "arya@2018") {
+                println("Login successful")
+                onLoginSuccess()
+                onDismiss()
+              } else if (username != "admin" && password != "arya@2018") {
+                usernameError = true
+                usernameErrorMessage = "Incorrect username"
+                passwordError = true
+                passwordErrorMessage = "Incorrect password"
+              } else if (username != "admin") {
+                usernameError = true
+                usernameErrorMessage = "Incorrect username"
+              } else {
+                passwordError = true
+                passwordErrorMessage = "Incorrect password"
+              }
             }
           }
         },
@@ -106,4 +122,5 @@ fun LoginDialog(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
     },
     shape = MaterialTheme.shapes.medium
   )
+
 }

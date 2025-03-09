@@ -21,6 +21,8 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import aryamahasangh.composeapp.generated.resources.*
+import dev.burnoo.compose.remembersetting.rememberBooleanSetting
+import dev.burnoo.compose.remembersetting.rememberStringSetting
 import kotlinx.coroutines.launch
 import org.aryamahasangh.components.LoginDialog
 import org.aryamahasangh.navigation.RootNavGraph
@@ -29,6 +31,7 @@ import org.jetbrains.compose.reload.DevelopmentEntryPoint
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+
 
 @Composable
 @Preview
@@ -42,8 +45,22 @@ fun App() {
   }
 }
 
-val LocalSnackbarHostState =
-  compositionLocalOf<SnackbarHostState> { error("SnackbarHostState is not found") }
+val LocalSnackbarHostState = compositionLocalOf<SnackbarHostState> { error("SnackbarHostState is not found") }
+//CompositionLocal for Authentication State:
+val LocalAuthState = compositionLocalOf { mutableStateOf(false) }
+
+@Composable
+fun rememberAuthState(): MutableState<Boolean> {
+  val currentLocalAuthState = LocalAuthState.current
+  return remember { currentLocalAuthState }
+}
+
+// Use rememberSetting to create setting:
+object SettingKeys {
+  const val isLoggedIn = "isLoggedIn"
+  const val userEmail = "userEmail"
+}
+
 
 @Composable
 fun AppDrawer(){
@@ -196,41 +213,6 @@ fun getScreenTitle(route: String?): String{
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-@Preview
-fun TopBarContentPreview() {
-  val isLoggedIn = false
-  TopAppBar(title = {"॥ ओ३म् ॥"}, navigationIcon = {},
-    actions = {
-      if(isLoggedIn){
-        IconButton(
-          onClick = {  }
-        ) {
-          Icon(
-            Icons.AutoMirrored.Filled.Logout,
-            contentDescription = "logout"
-          )
-        }
-      }else{
-//        TooltipBox(
-//          positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-//          tooltip = { PlainTooltip { Text("Add to favorites") } },
-//          state = rememberTooltipState()
-//        ) {
-          IconButton(
-            onClick = {  }
-          ) {
-            Icon(
-              Icons.AutoMirrored.Filled.Login,
-              contentDescription = "login"
-            )
-          }
-//        }
-      }
-    })
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
 fun MainContent(
   title: String,
   drawerState: DrawerState,
@@ -243,7 +225,10 @@ fun MainContent(
   val (activityDetails, selectedActivityDetails) = remember { mutableStateOf("") }
   val (videoDetails, selectedVideoDetails) = remember { mutableStateOf("") }
 
-  var isLoggedIn by remember { mutableStateOf(false) }
+  val authState = rememberAuthState() // Get auth state from CompositionLocal
+  var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
+  var userEmail by rememberStringSetting(SettingKeys.userEmail, "")
+
   var showLoginDialog by remember { mutableStateOf(false) }
   var showLogoutDialog by remember { mutableStateOf(false) }
   val snackbarHostState = remember { SnackbarHostState() }
@@ -344,6 +329,7 @@ fun MainContent(
         println("Selected Option: $selectedOption")
         CompositionLocalProvider(
           LocalSnackbarHostState provides snackbarHostState,
+          LocalAuthState provides authState
         ){
           RootNavGraph(
             navController = navController1,
@@ -368,7 +354,14 @@ fun MainContent(
   if (showLoginDialog) {
     LoginDialog(
       onDismiss = { showLoginDialog = false },
-      onLoginSuccess = { isLoggedIn = true }
+      onLoginSuccess = {
+        isLoggedIn = true
+        authState.value = true // Update auth state
+        showLoginDialog = false
+        scope.launch {
+          snackbarHostState.showSnackbar(message = "Login successful")
+        }
+      },
     )
   }
 
@@ -381,7 +374,11 @@ fun MainContent(
       confirmButton = {
         TextButton(onClick = {
           isLoggedIn = false
+          authState.value = false
           showLogoutDialog = false
+          scope.launch {
+            snackbarHostState.showSnackbar("Logout successful")
+          }
         }) {
           Text("Yes")
         }

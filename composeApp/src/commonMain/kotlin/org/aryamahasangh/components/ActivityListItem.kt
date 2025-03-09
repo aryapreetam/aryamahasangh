@@ -62,7 +62,7 @@ fun ActivityListItem(activity: OrganisationalActivity, handleOnClick: () -> Unit
       )
       Spacer(modifier = Modifier.height(2.dp))
       Text(
-        modifier = Modifier.background(Color.LightGray).padding(vertical = 1.dp, horizontal = 8.dp),
+        modifier = Modifier.background(MaterialTheme.colorScheme.outlineVariant).padding(vertical = 1.dp, horizontal = 8.dp),
         text = "${activityTypeData[activity.activityType]}", style = MaterialTheme.typography.bodyLarge)
       Spacer(modifier = Modifier.height(4.dp))
       Text(text = activity.description, style = MaterialTheme.typography.bodyMedium,
