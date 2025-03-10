@@ -247,7 +247,7 @@ fun DatePickerTextField(
         Icon(Icons.Filled.DateRange, contentDescription = "Select Date")
       }
     },
-    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
+    keyboardOptions = KeyboardOptions.Default.copy(keyboardType = KeyboardType.Text),
     placeholder = { Text("dd/mm/yyyy") },
     singleLine = true,
     maxLines = 1,
@@ -1079,7 +1079,6 @@ fun RegistrationForm() {
 
       Button(
         onClick = {
-
           if (validateForm()) {
             isSubmittingData = true
             formData = FormData(
@@ -1120,7 +1119,7 @@ fun RegistrationForm() {
                   val docList = mutableListOf<String>()
                   files.forEach { file ->
                     val uploadResponse = bucket.upload(
-                      path = "${aadharNo}_${index}_${Clock.System.now().epochSeconds}.jpg",
+                      path = "${index}_${Clock.System.now().epochSeconds}.jpg",
                       data = file.readBytes()
                     )
                     docList.add(bucket.publicUrl( uploadResponse.path))
@@ -1225,7 +1224,8 @@ fun RegistrationForm() {
             }
             println("Form is invalid. Please check the inputs.")
           }
-        }
+        },
+        enabled = !isSubmittingData,
       ) {
         if(isSubmittingData){
           Row(verticalAlignment = Alignment.CenterVertically) {

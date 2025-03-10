@@ -23,7 +23,10 @@ fun ReceivedApplicationsScreen(){
     receivedApplications = res.data?.studentsApplied ?: emptyList()
   }
   Column(modifier = Modifier.fillMaxSize().padding(8.dp)) {
-    FlowRow {
+    FlowRow(
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
+      verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
       receivedApplications.forEach {
         StudentApplicationItem(it)
       }

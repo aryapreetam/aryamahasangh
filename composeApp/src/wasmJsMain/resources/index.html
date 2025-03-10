@@ -8,9 +8,135 @@
     <link rel="icon" href="/favicon.ico" sizes="any">
     <link rel="apple-touch-icon" href="/apple-touch-icon.png">
     <script type="application/javascript" src="composeApp.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+
+        .quote-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: min(90%, 600px);
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .quote {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+            color: #333;
+            line-height: 1.4;
+            text-align: center;
+        }
+
+        .author {
+            font-style: italic;
+            color: #666;
+            margin-top: 1rem;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
 <canvas id="ComposeTarget"></canvas>
-<div id="components"></div>
+<div id="components">
+    <div class="quote-container">
+        <div id="quote" class="quote"></div>
+        <div id="author" class="author"></div>
+    </div>
+
+    <script>
+        const quotes = [
+            {
+                text: "सब सत्यविद्या और जो पदार्थ विद्या से जाने जाते हैं, उन सबका आदिमूल परमेश्वर है।",
+                author: "महर्षि दयानंद"
+            },
+            {
+                text: "ईश्वर सच्चिदानन्दस्वरूप, निराकार, सर्वशक्तिमान, न्यायकारी, दयालु, अजन्मा, अनंत, निर्विकार, अनादि, अनुपम, सर्वाधार, सर्वेश्वर, सर्वव्यापक, सर्वांतर्यामी, अजर, अमर, अभय, नित्य, पवित्र और सृष्टिकर्ता है, उसी की उपासना करने योग्य है।",
+                author: "महर्षि दयानंद"
+            },
+            {
+                text: "वेद सब सत्यविद्याओं का पुस्तक है। वेद का पढ़ना–पढ़ाना और सुनना–सुनाना सब आर्यों का परम धर्म है।",
+                author: "महर्षि दयानंद"
+            },
+            {
+                text: "सत्य के ग्रहण करने और असत्य के छोडने में सर्वदा उद्यत रहना चाहिए।",
+                author: "महर्षि दयानंद"
+            },
+            {
+                text: "सब काम धर्मानुसार, अर्थात् सत्य और असत्य को विचार करके करने चाहिए।",
+                author: "महर्षि दयानंद"
+            },
+            {
+                text: "संसार का उपकार करना इस समाज का मुख्य उद्देश्य है, अर्थात् शारीरिक, आत्मिक और सामाजिक उन्नति करना।",
+                author: "महर्षि दयानंद"
+            },
+            {
+                text: "सबसे प्रीतिपूर्वक, धर्मानुसार, यथायोग्य वर्तना चाहिये।",
+                author: "महर्षि दयानंद"
+            },
+            {
+                text: "अविद्या का नाश और विद्या की वृद्धि करनी चाहिये।",
+                author: "महर्षि दयानंद"
+            },
+            {
+                text: "प्रत्येक को अपनी ही उन्नति से संतुष्ट न रहना चाहिये, किंतु सब की उन्नति में अपनी उन्नति समझनी चाहिये।",
+                author: "महर्षि दयानंद"
+            },
+            {
+                text: "सब मनुष्यों को सामाजिक, सर्वहितकारी, नियम पालने में परतंत्र रहना चाहिये और प्रत्येक हितकारी नियम पालने में स्वतंत्र रना चाहिए।",
+                author: "महर्षि दयानंद"
+            }
+        ];
+
+        function displayQuote() {
+            const randomIndex = Math.floor(Math.random() * quotes.length);
+            const quoteElement = document.getElementById('quote');
+            const authorElement = document.getElementById('author');
+
+            quoteElement.textContent = `"${quotes[randomIndex].text}"`;
+            authorElement.textContent = `- ${quotes[randomIndex].author}`;
+        }
+
+        // Display initial quote
+        displayQuote();
+
+        // Start interval
+        document.quoteInterval = setInterval(displayQuote, 5000);
+
+        // Create observer to watch for element removal
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.removedNodes.forEach((node) => {
+                    if (node.classList && node.classList.contains('quote-container')) {
+                        clearInterval(document.quoteInterval);
+                        observer.disconnect();
+                    }
+                });
+            });
+        });
+
+        // Start observing the document body for removed nodes
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    </script>
+</div>
 </body>
 </html>

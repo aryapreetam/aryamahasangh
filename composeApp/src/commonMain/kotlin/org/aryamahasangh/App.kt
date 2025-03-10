@@ -3,6 +3,7 @@ package org.aryamahasangh
 import AppTheme
 import LocalThemeIsDark
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -167,8 +168,10 @@ fun LargeScreens(
       }
     }
   ){
-    Row(modifier = Modifier.fillMaxSize(1f)) {
-      VerticalDivider(modifier = Modifier.padding(top = 4.dp, bottom = 4.dp, end = 4.dp))
+    Row(modifier = Modifier.fillMaxSize(1f).background(MaterialTheme.colorScheme.surfaceDim)) {
+      VerticalDivider(
+        modifier = Modifier.padding(top = 4.dp, bottom = 4.dp, end = 4.dp)
+      )
       MainContent(title, drawerState, selectedOption, setValue, navController1)
     }
   }

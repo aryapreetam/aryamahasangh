@@ -10,9 +10,11 @@ fun main() {
 //    ComposeViewport(document.body!!) {
 //        App()
 //    }
-    CanvasBasedWindow(canvasElementId = "ComposeTarget") {
-        CompositionLocalProvider(LocalLayerContainer provides document.getElementById("components")!!) {
-            App()
-        }
+  CanvasBasedWindow(canvasElementId = "ComposeTarget") {
+    val quoteContainer = document.querySelector(".quote-container")
+    quoteContainer?.remove()
+    CompositionLocalProvider(LocalLayerContainer provides document.getElementById("components")!!) {
+      App()
     }
+  }
 }
