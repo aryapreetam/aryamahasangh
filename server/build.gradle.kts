@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.kotlinJvm)
     alias(libs.plugins.ktor)
+    alias(libs.plugins.kotlinx.serialization)
     application
 }
 
@@ -21,4 +22,7 @@ dependencies {
     implementation(libs.ktor.server.statuspages)
     implementation(libs.ktor.server.websockets)
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+    implementation(platform("io.github.jan-tennert.supabase:bom:3.0.3"))
+    implementation("io.github.jan-tennert.supabase:postgrest-kt")
+    implementation("io.ktor:ktor-server-config-yaml:3.0.2")
 }

@@ -136,7 +136,7 @@ fun StateDropdown(states: List<String>, selectedState: String?, onStateSelected:
         value = selectedState ?: "राज्य चुनें",
         label = { Text("राज्य") },
         onValueChange = {},
-        placeholder = { Text("Color") },
+        placeholder = { Text("State") },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
 //        colors = ExposedDropdownMenuDefaults.textFieldColors(),
       )

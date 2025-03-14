@@ -1,10 +1,11 @@
 package org.aryamahasangh
 
-import com.expediagroup.graphql.generator.scalars.ID
 import kotlinx.datetime.LocalDateTime
 import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
 
 data class Organisation(
+  val id: String,
   val name: String,
   val logo: String,
   val description: String,
@@ -32,7 +33,7 @@ enum class ActivityType {
 
 @OptIn(ExperimentalUuidApi::class)
 data class OrganisationalActivity(
-  val id: ID,
+  val id: String,
   val name: String,
   val description: String,
   val activityType: ActivityType,
@@ -58,7 +59,8 @@ data class OrganisationalMember(
   val priority: Int = 0
 )
 
-data class Member(
+data class Member @OptIn(ExperimentalUuidApi::class) constructor(
+  val id: String = Uuid.random().toString(),
   val name: String,
   val educationalQualification: String = "",
   val profileImage: String = "",

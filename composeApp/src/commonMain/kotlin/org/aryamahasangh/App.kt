@@ -40,7 +40,7 @@ fun App() {
   DevelopmentEntryPoint {
     AppTheme {
       // for quickly testing the components
-      // DemoComposable()
+       //DemoComposable()
       AppDrawer()
     }
   }

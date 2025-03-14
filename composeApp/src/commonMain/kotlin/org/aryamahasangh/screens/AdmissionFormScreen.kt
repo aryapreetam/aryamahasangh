@@ -351,9 +351,15 @@ fun DocumentGrid(
 ) {
   Column(horizontalAlignment = Alignment.Start) {
     if (documents.isEmpty()) {
-      Text("No documents attached.",
-        modifier = Modifier.padding(vertical = 24.dp, horizontal = 8.dp).background(MaterialTheme.colorScheme.surfaceVariant),
-        textAlign = TextAlign.Start)
+      Icon(
+        imageVector = Icons.Filled.PhotoLibrary,
+        contentDescription = "Selected",
+        modifier = Modifier.size(96.dp).padding(16.dp),
+        tint = MaterialTheme.colorScheme.outlineVariant
+      )
+//      Text("No documents attached.",
+//        modifier = Modifier.padding(vertical = 24.dp, horizontal = 8.dp).background(MaterialTheme.colorScheme.surfaceVariant),
+//        textAlign = TextAlign.Start)
     }
     FlowRow(
       verticalArrangement =  Arrangement.spacedBy(8.dp),
@@ -380,7 +386,7 @@ fun DocumentGrid(
 }
 
 @Composable
-fun ButtonForFilePicker(onFilesSelected: (List<PlatformFile>?) -> Unit) {
+fun ButtonForFilePicker(label: String?, onFilesSelected: (List<PlatformFile>?) -> Unit) {
   val launcher = rememberFilePickerLauncher(
     type = PickerType.File(extensions = listOf("png", "jpg", "jpeg", "webp", "pdf", "docx")),
     mode = PickerMode.Multiple(),
@@ -392,7 +398,7 @@ fun ButtonForFilePicker(onFilesSelected: (List<PlatformFile>?) -> Unit) {
   Button(onClick = {
     launcher.launch()
   }) {
-    Text("Select Documents")
+    Text(label ?: "Select Documents")
   }
 }
 
@@ -509,7 +515,7 @@ fun RegistrationForm() {
   val scope = rememberCoroutineScope()
   val snackbarHostState = LocalSnackbarHostState.current
 
-  var formData by remember { mutableStateOf(FormData()) }
+  var FormData by remember { mutableStateOf(FormData()) }
   var isSubmittingData by remember { mutableStateOf(false) }
   var formSubmittingProgress by remember { mutableStateOf("")}
 
@@ -696,7 +702,7 @@ fun RegistrationForm() {
         onValueChange = { text ->
           studentName = text.split(" ").joinToString(" ") { it.capitalize(Locale.current) }
           studentNameError = studentName.isBlank()
-          formData = formData.copy(studentName = studentName)
+          FormData = FormData.copy(studentName = studentName)
         },
         label = { Text("छात्रा का नाम") },
         modifier = Modifier.width(500.dp),
@@ -716,7 +722,7 @@ fun RegistrationForm() {
             if (text.all { it.isDigit() } && text.length <= 12) {
               aadharNo = text
               aadharNoError = text.isBlank()
-              formData = formData.copy(aadharNo = aadharNo)
+              FormData = FormData.copy(aadharNo = aadharNo)
             }
           },
           label = { Text("आधार संख्या") },
@@ -734,7 +740,7 @@ fun RegistrationForm() {
           onValueChange = { text ->
             dob = text
             dobError = text.isBlank()
-            formData = formData.copy(dob = dob)
+            FormData = FormData.copy(dob = dob)
           },
           modifier = Modifier.width(180.dp),
           isError = dobError,
@@ -746,7 +752,7 @@ fun RegistrationForm() {
           onBloodGroupSelected = { group ->
             selectedBloodGroup = group
             bloodGroupError = false
-            formData = formData.copy(bloodGroup = selectedBloodGroup)
+            FormData = FormData.copy(bloodGroup = selectedBloodGroup)
           },
           modifier = Modifier.width(150.dp),
           isError = bloodGroupError,
@@ -763,7 +769,7 @@ fun RegistrationForm() {
             if (text.length <= 20) {
               previousClass = text
               previousClassError = text.isBlank()
-              formData = formData.copy(previousClass = previousClass)
+              FormData = FormData.copy(previousClass = previousClass)
             }
           },
           label = { Text("पिछली उत्तीर्ण कक्षा") },
@@ -781,7 +787,7 @@ fun RegistrationForm() {
             if (text.length <= 10) {
               marksObtained = text
               marksObtainedError = text.isBlank()
-              formData = formData.copy(marksObtained = marksObtained)
+              FormData = FormData.copy(marksObtained = marksObtained)
             }
           },
           label = { Text("प्राप्त अंक") },
@@ -799,7 +805,7 @@ fun RegistrationForm() {
             if (text.length <= 100) {
               schoolName = text
               schoolNameError = text.isBlank()
-              formData = formData.copy(schoolName = schoolName)
+              FormData = FormData.copy(schoolName = schoolName)
             }
           },
           label = { Text("विद्यालय का नाम") },
@@ -821,7 +827,7 @@ fun RegistrationForm() {
             if (text.length <= 100) {
               fatherName = text
               fatherNameError = text.isBlank()
-              formData = formData.copy(fatherName = fatherName)
+              FormData = FormData.copy(fatherName = fatherName)
             }
           },
           label = { Text("पिता का नाम") },
@@ -839,7 +845,7 @@ fun RegistrationForm() {
             if (text.length <= 50) {
               fatherOccupation = text
               fatherOccupationError = text.isBlank()
-              formData = formData.copy(fatherOccupation = fatherOccupation)
+              FormData = FormData.copy(fatherOccupation = fatherOccupation)
             }
           },
           label = { Text("व्यवसाय") },
@@ -857,7 +863,7 @@ fun RegistrationForm() {
             if (text.length <= 100) {
               fatherQualification = text
               fatherQualificationError = text.isBlank()
-              formData = formData.copy(fatherQualification = fatherQualification)
+              FormData = FormData.copy(fatherQualification = fatherQualification)
             }
           },
           label = { Text("योग्यता") },
@@ -880,7 +886,7 @@ fun RegistrationForm() {
             if (text.length <= 100) {
               motherName = text
               motherNameError = text.isBlank()
-              formData = formData.copy(motherName = motherName)
+              FormData = FormData.copy(motherName = motherName)
             }
           },
           label = { Text("माता का नाम") },
@@ -898,7 +904,7 @@ fun RegistrationForm() {
             if (text.length <= 50) {
               motherOccupation = text
               motherOccupationError = text.isBlank()
-              formData = formData.copy(motherOccupation = motherOccupation)
+              FormData = FormData.copy(motherOccupation = motherOccupation)
             }
           },
           label = { Text("व्यवसाय") },
@@ -916,7 +922,7 @@ fun RegistrationForm() {
             if (text.length <= 100) {
               motherQualification = text
               motherQualificationError = text.isBlank()
-              formData = formData.copy(motherQualification = motherQualification)
+              FormData = FormData.copy(motherQualification = motherQualification)
             }
           },
           label = { Text("योग्यता") },
@@ -939,7 +945,7 @@ fun RegistrationForm() {
             if (text.length <= 300) {
               fullAddress = text
               fullAddressError = text.isBlank()
-              formData = formData.copy(fullAddress = fullAddress)
+              FormData = FormData.copy(fullAddress = fullAddress)
             }
           },
           leadingIcon = { Icon(Icons.Filled.Place, contentDescription = "Address") },
@@ -958,7 +964,7 @@ fun RegistrationForm() {
             if (text.all { it.isDigit() } && text.length <= 10) {
               mobileNo = text
               mobileNoError = text.isBlank()
-              formData = formData.copy(mobileNo = mobileNo)
+              FormData = FormData.copy(mobileNo = mobileNo)
             }
           },
           label = { Text("दूरभाष संख्या") },
@@ -977,7 +983,7 @@ fun RegistrationForm() {
             if (text.all { it.isDigit() } && text.length <= 10) {
               alternateMobileNo = text
               alternateMobileNoError = text.isBlank()
-              formData = formData.copy(alternateMobileNo = alternateMobileNo)
+              FormData = FormData.copy(alternateMobileNo = alternateMobileNo)
             }
           },
           leadingIcon = { Icon(Icons.Filled.Phone, contentDescription = "Phone") },
@@ -1003,17 +1009,17 @@ fun RegistrationForm() {
           attachedDocuments = attachedDocuments.toMutableList().apply {
             remove(documentToRemove)
           }.toList()
-          formData = formData.copy(attachedDocuments = attachedDocuments.map { it.name })
+          FormData = FormData.copy(attachedDocuments = attachedDocuments.map { it.name })
         },
         isError = attachedDocumentsError,
         errorMessage = attachedDocumentsErrorMessage
       )
 
-      ButtonForFilePicker(onFilesSelected = { filePath ->
+      ButtonForFilePicker(null, onFilesSelected = { filePath ->
         if (filePath != null) {
           attachedDocumentsError = false
           attachedDocuments = (attachedDocuments + filePath).distinct()
-          formData = formData.copy(attachedDocuments = attachedDocuments.map { it.name })
+          FormData = FormData.copy(attachedDocuments = attachedDocuments.map { it.name })
         }
       })
 
@@ -1032,11 +1038,11 @@ fun RegistrationForm() {
             onPhotoSelected = { file ->
               studentPhoto = file
               studentPhotoError = file != null
-              formData = formData.copy(studentPhoto = studentPhoto?.name)
+              FormData = FormData.copy(studentPhoto = studentPhoto?.name)
             },
             onPhotoRemoved = { photo ->
               studentPhoto = null
-              formData = formData.copy(studentPhoto = null)
+              FormData = FormData.copy(studentPhoto = null)
             },
             isError = studentPhotoError,
             errorMessage = studentPhotoErrorMessage
@@ -1048,7 +1054,7 @@ fun RegistrationForm() {
           onSignatureSelected = { file ->
             studentSignature = file
             studentSignatureError = file != null
-            formData = formData.copy(studentSignature = studentSignature?.name)
+            FormData = FormData.copy(studentSignature = studentSignature?.name)
           },
           label = "छात्रा",
           onRemoveSignature = {
@@ -1063,7 +1069,7 @@ fun RegistrationForm() {
           onSignatureSelected = { file ->
             parentSignature = file
             parentSignatureError = file != null
-            formData = formData.copy(parentSignature = parentSignature?.name)
+            FormData = FormData.copy(parentSignature = parentSignature?.name)
           },
           label = "माता/पिता",
           onRemoveSignature = {
@@ -1081,7 +1087,7 @@ fun RegistrationForm() {
         onClick = {
           if (validateForm()) {
             isSubmittingData = true
-            formData = FormData(
+            FormData = FormData(
               studentName = studentName,
               aadharNo = aadharNo,
               dob = dob,
@@ -1127,16 +1133,16 @@ fun RegistrationForm() {
                   }
                   when(index){
                     "document" -> {
-                      formData = formData.copy(attachedDocuments = docList)
+                      FormData = FormData.copy(attachedDocuments = docList)
                     }
                     "student_photo" -> {
-                      formData = formData.copy(studentPhoto = docList[0])
+                      FormData = FormData.copy(studentPhoto = docList[0])
                     }
                     "student_signature" -> {
-                      formData = formData.copy(studentSignature = docList[0])
+                      FormData = FormData.copy(studentSignature = docList[0])
                     }
                     "parent_signature" -> {
-                      formData = formData.copy(parentSignature = docList[0])
+                      FormData = FormData.copy(parentSignature = docList[0])
                     }
                   }
                 }
@@ -1149,30 +1155,30 @@ fun RegistrationForm() {
                 return@launch
               }
 
-              println("Form Data: $formData") // Print form data
+              println("Form Data: $FormData") // Print form data
               val res = apolloClient.mutation(AddStudentAdmissionDataMutation(
                 input = AdmissionFormDataInput(
                   id = Uuid.random().toString(),
-                  studentName = formData.studentName,
-                  aadharNo = formData.aadharNo,
-                  dob = formData.dob,
-                  bloodGroup = formData.bloodGroup,
-                  previousClass = formData.previousClass,
-                  marksObtained = formData.marksObtained,
-                  schoolName = formData.schoolName,
-                  fatherName = formData.fatherName,
-                  fatherOccupation = formData.fatherOccupation,
-                  fatherQualification = formData.fatherQualification,
-                  motherName = formData.motherName,
-                  motherOccupation = formData.motherOccupation,
-                  motherQualification = formData.motherQualification,
-                  fullAddress = formData.fullAddress,
-                  mobileNo = formData.mobileNo,
-                  alternateMobileNo = formData.alternateMobileNo,
-                  attachedDocuments = formData.attachedDocuments,
-                  studentPhoto = formData.studentPhoto!!,
-                  studentSignature = formData.studentSignature!!,
-                  parentSignature = formData.parentSignature!!,
+                  studentName = FormData.studentName,
+                  aadharNo = FormData.aadharNo,
+                  dob = FormData.dob,
+                  bloodGroup = FormData.bloodGroup,
+                  previousClass = FormData.previousClass,
+                  marksObtained = FormData.marksObtained,
+                  schoolName = FormData.schoolName,
+                  fatherName = FormData.fatherName,
+                  fatherOccupation = FormData.fatherOccupation,
+                  fatherQualification = FormData.fatherQualification,
+                  motherName = FormData.motherName,
+                  motherOccupation = FormData.motherOccupation,
+                  motherQualification = FormData.motherQualification,
+                  fullAddress = FormData.fullAddress,
+                  mobileNo = FormData.mobileNo,
+                  alternateMobileNo = FormData.alternateMobileNo,
+                  attachedDocuments = FormData.attachedDocuments,
+                  studentPhoto = FormData.studentPhoto!!,
+                  studentSignature = FormData.studentSignature!!,
+                  parentSignature = FormData.parentSignature!!,
                 )
               )).execute()
               isSubmittingData = false
