@@ -1,0 +1,40 @@
+# Ignore Gradle build directories
+.gradle/
+build/
+*/build/
+
+# Ignore Git directory
+.git/
+
+# Ignore IDE files
+.idea/
+*.iml
+*.ipr
+*.iws
+.vscode/
+
+# Ignore logs
+*.log
+
+# Ignore compiled classes
+*.class
+
+# Ignore Kotlin compiler output
+*.kotlin_module
+
+# Ignore Android build files
+*.apk
+*.aab
+*.aar
+
+# Ignore macOS specific files
+.DS_Store
+
+# Ignore all modules except server and gradle
+/composeApp/
+/shared/
+/docs/
+
+# Don't ignore gradle wrapper
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties

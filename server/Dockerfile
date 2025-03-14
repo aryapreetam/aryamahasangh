@@ -12,7 +12,7 @@ COPY gradlew ./
 COPY gradlew.bat ./
 
 # Create empty directories for required modules to satisfy dependency resolution
-RUN mkdir -p server shared
+RUN mkdir -p server
 
 # Download dependencies only (faster than full build for caching)
 RUN ./gradlew :server:dependencies --no-daemon --build-cache --configure-on-demand
@@ -30,9 +30,8 @@ COPY gradle.properties settings.gradle.kts build.gradle.kts ./
 COPY gradlew ./
 COPY gradlew.bat ./
 
-# Copy only the necessary modules (server and shared)
+# Copy only the necessary modules (server)
 COPY server/ server/
-COPY shared/ shared/
 
 # Build the server application with optimized flags
 RUN ./gradlew :server:build --no-daemon --parallel --build-cache --configure-on-demand

@@ -71,5 +71,7 @@ The Dockerfile has been optimized to reduce build time on render.com from approx
 - Leveraging Docker layer caching
 - Optimized Gradle build flags (parallel, build-cache, configure-on-demand)
 - JVM runtime optimizations for faster startup and better performance
+- Removal of shared module dependency
+- Added .dockerignore file to reduce build context size
 
 For detailed information about these optimizations, see [DOCKER_OPTIMIZATION.md](./DOCKER_OPTIMIZATION.md)
