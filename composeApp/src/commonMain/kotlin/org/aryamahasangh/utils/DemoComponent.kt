@@ -22,8 +22,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import org.aryamahasangh.OrganisationalActivityDetailQuery.*
+import org.aryamahasangh.screens.ActivityForm
 import org.aryamahasangh.screens.JoinUsScreen
-import org.aryamahasangh.screens.OrganisationalActivityForm
+import org.aryamahasangh.screens.mockFormData1
 import org.aryamahasangh.type.ActivityType
 import kotlin.random.Random
 
@@ -31,7 +32,8 @@ import kotlin.random.Random
 fun DemoComposable(){
   //OrganisationActivityForm()
   //RegistrationForm()
-  JoinUsComponent()
+  //JoinUsComponent()
+  ActivityForm(formData1 = mockFormData1)
 }
 
 @Composable
@@ -90,7 +92,6 @@ fun OrganisationActivityForm(){
       )
     )
   )
-  OrganisationalActivityForm(activity = sampleActivity)
 }
 
 val profileImagesList = listOf(

@@ -13,6 +13,10 @@ import graphql.language.Value
 import graphql.schema.Coercing
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLType
+import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.serializer.KotlinXSerializer
 import io.ktor.http.*
 import io.ktor.serialization.jackson.*
 import io.ktor.server.application.*
@@ -23,6 +27,7 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import kotlinx.datetime.LocalDateTime
+import kotlinx.serialization.json.Json
 import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
@@ -30,6 +35,16 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
 const val SERVER_PORT = 4000
+
+val url = "https://placeholder-staging-supabase.co"
+val key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0bnd3aXdtbGpjd3pwc2F3ZG1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5MzE4OTMsImV4cCI6MjA1MDUwNzg5M30.cY4A4ZxqHA_1VRC-k6URVAHHkweHTR8FEYEzHYiu19A"
+val supabase =  createSupabaseClient(url, key) {
+  defaultSerializer = KotlinXSerializer(Json {
+    ignoreUnknownKeys = true
+  })
+  install(Postgrest)
+}
+
 
 fun main() {
   embeddedServer(Netty, port = SERVER_PORT, host = "0.0.0.0", module = Application::module)
@@ -104,9 +119,10 @@ class OrgsQuery : Query {
   fun organisations(): List<Organisation> = listOfOrganisations
   fun organisation(name: String): Organisation? = listOfOrganisations.find { it.name == name }
   fun organisationalActivities(): List<OrganisationalActivity> = activities
-  fun organisationalActivity(id: ID) =  activities.find { it.id == id }
+  fun organisationalActivity(id: String) =  activities.find { it.id == id }
   fun learningItems(): List<Video> = videosList
   fun learningItem(id: ID) = videosList.find { it.id == id }
+  fun members(): List<Member> = listOfOrganisations.flatMap { it.keyPeople.map { it.member } }.distinctBy { it.phoneNumber }
 }
 
 data class OrganisationInput(
@@ -118,22 +134,30 @@ data class OrganisationInput(
 
 @OptIn(ExperimentalUuidApi::class)
 class StudentAdmissionMutations : Mutation {
-  fun addStudentAdmissionData(input: AdmissionFormData): Boolean{
-    println("student_data: $input")
-    return studentsData.add(input)
+  suspend fun addStudentAdmissionData(input: AdmissionFormData): Boolean{
+    println("input student data: $input")
+    try {
+      supabase.from("admission").insert(input)
+      return true
+    } catch (e: Exception) {
+      println("error: $e")
+      return false
+    }
   }
 }
 
-val studentsData = mutableListOf<AdmissionFormData>()
-
 class StudentAdmissionQuery : Query {
-  fun studentsApplied(): List<AdmissionFormData> = studentsData
+  suspend fun studentsApplied(): List<AdmissionFormData> {
+    val res = supabase.from("admission").select().decodeList<AdmissionFormData>()
+    return res
+  }
 }
 
 @OptIn(ExperimentalUuidApi::class)
 class OrgsMutation : Mutation {
   fun addOrganisation(input: OrganisationInput): Boolean {
     val org = Organisation(
+      id = Uuid.random().toString(),
       name = input.name,
       logo = input.logo,
       description = input.description,

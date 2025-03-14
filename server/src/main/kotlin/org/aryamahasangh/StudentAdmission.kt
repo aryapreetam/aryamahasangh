@@ -1,9 +1,10 @@
 package org.aryamahasangh
 
-import com.expediagroup.graphql.generator.scalars.ID
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class AdmissionFormData(
-  val id: ID,
+  val id: String,
   val studentName: String = "",
   val aadharNo: String = "",
   val dob: String = "",

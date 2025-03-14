@@ -57,7 +57,7 @@ query organisationalActivities {
 
 
 
-query organisationalActivityDetail($id: ID!){
+query organisationalActivityDetail($id: String!){
   organisationalActivity(id: $id){
     id,
     name

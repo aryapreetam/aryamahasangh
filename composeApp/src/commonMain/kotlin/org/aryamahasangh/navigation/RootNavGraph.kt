@@ -24,7 +24,12 @@ fun RootNavGraph(
       AboutUs()
     }
     composable<Screen.Activities> {
-      ActivitiesScreen(navController, onNavigateToActivityDetails)
+      var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
+      if(isLoggedIn){
+        ActivitiesContainer(navController, onNavigateToActivityDetails)
+      }else{
+        ActivitiesScreen(navController, onNavigateToActivityDetails)
+      }
     }
     composable<Screen.ActivityDetails> {
       val id = it.toRoute<Screen.ActivityDetails>().id
