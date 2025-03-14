@@ -1,7 +1,7 @@
 # Multi-stage build for a lightweight Ktor server Docker image
 
 # Stage 1: Build the application
-FROM gradle:8.6.0-jdk17-alpine AS build
+FROM gradle:8.10.2-jdk17-alpine AS build
 WORKDIR /app
 
 # Copy the entire project
@@ -16,8 +16,8 @@ FROM eclipse-temurin:17-jre-alpine
 # Set working directory
 WORKDIR /app
 
-# Copy the built application from the build stage
-COPY --from=build /app/server/build/libs/*.jar /app/server.jar
+# Copy the built application from the build stage (using the fat JAR with all dependencies)
+COPY --from=build /app/server/build/libs/server-all.jar /app/server.jar
 
 # Expose both local and deployed ports
 EXPOSE 4000 8080
