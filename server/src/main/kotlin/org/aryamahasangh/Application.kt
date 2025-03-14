@@ -34,7 +34,7 @@ import kotlin.reflect.KType
 import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 
-const val SERVER_PORT = 4000
+val SERVER_PORT = System.getenv("PORT")?.toIntOrNull() ?: 4000
 
 val url = "https://ftnwwiwmljcwzpsawdmf.supabase.co"
 val key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0bnd3aXdtbGpjd3pwc2F3ZG1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5MzE4OTMsImV4cCI6MjA1MDUwNzg5M30.cY4A4ZxqHA_1VRC-k6URVAHHkweHTR8FEYEzHYiu19A"
