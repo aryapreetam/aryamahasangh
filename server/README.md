@@ -5,8 +5,9 @@ This directory contains the server module of the AryaMahasangh project, which is
 ## Docker Setup
 
 A Dockerfile is provided to containerize the server application. The Dockerfile uses a multi-stage build approach to create a lightweight image:
-- First stage: Builds the application using Gradle
-- Second stage: Creates a minimal runtime image with just the built application
+- First stage: Caches Gradle dependencies for faster builds
+- Second stage: Builds the application using the cached dependencies
+- Third stage: Creates a minimal runtime image with just the built application
 
 ## Building and Running Locally
 
@@ -60,3 +61,15 @@ To deploy this application to Render.com:
 - The Docker image is based on Alpine Linux for minimal size
 - The application is packaged as a self-contained JAR file
 - The port is configured using the PORT environment variable, which defaults to 4000 if not set
+
+## Build Optimizations
+
+The Dockerfile has been optimized to reduce build time on render.com from approximately 10 minutes to around 1 minute. Key optimizations include:
+
+- Three-stage build process with dedicated dependency caching
+- Selective file copying (only necessary files and modules)
+- Leveraging Docker layer caching
+- Optimized Gradle build flags (parallel, build-cache, configure-on-demand)
+- JVM runtime optimizations for faster startup and better performance
+
+For detailed information about these optimizations, see [DOCKER_OPTIMIZATION.md](./DOCKER_OPTIMIZATION.md)

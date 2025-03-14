@@ -14,12 +14,12 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.aryamahasangh.isAndroid
 
-const val localDev = true
+const val localDev = false
 // "10.0.2.2"
 val host = if(isAndroid()) "10.0.2.2" else "localhost"
 val port = "4000"
-var serverUrl = if(localDev) "http://${host}:${port}" else "https://sandhya-anushthan-api.onrender.com"
-var webSocketUrl = if(localDev) "ws://${host}:${port}" else "wss://sandhya-anushthan-api.onrender.com"
+var serverUrl = if(localDev) "http://${host}:${port}" else "https://aryamahasangh.onrender.com"
+var webSocketUrl = if(localDev) "ws://${host}:${port}" else "wss://aryamahasangh.onrender.com"
 val apolloClient = ApolloClient.Builder()
   .serverUrl("$serverUrl/graphql")
   .webSocketServerUrl("$webSocketUrl/subscriptions")
