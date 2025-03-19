@@ -1,7 +1,6 @@
 package org.aryamahasangh
 
 import com.expediagroup.graphql.generator.hooks.FlowSubscriptionSchemaGeneratorHooks
-import com.expediagroup.graphql.generator.scalars.ID
 import com.expediagroup.graphql.server.ktor.*
 import com.expediagroup.graphql.server.ktor.subscriptions.KtorGraphQLSubscriptionHooks
 import com.expediagroup.graphql.server.operations.Mutation
@@ -16,6 +15,7 @@ import graphql.schema.GraphQLType
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Columns
 import io.github.jan.supabase.serializer.KotlinXSerializer
 import io.ktor.http.*
 import io.ktor.serialization.jackson.*
@@ -27,6 +27,15 @@ import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.json.Json
 import java.util.*
 import kotlin.reflect.KClass
@@ -43,6 +52,23 @@ val supabase =  createSupabaseClient(url, key) {
     ignoreUnknownKeys = true
   })
   install(Postgrest)
+}
+
+object LocalDateTimeSerializer : KSerializer<LocalDateTime> {
+  override val descriptor: SerialDescriptor =
+    PrimitiveSerialDescriptor("LocalDateTime", PrimitiveKind.STRING)
+
+  override fun serialize(encoder: Encoder, value: LocalDateTime) {
+    // Serialize LocalDateTime to a string (if needed)
+    encoder.encodeString(value.toString())
+  }
+
+  override fun deserialize(decoder: Decoder): LocalDateTime {
+    // Deserialize the timestamp string into LocalDateTime
+    val timestamp = decoder.decodeString()
+    return kotlinx.datetime.Instant.parse(timestamp)
+      .toLocalDateTime(TimeZone.UTC) // Convert to LocalDateTime in UTC
+  }
 }
 
 
@@ -116,21 +142,75 @@ class CustomGraphqlSubscriptionHooks : KtorGraphQLSubscriptionHooks {
 
 @OptIn(ExperimentalUuidApi::class)
 class OrgsQuery : Query {
-  fun organisations(): List<Organisation> = listOfOrganisations
-  fun organisation(name: String): Organisation? = listOfOrganisations.find { it.name == name }
-  fun organisationalActivities(): List<OrganisationalActivity> = activities
-  fun organisationalActivity(id: String) =  activities.find { it.id == id }
-  fun learningItems(): List<Video> = videosList
-  fun learningItem(id: ID) = videosList.find { it.id == id }
-  fun members(): List<Member> = listOfOrganisations.flatMap { it.keyPeople.map { it.member } }.distinctBy { it.phoneNumber }
+  suspend fun organisations(): List<Organisation> = getOrganisations()
+  suspend fun organisation(name: String): Organisation? = getOrganisations().find { it.name == name }
+  suspend fun organisationalActivities(): List<OrganisationalActivity> = getOrganisationalActivities()
+  suspend fun organisationalActivity(id: String) =  getOrganisationalActivities().find { it.id == id }
+  suspend fun learningItems(): List<Video> = getVideos()
+  suspend fun learningItem(id: String) = getVideos().find { it.id == id }
+  suspend fun members(): List<Member> = getMembers().distinctBy { it.phoneNumber }
 }
 
-data class OrganisationInput(
-  val name: String,
-  val logo: String,
-  val description: String,
-  val people: List<OrganisationalMember>
-)
+@Serializable
+data class OrganisationId(val organisation_id: String)
+
+suspend fun getOrganisationalActivities(): List<OrganisationalActivity> {
+  //Columns.raw("*, contactPeople:activity_member(*, member:member(*))
+  val newActivities = mutableListOf<OrganisationalActivity>()
+  return try {
+    val activities = supabase.from("activities")
+      .select(
+        Columns.raw("*, contactPeople:activity_member(*, member:member(*))")
+      ).decodeList<OrganisationalActivity>()
+    activities.forEach { it ->
+      val orgIds = supabase.from("organisational_activity").select(Columns.list("organisation_id")){
+        filter { eq("activity_id", it.id) }
+      }.decodeList<OrganisationId>()
+      val orgs = supabase.from("organisation").select(Columns.list("id", "name")){
+        filter { isIn("id", orgIds.map { it.organisation_id }) }
+      }.decodeList<Organisation>()
+      newActivities.add(it.copy(associatedOrganisations = orgs))
+    }
+    newActivities
+  }catch (e: Exception){
+    println(e)
+    listOf()
+  }
+}
+
+suspend fun getOrganisations(): List<Organisation> {
+  return supabase.from("organisation")
+    .select(
+      Columns.raw("*, keyPeople:organisational_member(*, member:member(*))")
+    )
+    .decodeList<Organisation>()
+}
+
+suspend fun getOrganisation(id: String): Organisation? {
+  return supabase.from("organisation")
+    .select(
+      Columns.raw("*, keyPeople:organisational_member(*, member:member(*))")
+    ){
+      filter { Organisation::id eq id }
+    }
+    .decodeSingleOrNull<Organisation>()
+}
+
+suspend fun getVideos(): List<Video> {
+  return supabase.from("learning").select().decodeList()
+}
+
+suspend fun getMembers(): List<Member> {
+  // select distinct on (phone_number) * from member
+  return supabase.from("member").select().decodeList<Member>()
+}
+
+//data class OrganisationInput(
+//  val name: String,
+//  val logo: String,
+//  val description: String,
+//  val people: List<OrganisationalMember>
+//)
 
 @OptIn(ExperimentalUuidApi::class)
 class StudentAdmissionMutations : Mutation {
@@ -155,43 +235,90 @@ class StudentAdmissionQuery : Query {
 
 @OptIn(ExperimentalUuidApi::class)
 class OrgsMutation : Mutation {
-  fun addOrganisation(input: OrganisationInput): Boolean {
-    val org = Organisation(
-      id = Uuid.random().toString(),
-      name = input.name,
-      logo = input.logo,
-      description = input.description,
-      keyPeople = input.people
-    )
-    OrganisationPublisher.publishOrganisation(org)
-    return listOfOrganisations.add(org)
-  }
-  fun addMemberToOrganisation(orgId: Uuid, orgMember: OrganisationalMember): Boolean {
-    return false
-  }
-
-  fun removeMemberFromOrganisation(orgId: Uuid, memberId: Uuid): Boolean {
-    return false
-  }
-
-  fun updateOrganisationMember(orgId: Uuid, memberId: Uuid, orgMemberDetails: OrganisationalMember): Boolean {
-    return false
-  }
-
-  fun updateOrganisationDetails(orgId: Uuid, name: String, description: String, logo: String): Boolean {
-    return false
-  }
-
-  fun removeOrganisation(orgId: Uuid): Boolean {
-    return false
-  }
+//  fun addOrganisation(input: OrganisationInput): Boolean {
+//    val org = Organisation(
+//      id = Uuid.random().toString(),
+//      name = input.name,
+//      logo = input.logo,
+//      description = input.description,
+//      keyPeople = input.people
+//    )
+//    OrganisationPublisher.publishOrganisation(org)
+//    return true
+//  }
+//  fun addMemberToOrganisation(orgId: Uuid, orgMember: OrganisationalMember): Boolean {
+//    return false
+//  }
+//
+//  fun removeMemberFromOrganisation(orgId: Uuid, memberId: Uuid): Boolean {
+//    return false
+//  }
+//
+//  fun updateOrganisationMember(orgId: Uuid, memberId: Uuid, orgMemberDetails: OrganisationalMember): Boolean {
+//    return false
+//  }
+//
+//  fun updateOrganisationDetails(orgId: Uuid, name: String, description: String, logo: String): Boolean {
+//    return false
+//  }
+//
+//  fun removeOrganisation(orgId: Uuid): Boolean {
+//    return false
+//  }
 }
+
+@Serializable
+data class InsertResponse(
+  val id: String
+)
 
 @OptIn(ExperimentalUuidApi::class)
 class ActivityMutation : Mutation {
-  fun addActivity(activity: OrganisationalActivity): Boolean {
-    return false
+  suspend fun addOrganisationActivity(input: OrganisationActivityInput): Boolean {
+    println("input: $input")
+    try{
+      val (id) = supabase.from("activities").insert(ActivityInput(
+        name = input.name,
+        shortDescription = input.shortDescription,
+        longDescription = input.longDescription,
+        activityType = input.activityType,
+        startDateTime = input.startDateTime,
+        endDateTime = input.endDateTime,
+        address = input.address,
+        state = input.state,
+        district = input.district,
+        pincode = input.pincode,
+        mediaFiles = input.mediaFiles,
+        additionalInstructions =  input.additionalInstructions
+      )){
+        select(Columns.raw("id"))
+      }.decodeSingle<InsertResponse>()
+
+      input.associatedOrganisations.forEach { orgId ->
+        supabase.from("organisational_activity")
+          .insert(
+            Organisational_Activity(id, orgId)
+          )
+      }
+
+      input.contactPeople.forEach { contactPerson ->
+        supabase.from("activity_member")
+          .insert(
+            Activity_Member(
+              activity_id = id,
+              member_id = contactPerson[0],
+              post = contactPerson[1],
+              priority = contactPerson[2].toInt()
+            )
+          )
+        }
+      return true
+    }catch (e: Exception){
+      println(e)
+      return false
+    }
   }
+
   fun removeActivity(activityId: Uuid): Boolean {
     return false
   }
@@ -200,16 +327,6 @@ class ActivityMutation : Mutation {
   }
 }
 
-//class CustomSchemaGeneratorHooks : SchemaGeneratorHooks {
-//  @OptIn(ExperimentalUuidApi::class)
-//  override fun willGenerateGraphQLType(type: KType): GraphQLType? {
-//    return when(type.classifier as? KClass<*>){
-//      Uuid::class -> graphqlUuidType
-//      LocalDateTime::class -> LocalDateTimeScalar.instance
-//      else -> super.willGenerateGraphQLType(type)
-//    }
-//  }
-//}
 
 class CustomSchemaGeneratorHooks : FlowSubscriptionSchemaGeneratorHooks() {
   @OptIn(ExperimentalUuidApi::class)

@@ -54,7 +54,7 @@ fun ActivitiesContainer(navController: NavHostController, onNavigateToActivityDe
         if(it == 0){
           ActivitiesScreen(navController, onNavigateToActivityDetails)
         }else{
-          ActivityFormPreview()
+          ActivityForm()
         }
       }
     }

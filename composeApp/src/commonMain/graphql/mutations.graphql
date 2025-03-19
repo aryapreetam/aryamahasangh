@@ -1,5 +1,5 @@
-mutation addOrganisation($input: OrganisationInput!) {
-  addOrganisation(input: $input)
+mutation AddOrganisationActivity($input: OrganisationActivityInput!){
+  addOrganisationActivity(input: $input)
 }
 
 mutation AddStudentAdmissionData($input: AdmissionFormDataInput!) {

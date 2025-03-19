@@ -33,7 +33,6 @@ import org.aryamahasangh.OrganisationalActivityDetailQuery.ContactPeople
 import org.aryamahasangh.OrganisationalActivityDetailQuery.OrganisationalActivity
 import org.aryamahasangh.components.activityTypeData
 import org.aryamahasangh.network.apolloClient
-import org.aryamahasangh.type.ActivityType
 import org.aryamahasangh.utils.format
 import org.aryamahasangh.utils.formatDateTime
 import org.jetbrains.compose.resources.painterResource
@@ -56,45 +55,48 @@ fun ActivityDetailScreen(id: String) {
   ActivityDisplay(data)
 }
 
-@Preview
-@Composable
-fun ActivityDisplayPreview(){
-  val activity = OrganisationalActivityDetailQuery.OrganisationalActivity(
-    id = "",
-    name =  "नियमित संध्या अनुष्ठान अभियान",
-    description = "ईश के ज्ञान से लोक में जांच के आर्य कार्य आगे बढ़ाते रहें। नित्य है ना मिटे ना हटे ले चले प्रार्थना प्रेम से भाव लाते रहें।",
-        associatedOrganisation =  listOf(
-        "राष्ट्रीय आर्य निर्मात्री सभा"
-        ),
-        activityType = ActivityType.EVENT,
-        place =  "रोहतक",
-        startDateTime = "2025-02-25T09:04:42.006965",
-        endDateTime = "2025-05-15T09:04:42.006965",
-        mediaFiles = listOf(
-        "https://images.pexels.com/photos/209831/pexels-photo-209831.jpeg?auto=compress&cs=tinysrgb&w=200&dpr=1&fit=crop&h=150",
-        "https://images.pexels.com/photos/1402787/pexels-photo-1402787.jpeg?auto=compress&cs=tinysrgb&w=200&dpr=1&fit=crop&h=150"
-        ),
-        additionalInstructions = "शान्तिपाठ + जयघोष अभिवादन + प्रसाद वितरण।\nसभी आर्यसमाज पदाधिकारी अवश्य पहुंचें और संगठित स्वरूप को प्रकाशित करें !!",
-        contactPeople = listOf(
-          ContactPeople(
-            member = OrganisationalActivityDetailQuery.Member(
-              name = "आचार्य संजीव आर्य",
-              profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_sanjiv.webp",
-              phoneNumber = "9045353309"
-            ),
-            post = "अध्यक्ष",
-            priority = 1
-          )
-        )
-  )
-  Surface(Modifier.background(Color.White)){
-    ActivityDisplay(activity)
-  }
-}
+//@Preview
+//@Composable
+//fun ActivityDisplayPreview(){
+//  val activity = OrganisationalActivityDetailQuery.OrganisationalActivity(
+//    id = "",
+//    name =  "नियमित संध्या अनुष्ठान अभियान",
+//    description = "ईश के ज्ञान से लोक में जांच के आर्य कार्य आगे बढ़ाते रहें। नित्य है ना मिटे ना हटे ले चले प्रार्थना प्रेम से भाव लाते रहें।",
+//        associatedOrganisations = listOf(
+//          OrganisationalActivityDetailQuery.AssociatedOrganisation("sdfsdfdsf", "राष्ट्रीय आर्य निर्मात्री सभा")
+//        ),
+//        activityType = ActivityType.EVENT,
+//        district =  "रोहतक",
+//        startDateTime = "2025-02-25T09:04:42.006965",
+//        endDateTime = "2025-05-15T09:04:42.006965",
+//        mediaFiles = listOf(
+//        "https://images.pexels.com/photos/209831/pexels-photo-209831.jpeg?auto=compress&cs=tinysrgb&w=200&dpr=1&fit=crop&h=150",
+//        "https://images.pexels.com/photos/1402787/pexels-photo-1402787.jpeg?auto=compress&cs=tinysrgb&w=200&dpr=1&fit=crop&h=150"
+//        ),
+//        additionalInstructions = "शान्तिपाठ + जयघोष अभिवादन + प्रसाद वितरण।\nसभी आर्यसमाज पदाधिकारी अवश्य पहुंचें और संगठित स्वरूप को प्रकाशित करें !!",
+//      contactPeople = listOf(
+//        ContactPeople(
+//          member = OrganisationalActivityDetailQuery.Member(
+//            name = "आचार्य संजीव आर्य",
+//            profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_sanjiv.webp",
+//            phoneNumber = "9045353309"
+//          ),
+//          post = "अध्यक्ष",
+//          priority = 1
+//        )
+//      ),
+//        address = "sdfsdf",
+//        state = "sdffsdf"
+//  )
+//  Surface(Modifier.background(Color.White)){
+//    ActivityDisplay(activity)
+//  }
+//}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ActivityDisplay(activity: OrganisationalActivity) {
+  println(activity)
   //Profile Image URLS
   Column(
     modifier = Modifier
@@ -117,7 +119,7 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
 
     // Description
     Text(
-      text = activity.description,
+      text = activity.longDescription,
       style = MaterialTheme.typography.bodyLarge,
       modifier = Modifier.padding(vertical = 8.dp)
     )
@@ -129,12 +131,13 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
       style = MaterialTheme.typography.titleMedium,
       fontWeight = FontWeight.Bold,
     )
-    FlowRow(horizontalArrangement =  Arrangement.spacedBy(4.dp),
-      verticalArrangement =  Arrangement.spacedBy(4.dp)) {
-      activity.associatedOrganisation.forEach { associatedOrg ->
+    FlowRow(
+      horizontalArrangement =  Arrangement.spacedBy(4.dp),
+      verticalArrangement =  Arrangement.spacedBy(-12.dp)) {
+      activity.associatedOrganisations.forEach { associatedOrg ->
         AssistChip(
           onClick = { },
-          label = { Text(associatedOrg) }
+          label = { Text(associatedOrg.name) }
         )
       }
     }
@@ -147,7 +150,7 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
     ) {
       Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Place", tint = Color.Gray)
       Spacer(modifier = Modifier.width(4.dp))
-      Text(text = "स्थान: ${activity.place}", style = MaterialTheme.typography.bodyMedium)
+      Text(text = "स्थान: ${activity.district}", style = MaterialTheme.typography.bodyMedium)
     }
 
     // Start and End Date/Time

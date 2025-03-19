@@ -1,5 +1,6 @@
 package org.aryamahasangh.network
 
+import com.apollographql.adapter.datetime.KotlinxLocalDateTimeAdapter
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.http.HttpRequest
 import com.apollographql.apollo.api.http.HttpResponse
@@ -7,14 +8,18 @@ import com.apollographql.apollo.network.http.HttpInterceptor
 import com.apollographql.apollo.network.http.HttpInterceptorChain
 import com.apollographql.ktor.http.KtorHttpEngine
 import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.serializer.KotlinXSerializer
 import io.github.jan.supabase.storage.Storage
 import io.github.jan.supabase.storage.resumable.SettingsResumableCache
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.json.Json
 import org.aryamahasangh.isAndroid
+import org.aryamahasangh.type.LocalDateTime
 
-const val localDev = false
+const val localDev = true
 // "10.0.2.2"
 val host = if(isAndroid()) "10.0.2.2" else "localhost"
 val port = "4000"
@@ -26,6 +31,7 @@ val apolloClient = ApolloClient.Builder()
   .addHttpHeader("Access-Control-Allow-Origin", "*")
   .httpEngine(KtorHttpEngine())
   .addHttpInterceptor(AuthorizationInterceptor())
+  .addCustomScalarAdapter(LocalDateTime.type, KotlinxLocalDateTimeAdapter)
   .build()
 
 class AuthorizationInterceptor() : HttpInterceptor {
@@ -88,7 +94,15 @@ val supabaseClient = createSupabaseClient(
       cache = SettingsResumableCache()
     }
   }
+  install(Postgrest){
+  }
+  defaultSerializer = KotlinXSerializer(Json{
+    ignoreUnknownKeys = true // Avoid errors if unknown fields are received
+    encodeDefaults = true
+    prettyPrint = true
+  })
 }
 const val BUCKET = "documents"
 val resumableClient = supabaseClient.storage[BUCKET].resumable
 val bucket = supabaseClient.storage[BUCKET]
+

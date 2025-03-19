@@ -12,9 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.aryamahasangh.OrganisationalActivitiesQuery.OrganisationalActivity
 import org.aryamahasangh.components.ActivityListItem
-import org.aryamahasangh.type.ActivityType
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import kotlin.random.Random
 
 val indianStatesToDistricts =
   mapOf(
@@ -57,14 +55,14 @@ fun JoinUsScreen() {
           "आप निर्मात्री सभा द्वारा आयोजित दो दिवसीय लघु गुरुकुल पाठ्यक्रम पूर्ण कर आर्य महासंघ से जुड़ सकते है। \n" +
           "निचे आप अपना क्षेत्र चुनकर आपके क्षेत्रों में आयोजित होने वाले सत्रों के विवरण देख सकते है। ")
 
-      ActivityForm()
+      UpcomingActivitiesForm()
     }
 }
 
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ActivityForm() {
+fun UpcomingActivitiesForm() {
   var selectedState by remember { mutableStateOf<String?>(null) }
   var selectedDistrict by remember { mutableStateOf<String?>(null) }
   var activities by remember { mutableStateOf<List<OrganisationalActivity>>(emptyList()) }
@@ -101,7 +99,7 @@ fun ActivityForm() {
     Button(
       onClick = {
         // Simulate fetching activities (Replace with your API call)
-        activities = fetchActivities(selectedState, selectedDistrict)
+        //activities = fetchActivities(selectedState, selectedDistrict)
       },
       enabled = showActivitiesEnabled,
       modifier = Modifier.align(Alignment.Start).padding(top = 8.dp, bottom = 8.dp)
@@ -209,11 +207,11 @@ fun DistrictDropdown(districts: List<String>, selectedDistrict: String?, onDistr
   }
 }
 
-@Preview
-@Composable
-fun ActivityListPreview(){
-  ActivitiesList(fetchActivities("Maharashtra", "Mumbai"))
-}
+//@Preview
+//@Composable
+//fun ActivityListPreview(){
+//  ActivitiesList(fetchActivities("Maharashtra", "Mumbai"))
+//}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -241,78 +239,6 @@ fun ActivitiesList(activities: List<OrganisationalActivity>) {
 val listOfCities = "फरीदाबाद, गुड़गांव, मेवात, रोहतक, सोनीपत, रेवाड़ी, झज्जर, पानीपत, पलवल, महेंद्रगढ़, भिवानी,जींद, मेरठ, गाजियाबाद, गौतम बुद्ध नगर (नोएडा), ग्रेटर नोएडा, बुलंदशहर, बागपत, हापुड़, मुजफ्फरनगर"
 
 val placeDesc = listOf("संत भवन", "आर्य समाज", "शहर उद्यान", "गुरूकुल प्रांगण", "सामाजिक भवन")
-
-fun fetchActivities(state: String?, district: String?): List<OrganisationalActivity> {
-  // Simulate fetching activities from a data source
-  // Replace this with your actual API call or data retrieval logic
-  val filteredActivities = mutableListOf<OrganisationalActivity>()
-  val allActivities = listOf(
-    OrganisationalActivity(
-      id = "1",
-      name = "आर्य प्रशिक्षण सत्र",
-      description = "महान संत परम्पराओं को जानने का बौद्धिक प्रकल्प",
-      startDateTime = "2025-05-10T14:00:00",
-      endDateTime = "2025-05-10T15:00:00",
-      activityType = ActivityType.SESSION,
-      place = "${placeDesc.random()}, ${listOfCities.split(",").random()}"
-    )
-    ,
-      OrganisationalActivity(
-        id = "2",
-        name = "आर्या प्रशिक्षण सत्र",
-        description = "महान संत परम्पराओं को जानने का बौद्धिक प्रकल्प",
-        startDateTime = "2025-04-22T09:00:00",
-        endDateTime = "2025-04-22T12:00:00",
-        activityType = ActivityType.SESSION,
-        place = "${placeDesc.random()}, ${listOfCities.split(",").random()}"
-      )
-    ,
-      OrganisationalActivity(
-        id = "3",
-        name = "आर्या प्रशिक्षण सत्र",
-        description = "महान संत परम्पराओं को जानने का बौद्धिक प्रकल्प",
-        startDateTime = "2025-05-10T14:00:00",
-        endDateTime = "2025-05-10T15:00:00",
-        activityType = ActivityType.SESSION,
-        place = "${placeDesc.random()}, ${listOfCities.split(",").random()}"
-    ),
-      OrganisationalActivity(
-        id = "4",
-        name = "आर्य प्रशिक्षण सत्र",
-        description = "महान संत परम्पराओं को जानने का बौद्धिक प्रकल्प",
-        startDateTime = "2025-02-20T15:38:26.337446",
-        endDateTime = "2025-04-08T15:38:26.337446",
-        activityType = ActivityType.SESSION,
-        place = "${placeDesc.random()}, ${listOfCities.split(",").random()}"
-    )
-  )
-
-  //Filter activities according to state
-  val stateActivities = allActivities.filter {
-      organisationalActivity ->
-    organisationalActivity.place.contains(state ?: "", ignoreCase = true)
-  }
-
-  //Then filter further with district if needed
-  if(district != null){
-    stateActivities.filter {
-        organisationalActivity ->
-      organisationalActivity.place.contains(district, ignoreCase = true)
-    }
-  }
-  else{
-    return stateActivities;
-  }
-
-//  val aa = buildList {
-//    repeat(100) {
-//      val ac = allActivities[0].copy(id = "$it")
-//      add(ac)
-//    }
-//  }
-//  return aa.take(Random.nextInt(20,aa.size))
-  return allActivities.take(Random.nextInt(2,allActivities.size))
-}
 
 @Preview
 @Composable

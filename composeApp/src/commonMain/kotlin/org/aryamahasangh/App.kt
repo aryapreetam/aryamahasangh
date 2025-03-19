@@ -33,6 +33,38 @@ import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
+//@Serializable
+//data class Test(
+//  val id: String? = null,
+//  @Serializable(with = LocalDateTimeSerializer::class)
+//  @SerialName("created_at")
+//  val createdAt: LocalDateTime? = null,
+//  val type: ActivityType,
+//  val files: List<String>
+//)
+//
+//@Serializable
+//data class TestInput(
+//  val type: ActivityType,
+//  val files: List<String>
+//)
+//
+//object LocalDateTimeSerializer : KSerializer<LocalDateTime> {
+//  override val descriptor: SerialDescriptor =
+//    PrimitiveSerialDescriptor("LocalDateTime", PrimitiveKind.STRING)
+//
+//  override fun serialize(encoder: Encoder, value: LocalDateTime) {
+//    // Serialize LocalDateTime to a string (if needed)
+//    encoder.encodeString(value.toString())
+//  }
+//
+//  override fun deserialize(decoder: Decoder): LocalDateTime {
+//    // Deserialize the timestamp string into LocalDateTime
+//    val timestamp = decoder.decodeString()
+//    return kotlinx.datetime.Instant.parse(timestamp)
+//      .toLocalDateTime(TimeZone.UTC) // Convert to LocalDateTime in UTC
+//  }
+//}
 
 @Composable
 @Preview
@@ -41,7 +73,16 @@ fun App() {
     AppTheme {
       // for quickly testing the components
       //DemoComposable()
+//      val scope = rememberCoroutineScope()
+//      val test = TestInput(type = ActivityType.CAMPAIGN, files = listOf("Test", "Test1"))
+//      scope.launch {
+//        val res = supabaseClient.from("test").insert(test){
+//          select()
+//        }.decodeSingle<Test>()
+//        println("res: ${res}")
+//      }
       AppDrawer()
+
     }
   }
 }

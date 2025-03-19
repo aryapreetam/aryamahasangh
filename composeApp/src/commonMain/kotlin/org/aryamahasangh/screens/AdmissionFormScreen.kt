@@ -395,7 +395,7 @@ fun ButtonForFilePicker(label: String?, onFilesSelected: (List<PlatformFile>?) -
     println(files)
     onFilesSelected(files)
   }
-  Button(onClick = {
+  OutlinedButton(onClick = {
     launcher.launch()
   }) {
     Text(label ?: "Select Documents")
@@ -430,7 +430,7 @@ fun StudentPhotoSection(
       }
     }
 
-    Button(onClick = {
+    OutlinedButton(onClick = {
       launcher.launch()
     }) {
       Text("Select Photo")
@@ -489,13 +489,13 @@ fun SignatureSection(
         ) { file ->
           onSignatureSelected(file)
         }
-        Button(onClick = {
+        OutlinedButton(onClick = {
           launcher.launch()
         }) {
           Text("Upload Image")
         }
 
-        Button(onClick = {
+        OutlinedButton(onClick = {
           //onSignatureSelected("path")
         }) {
           Text("Draw Signature")
