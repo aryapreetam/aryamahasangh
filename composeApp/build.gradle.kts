@@ -78,6 +78,8 @@ kotlin {
       implementation("com.apollographql.apollo:apollo-runtime:4.1.1")
       implementation("com.apollographql.apollo:apollo-normalized-cache:4.1.1")
       implementation("com.apollographql.ktor:apollo-engine-ktor:0.1.1")
+      implementation("com.apollographql.adapters:apollo-adapters-core:0.0.4")
+      implementation("com.apollographql.adapters:apollo-adapters-kotlinx-datetime:0.0.4")
       implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
 
 
@@ -93,6 +95,8 @@ kotlin {
       implementation(platform("io.github.jan-tennert.supabase:bom:3.1.2"))
       implementation("io.github.jan-tennert.supabase:auth-kt")
       implementation("io.github.jan-tennert.supabase:storage-kt")
+      implementation("io.github.jan-tennert.supabase:postgrest-kt")
+      implementation("io.github.jan-tennert.supabase:realtime-kt")
       implementation("io.github.dokar3:sonner:0.3.8")
       implementation("dev.burnoo:compose-remember-setting:1.0.3")
     }

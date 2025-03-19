@@ -1,15 +1,12 @@
 package org.aryamahasangh
 
-import com.expediagroup.graphql.generator.scalars.ID
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
-data class Video(val id: ID, val title: String, val description: String, val url: String, val thumbnailUrl: String, val videoId: String)
+data class Video(val id: String = "", val title: String, val description: String, val url: String, val thumbnailUrl: String, val videoId: String)
 
 @OptIn(ExperimentalUuidApi::class)
 val videosList: List<Video> = listOf(
   Video(
-    id = ID(Uuid.random().toString()),
     title = "सत्यार्थ प्रकाश व्याख्या भाग १",
     description = "ईश्वर के नाम की व्याख्या भाग 1",
     url = "https://www.youtube.com/watch?v=VRV-DbnKekM",
@@ -17,7 +14,7 @@ val videosList: List<Video> = listOf(
     videoId = "VRV-DbnKekM"
   ),
   Video(
-    id = ID(Uuid.random().toString()),
+    
     title = "सत्यार्थ प्रकाश व्याख्या भाग २",
     description = "ईश्वर के नाम की व्याख्या भाग 2",
     url = "https://youtu.be/rRwCUgkLVd0?si=6C009TfX_rquQ04i",
@@ -25,7 +22,7 @@ val videosList: List<Video> = listOf(
     videoId = "rRwCUgkLVd0"
   ),
   Video(
-    id = ID(Uuid.random().toString()),
+    
     title = "सत्यार्थ प्रकाश व्याख्या भाग ३",
     description = "ईश्वर के नाम की व्याख्या भाग 3",
     url = "https://youtu.be/cy6K36_OIUM?si=9qMC8y5FOUnlH7EK",
@@ -33,7 +30,7 @@ val videosList: List<Video> = listOf(
     videoId = "cy6K36_OIUM"
   ),
   Video(
-    id = ID(Uuid.random().toString()),
+    
     title = "सत्यार्थ प्रकाश व्याख्या भाग ४",
     description = "ईश्वर के नाम की व्याख्या भाग 4",
     url = "https://youtu.be/sEcX__iDeYY?si=r-MS2pq07OXohRNq",
@@ -41,7 +38,7 @@ val videosList: List<Video> = listOf(
     videoId = "sEcX__iDeYY"
   ),
   Video(
-    id = ID(Uuid.random().toString()),
+    
     title = "सत्यार्थ प्रकाश व्याख्या भाग ५",
     description = "ईश्वर के नाम की व्याख्या भाग 5",
     url = "https://youtu.be/bctMktlkK_o?si=0QI7PHohOeTgQn_h",
@@ -49,7 +46,7 @@ val videosList: List<Video> = listOf(
     videoId = "bctMktlkK_o"
   ),
   Video(
-    id = ID(Uuid.random().toString()),
+    
     title = "सत्यार्थ प्रकाश व्याख्या भाग ६",
     description = "ईश्वर के नाम की व्याख्या भाग 6",
     url = "https://youtu.be/dvbRLdr-7u8?si=rfwUz0aKF8sBpx-e",
@@ -57,7 +54,7 @@ val videosList: List<Video> = listOf(
     videoId = "dvbRLdr-7u8"
   ),
   Video(
-    id = ID(Uuid.random().toString()),
+    
     title = "सत्यार्थ प्रकाश व्याख्या भाग ७",
     description = "ईश्वर के नाम की व्याख्या भाग 7",
     url = "https://youtu.be/fVwaRGcEro0?si=81TL202kVH1nVMZX",
@@ -65,7 +62,7 @@ val videosList: List<Video> = listOf(
     videoId = "fVwaRGcEro0"
   ),
   Video(
-    id = ID(Uuid.random().toString()),
+    
     title = "सत्यार्थ प्रकाश व्याख्या भाग ८",
     description = "ईश्वर के नाम की व्याख्या भाग 8",
     url = "https://youtu.be/NEKbz6dx-70?si=xxejuZkGARNE5-Hf",
@@ -73,7 +70,7 @@ val videosList: List<Video> = listOf(
     videoId = "NEKbz6dx-70"
   ),
   Video(
-    id = ID(Uuid.random().toString()),
+    
     title = "सत्यार्थ प्रकाश व्याख्या भाग ९",
     description = "ईश्वर के नाम की व्याख्या भाग 9",
     url = "https://youtu.be/soEbIFT29TM?si=r-cHEaW8u6QGjfae",
@@ -81,7 +78,7 @@ val videosList: List<Video> = listOf(
     videoId = "soEbIFT29TM"
   ),
   Video(
-    id = ID(Uuid.random().toString()),
+    
     title = "सत्यार्थ प्रकाश व्याख्या भाग १०",
     description = "ईश्वर के नाम की व्याख्या भाग 10",
     url = "https://youtu.be/72Cwf248Qr4?si=aD2s3b8OPoTC72Bu",
@@ -89,7 +86,7 @@ val videosList: List<Video> = listOf(
     videoId = "72Cwf248Qr4"
   ),
   Video(
-    id = ID(Uuid.random().toString()),
+    
     title = "सत्यार्थ प्रकाश व्याख्या भाग ११",
     description = "ईश्वर के नाम की व्याख्या भाग 11",
     url = "https://youtu.be/NqRqziicZ60?si=BNJ_yOGikTicaWc0",
@@ -97,7 +94,7 @@ val videosList: List<Video> = listOf(
     videoId = "NqRqziicZ60"
   ),
   Video(
-    id = ID(Uuid.random().toString()),
+    
     title = "सत्यार्थ प्रकाश व्याख्या भाग १२",
     description = "ईश्वर के नाम की व्याख्या भाग 12",
     url = "https://youtu.be/XECGokLT14I?si=BC7J8YeemCk04-J-",
@@ -105,7 +102,7 @@ val videosList: List<Video> = listOf(
     videoId = "XECGokLT14I"
   ),
   Video(
-    id = ID(Uuid.random().toString()),
+    
     title = "सत्यार्थ प्रकाश व्याख्या भाग १३",
     description = "ईश्वर के नाम की व्याख्या भाग 13",
     url = "https://youtu.be/Gi4sJr8HC1U?si=IO39Q78eXew8AIvW",
@@ -113,7 +110,7 @@ val videosList: List<Video> = listOf(
     videoId = "Gi4sJr8HC1U"
   ),
   Video(
-    id = ID(Uuid.random().toString()),
+    
     title = "सत्यार्थ प्रकाश व्याख्या भाग १४",
     description = "ईश्वर के नाम की व्याख्या भाग 14",
     url = "https://youtu.be/IAxmzH9RWnY?si=ewV6JhLGeFq7b3BI",
@@ -121,7 +118,7 @@ val videosList: List<Video> = listOf(
     videoId = "IAxmzH9RWnY"
   ),
   Video(
-    id = ID(Uuid.random().toString()),
+    
     title = "सत्यार्थ प्रकाश व्याख्या भाग १५",
     description = "ईश्वर के नाम की व्याख्या भाग 15",
     url = "https://youtu.be/G7zuARqZqV4?si=VsdQ4-z_MGSgm5i1",
@@ -129,7 +126,7 @@ val videosList: List<Video> = listOf(
     videoId = "G7zuARqZqV4"
   ),
   Video(
-    id = ID(Uuid.random().toString()),
+    
     title = "सत्यार्थ प्रकाश व्याख्या भाग १६",
     description = "ईश्वर के नाम की व्याख्या भाग 16",
     url = "https://youtu.be/0ZHfmjXOsU4?si=co5FbH5oC49w4s-v",
@@ -137,7 +134,7 @@ val videosList: List<Video> = listOf(
     videoId = "0ZHfmjXOsU4"
   ),
   Video(
-    id = ID(Uuid.random().toString()),
+    
     title = "सत्यार्थ प्रकाश व्याख्या भाग १७",
     description = "ईश्वर के नाम की व्याख्या भाग 17",
     url = "https://youtu.be/hiz91U2Pdrc?si=McnwMQ__jHPnSxIL",
@@ -145,7 +142,7 @@ val videosList: List<Video> = listOf(
     videoId = "hiz91U2Pdrc"
   ),
   Video(
-    id = ID(Uuid.random().toString()),
+    
     title = "सत्यार्थ प्रकाश व्याख्या भाग १८",
     description = "ईश्वर के नाम की व्याख्या भाग 18",
     url = "https://youtu.be/ik3LGaLZrjU?si=1dTIqgfctdr7LvpL",
@@ -153,7 +150,7 @@ val videosList: List<Video> = listOf(
     videoId = "ik3LGaLZrjU"
   ),
   Video(
-    id = ID(Uuid.random().toString()),
+    
     title = "सत्यार्थ प्रकाश व्याख्या भाग १९",
     description = "ईश्वर के नाम की व्याख्या भाग 19",
     url = "https://youtu.be/LM6y7FPHzM8?si=p4x524U0F0FKnKqy",
@@ -161,7 +158,7 @@ val videosList: List<Video> = listOf(
     videoId = "LM6y7FPHzM8"
   ),
   Video(
-    id = ID(Uuid.random().toString()),
+    
     title = "सत्यार्थ प्रकाश व्याख्या भाग २०",
     description = "ईश्वर के नाम की व्याख्या भाग 20",
     url = "https://youtu.be/6lm_5-qHcJw?si=SZ8DYiS88gADAOt-",

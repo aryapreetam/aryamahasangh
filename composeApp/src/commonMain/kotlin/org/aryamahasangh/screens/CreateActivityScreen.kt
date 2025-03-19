@@ -26,70 +26,43 @@ import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import io.github.vinceglb.filekit.core.PlatformFile
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import kotlinx.serialization.Serializable
+import org.aryamahasangh.AddOrganisationActivityMutation
+import org.aryamahasangh.OrganisationsAndMembersQuery
+import org.aryamahasangh.OrganisationsAndMembersQuery.Member
+import org.aryamahasangh.OrganisationsAndMembersQuery.Organisation
+import org.aryamahasangh.network.apolloClient
+import org.aryamahasangh.type.ActivityType
+import org.aryamahasangh.type.OrganisationActivityInput
 
-// Data classes defined directly in Kotlin
-data class Organisation(val id: String, val name: String)
-data class Member(val id: String, val name: String, val phoneNumber: String, val profileImage: String)
-data class FormData1(val organisations: List<Organisation>, val members: List<Member>)
-
-// Mock JSON data converted to Kotlin object
-val mockFormData1 = FormData1(
-  organisations = listOf(
-    Organisation("31e8e401-fed7-4ab9-a7fb-b031488ae3a5", "राष्ट्रीय आर्य निर्मात्री सभा"),
-    Organisation("531c09ef-996f-47f0-9c88-88a9f7fa5380", "राष्ट्रीय आर्य क्षत्रिय सभा"),
-    Organisation("221465d0-ba28-4e43-85a0-dfe166003b48", "राष्ट्रीय आर्य संरक्षिणी सभा"),
-    Organisation("b10b4fec-0e39-439b-b8cd-747e4ac30035", "राष्ट्रीय आर्य संवर्धिनी सभा"),
-    Organisation("d9be2e8e-ce2e-4c10-ac74-e3f8eb1198b8", "राष्ट्रीय आर्य दलितोद्धारिणी सभा"),
-    Organisation("3d0d3f88-fbc9-415a-9182-833fe08454e6", "आर्य गुरुकुल महाविद्यालय"),
-    Organisation("ac0a79c1-e9aa-474c-8ba5-d9342c56a6bc", "आर्या गुरुकुल महाविद्यालय"),
-    Organisation("47790da8-8ec4-44e6-b0cc-39f0f95ee6b4", "आर्या परिषद्"),
-    Organisation("1bc501ee-283c-4b64-92e8-a067f08ef39d", "वानप्रस्थ आयोग"),
-    Organisation("f8e82b92-0e9e-4f59-976f-650f6b11774e", "राष्ट्रीय आर्य संचार परिषद"),
-    Organisation("a5a834db-10c6-4de8-b173-c72dfdb2cec8", "आर्य महासंघ")
-  ),
-  members = listOf(
-    Member("1e4c75f8-4271-4e20-b00e-82a5162af9e3", "आचार्य जितेन्द्र आर्य", "9416201731", "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image/achary_jitendra.webp"),
-    Member("98072b81-4c63-4ffb-9643-90174107449e", "आचार्य डॉ० महेशचन्द्र आर्य", "9813377510", "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image/achary_mahesh.webp"),
-    Member("6c6d0a7b-ef6a-4308-8bd0-2f66e1cff8c0", "डॉ० महेश आर्य", "9810485231", "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image/dr_mahesh_arya.webp"),
-    Member("e8f81733-2c37-410e-900c-6132529dcd93", "उपाचार्य जसबीर आर्य", "9871092222", "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp"),
-    Member("ec0b342e-6433-440b-bf0c-17530bf3131d", "सौम्य आर्य", "9466944880", "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp"),
-    Member("6541d219-e860-4998-a022-4efda1e56cff", "आर्य प्रवेश 'प्रघोष'", "7419002189", "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image/arya_pravesh_ji.webp"),
-    Member("5584e2ca-fc87-49f8-a110-cdbdf7f4b343", "आचार्य संजीव आर्य", "9045353309", "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image/achary_sanjiv.webp"),
-    Member("8c419841-6dde-464e-b257-e8b93fbab5dc", "आर्य सुशील", "9410473224", ""),
-    Member("965e76fc-d7cc-49b0-a514-ae99745fd261", "आचार्य वर्चस्पति", "9053347826", "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image/achary_varchaspati.webp"),
-    Member("951b33a0-c5d5-41c1-b136-4c4e3f56358c", "आर्य वेदप्रकाश", "8168491108", ""),
-    Member("cf298218-90ad-46dc-8eff-2c8f3f31b6cd", "सुखविंदर आर्य", "8529616314", "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image/anil_arya.webp"),
-    Member("75235ee0-a6cd-4472-87f3-1c1e13b16f9f", "आर्य धर्मबीर शास्त्री", "9812428391", "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp"),
-    Member("661a0db7-12da-4179-8611-b94c2c10072b", "आर्य संदीप शास्त्री", "9812492102", ""),
-    Member("b0dd89d1-3a79-4669-a0e0-4ff65a74386a", "अश्विनी आर्य", "9719375460", "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image/achary_ashvani.webp"),
-    Member("f9d0aa23-d579-4915-a7b1-0f976a28cdb0", "आचार्या इन्द्रा", "9868912128", "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image/acharya_indra.webp"),
-    Member("994a668a-cae7-4eac-b7df-3f72fedb9176", "आचार्या डॉ० सुशीला", "9355690824", "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image/acharya_suman.webp"),
-    Member("1609b32d-0595-4716-b807-dc0155106790", "आर्या रेनु", "9999999999", ""),
-    Member("0663ea2e-6bfc-47fe-8cb7-b3b33fd78891", "पंडित लोकनाथजी आर्य", "7015563934", "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image/achary_loknath.webp"),
-    Member("d29b0b9a-9737-4743-9a94-7836016c0601", "श्री शिवनारायणजी आर्य", "9466140987", "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image/arya_shivnarayan.webp"),
-    Member("c2cce78b-7817-4e47-bccb-a4a130952ef6", "अनिल आर्य", "9416037102", "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image/anil_arya.webp"),
-    Member("fea837b1-b7ed-4737-8ff9-7d9f41e6f82b", "आचार्य हनुमत् प्रसाद", "9868792232", "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image/achary_hanumat_prasad.webp"),
-    Member("9b2ae964-e646-4518-8a92-3c451019882a", "आचार्य सतीश", "9350945482", "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image/achary_satish.webp"),
-    Member("51fd156f-abd2-46c0-84bb-074850496de1", "आर्य जसबीर सिंह", "9717647455", "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image/upachary_jasbir_arya.webp")
-  )
+val stringToActivityTypeMap = mapOf(
+  "कक्षा" to ActivityType.COURSE,
+  "कार्यक्रम" to ActivityType.EVENT,
+  "अभियान" to ActivityType.CAMPAIGN,
+  "सत्र" to ActivityType.SESSION,
 )
 
-//fun parseJson(jsonString: String): FormData {  //No longer needed
-//    val json = Json {
-//        ignoreUnknownKeys = true
-//    }
-//    val parsed = json.decodeFromString<Data>(jsonString)
-//    return FormData(parsed.data.organisations, parsed.data.members)
-//}
-
+val activityTypeToStringMap = mapOf(
+  ActivityType.COURSE to "कक्षा",
+  ActivityType.EVENT to "कार्यक्रम",
+  ActivityType.CAMPAIGN to "अभियान",
+  ActivityType.SESSION to "सत्र",
+)
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ActivityForm(formData1: FormData1) { // Take FormData object directly
+fun ActivityForm() { // Take FormData object directly
+
+  var organisations by remember { mutableStateOf(emptyList<OrganisationsAndMembersQuery.Organisation>()) }
+  var members by remember { mutableStateOf(emptyList<OrganisationsAndMembersQuery.Member>()) }
+
+  LaunchedEffect(Unit) {
+    val orgsAndMembers = apolloClient.query(OrganisationsAndMembersQuery()).execute()
+    organisations = orgsAndMembers.data?.organisations ?: emptyList()
+    members = orgsAndMembers.data?.members ?: emptyList()
+  }
 
   // State variables for form fields
   var name by remember { mutableStateOf("") }
@@ -106,7 +79,7 @@ fun ActivityForm(formData1: FormData1) { // Take FormData object directly
   var description by remember { mutableStateOf("") }
   var descriptionError by remember { mutableStateOf(false) }
 
-  var associatedOrganisations by remember { mutableStateOf(emptySet<String>()) }
+  var associatedOrganisations by remember { mutableStateOf(emptySet<Organisation>()) }
   var associatedOrganisationsError by remember { mutableStateOf(false) }
 
   var address by remember { mutableStateOf("") }
@@ -117,15 +90,6 @@ fun ActivityForm(formData1: FormData1) { // Take FormData object directly
 
   var district by remember { mutableStateOf("") }
   var districtError by remember { mutableStateOf(false) }
-
-  val states = remember { listOf("Haryana", "Punjab", "Delhi") } //Dummy data
-  val districts = remember {
-    mutableStateMapOf(
-      "Haryana" to listOf("Gurugram", "Faridabad"),
-      "Punjab" to listOf("Ludhiana", "Amritsar"),
-      "Delhi" to listOf("New Delhi", "South Delhi")
-    )
-  }
 
   var pincode by remember { mutableStateOf("") }
   var pincodeError by remember { mutableStateOf(false) }
@@ -148,7 +112,7 @@ fun ActivityForm(formData1: FormData1) { // Take FormData object directly
   var attachedDocumentsErrorMessage by remember { mutableStateOf("") }
 
 
-  var contactPeople by remember { mutableStateOf(emptySet<String>()) }
+  var contactPeople by remember { mutableStateOf(emptySet<Member>()) }
   var contactPeopleError by remember { mutableStateOf(false) }
 
   var additionalInstructions by remember { mutableStateOf("") }
@@ -156,8 +120,6 @@ fun ActivityForm(formData1: FormData1) { // Take FormData object directly
   var isSubmitting by remember { mutableStateOf(false) }
 
   val scrollState = rememberScrollState()
-  val organisations = remember { formData1.organisations }
-  val members = remember { formData1.members }
 
   // Date Picker Dialog State
   val openStartDateDialog = remember { mutableStateOf(false) }
@@ -198,33 +160,43 @@ fun ActivityForm(formData1: FormData1) { // Take FormData object directly
         || endDateError || endTimeError || contactPeopleError)
   }
 
+  @Serializable
+  data class InsertResponse(
+    val id: Int // Only the ID will be returned
+  )
+
   fun submitForm() {
 
     if (validateForm()) {
       isSubmitting = true
       scope.launch {
-        delay(2000)
+        val inp =  OrganisationActivityInput(
+          name = name,
+          shortDescription = shortDescription,
+          longDescription = description,
+          activityType = stringToActivityTypeMap[selectedType!!]!!,
+          address = address,
+          state = state,
+          district = district,
+          pincode = pincode.toInt(),
+          associatedOrganisations = associatedOrganisations.map { it.id },
+          startDateTime = startDate?.atTime(startTime!!).toString(),
+          endDateTime = endDate?.atTime(endTime!!).toString(),
+          mediaFiles = listOf(),
+          contactPeople =  contactPeople.map { listOf(it.id, "Organiser", "0") },
+          additionalInstructions = additionalInstructions
+        )
+        val res = apolloClient.mutation(AddOrganisationActivityMutation(
+         inp
+        )).execute()
+
+        println("res: ${res}")
+
         isSubmitting = false
-        println("Form submitted with data:")
-        println("Name: $name")
-        println("Types: $selectedType")
-        println("Short Description: $shortDescription")
-        println("Description: $description")
-        println("Associated Organisations: $associatedOrganisations")
-        println("Address: $address")
-        println("State: $state")
-        println("District: $district")
-        println("Pincode: $pincode")
-        println("Start Date: $startDate")
-        println("Start Time: $startTime")
-        println("End Date: $endDate")
-        println("End Time: $endTime")
-        println("Contact People: $contactPeople")
-        println("Additional Instructions: $additionalInstructions")
 
         // Reset form
         name = ""
-        selectedType = ""
+        selectedType = null
         shortDescription = ""
         description = ""
         associatedOrganisations = emptySet()
@@ -370,7 +342,7 @@ fun ActivityForm(formData1: FormData1) { // Take FormData object directly
     MultiSelectDropdown(
       modifier = Modifier.width(500.dp),
       label = "संबधित संस्थाएं",
-      options = organisations.map { it.name },
+      options = organisations,
       selectedOptions = associatedOrganisations,
       onSelectionChanged = {
         associatedOrganisations = it
@@ -696,9 +668,9 @@ fun CustomDatePickerDialog(
 fun MultiSelectDropdown(
   modifier: Modifier,
   label: String,
-  options: List<String>,
-  selectedOptions: Set<String>,
-  onSelectionChanged: (Set<String>) -> Unit,
+  options: List<Organisation>,
+  selectedOptions: Set<Organisation>,
+  onSelectionChanged: (Set<Organisation>) -> Unit,
   isError: Boolean = false,
   supportingText: @Composable () -> Unit = {}
 ) {
@@ -717,7 +689,7 @@ fun MultiSelectDropdown(
           onClick = { onSelectionChanged(selectedOptions - option) },
           label = {
             Text(
-              text = option,
+              text = option.name,
               maxLines = 1,
               overflow = TextOverflow.Ellipsis
             )
@@ -740,7 +712,7 @@ fun MultiSelectDropdown(
     ) {
       OutlinedTextField(
         readOnly = true,
-        value = selectedOptions.joinToString(", "),
+        value = selectedOptions.joinToString(", ") { it.name },
         onValueChange = { },
         label = { Text(label) },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
@@ -754,7 +726,7 @@ fun MultiSelectDropdown(
       ) {
         options.forEach { option ->
           DropdownMenuItem(
-            text = { Text(text = option) },
+            text = { Text(text = option.name) },
             onClick = {
               onSelectionChanged(
                 if (option in selectedOptions) selectedOptions - option else selectedOptions + option
@@ -777,49 +749,6 @@ fun MultiSelectDropdown(
   }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun Dropdown(
-  label: String,
-  options: List<String>,
-  selectedValue: String,
-  onValueChanged: (String) -> Unit,
-  isError: Boolean = false,
-  supportingText: @Composable () -> Unit = {}
-) {
-  var expanded by remember { mutableStateOf(false) }
-
-  ExposedDropdownMenuBox(
-    expanded = expanded,
-    onExpandedChange = { expanded = !expanded },
-    modifier = Modifier.fillMaxWidth()
-  ) {
-    OutlinedTextField(
-      readOnly = true,
-      value = selectedValue,
-      onValueChange = { },
-      label = { Text(label) },
-      trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-      modifier = Modifier.menuAnchor().fillMaxWidth(),
-      isError = isError,
-      supportingText = supportingText
-    )
-    ExposedDropdownMenu(
-      expanded = expanded,
-      onDismissRequest = { expanded = false },
-    ) {
-      options.forEach { selectionOption ->
-        DropdownMenuItem(
-          text = { Text(selectionOption) },
-          onClick = {
-            onValueChanged(selectionOption)
-            expanded = false
-          }
-        )
-      }
-    }
-  }
-}
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -828,8 +757,8 @@ fun ContactPeopleDropdown(
   modifier: Modifier,
   label: String,
   members: List<Member>,
-  selectedMembers: Set<String>,
-  onSelectionChanged: (Set<String>) -> Unit,
+  selectedMembers: Set<Member>,
+  onSelectionChanged: (Set<Member>) -> Unit,
   isError: Boolean = false,
   supportingText: @Composable () -> Unit = {}
 ) {
@@ -843,10 +772,10 @@ fun ContactPeopleDropdown(
       horizontalArrangement = Arrangement.spacedBy(4.dp),
       verticalArrangement = Arrangement.spacedBy(-12.dp)
     ) {
-      members.filter { it.id in selectedMembers }.forEach { member ->
+      members.filter { it in selectedMembers }.forEach { member ->
         InputChip(
           selected = true,
-          onClick = { onSelectionChanged(selectedMembers - member.id) },
+          onClick = { onSelectionChanged(selectedMembers - member) },
           label = { Text(member.name) },
           //onDismiss = { onSelectionChanged(selectedMembers - member.id) },
           modifier = Modifier.padding(2.dp),
@@ -884,7 +813,7 @@ fun ContactPeopleDropdown(
     ) {
       OutlinedTextField(
         readOnly = true,
-        value = members.filter { it.id in selectedMembers }.joinToString(", ") { it.name },
+        value = members.filter { it in selectedMembers }.joinToString(", ") { it.name },
         onValueChange = { },
         label = { Text(label) },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
@@ -901,7 +830,7 @@ fun ContactPeopleDropdown(
             text = { Text(text = member.name) },
             onClick = {
               onSelectionChanged(
-                if (member.id in selectedMembers) selectedMembers - member.id else selectedMembers + member.id
+                if (member in selectedMembers) selectedMembers - member else selectedMembers + member
               )
 //              expanded = false
             },
@@ -922,7 +851,7 @@ fun ContactPeopleDropdown(
                 Icon(Icons.Filled.Face, contentDescription = "Profile", tint = Color.Gray)
               }
             },
-            trailingIcon = if (member.id in selectedMembers) {
+            trailingIcon = if (member in selectedMembers) {
               {
                 Icon(
                   imageVector = Icons.Default.Check,
@@ -1014,12 +943,4 @@ fun CustomTextField(
     isError = isError,
     supportingText = supportingText
   )
-
-
-}
-
-@Preview
-@Composable
-fun ActivityFormPreview() {
-  ActivityForm(formData1 = mockFormData1)  //Use the pre-parsed data
 }

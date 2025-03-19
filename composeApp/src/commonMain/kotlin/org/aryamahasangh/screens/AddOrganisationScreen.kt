@@ -290,6 +290,7 @@ fun KeyPersonInputForm() {
 @Composable
 fun PreviewOrganisationForm() {
   val sampleOrganisation = OrganisationQuery.Organisation(
+    id = "sdfdsf",
     name = "राष्ट्रीय आर्य निर्मात्री सभा",
     description = "प्रत्येक बुद्धिमान व्यक्ति यह समझ सकता है कि मानवीय जीवन अति दुर्लभ है...",
     logo = "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image//nirmatri_sabha.webp",

@@ -1,12 +1,25 @@
 query organisations{
   organisations{
+    id
     name
     description
   }
 }
 
+query OrganisationsAndMembers{
+  members{
+    id,
+    name
+    profileImage
+  }
+  organisations{
+    id
+    name
+  }
+}
 query organisation($name: String!) {
   organisation(name: $name){
+    id
     name
     logo
     description
@@ -32,7 +45,7 @@ query learningsItems {
   }
 }
 
-query LearningItemDetail($id: ID!){
+query LearningItemDetail($id: String!){
   learningItem(id: $id){
     id
     title
@@ -47,11 +60,11 @@ query organisationalActivities {
   organisationalActivities{
     id
     name
-    description
+    shortDescription
     startDateTime
     endDateTime
     activityType
-    place
+    district
   }
 }
 
@@ -61,10 +74,16 @@ query organisationalActivityDetail($id: String!){
   organisationalActivity(id: $id){
     id,
     name
-    description
-    associatedOrganisation
+    shortDescription
+    longDescription
+    associatedOrganisations {
+      id
+      name
+    }
     activityType
-    place
+    address
+    state
+    district
     startDateTime
     endDateTime
     mediaFiles

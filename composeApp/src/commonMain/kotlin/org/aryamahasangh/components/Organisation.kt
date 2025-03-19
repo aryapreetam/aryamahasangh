@@ -43,7 +43,7 @@ fun SabhaPreview(){
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun OrganisationDetail(organisation: OrganisationQuery.Organisation){
-  val (name, logo, description, keyPeople ) = organisation
+  val (id, name, logo, description, keyPeople ) = organisation
   Column(modifier = Modifier.fillMaxSize().padding(8.dp)
     .verticalScroll(rememberScrollState())) {
     Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
