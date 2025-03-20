@@ -10,8 +10,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import org.aryamahasangh.OrganisationalActivitiesQuery.OrganisationalActivity
+import com.apollographql.apollo.api.Optional
+import kotlinx.coroutines.launch
+import org.aryamahasangh.OrganisationalActivitiesQuery
 import org.aryamahasangh.components.ActivityListItem
+import org.aryamahasangh.network.apolloClient
+import org.aryamahasangh.type.ActivityFilterInput
+import org.aryamahasangh.type.ActivityType
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 val indianStatesToDistricts =
@@ -63,16 +68,19 @@ fun JoinUsScreen() {
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun UpcomingActivitiesForm() {
-  var selectedState by remember { mutableStateOf<String?>(null) }
-  var selectedDistrict by remember { mutableStateOf<String?>(null) }
-  var activities by remember { mutableStateOf<List<OrganisationalActivity>>(emptyList()) }
+  var isLoading by remember { mutableStateOf(false) }
+  var selectedState by remember { mutableStateOf<String>("") }
+  var selectedDistrict by remember { mutableStateOf<String>("") }
+  var activities by remember { mutableStateOf<List<OrganisationalActivitiesQuery.OrganisationalActivity>?>(null) }
+
+  val scope = rememberCoroutineScope()
 
   // Reset district on state change
   LaunchedEffect(selectedState) {
-    selectedDistrict = null
+    selectedDistrict = ""
   }
 
-  val showActivitiesEnabled = selectedState != null
+  val showActivitiesEnabled = selectedState.isNotEmpty()
 
   Column(modifier = Modifier.padding(top = 8.dp)) {
     FlowRow(
@@ -90,7 +98,7 @@ fun UpcomingActivitiesForm() {
       DistrictDropdown(
         districts = districts,
         selectedDistrict = selectedDistrict,
-        onDistrictSelected = { selectedDistrict = it },
+        onDistrictSelected = { selectedDistrict = it ?: "" },
         modifier = Modifier.width(200.dp)
       )
     }
@@ -98,24 +106,58 @@ fun UpcomingActivitiesForm() {
     // Show Activities Button
     Button(
       onClick = {
-        // Simulate fetching activities (Replace with your API call)
-        //activities = fetchActivities(selectedState, selectedDistrict)
+        scope.launch {
+          isLoading = true
+          val activityFilter = ActivityFilterInput(
+            type = Optional.present(ActivityType.SESSION),
+            state = Optional.present(selectedState),
+            district = Optional.present(selectedDistrict)
+          )
+          val activitiesRes = apolloClient.query(
+            OrganisationalActivitiesQuery(filter = Optional.present(activityFilter))
+          ).execute()
+          isLoading = false
+          activities = activitiesRes.data?.organisationalActivities ?: emptyList()
+        }
       },
-      enabled = showActivitiesEnabled,
+      enabled = showActivitiesEnabled || (!isLoading && selectedState.isNotEmpty()),
       modifier = Modifier.align(Alignment.Start).padding(top = 8.dp, bottom = 8.dp)
     ) {
       Text("आगामी सत्र दिखाएं")
     }
 
-    // Activities List
-    if (activities.isNotEmpty()) {
+    if(isLoading){
       Box(
         modifier = Modifier
-          .fillMaxSize()
-          .weight(1f) // Limits height to remaining space
-      ) {
-        ActivitiesList(activities = activities)
+          .fillMaxSize(),
+        contentAlignment = Alignment.Center
+      ){
+        LinearProgressIndicator()
       }
+      return
+    }
+
+    if(activities == null){
+      return
+    }
+
+    if(activities!!.isEmpty()){
+      Box(
+        modifier = Modifier
+          .fillMaxSize(),
+        contentAlignment = Alignment.Center
+      ){
+        Text("No sessions have been planned in this area!")
+      }
+      return
+    }
+
+    Box(
+      modifier = Modifier
+        .fillMaxSize()
+        .weight(1f) // Limits height to remaining space
+    ) {
+      ActivitiesList(activities = activities!!)
     }
   }
 }
@@ -175,7 +217,7 @@ fun DistrictDropdown(districts: List<String>, selectedDistrict: String?, onDistr
         label = { Text("जनपद") },
         onValueChange = {
         },
-        placeholder = { Text("Color") },
+        placeholder = { Text("District") },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
 //        colors = ExposedDropdownMenuDefaults.textFieldColors(),
       )
@@ -215,7 +257,7 @@ fun DistrictDropdown(districts: List<String>, selectedDistrict: String?, onDistr
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ActivitiesList(activities: List<OrganisationalActivity>) {
+fun ActivitiesList(activities: List<OrganisationalActivitiesQuery.OrganisationalActivity>) {
   LazyColumn(
     modifier = Modifier.fillMaxSize(),
     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -233,12 +275,6 @@ fun ActivitiesList(activities: List<OrganisationalActivity>) {
     }
   }
 }
-
-// Helper Functions
-
-val listOfCities = "फरीदाबाद, गुड़गांव, मेवात, रोहतक, सोनीपत, रेवाड़ी, झज्जर, पानीपत, पलवल, महेंद्रगढ़, भिवानी,जींद, मेरठ, गाजियाबाद, गौतम बुद्ध नगर (नोएडा), ग्रेटर नोएडा, बुलंदशहर, बागपत, हापुड़, मुजफ्फरनगर"
-
-val placeDesc = listOf("संत भवन", "आर्य समाज", "शहर उद्यान", "गुरूकुल प्रांगण", "सामाजिक भवन")
 
 @Preview
 @Composable

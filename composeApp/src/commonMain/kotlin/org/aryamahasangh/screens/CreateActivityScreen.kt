@@ -1,5 +1,6 @@
 package org.aryamahasangh.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -30,10 +31,12 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 import kotlinx.serialization.Serializable
 import org.aryamahasangh.AddOrganisationActivityMutation
+import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.OrganisationsAndMembersQuery
 import org.aryamahasangh.OrganisationsAndMembersQuery.Member
 import org.aryamahasangh.OrganisationsAndMembersQuery.Organisation
 import org.aryamahasangh.network.apolloClient
+import org.aryamahasangh.network.bucket
 import org.aryamahasangh.type.ActivityType
 import org.aryamahasangh.type.OrganisationActivityInput
 
@@ -128,6 +131,8 @@ fun ActivityForm() { // Take FormData object directly
   val openStartTimeDialog = remember { mutableStateOf(false) }
   val openEndTimeDialog = remember { mutableStateOf(false) }
   val scope = rememberCoroutineScope()
+  val snackbarHostState = LocalSnackbarHostState.current
+  var postMap by remember { mutableStateOf<MutableMap<String, Pair<String, Int>>>(mutableMapOf()) }
 
   // Date format
   val dateFormatter: (LocalDate) -> String = { date ->
@@ -170,6 +175,24 @@ fun ActivityForm() { // Take FormData object directly
     if (validateForm()) {
       isSubmitting = true
       scope.launch {
+        val attachedImages = mutableListOf<String>()
+        try {
+          attachedDocuments.forEach {
+            val uploadResponse = bucket.upload(
+              path = "${Clock.System.now().epochSeconds}.jpg",
+              data = it.readBytes()
+            )
+            attachedImages.add(bucket.publicUrl(uploadResponse.path))
+          }
+        }catch (e: Exception) {
+          snackbarHostState.showSnackbar(
+            message = "Error uploading images. Please try again",
+            actionLabel = "Close"
+          )
+          println("error uploading files: $e")
+          return@launch
+        }
+
         val inp =  OrganisationActivityInput(
           name = name,
           shortDescription = shortDescription,
@@ -182,14 +205,21 @@ fun ActivityForm() { // Take FormData object directly
           associatedOrganisations = associatedOrganisations.map { it.id },
           startDateTime = startDate?.atTime(startTime!!).toString(),
           endDateTime = endDate?.atTime(endTime!!).toString(),
-          mediaFiles = listOf(),
-          contactPeople =  contactPeople.map { listOf(it.id, "Organiser", "0") },
+          mediaFiles = attachedImages,
+          contactPeople =  contactPeople.map {
+            val (role, priority) = postMap[it.id] ?: Pair("", 0)
+            listOf(it.id, role, priority.toString()) },
           additionalInstructions = additionalInstructions
         )
         val res = apolloClient.mutation(AddOrganisationActivityMutation(
          inp
         )).execute()
 
+        if(!res.hasErrors()){
+          snackbarHostState.showSnackbar(
+            message = "A new activity has been created successfully.",
+          )
+        }
         println("res: ${res}")
 
         isSubmitting = false
@@ -215,6 +245,8 @@ fun ActivityForm() { // Take FormData object directly
         endDateText = TextFieldValue("")
         startTimeText = TextFieldValue("")
         endTimeText = TextFieldValue("")
+        postMap.clear()
+        attachedDocuments = listOf()
 
         // Clear all error states
         nameError = false
@@ -231,6 +263,7 @@ fun ActivityForm() { // Take FormData object directly
         endDateError = false
         endTimeError = false
         contactPeopleError = false
+
       }
     }
   }
@@ -516,7 +549,7 @@ fun ActivityForm() { // Take FormData object directly
 
     // Contact People
     ContactPeopleDropdown(
-      modifier = Modifier.width(500.dp),
+      modifier = Modifier.fillMaxWidth(),
       label = "संपर्क सूत्र",
       members = members,
       selectedMembers = contactPeople,
@@ -524,6 +557,7 @@ fun ActivityForm() { // Take FormData object directly
         contactPeople = it
         contactPeopleError = it.isEmpty()
       },
+      postMap = postMap,
       isError = contactPeopleError,
       supportingText = { if (contactPeopleError) Text("At least one contact person is required") }
     )
@@ -760,7 +794,8 @@ fun ContactPeopleDropdown(
   selectedMembers: Set<Member>,
   onSelectionChanged: (Set<Member>) -> Unit,
   isError: Boolean = false,
-  supportingText: @Composable () -> Unit = {}
+  supportingText: @Composable () -> Unit = {},
+  postMap: MutableMap<String, Pair<String, Int>>
 ) {
   var expanded by remember { mutableStateOf(false) }
   val context = LocalPlatformContext.current  // Needed for Coil
@@ -768,41 +803,65 @@ fun ContactPeopleDropdown(
   Column(modifier = modifier) { // Wrap the InputChip area in a Column
     // Display Selected Members as Input Chips
     FlowRow(
-      modifier = Modifier.fillMaxWidth(),
+      modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
       horizontalArrangement = Arrangement.spacedBy(4.dp),
-      verticalArrangement = Arrangement.spacedBy(-12.dp)
     ) {
-      members.filter { it in selectedMembers }.forEach { member ->
+      members.filter { it in selectedMembers }.forEachIndexed { index, member ->
+        var text by remember { mutableStateOf(postMap[member.id]?.first ?: "") }
         InputChip(
           selected = true,
-          onClick = { onSelectionChanged(selectedMembers - member) },
-          label = { Text(member.name) },
-          //onDismiss = { onSelectionChanged(selectedMembers - member.id) },
-          modifier = Modifier.padding(2.dp),
-          leadingIcon = {
-            if (member.profileImage.isNotEmpty()) {
-              AsyncImage(
-                model = ImageRequest.Builder(LocalPlatformContext.current)
-                  .data(member.profileImage)
-                  .crossfade(true)
-                  .build(),
-                contentDescription = "Profile Image",
-                modifier = Modifier
-                  .size(24.dp)
-                  .clip(CircleShape),
-                contentScale = ContentScale.Crop
-              )
-            } else {
-              Icon(Icons.Filled.Face, contentDescription = "Profile", tint = Color.Gray)
+          onClick = {
+            // handled in close button
+          },
+          label = {
+            Row(
+              modifier = Modifier.padding(vertical = 12.dp),
+              Arrangement.spacedBy(8.dp)
+            ) {
+              if (member.profileImage.isNotEmpty()) {
+                AsyncImage(
+                  model = ImageRequest.Builder(LocalPlatformContext.current)
+                    .data(member.profileImage)
+                    .crossfade(true)
+                    .build(),
+                  contentDescription = "Profile Image",
+                  modifier = Modifier
+                    .size(24.dp)
+                    .clip(CircleShape),
+                  contentScale = ContentScale.Crop
+                )
+              } else {
+                Icon(Icons.Filled.Face, contentDescription = "Profile", tint = Color.Gray)
+              }
+              Column{
+                Text(member.name)
+                OutlinedTextField(
+                  modifier = Modifier.width(200.dp),
+                  value = text,
+                  onValueChange = {
+                    text = it
+                    postMap[member.id] = Pair(it, index)
+                  },
+                  label = { Text("Role") },
+                  placeholder = { Text("संयोजक, कोषाध्यक्ष इत्यादि") }
+                )
+              }
+              Box(
+                modifier = Modifier.size(36.dp).clickable {
+                  onSelectionChanged(selectedMembers - member)
+                },
+                contentAlignment = Alignment.Center
+              ){
+                Icon(
+                  Icons.Default.Close,
+                  contentDescription = null,
+                  Modifier.size(24.dp)
+                )
+              }
             }
           },
-          trailingIcon = {
-            Icon(
-              Icons.Default.Close,
-              contentDescription = null,
-              Modifier.size(InputChipDefaults.IconSize)
-            )
-          },
+          //onDismiss = { onSelectionChanged(selectedMembers - member.id) },
+          modifier = Modifier.padding(2.dp),
         )
       }
     }
@@ -810,6 +869,7 @@ fun ContactPeopleDropdown(
     ExposedDropdownMenuBox(
       expanded = expanded,
       onExpandedChange = { expanded = !expanded },
+      modifier = Modifier.width(500.dp)
     ) {
       OutlinedTextField(
         readOnly = true,

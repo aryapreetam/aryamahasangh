@@ -3,13 +3,15 @@ package org.aryamahasangh.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.Text
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import kotlinx.coroutines.launch
+import org.aryamahasangh.DeleteActivityMutation
+import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.OrganisationalActivitiesQuery
 import org.aryamahasangh.components.ActivityListItem
 import org.aryamahasangh.navigation.Screen
@@ -18,23 +20,57 @@ import org.aryamahasangh.network.apolloClient
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ActivitiesScreen(navController: NavHostController, onNavigateToActivityDetails: (String) -> Unit) {
-  val activities = remember { mutableStateOf(emptyList<OrganisationalActivitiesQuery.OrganisationalActivity>()) }
+  val scope = rememberCoroutineScope()
+
+  val snackbarHostState = LocalSnackbarHostState.current
+  var isLoading by remember { mutableStateOf(false) }
+  var activities by remember { mutableStateOf(emptyList<OrganisationalActivitiesQuery.OrganisationalActivity>()) }
   LaunchedEffect(Unit) {
+    isLoading = true
     val res = apolloClient.query(OrganisationalActivitiesQuery()).execute()
-    activities.value = res.data?.organisationalActivities ?: emptyList()
+    isLoading = false
+    activities = res.data?.organisationalActivities ?: emptyList()
   }
-  Column(modifier = Modifier
-    .fillMaxSize()
-    .padding(8.dp)
-    .verticalScroll(rememberScrollState())) {
+  if(isLoading){
+    LinearProgressIndicator()
+    return
+  }
+
+  if(activities.isEmpty()){
+    Text("No activities have been planned")
+    return
+  }
+
+  Column(
+    modifier = Modifier
+      .fillMaxSize()
+      .padding(8.dp)
+      .verticalScroll(rememberScrollState())
+  ) {
     FlowRow(
-      verticalArrangement =  Arrangement.spacedBy(8.dp),
+      verticalArrangement = Arrangement.spacedBy(8.dp),
       horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-      activities.value.forEach { activity ->
-        ActivityListItem(activity){
-          onNavigateToActivityDetails(activity.id)
-          navController.navigate(Screen.ActivityDetails(activity.id))
+      activities.forEach { activity ->
+        ActivityListItem(
+          activity = activity,
+          handleOnClick = {
+            onNavigateToActivityDetails(activity.id)
+            navController.navigate(Screen.ActivityDetails(activity.id))
+          }
+        ) {
+          scope.launch {
+            val res = apolloClient.mutation(DeleteActivityMutation(activity.id)).execute()
+            if(!res.hasErrors()){
+              snackbarHostState.showSnackbar("Activity deleted successfully")
+              activities = activities.filter { it.id != activity.id  }
+            }else{
+              snackbarHostState.showSnackbar(
+                message = "Error deleting activity. Please try again",
+                actionLabel = "Close"
+              )
+            }
+          }
         }
       }
     }

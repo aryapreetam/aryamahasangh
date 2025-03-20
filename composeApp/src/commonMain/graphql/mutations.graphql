@@ -5,3 +5,7 @@ mutation AddOrganisationActivity($input: OrganisationActivityInput!){
 mutation AddStudentAdmissionData($input: AdmissionFormDataInput!) {
   addStudentAdmissionData(input: $input)
 }
+
+mutation DeleteActivity($id: String!){
+  removeActivity(activityId: $id)
+}

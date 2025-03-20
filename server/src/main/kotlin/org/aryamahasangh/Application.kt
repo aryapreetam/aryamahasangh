@@ -140,12 +140,18 @@ class CustomGraphqlSubscriptionHooks : KtorGraphQLSubscriptionHooks {
   }
 }
 
+data class ActivityFilter(
+  val type: ActivityType?,
+  val state: String?,
+  val district: String?
+)
+
 @OptIn(ExperimentalUuidApi::class)
 class OrgsQuery : Query {
   suspend fun organisations(): List<Organisation> = getOrganisations()
   suspend fun organisation(name: String): Organisation? = getOrganisations().find { it.name == name }
-  suspend fun organisationalActivities(): List<OrganisationalActivity> = getOrganisationalActivities()
-  suspend fun organisationalActivity(id: String) =  getOrganisationalActivities().find { it.id == id }
+  suspend fun organisationalActivities(filter: ActivityFilter? = null): List<OrganisationalActivity> = getOrganisationalActivities(filter)
+  suspend fun organisationalActivity(id: String) =  getOrganisationalActivity(id)
   suspend fun learningItems(): List<Video> = getVideos()
   suspend fun learningItem(id: String) = getVideos().find { it.id == id }
   suspend fun members(): List<Member> = getMembers().distinctBy { it.phoneNumber }
@@ -154,14 +160,55 @@ class OrgsQuery : Query {
 @Serializable
 data class OrganisationId(val organisation_id: String)
 
-suspend fun getOrganisationalActivities(): List<OrganisationalActivity> {
+suspend fun getOrganisationalActivity(id: String): OrganisationalActivity? {
+  return try {
+    val activity = supabase.from("activities")
+      .select(
+        Columns.raw("*, contactPeople:activity_member(*, member:member(*))")
+      ){
+        filter {
+          eq("id", id)
+        }
+      }.decodeSingleOrNull<OrganisationalActivity>()
+    if(activity != null) {
+      val orgIds = supabase.from("organisational_activity").select(Columns.list("organisation_id")){
+        filter { eq("activity_id", id) }
+      }.decodeList<OrganisationId>()
+      val orgs = supabase.from("organisation").select(Columns.list("id", "name")){
+        filter { isIn("id", orgIds.map { it.organisation_id }) }
+      }.decodeList<Organisation>()
+      activity.copy(associatedOrganisations = orgs)
+    }else{
+      null
+    }
+  }catch (e: Exception){
+    println("Error: $e")
+    null
+  }
+}
+
+suspend fun getOrganisationalActivities(activityFilter: ActivityFilter?): List<OrganisationalActivity> {
   //Columns.raw("*, contactPeople:activity_member(*, member:member(*))
   val newActivities = mutableListOf<OrganisationalActivity>()
   return try {
     val activities = supabase.from("activities")
       .select(
         Columns.raw("*, contactPeople:activity_member(*, member:member(*))")
-      ).decodeList<OrganisationalActivity>()
+      ){
+        if(activityFilter != null) {
+          filter {
+            if(activityFilter.type != null) {
+              eq("type", activityFilter.type)
+            }
+            if(!activityFilter.state.isNullOrEmpty()){
+              eq("state", activityFilter.state)
+            }
+            if(!activityFilter.district.isNullOrEmpty()) {
+              eq("district", activityFilter.district)
+            }
+          }
+        }
+      }.decodeList<OrganisationalActivity>()
     activities.forEach { it ->
       val orgIds = supabase.from("organisational_activity").select(Columns.list("organisation_id")){
         filter { eq("activity_id", it.id) }
@@ -204,13 +251,6 @@ suspend fun getMembers(): List<Member> {
   // select distinct on (phone_number) * from member
   return supabase.from("member").select().decodeList<Member>()
 }
-
-//data class OrganisationInput(
-//  val name: String,
-//  val logo: String,
-//  val description: String,
-//  val people: List<OrganisationalMember>
-//)
 
 @OptIn(ExperimentalUuidApi::class)
 class StudentAdmissionMutations : Mutation {
@@ -319,8 +359,19 @@ class ActivityMutation : Mutation {
     }
   }
 
-  fun removeActivity(activityId: Uuid): Boolean {
-    return false
+  suspend fun removeActivity(activityId: String): Boolean {
+    println("removeActivity: $activityId")
+    try {
+      supabase.from("activities").delete {
+        filter {
+          eq("id", activityId)
+        }
+      }
+      return true
+    }catch (e: Exception){
+      println("error: $e")
+      return false
+    }
   }
   fun updateActivity(activity: OrganisationalActivity): Boolean {
     return false
