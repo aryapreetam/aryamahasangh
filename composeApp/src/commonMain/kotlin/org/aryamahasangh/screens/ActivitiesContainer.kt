@@ -45,7 +45,8 @@ fun ActivitiesContainer(navController: NavHostController, onNavigateToActivityDe
       state = pagerState,
       modifier = Modifier
         .fillMaxWidth()
-        .weight(1f)
+        .weight(1f),
+      userScrollEnabled = false
     ){
       Box(
         modifier = Modifier.fillMaxSize(),

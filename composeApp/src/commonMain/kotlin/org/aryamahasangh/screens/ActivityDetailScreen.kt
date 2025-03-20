@@ -1,6 +1,7 @@
 package org.aryamahasangh.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -12,10 +13,7 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,15 +21,19 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.BrushPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.error_profile_image
 import coil3.compose.AsyncImage
+import kotlinx.coroutines.launch
+import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.OrganisationalActivityDetailQuery
 import org.aryamahasangh.OrganisationalActivityDetailQuery.ContactPeople
 import org.aryamahasangh.OrganisationalActivityDetailQuery.OrganisationalActivity
 import org.aryamahasangh.components.activityTypeData
+import org.aryamahasangh.isWeb
 import org.aryamahasangh.network.apolloClient
 import org.aryamahasangh.utils.format
 import org.aryamahasangh.utils.formatDateTime
@@ -119,9 +121,14 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
 
     // Description
     Text(
+      text = activity.shortDescription,
+      style = MaterialTheme.typography.bodyLarge,
+      modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+    )
+    Text(
       text = activity.longDescription,
       style = MaterialTheme.typography.bodyLarge,
-      modifier = Modifier.padding(vertical = 8.dp)
+      modifier = Modifier.padding(top = 4.dp, bottom = 8.dp)
     )
     Spacer(modifier = Modifier.height(4.dp))
 
@@ -142,15 +149,13 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
       }
     }
 
-
     // Place
     Row(
       verticalAlignment = Alignment.CenterVertically,
-      modifier = Modifier.padding(top = 8.dp)
     ) {
       Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Place", tint = Color.Gray)
       Spacer(modifier = Modifier.width(4.dp))
-      Text(text = "स्थान: ${activity.district}", style = MaterialTheme.typography.bodyMedium)
+      Text(text = "स्थान: ${activity.address}, ${activity.district}, ${activity.state}. पिनकोड: ${activity.pincode}", style = MaterialTheme.typography.bodyMedium)
     }
 
     // Start and End Date/Time
@@ -172,6 +177,8 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
       Text(text = "समाप्ति: ${formatDateTime(activity.endDateTime)}", style = MaterialTheme.typography.bodyMedium)
     }
 
+    val uriHandler = LocalUriHandler.current
+
     // Media Files
     if (activity.mediaFiles.isNotEmpty()) {
       LazyRow(
@@ -182,7 +189,9 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
             model = imageUrl,
             contentDescription = "Thumbnail ",
             contentScale = ContentScale.Crop,
-            modifier = Modifier.size(150.dp),
+            modifier = Modifier.size(150.dp).clickable(onClick = {
+              uriHandler.openUri(imageUrl)
+            }),
           )
         }
       }
@@ -289,8 +298,21 @@ fun ContactPersonItem(contactPerson: ContactPeople) {
       thickness = 2.dp,
       color = Color.LightGray
     )
+    val uriHandler = LocalUriHandler.current
+    val snackbarHostState = LocalSnackbarHostState.current
+    val scope = rememberCoroutineScope()
     IconButton(
-      onClick = {  }
+      onClick = {
+        uriHandler.openUri("tel:${contactPerson.member.phoneNumber}")
+        if(isWeb()) {
+          scope.launch {
+            snackbarHostState.showSnackbar(
+              message = "If you do not have calling apps installed, you can manually call to ${contactPerson.member.phoneNumber}",
+              actionLabel = "Close"
+            )
+          }
+        }
+      }
     ){
       Icon(
         imageVector = Icons.Default.Call,

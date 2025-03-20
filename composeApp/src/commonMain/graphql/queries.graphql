@@ -56,8 +56,8 @@ query LearningItemDetail($id: String!){
   }
 }
 
-query organisationalActivities {
-  organisationalActivities{
+query OrganisationalActivities($filter: ActivityFilterInput){
+  organisationalActivities(filter: $filter){
     id
     name
     shortDescription
@@ -67,7 +67,6 @@ query organisationalActivities {
     district
   }
 }
-
 
 
 query organisationalActivityDetail($id: String!){
@@ -84,6 +83,7 @@ query organisationalActivityDetail($id: String!){
     address
     state
     district
+    pincode
     startDateTime
     endDateTime
     mediaFiles
