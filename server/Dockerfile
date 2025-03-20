@@ -30,7 +30,7 @@ COPY gradle.properties settings.gradle.kts build.gradle.kts ./
 COPY gradlew ./
 COPY gradlew.bat ./
 
-# Copy only the necessary modules (server)
+# Copy only the necessary modules (server and shared)
 COPY server/ server/
 COPY shared/ shared/
 
