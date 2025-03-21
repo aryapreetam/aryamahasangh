@@ -14,6 +14,7 @@ data class Organisation(
 )
 
 
+@Serializable
 enum class ActivityType {
   /**
    * Karyakram:
@@ -154,6 +155,7 @@ data class OrganisationalMember(
 data class Member(
   val id: String = "",
   val name: String,
+  @SerialName("educational_qualification")
   val educationalQualification: String = "",
   @SerialName("profile_image")
   val profileImage: String = "",
