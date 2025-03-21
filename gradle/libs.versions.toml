@@ -10,15 +10,15 @@ androidx-espresso-core = "3.6.1"
 androidx-lifecycle = "2.8.4"
 androidx-material = "1.12.0"
 androidx-test-junit = "1.2.1"
-coilCompose = "3.0.4"
-compose-multiplatform = "1.7.3"
+coilCompose = "3.1.0"
+compose-multiplatform = "1.8.0-beta01"
 # for ui tooling
-compose-android = "1.7.6"
+compose-android = "1.8.0-beta02"
 junit = "4.13.2"
 
-# kotlin = "2.1.0"
+kotlin = "2.1.20-RC"
 kermit = "2.0.5"
-kotlin = "2.1.0-firework.32" # custom version for experimental hot reload support
+# kotlin = "2.1.0-firework.32" # custom version for experimental hot reload support
 compose-hot-reload = "1.0.0-dev.32.1"
 
 kotlinx-coroutines = "1.9.0"
@@ -26,9 +26,9 @@ kotlinx-serialization = "1.8.0"
 ktor = "3.1.0"
 
 logback = "1.5.12"
-navigationCompose = "2.8.0-alpha11"
-uiToolingPreviewDesktop = "1.8.0-alpha01"
-uiToolingPreviewAndroid = "1.7.6"
+navigationCompose = "2.9.0-alpha15"
+uiToolingPreviewDesktop = "1.8.0-beta01"
+uiToolingPreviewAndroid = "1.8.0-beta02"
 kotlinStdlib = "2.1.0-firework.32"
 runner = "1.5.2"
 core = "1.5.0"

@@ -6,6 +6,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -32,12 +33,24 @@ fun ActivitiesScreen(navController: NavHostController, onNavigateToActivityDetai
     activities = res.data?.organisationalActivities ?: emptyList()
   }
   if(isLoading){
-    LinearProgressIndicator()
+    Box(
+      modifier = Modifier
+        .fillMaxSize(),
+      contentAlignment = Alignment.Center
+    ) {
+      LinearProgressIndicator()
+    }
     return
   }
 
   if(activities.isEmpty()){
-    Text("No activities have been planned")
+    Box(
+      modifier = Modifier
+        .fillMaxSize(),
+      contentAlignment = Alignment.Center
+    ) {
+      Text("No activities have been planned")
+    }
     return
   }
 
@@ -62,8 +75,8 @@ fun ActivitiesScreen(navController: NavHostController, onNavigateToActivityDetai
           scope.launch {
             val res = apolloClient.mutation(DeleteActivityMutation(activity.id)).execute()
             if(!res.hasErrors()){
-              snackbarHostState.showSnackbar("Activity deleted successfully")
               activities = activities.filter { it.id != activity.id  }
+              snackbarHostState.showSnackbar("Activity deleted successfully")
             }else{
               snackbarHostState.showSnackbar(
                 message = "Error deleting activity. Please try again",

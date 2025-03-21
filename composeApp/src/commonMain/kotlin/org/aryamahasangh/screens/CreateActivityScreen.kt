@@ -215,55 +215,52 @@ fun ActivityForm() { // Take FormData object directly
          inp
         )).execute()
 
+        isSubmitting = false
         if(!res.hasErrors()){
+          // Reset form
+          name = ""
+          selectedType = null
+          shortDescription = ""
+          description = ""
+          associatedOrganisations = emptySet()
+          address = ""
+          state = ""
+          district = ""
+          pincode = ""
+          startDate = null
+          startTime = null
+          endDate = null
+          endTime = null
+          contactPeople = emptySet()
+          additionalInstructions = ""
+
+          startDateText = TextFieldValue("")
+          endDateText = TextFieldValue("")
+          startTimeText = TextFieldValue("")
+          endTimeText = TextFieldValue("")
+          postMap.clear()
+          attachedDocuments = listOf()
+
+          // Clear all error states
+          nameError = false
+          typesError = false
+          shortDescriptionError = false
+          descriptionError = false
+          associatedOrganisationsError = false
+          addressError = false
+          stateError = false
+          districtError = false
+          pincodeError = false
+          startDateError = false
+          startTimeError = false
+          endDateError = false
+          endTimeError = false
+          contactPeopleError = false
           snackbarHostState.showSnackbar(
             message = "A new activity has been created successfully.",
           )
         }
         println("res: ${res}")
-
-        isSubmitting = false
-
-        // Reset form
-        name = ""
-        selectedType = null
-        shortDescription = ""
-        description = ""
-        associatedOrganisations = emptySet()
-        address = ""
-        state = ""
-        district = ""
-        pincode = ""
-        startDate = null
-        startTime = null
-        endDate = null
-        endTime = null
-        contactPeople = emptySet()
-        additionalInstructions = ""
-
-        startDateText = TextFieldValue("")
-        endDateText = TextFieldValue("")
-        startTimeText = TextFieldValue("")
-        endTimeText = TextFieldValue("")
-        postMap.clear()
-        attachedDocuments = listOf()
-
-        // Clear all error states
-        nameError = false
-        typesError = false
-        shortDescriptionError = false
-        descriptionError = false
-        associatedOrganisationsError = false
-        addressError = false
-        stateError = false
-        districtError = false
-        pincodeError = false
-        startDateError = false
-        startTimeError = false
-        endDateError = false
-        endTimeError = false
-        contactPeopleError = false
-
       }
     }
   }
@@ -831,7 +828,12 @@ fun ContactPeopleDropdown(
                   contentScale = ContentScale.Crop
                 )
               } else {
-                Icon(Icons.Filled.Face, contentDescription = "Profile", tint = Color.Gray)
+                Icon(
+                  modifier = Modifier.size(24.dp),
+                  imageVector = Icons.Filled.Face,
+                  contentDescription = "Profile",
+                  tint = Color.Gray
+                )
               }
               Column{
                 Text(member.name)
@@ -908,7 +910,12 @@ fun ContactPeopleDropdown(
                   contentScale = ContentScale.Crop
                 )
               } else {
-                Icon(Icons.Filled.Face, contentDescription = "Profile", tint = Color.Gray)
+                Icon(
+                  modifier = Modifier.size(36.dp),
+                  imageVector = Icons.Filled.Face,
+                  contentDescription = "Profile",
+                  tint = Color.Gray
+                )
               }
             },
             trailingIcon = if (member in selectedMembers) {

@@ -11,10 +11,11 @@ pluginManagement {
       }
     }
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+    maven("https://maven.pkg.jetbrains.space/kotlin/p/kotlin/dev")
+    maven("https://packages.jetbrains.team/maven/p/firework/dev")
     google()
     gradlePluginPortal()
     mavenCentral()
-    maven("https://packages.jetbrains.team/maven/p/firework/dev")
     // Desktop target has to add this repo. for compose-webview-multiplatform
     maven("https://jogamp.org/deployment/maven")
   }
@@ -30,15 +31,15 @@ dependencyResolutionManagement {
       }
     }
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
-    mavenCentral()
     maven("https://packages.jetbrains.team/maven/p/firework/dev")
+    mavenCentral()
     // Desktop target has to add this repo. for compose-webview-multiplatform
     maven("https://jogamp.org/deployment/maven")
   }
 }
 
 plugins {
-  id("org.gradle.toolchains.foojay-resolver-convention") version "0.8.0"
+  id("org.gradle.toolchains.foojay-resolver-convention") version "0.9.0"
 }
 
 include(":composeApp")
