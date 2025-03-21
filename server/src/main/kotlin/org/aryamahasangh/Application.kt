@@ -244,7 +244,7 @@ suspend fun getOrganisation(id: String): Organisation? {
 }
 
 suspend fun getVideos(): List<Video> {
-  return supabase.from("learning").select().decodeList()
+  return supabase.from("learning").select().decodeList<Video>()
 }
 
 suspend fun getMembers(): List<Member> {
