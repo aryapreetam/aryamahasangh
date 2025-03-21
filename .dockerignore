@@ -30,9 +30,10 @@ build/
 # Ignore macOS specific files
 .DS_Store
 
-# Ignore all modules except server and gradle
+# Ignore all modules except server, shared, and gradle
 /composeApp/
-/shared/
+# Include shared module as it's a dependency of server
+# /shared/
 /docs/
 
 # Don't ignore gradle wrapper

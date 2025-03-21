@@ -1,29 +1,48 @@
-# Stage 1: Build the application
+# Multi-stage build for optimized Docker image
+
+# Stage 1: Dependency cache
+FROM gradle:8.10.2-jdk17-alpine AS deps
+WORKDIR /app
+ENV GRADLE_USER_HOME /cache
+COPY gradle gradle
+COPY gradle.properties settings.gradle.kts build.gradle.kts ./
+COPY server server
+COPY shared shared
+COPY gradle/libs.versions.toml gradle/
+# Download dependencies only
+RUN gradle :server:dependencies --no-daemon --build-cache
+
+# Stage 2: Build the application
 FROM gradle:8.10.2-jdk17-alpine AS build
 WORKDIR /app
-
-# Copy the entire project
+COPY --from=deps /cache /home/gradle/.gradle
 COPY . .
+# Build the application with optimized settings
+RUN gradle :server:build -x test --no-daemon --parallel --build-cache --configure-on-demand
 
-# Build the server application
-RUN gradle :server:build --no-daemon
-
-# Stage 2: Create a lightweight runtime image
+# Stage 3: Create a minimal runtime image
 FROM eclipse-temurin:17-jre-alpine
-
-# Set working directory
 WORKDIR /app
 
-# Copy the built application from the build stage (using the fat JAR with all dependencies)
-COPY --from=build /app/server/build/libs/server-all.jar /app/server.jar
+# Create a non-root user to run the application
+RUN addgroup --system --gid 1001 appgroup && \
+    adduser --system --uid 1001 --ingroup appgroup appuser && \
+    mkdir -p /app/logs && \
+    chown -R appuser:appgroup /app
 
-# Expose both local and deployed ports
-EXPOSE 4000 8080
+# Copy the built application
+COPY --from=build --chown=appuser:appgroup /app/server/build/libs/server-all.jar /app/server.jar
 
-# Set environment variable for port based on deployment environment
-# For render.com, the PORT environment variable will be set to 8080
-# For local development, we'll use the default of 4000
-ENV PORT=${PORT:-4000}
+# Set environment variables
+ENV PORT=4000
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:InitialRAMPercentage=50.0 -Djava.security.egd=file:/dev/./urandom"
 
-# Set the command to run the application
-CMD ["java", "-jar", "/app/server.jar"]
+# Expose both ports (4000 for local, 8080 for render.com)
+EXPOSE 4000
+EXPOSE 8080
+
+# Switch to non-root user
+USER appuser
+
+# Run the application
+CMD java $JAVA_OPTS -jar /app/server.jar

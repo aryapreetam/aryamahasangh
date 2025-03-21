@@ -1,0 +1,51 @@
+# Gradle files
+.gradle/
+build/
+!gradle/wrapper/
+
+# IDE files
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+
+# Logs
+logs/
+*.log
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~.nib
+
+# Local configuration files
+local.properties
+
+# Node modules (if any)
+node_modules/
+
+# Git directory
+.git/
+.gitignore
+
+# Docker files (to avoid recursive copying)
+.dockerignore
+Dockerfile
+
+# Test files
+**/test/
+**/androidTest/
+**/commonTest/
+**/jvmTest/
+**/jsTest/
+**/iosTest/
+
+# Documentation
+docs/
+*.md
