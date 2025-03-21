@@ -103,8 +103,8 @@ kotlin {
     androidMain.dependencies {
       implementation(libs.androidx.activity.compose)
 //      implementation(libs.compose.ui.tooling.preview)
-      implementation("androidx.compose.ui:ui:1.7.6")
-      implementation("androidx.compose.ui:ui-tooling-preview:1.7.6")
+      implementation("androidx.compose.ui:ui:${libs.versions.compose.android.get()}")
+      implementation("androidx.compose.ui:ui-tooling-preview:${libs.versions.compose.android.get()}")
 
       implementation(libs.ktor.client.android)
     }
