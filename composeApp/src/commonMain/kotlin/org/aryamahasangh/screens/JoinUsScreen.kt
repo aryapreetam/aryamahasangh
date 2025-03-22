@@ -16,6 +16,7 @@ import org.aryamahasangh.OrganisationalActivitiesQuery
 import org.aryamahasangh.components.ActivityListItem
 import org.aryamahasangh.network.apolloClient
 import org.aryamahasangh.type.ActivityFilterInput
+import org.aryamahasangh.type.ActivityPeriod
 import org.aryamahasangh.type.ActivityType
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -55,13 +56,15 @@ val indianStatesToDistricts =
 @Composable
 @Preview
 fun JoinUsScreen() {
-    Column(modifier = Modifier.padding(8.dp)){
-      Text("नमस्ते जी,\n" +
+  Column(modifier = Modifier.padding(8.dp)) {
+    Text(
+      "नमस्ते जी,\n" +
           "आप निर्मात्री सभा द्वारा आयोजित दो दिवसीय लघु गुरुकुल पाठ्यक्रम पूर्ण कर आर्य महासंघ से जुड़ सकते है। \n" +
-          "निचे आप अपना क्षेत्र चुनकर आपके क्षेत्रों में आयोजित होने वाले सत्रों के विवरण देख सकते है। ")
+          "निचे आप अपना क्षेत्र चुनकर आपके क्षेत्रों में आयोजित होने वाले सत्रों के विवरण देख सकते है। "
+    )
 
-      UpcomingActivitiesForm()
-    }
+    UpcomingActivitiesForm()
+  }
 }
 
 
@@ -91,7 +94,7 @@ fun UpcomingActivitiesForm() {
         states = indianStatesToDistricts.keys.toList(),
         selectedState = selectedState,
         onStateSelected = { selectedState = it },
-        modifier = Modifier.width( 160.dp)
+        modifier = Modifier.width(160.dp),
       )
       // District Selection (Conditional)
       val districts = indianStatesToDistricts[selectedState] ?: emptyList()
@@ -111,7 +114,8 @@ fun UpcomingActivitiesForm() {
           val activityFilter = ActivityFilterInput(
             type = Optional.present(ActivityType.SESSION),
             state = Optional.present(selectedState),
-            district = Optional.present(selectedDistrict)
+            district = Optional.present(selectedDistrict),
+            activityPeriod = Optional.present(ActivityPeriod.FUTURE)
           )
           val activitiesRes = apolloClient.query(
             OrganisationalActivitiesQuery(filter = Optional.present(activityFilter))
@@ -121,32 +125,32 @@ fun UpcomingActivitiesForm() {
         }
       },
       enabled = showActivitiesEnabled || (!isLoading && selectedState.isNotEmpty()),
-      modifier = Modifier.align(Alignment.Start).padding(top = 8.dp, bottom = 8.dp)
+      modifier = Modifier.align(Alignment.Start).padding(bottom = 8.dp)
     ) {
       Text("आगामी सत्र दिखाएं")
     }
 
-    if(isLoading){
+    if (isLoading) {
       Box(
         modifier = Modifier
           .fillMaxSize(),
         contentAlignment = Alignment.Center
-      ){
+      ) {
         LinearProgressIndicator()
       }
       return
     }
 
-    if(activities == null){
+    if (activities == null) {
       return
     }
 
-    if(activities!!.isEmpty()){
+    if (activities!!.isEmpty()) {
       Box(
         modifier = Modifier
           .fillMaxSize(),
         contentAlignment = Alignment.Center
-      ){
+      ) {
         Text("No sessions have been planned in this area!")
       }
       return
@@ -163,7 +167,14 @@ fun UpcomingActivitiesForm() {
 }
 
 @Composable
-fun StateDropdown(states: List<String>, selectedState: String?, onStateSelected: (String) -> Unit, modifier: Modifier = Modifier) {
+fun StateDropdown(
+  states: List<String>,
+  selectedState: String?,
+  onStateSelected: (String) -> Unit,
+  modifier: Modifier = Modifier,
+  isError: Boolean = false,
+  errorMessage: String = ""
+) {
   var expanded by remember { mutableStateOf(false) }
   Column(modifier = modifier) {
     ExposedDropdownMenuBox(
@@ -179,6 +190,8 @@ fun StateDropdown(states: List<String>, selectedState: String?, onStateSelected:
         placeholder = { Text("State") },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
 //        colors = ExposedDropdownMenuDefaults.textFieldColors(),
+        isError = isError,
+        supportingText =  { if(isError && errorMessage.isNotEmpty()) Text(errorMessage) else null}
       )
       ExposedDropdownMenu(
         expanded = expanded,
@@ -202,7 +215,14 @@ fun StateDropdown(states: List<String>, selectedState: String?, onStateSelected:
 }
 
 @Composable
-fun DistrictDropdown(districts: List<String>, selectedDistrict: String?, onDistrictSelected: (String?) -> Unit, modifier: Modifier = Modifier) {
+fun DistrictDropdown(
+  districts: List<String>,
+  selectedDistrict: String?,
+  onDistrictSelected: (String?) -> Unit,
+  modifier: Modifier = Modifier,
+  isError: Boolean = false,
+  errorMessage: String = ""
+) {
   var expanded by remember { mutableStateOf(false) }
 
   Column(modifier = modifier) {
@@ -220,6 +240,8 @@ fun DistrictDropdown(districts: List<String>, selectedDistrict: String?, onDistr
         placeholder = { Text("District") },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
 //        colors = ExposedDropdownMenuDefaults.textFieldColors(),
+        isError = isError,
+        supportingText =  { if(isError && errorMessage.isNotEmpty()) Text(errorMessage) else null}
       )
       ExposedDropdownMenu(
         expanded = expanded,
