@@ -26,6 +26,7 @@ import io.ktor.server.plugins.cors.routing.*
 import io.ktor.server.plugins.statuspages.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
+import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -140,10 +141,20 @@ class CustomGraphqlSubscriptionHooks : KtorGraphQLSubscriptionHooks {
   }
 }
 
+@Serializable
+enum class ActivityPeriod {
+  PAST,
+  PRESENT,
+  FUTURE,
+  All
+}
+
+@Serializable
 data class ActivityFilter(
   val type: ActivityType?,
   val state: String?,
-  val district: String?
+  val district: String?,
+  val activityPeriod: ActivityPeriod? = ActivityPeriod.All
 )
 
 @OptIn(ExperimentalUuidApi::class)
@@ -188,6 +199,7 @@ suspend fun getOrganisationalActivity(id: String): OrganisationalActivity? {
 }
 
 suspend fun getOrganisationalActivities(activityFilter: ActivityFilter?): List<OrganisationalActivity> {
+  println("getOrganisationalActivities() called with: activityFilter = $activityFilter")
   //Columns.raw("*, contactPeople:activity_member(*, member:member(*))
   val newActivities = mutableListOf<OrganisationalActivity>()
   return try {
@@ -206,6 +218,11 @@ suspend fun getOrganisationalActivities(activityFilter: ActivityFilter?): List<O
             if(!activityFilter.district.isNullOrEmpty()) {
               eq("district", activityFilter.district)
             }
+            if(activityFilter.type != null && activityFilter.activityPeriod == ActivityPeriod.FUTURE) {
+              val current = Clock.System.now().toLocalDateTime(TimeZone.Companion.of("Asia/Kolkata"))
+              println("currentDateTime: $current")
+              gt("start_datetime", current)
+            }
           }
         }
       }.decodeList<OrganisationalActivity>()
@@ -218,9 +235,10 @@ suspend fun getOrganisationalActivities(activityFilter: ActivityFilter?): List<O
       }.decodeList<Organisation>()
       newActivities.add(it.copy(associatedOrganisations = orgs))
     }
+//    println("activities: $newActivities")
     newActivities
   }catch (e: Exception){
-    println(e)
+    println("Error: $e")
     listOf()
   }
 }

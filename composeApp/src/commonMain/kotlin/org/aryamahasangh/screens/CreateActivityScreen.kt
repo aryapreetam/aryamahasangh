@@ -29,6 +29,7 @@ import coil3.request.crossfade
 import io.github.vinceglb.filekit.core.PlatformFile
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
+import kotlinx.datetime.Clock.System
 import kotlinx.serialization.Serializable
 import org.aryamahasangh.AddOrganisationActivityMutation
 import org.aryamahasangh.LocalSnackbarHostState
@@ -94,6 +95,9 @@ fun ActivityForm() { // Take FormData object directly
   var district by remember { mutableStateOf("") }
   var districtError by remember { mutableStateOf(false) }
 
+  var stateErrorMessage by remember { mutableStateOf("") }
+  var districtErrorMessage by remember { mutableStateOf("") }
+
   var pincode by remember { mutableStateOf("") }
   var pincodeError by remember { mutableStateOf(false) }
 
@@ -109,6 +113,9 @@ fun ActivityForm() { // Take FormData object directly
   var startTimeError by remember { mutableStateOf(false) }
   var endDateError by remember { mutableStateOf(false) }
   var endTimeError by remember { mutableStateOf(false) }
+
+  var startDateTimeErrorMessage by remember { mutableStateOf("") }
+  var endDateTimeErrorMessage by remember { mutableStateOf("") }
 
   var attachedDocuments by remember { mutableStateOf(emptyList<PlatformFile>()) }
   var attachedDocumentsError by remember { mutableStateOf(false) }
@@ -160,6 +167,50 @@ fun ActivityForm() { // Take FormData object directly
     endTimeError = endTime == null
     contactPeopleError = contactPeople.isEmpty()
 
+    stateErrorMessage = if (stateError) "State required" else ""
+    districtErrorMessage = if (districtError) "Districts required" else ""
+
+    if ((!startDateError && !startTimeError && !endDateError && !endTimeError)) {
+      val currentDateTime = System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+      val startDateTime = startDate?.atTime(startTime!!)!!
+      val endDateTime = endDate?.atTime(endTime!!)!!
+
+      if (!(startDateTime < endDateTime
+            && startDateTime > currentDateTime && endDateTime > currentDateTime)
+      ) {
+        if (startDateTime >= endDateTime) {
+          startDateError = true
+          startTimeError = true
+          endDateError = true
+          endTimeError = true
+          startDateTimeErrorMessage = "Start datetime should be before end datetime"
+          endDateTimeErrorMessage = "Start datetime should be before end datetime"
+        } else if (startDateTime <= currentDateTime) {
+          startDateError = true
+          startTimeError = true
+          startDateTimeErrorMessage = "Start datetime should be after current datetime"
+        } else if (endDateTime <= currentDateTime) {
+          endDateError = true
+          endTimeError = true
+          endDateTimeErrorMessage = "End datetime should be after current datetime"
+        } else {
+          startDateError = false
+          startTimeError = false
+          endDateError = false
+          endTimeError = false
+          startDateTimeErrorMessage = ""
+          endDateTimeErrorMessage = ""
+        }
+      } else {
+        startDateError = false
+        startTimeError = false
+        endDateError = false
+        endTimeError = false
+        startDateTimeErrorMessage = ""
+        endDateTimeErrorMessage = ""
+      }
+    }
+
     return !(nameError || typesError || shortDescriptionError || descriptionError || associatedOrganisationsError
         || addressError || stateError || districtError || pincodeError || startDateError || startTimeError
         || endDateError || endTimeError || contactPeopleError)
@@ -184,7 +235,7 @@ fun ActivityForm() { // Take FormData object directly
             )
             attachedImages.add(bucket.publicUrl(uploadResponse.path))
           }
-        }catch (e: Exception) {
+        } catch (e: Exception) {
           snackbarHostState.showSnackbar(
             message = "Error uploading images. Please try again",
             actionLabel = "Close"
@@ -193,7 +244,7 @@ fun ActivityForm() { // Take FormData object directly
           return@launch
         }
 
-        val inp =  OrganisationActivityInput(
+        val inp = OrganisationActivityInput(
           name = name,
           shortDescription = shortDescription,
           longDescription = description,
@@ -206,17 +257,20 @@ fun ActivityForm() { // Take FormData object directly
           startDateTime = startDate?.atTime(startTime!!).toString(),
           endDateTime = endDate?.atTime(endTime!!).toString(),
           mediaFiles = attachedImages,
-          contactPeople =  contactPeople.map {
+          contactPeople = contactPeople.map {
             val (role, priority) = postMap[it.id] ?: Pair("", 0)
-            listOf(it.id, role, priority.toString()) },
+            listOf(it.id, role, priority.toString())
+          },
           additionalInstructions = additionalInstructions
         )
-        val res = apolloClient.mutation(AddOrganisationActivityMutation(
-         inp
-        )).execute()
+        val res = apolloClient.mutation(
+          AddOrganisationActivityMutation(
+            inp
+          )
+        ).execute()
 
         isSubmitting = false
-        if(!res.hasErrors()){
+        if (!res.hasErrors()) {
           // Reset form
           name = ""
           selectedType = null
@@ -287,7 +341,7 @@ fun ActivityForm() { // Take FormData object directly
       keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
     )
 
-    Column{
+    Column {
       // Type (Filter Chips)
       Text(text = "प्रकार :", style = MaterialTheme.typography.bodyMedium)
       Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -400,33 +454,6 @@ fun ActivityForm() { // Take FormData object directly
       keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
     )
 
-//    // State
-//    Dropdown(
-//      label = "State *",
-//      options = states,
-//      selectedValue = state,
-//      onValueChanged = {
-//        state = it
-//        district = ""
-//        stateError = false
-//      },
-//      isError = stateError,
-//      supportingText = { if (stateError) Text("State is required") }
-//    )
-//
-//    // District
-//    Dropdown(
-//      label = "District *",
-//      options = districts[state] ?: emptyList(),
-//      selectedValue = district,
-//      onValueChanged = {
-//        district = it
-//        districtError = false
-//      },
-//      isError = districtError,
-//      supportingText = { if (districtError) Text("District is required") }
-//    )
-
     FlowRow(
       horizontalArrangement = Arrangement.spacedBy(8.dp),
       verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -434,16 +461,26 @@ fun ActivityForm() { // Take FormData object directly
       StateDropdown(
         states = indianStatesToDistricts.keys.toList(),
         selectedState = state,
-        onStateSelected = { state = it },
-        modifier = Modifier.width( 160.dp)
+        onStateSelected = {
+          state = it
+          stateError = false
+        },
+        modifier = Modifier.width(160.dp),
+        isError = stateError,
+        errorMessage = if (stateError) stateErrorMessage else ""
       )
       // District Selection (Conditional)
       val districts = indianStatesToDistricts[state] ?: emptyList()
       DistrictDropdown(
         districts = districts,
         selectedDistrict = district,
-        onDistrictSelected = { district = it ?: "" },
-        modifier = Modifier.width(200.dp)
+        onDistrictSelected = {
+          district = it ?: ""
+          districtError = false
+        },
+        modifier = Modifier.width(200.dp),
+        isError = districtError,
+        errorMessage = if (districtError) districtErrorMessage else ""
       )
       // Pincode
       OutlinedTextField(
@@ -467,11 +504,12 @@ fun ActivityForm() { // Take FormData object directly
     }
     FlowRow(
       horizontalArrangement = Arrangement.spacedBy(16.dp),
-    ){
-      Column{
+    ) {
+      Column {
         Text(text = "प्रारंभ:", style = MaterialTheme.typography.bodyMedium)
         Row(
-          horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+          horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
           CustomTextField(
             value = startDateText,
             label = "दिनांक",
@@ -479,7 +517,7 @@ fun ActivityForm() { // Take FormData object directly
             readOnly = true,
             onClick = { openStartDateDialog.value = true },
             isError = startDateError,
-            supportingText = {if (startDateError) Text("Start date is required")}
+            supportingText = { if (startDateError) Text(if (startDateTimeErrorMessage.isEmpty()) "Start date is required" else startDateTimeErrorMessage) }
           )
 
           CustomTextField(
@@ -489,12 +527,12 @@ fun ActivityForm() { // Take FormData object directly
             readOnly = true,
             onClick = { openStartTimeDialog.value = true },
             isError = startTimeError,
-            supportingText = {if (startTimeError) Text("Start time is required")}
+            supportingText = { if (startTimeError) Text(if (startDateTimeErrorMessage.isEmpty()) "Start time is required" else startDateTimeErrorMessage) }
           )
         }
       }
 
-      Column{
+      Column {
         Text(text = "समाप्ति:", style = MaterialTheme.typography.bodyMedium)
         // End Date and Time
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -505,7 +543,7 @@ fun ActivityForm() { // Take FormData object directly
             readOnly = true,
             onClick = { openEndDateDialog.value = true },
             isError = endDateError,
-            supportingText = {if (endDateError) Text("End date is required")}
+            supportingText = { if (endDateError) Text(if (endDateTimeErrorMessage.isEmpty()) "End date is required" else endDateTimeErrorMessage) }
           )
 
           CustomTextField(
@@ -515,7 +553,7 @@ fun ActivityForm() { // Take FormData object directly
             readOnly = true,
             onClick = { openEndTimeDialog.value = true },
             isError = endTimeError,
-            supportingText = {if (endTimeError) Text("End time is required")}
+            supportingText = { if (endTimeError) Text(if (endDateTimeErrorMessage.isEmpty()) "End time is required" else endDateTimeErrorMessage) }
           )
         }
       }
@@ -648,9 +686,24 @@ fun ActivityForm() { // Take FormData object directly
 @Composable
 fun CustomDatePickerDialog(
   onDateSelected: (LocalDate) -> Unit,
-  onDismissRequest: () -> Unit
+  onDismissRequest: () -> Unit,
+  disablePastDates: Boolean = false
 ) {
-  val datePickerState = rememberDatePickerState()
+  val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+  val datePickerState = rememberDatePickerState(
+    selectableDates = if (disablePastDates) {
+      object : SelectableDates {
+        override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+          val selectedDate = Instant.fromEpochMilliseconds(utcTimeMillis)
+            .toLocalDateTime(TimeZone.currentSystemDefault()).date
+          return selectedDate >= today // Allow only future dates
+        }
+      }
+    } else {
+      DatePickerDefaults.AllDates
+    }
+  )
   val selectedDate = datePickerState.selectedDateMillis?.let {
     Instant.fromEpochMilliseconds(it).toLocalDateTime(TimeZone.currentSystemDefault()).date
   }
@@ -664,7 +717,7 @@ fun CustomDatePickerDialog(
   ) {
     Surface(shape = MaterialTheme.shapes.extraLarge) {
       Column(
-        modifier = Modifier.padding(16.dp),
+//        modifier = Modifier.padding(4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
       ) {
@@ -680,10 +733,11 @@ fun CustomDatePickerDialog(
             Text(text = "Cancel")
           }
           Spacer(modifier = Modifier.width(8.dp))
-          Button(onClick = {
-            selectedDate?.let { onDateSelected(it) }
-            onDismissRequest()
-          },
+          Button(
+            onClick = {
+              selectedDate?.let { onDateSelected(it) }
+              onDismissRequest()
+            },
             enabled = selectedDate != null
           ) {
             Text(text = "OK")
@@ -781,7 +835,6 @@ fun MultiSelectDropdown(
 }
 
 
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ContactPeopleDropdown(
@@ -835,7 +888,7 @@ fun ContactPeopleDropdown(
                   tint = Color.Gray
                 )
               }
-              Column{
+              Column {
                 Text(member.name)
                 OutlinedTextField(
                   modifier = Modifier.width(200.dp),
@@ -853,7 +906,7 @@ fun ContactPeopleDropdown(
                   onSelectionChanged(selectedMembers - member)
                 },
                 contentAlignment = Alignment.Center
-              ){
+              ) {
                 Icon(
                   Icons.Default.Close,
                   contentDescription = null,
@@ -984,17 +1037,18 @@ fun CustomTextField(
   isError: Boolean = false,
   supportingText: @Composable () -> Unit = {}
 ) {
-
-
   OutlinedTextField(
     value = value,
-    onValueChange = {  },
+    onValueChange = { },
     label = { Text(label) },
     modifier = modifier,
     readOnly = readOnly,
     trailingIcon = {
       IconButton(onClick = onClick) {
-        Icon(if(label.contains("दिनांक")) Icons.Filled.DateRange else Icons.Filled.Schedule, contentDescription = "Select Date")
+        Icon(
+          if (label.contains("दिनांक")) Icons.Filled.DateRange else Icons.Filled.Schedule,
+          contentDescription = "Select Date"
+        )
       }
     },
     interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
