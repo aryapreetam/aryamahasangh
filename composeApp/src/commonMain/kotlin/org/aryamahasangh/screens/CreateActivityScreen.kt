@@ -21,7 +21,6 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
@@ -687,7 +686,7 @@ fun ActivityForm() { // Take FormData object directly
 fun CustomDatePickerDialog(
   onDateSelected: (LocalDate) -> Unit,
   onDismissRequest: () -> Unit,
-  disablePastDates: Boolean = false
+  disablePastDates: Boolean = true
 ) {
   val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
@@ -708,43 +707,35 @@ fun CustomDatePickerDialog(
     Instant.fromEpochMilliseconds(it).toLocalDateTime(TimeZone.currentSystemDefault()).date
   }
 
-  Dialog(
+  DatePickerDialog(
     onDismissRequest = onDismissRequest,
-    properties = DialogProperties(
-      dismissOnBackPress = true,
-      dismissOnClickOutside = true
-    )
-  ) {
-    Surface(shape = MaterialTheme.shapes.extraLarge) {
-      Column(
-//        modifier = Modifier.padding(4.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+    confirmButton = {
+      TextButton(
+        onClick = {
+          onDismissRequest()
+          val selectedDate1 = datePickerState.selectedDateMillis?.let {
+            Instant.fromEpochMilliseconds(it).toLocalDateTime(TimeZone.currentSystemDefault()).date
+          }
+          selectedDate1?.let {
+            onDateSelected(it)
+          }
+        },
+        enabled = selectedDate != null
       ) {
-        DatePicker(
-          state = datePickerState,
-          title = null,
-          headline = null,
-          showModeToggle = false,
-          colors = DatePickerDefaults.colors(),
-        )
-        Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
-          TextButton(onClick = onDismissRequest) {
-            Text(text = "Cancel")
-          }
-          Spacer(modifier = Modifier.width(8.dp))
-          Button(
-            onClick = {
-              selectedDate?.let { onDateSelected(it) }
-              onDismissRequest()
-            },
-            enabled = selectedDate != null
-          ) {
-            Text(text = "OK")
-          }
-        }
+        Text("OK")
+      }
+    },
+    dismissButton = {
+      TextButton(onClick = {
+        onDismissRequest()
+      }) {
+        Text("Cancel")
       }
     }
+  ){
+    DatePicker(
+      state = datePickerState
+    )
   }
 }
 
