@@ -155,7 +155,7 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
     ) {
       Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Place", tint = Color.Gray)
       Spacer(modifier = Modifier.width(4.dp))
-      Text(text = "स्थान: ${activity.address}, ${activity.district}, ${activity.state}. पिनकोड: ${activity.pincode}", style = MaterialTheme.typography.bodyMedium)
+      Text(text = "स्थान: ${activity.address}, ${activity.district}, ${activity.state}.", style = MaterialTheme.typography.bodyMedium)
     }
 
     // Start and End Date/Time

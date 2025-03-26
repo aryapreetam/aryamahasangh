@@ -83,7 +83,6 @@ query organisationalActivityDetail($id: String!){
     address
     state
     district
-    pincode
     startDateTime
     endDateTime
     mediaFiles

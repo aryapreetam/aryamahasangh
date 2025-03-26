@@ -46,7 +46,6 @@ data class ActivityInput(
   val address: String = "",
   val state: String = "",
   val district: String = "",
-  val pincode: Int,
   @Serializable(with = LocalDateTimeSerializer::class)
   @SerialName("start_datetime")
   val startDateTime: LocalDateTime,
@@ -82,7 +81,6 @@ data class OrganisationActivityInput(
   val address: String = "",
   val state: String = "",
   val district: String = "",
-  val pincode: Int,
   val associatedOrganisations: List<String> = listOf(),
   @Serializable(with = LocalDateTimeSerializer::class)
   val startDateTime: LocalDateTime,
@@ -109,7 +107,6 @@ data class OrganisationalActivity(
   val address: String = "",
   val state: String = "",
   val district: String = "",
-  val pincode: Int,
   /**
    * list of organisations associated with this activity.
    * represented by orgId
