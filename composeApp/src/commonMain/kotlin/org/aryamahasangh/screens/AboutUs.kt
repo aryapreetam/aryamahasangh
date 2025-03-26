@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -17,6 +17,8 @@ import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.error_profile_image
 import aryamahasangh.composeapp.generated.resources.mahasangh_logo_without_background
 import coil3.compose.AsyncImage
+import org.aryamahasangh.OrganisationQuery
+import org.aryamahasangh.network.apolloClient
 import org.jetbrains.compose.resources.painterResource
 
 @Composable
@@ -27,6 +29,13 @@ fun AboutUs() {
 //      println("counter: ${it.data?.counter}")
 //    }
 //  }
+
+  var organisation by remember { mutableStateOf<OrganisationQuery.Organisation?>(null) }
+
+  LaunchedEffect(Unit) {
+    val res = apolloClient.query(OrganisationQuery(name = "आर्य महासंघ")).execute()
+    organisation = res.data?.organisation
+  }
 
   Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
     Column(
@@ -65,6 +74,11 @@ fun AboutUs() {
       }
     }
   }
+}
+
+@Composable
+fun AboutUsIntro() {
+
 }
 
 

@@ -345,7 +345,6 @@ class ActivityMutation : Mutation {
         address = input.address,
         state = input.state,
         district = input.district,
-        pincode = input.pincode,
         mediaFiles = input.mediaFiles,
         additionalInstructions =  input.additionalInstructions
       )){

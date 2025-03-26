@@ -16,7 +16,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -97,8 +96,6 @@ fun ActivityForm() { // Take FormData object directly
   var stateErrorMessage by remember { mutableStateOf("") }
   var districtErrorMessage by remember { mutableStateOf("") }
 
-  var pincode by remember { mutableStateOf("") }
-  var pincodeError by remember { mutableStateOf(false) }
 
   var startDate by remember { mutableStateOf<LocalDate?>(null) }
   var startTime by remember { mutableStateOf<LocalTime?>(null) }
@@ -159,7 +156,6 @@ fun ActivityForm() { // Take FormData object directly
     addressError = address.isEmpty()
     stateError = state.isEmpty()
     districtError = district.isEmpty()
-    pincodeError = pincode.isEmpty() || pincode.length > 8
     startDateError = startDate == null
     startTimeError = startTime == null
     endDateError = endDate == null
@@ -211,7 +207,7 @@ fun ActivityForm() { // Take FormData object directly
     }
 
     return !(nameError || typesError || shortDescriptionError || descriptionError || associatedOrganisationsError
-        || addressError || stateError || districtError || pincodeError || startDateError || startTimeError
+        || addressError || stateError || districtError || startDateError || startTimeError
         || endDateError || endTimeError || contactPeopleError)
   }
 
@@ -251,7 +247,6 @@ fun ActivityForm() { // Take FormData object directly
           address = address,
           state = state,
           district = district,
-          pincode = pincode.toInt(),
           associatedOrganisations = associatedOrganisations.map { it.id },
           startDateTime = startDate?.atTime(startTime!!).toString(),
           endDateTime = endDate?.atTime(endTime!!).toString(),
@@ -279,7 +274,6 @@ fun ActivityForm() { // Take FormData object directly
           address = ""
           state = ""
           district = ""
-          pincode = ""
           startDate = null
           startTime = null
           endDate = null
@@ -303,7 +297,6 @@ fun ActivityForm() { // Take FormData object directly
           addressError = false
           stateError = false
           districtError = false
-          pincodeError = false
           startDateError = false
           startTimeError = false
           endDateError = false
@@ -480,25 +473,6 @@ fun ActivityForm() { // Take FormData object directly
         modifier = Modifier.width(200.dp),
         isError = districtError,
         errorMessage = if (districtError) districtErrorMessage else ""
-      )
-      // Pincode
-      OutlinedTextField(
-        value = pincode,
-        onValueChange = {
-          if (it.length <= 8 && it.all { char -> char.isDigit() }) {
-            pincode = it
-            pincodeError = false
-          }
-        },
-        label = { Text("पिनकोड") },
-        modifier = Modifier.width(110.dp),
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-        isError = pincodeError,
-        supportingText = {
-          if (pincodeError) {
-            Text("Pincode must be numeric and no more than 8 digits")
-          }
-        }
       )
     }
     FlowRow(
