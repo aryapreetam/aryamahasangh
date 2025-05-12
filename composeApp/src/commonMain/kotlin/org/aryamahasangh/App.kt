@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import aryamahasangh.composeapp.generated.resources.*
 import dev.burnoo.compose.remembersetting.rememberBooleanSetting
@@ -28,66 +29,21 @@ import kotlinx.coroutines.launch
 import org.aryamahasangh.components.LoginDialog
 import org.aryamahasangh.navigation.RootNavGraph
 import org.aryamahasangh.navigation.Screen
-import org.jetbrains.compose.reload.DevelopmentEntryPoint
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
-//@Serializable
-//data class Test(
-//  val id: String? = null,
-//  @Serializable(with = LocalDateTimeSerializer::class)
-//  @SerialName("created_at")
-//  val createdAt: LocalDateTime? = null,
-//  val type: ActivityType,
-//  val files: List<String>
-//)
-//
-//@Serializable
-//data class TestInput(
-//  val type: ActivityType,
-//  val files: List<String>
-//)
-//
-//object LocalDateTimeSerializer : KSerializer<LocalDateTime> {
-//  override val descriptor: SerialDescriptor =
-//    PrimitiveSerialDescriptor("LocalDateTime", PrimitiveKind.STRING)
-//
-//  override fun serialize(encoder: Encoder, value: LocalDateTime) {
-//    // Serialize LocalDateTime to a string (if needed)
-//    encoder.encodeString(value.toString())
-//  }
-//
-//  override fun deserialize(decoder: Decoder): LocalDateTime {
-//    // Deserialize the timestamp string into LocalDateTime
-//    val timestamp = decoder.decodeString()
-//    return kotlinx.datetime.Instant.parse(timestamp)
-//      .toLocalDateTime(TimeZone.UTC) // Convert to LocalDateTime in UTC
-//  }
-//}
-
 @Composable
 @Preview
 fun App() {
-  DevelopmentEntryPoint {
-    AppTheme {
-      // for quickly testing the components
-      //DemoComposable()
-//      val scope = rememberCoroutineScope()
-//      val test = TestInput(type = ActivityType.CAMPAIGN, files = listOf("Test", "Test1"))
-//      scope.launch {
-//        val res = supabaseClient.from("test").insert(test){
-//          select()
-//        }.decodeSingle<Test>()
-//        println("res: ${res}")
-//      }
-      AppDrawer()
-
-    }
+  AppTheme {
+    AppDrawer()
   }
 }
 
-val LocalSnackbarHostState = compositionLocalOf<SnackbarHostState> { error("SnackbarHostState is not found") }
+val LocalSnackbarHostState =
+  compositionLocalOf<SnackbarHostState> { error("SnackbarHostState is not found") }
+
 //CompositionLocal for Authentication State:
 val LocalAuthState = compositionLocalOf { mutableStateOf(false) }
 
@@ -105,47 +61,47 @@ object SettingKeys {
 
 
 @Composable
-fun AppDrawer(){
-  val navController = rememberNavController()
+fun AppDrawer() {
   BoxWithConstraints(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    var (selectedOption, setValue) = remember { mutableStateOf(drawerOptions[0].title) }
-
+    val navController = rememberNavController()
     val isLargeScreen = maxWidth > 840.dp
     if (isLargeScreen) {
       Box(modifier = Modifier.width(1280.dp)){
-        LargeScreens("", drawerState, selectedOption, setValue, navController)
+        LargeScreens(drawerState, navController)
       }
     } else {
-      SmallScreens("", drawerState, selectedOption, setValue, navController)
+      SmallScreens(drawerState, navController)
     }
   }
 }
 
-data class DrawerOption(val title: String, val icon: DrawableResource, val route: Screen = Screen.AboutUs)
+data class DrawerOption(val title: String, val icon: DrawableResource, val route: Screen = Screen.AboutSection)
 val drawerOptions = listOf(
-  DrawerOption("हमारे बारे मे", Res.drawable.info, Screen.AboutUs),
-  DrawerOption("गतिविधियां", Res.drawable.local_activity, Screen.Activities),
-  DrawerOption("संलग्न संस्थाएं", Res.drawable.account_tree, Screen.Orgs),
+  DrawerOption("हमारे बारे मे", Res.drawable.info, Screen.AboutSection),
+  DrawerOption("गतिविधियां", Res.drawable.local_activity, Screen.ActivitiesSection),
+  DrawerOption("संलग्न संस्थाएं", Res.drawable.account_tree, Screen.OrgsSection),
   DrawerOption("हमसें जुडें", Res.drawable.handshake, Screen.JoinUs),
-  DrawerOption("छात्रा प्रवेश", Res.drawable.local_library, Screen.AdmissionForm),
-  DrawerOption("स्वाध्याय", Res.drawable.local_library, Screen.Learning),
-)
 
-@Composable
-@Preview
-fun DrawerContentPreview() {
-  DrawerContent(rememberDrawerState(initialValue = DrawerValue.Open), drawerOptions[0].title, {}, navController1 = rememberNavController())
-}
+  DrawerOption("गुरुकुल महाविद्यालय", Res.drawable.school, Screen.GurukulSection),
+  DrawerOption("आर्य-आर्या निर्माण", Res.drawable.interactive_space, Screen.AryaNirmanSection),
+  DrawerOption("आर्य समाज संगठन", Res.drawable.diversity_3, Screen.AryaSamajSection),
+  DrawerOption("आओ स्वाध्याय करें", Res.drawable.menu_book, Screen.Learning),
+  DrawerOption("ग्रन्थ विभाग", Res.drawable.local_library, Screen.BookSection),
+  )
+
 
 @Composable
 fun DrawerContent(
   drawerState: DrawerState,
-  selectedOption: String,
-  setValue: (String) -> Unit,
-  navController1: NavHostController
+  navController: NavHostController,
 ) {
   val scope = rememberCoroutineScope()
+  val backStackEntry by navController.currentBackStackEntryAsState()
+  val currentDestination by remember {
+    derivedStateOf { backStackEntry?.destination?.route }
+  }
+
   Column(modifier = Modifier.width(250.dp).padding(8.dp)) {
     Row(
       modifier = Modifier.fillMaxWidth(),
@@ -170,13 +126,20 @@ fun DrawerContent(
         label = {
           Text(option.title, style = MaterialTheme.typography.bodyLarge)
         },
-        selected = selectedOption == option.title,
+        selected = checkIfSelected(
+          currentDestination,
+          option.route.toString()
+        ),
         onClick = {
-          setValue(option.title)
-          scope.launch { drawerState.close() }
-          navController1.navigate(option.route){
-            popUpTo(option.route)
+          navController.navigate(option.route){
+//            popUpTo(navController.graph.findStartDestination()){
+//              saveState = true
+//            }
             launchSingleTop = true
+            restoreState = true
+            scope.launch {
+              drawerState.close()
+            }
           }
         },
         icon = {
@@ -188,24 +151,40 @@ fun DrawerContent(
       )
       if(option.title == "हमसें जुडें"){
         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-        Text("गुरुकुल", modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp), style = MaterialTheme.typography.titleMedium)
+        Text("गुरुकुल", modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp), style = MaterialTheme.typography.titleMedium)
+      }else if(option.title == "गुरुकुल महाविद्यालय"){
+        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+        Text("संगठन ", modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp), style = MaterialTheme.typography.titleMedium)
+      }else if(option.title == "आर्य समाज संगठन"){
+        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+        Text("स्वाध्याय ", modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp), style = MaterialTheme.typography.titleMedium)
       }
     }
   }
 }
 
+private fun checkIfSelected(currentDestination: String?, currentDrawerItem: String): Boolean{
+  return if((currentDestination?.contains("AboutUs") == true || currentDestination?.contains("AboutUsDetails") == true) && currentDrawerItem == Screen.AboutSection.toString()) true
+  else if((currentDestination?.contains("Activities") == true || currentDestination?.contains("ActivityDetails") == true) && currentDrawerItem == Screen.ActivitiesSection.toString()) true
+  else if((currentDestination?.contains("Orgs") == true || currentDestination?.contains("OrgDetails") == true) && currentDrawerItem == Screen.OrgsSection.toString()) true
+  else if((currentDestination?.contains("Learning") == true || currentDestination?.contains("VideoDetails") == true) && currentDrawerItem == Screen.LearningSection.toString()) true
+  else if((currentDestination?.contains("BookOrderForm") == true) && currentDrawerItem == Screen.BookSection.toString()) true
+  else if((currentDestination?.contains("AryaNirmanHome") == true) && currentDrawerItem == Screen.AryaNirmanSection.toString()) true
+  else if((currentDestination?.contains("AryaSamajHome") == true) && currentDrawerItem == Screen.AryaSamajSection.toString()) true
+  else if((currentDestination?.contains("GurukulCollege") == true || currentDestination?.contains("AdmissionForm") == true) && currentDrawerItem == Screen.GurukulSection.toString()) true
+  else if(currentDestination?.contains(currentDrawerItem) == true) true
+  else false
+}
+
 @Composable
 fun LargeScreens(
-  title: String,
   drawerState: DrawerState,
-  selectedOption: String,
-  setValue: (String) -> Unit,
-  navController1: NavHostController
+  navController: NavHostController,
 ){
   PermanentNavigationDrawer(
     drawerContent = {
       PermanentDrawerSheet {
-        DrawerContent(drawerState, selectedOption, setValue, navController1)
+        DrawerContent(drawerState, navController)
       }
     }
   ){
@@ -213,7 +192,7 @@ fun LargeScreens(
       VerticalDivider(
         modifier = Modifier.padding(top = 4.dp, bottom = 4.dp, end = 4.dp)
       )
-      MainContent(title, drawerState, selectedOption, setValue, navController1)
+      MainContent( drawerState, navController)
     }
   }
 }
@@ -221,21 +200,18 @@ fun LargeScreens(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SmallScreens(
-  title: String,
   drawerState: DrawerState,
-  selectedOption: String,
-  setValue: (String) -> Unit,
-  navController1: NavHostController
+  navController: NavHostController,
 ) {
   ModalNavigationDrawer(
     drawerState = drawerState,
     drawerContent = {
       ModalDrawerSheet {
-        DrawerContent(drawerState, selectedOption, setValue, navController1)
+        DrawerContent(drawerState, navController)
       }
     },
     content = {
-      MainContent(title, drawerState, selectedOption, setValue, navController1)
+      MainContent(drawerState, navController)
     }
   )
 }
@@ -258,52 +234,45 @@ fun getScreenTitle(route: String?): String{
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainContent(
-  title: String,
   drawerState: DrawerState,
-  selectedOption: String,
-  setValue: (String) -> Unit,
-  navController1: NavHostController
+  navController: NavHostController,
 ) {
   val scope = rememberCoroutineScope()
-  val (orgDetails, selectedOrgDetails) = remember { mutableStateOf("") }
-  val (activityDetails, selectedActivityDetails) = remember { mutableStateOf("") }
-  val (videoDetails, selectedVideoDetails) = remember { mutableStateOf("") }
 
   val authState = rememberAuthState() // Get auth state from CompositionLocal
   var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
   var userEmail by rememberStringSetting(SettingKeys.userEmail, "")
-
   var showLoginDialog by remember { mutableStateOf(false) }
   var showLogoutDialog by remember { mutableStateOf(false) }
   val snackbarHostState = remember { SnackbarHostState() }
 
-  LaunchedEffect(selectedOption) {
-    selectedOrgDetails("")
-    selectedActivityDetails("")
-    selectedVideoDetails("")
+  val backStackEntry by navController.currentBackStackEntryAsState()
+  val currentDestination by remember {
+    derivedStateOf { backStackEntry?.destination?.route }
   }
+
+  LaunchedEffect(currentDestination){
+    println("currentRoute: $currentDestination")
+  }
+
   Scaffold(
     snackbarHost = {
       SnackbarHost(hostState = snackbarHostState)
     },
     topBar = {
-      val currentRoute = navController1.currentDestination?.route
-      val screenTitle = getScreenTitle(currentRoute)
-      println("screentitle: $screenTitle")
       TopAppBar(
         title = {
           Row(modifier = Modifier.fillMaxWidth().basicMarquee().padding(top = 2.dp),
             horizontalArrangement = Arrangement.Center) {
-            Text(if(screenTitle.isNotEmpty()) screenTitle else "॥ ओ३म् ॥")
+            //Text(if(screenTitle.isNotEmpty()) screenTitle else "॥ ओ३म् ॥")
           }
         },
         navigationIcon = {
-          if(orgDetails.isNotEmpty() || activityDetails.isNotEmpty() || videoDetails.isNotEmpty()) {
+          val currentScreen = currentDestination?.substringAfterLast(".")
+          val shouldShowBack = listOf("AboutUsDetails", "ActivityDetails", "OrgDetails", "VideoDetails", "AdmissionForm").any { currentScreen?.startsWith(it) == true }
+          if(shouldShowBack) {
             IconButton(onClick = {
-              selectedOrgDetails("")
-              selectedActivityDetails("")
-              selectedVideoDetails("")
-              navController1.navigateUp()
+              navController.navigateUp()
             }) {
               Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back Arrow")
             }
@@ -370,23 +339,11 @@ fun MainContent(
           .fillMaxSize(1.0f)
           .padding(paddingValues)
       ) {
-        println("Selected Option: $selectedOption")
         CompositionLocalProvider(
           LocalSnackbarHostState provides snackbarHostState,
           LocalAuthState provides authState
         ){
-          RootNavGraph(
-            navController = navController1,
-            onNavigateToOrgDetails = { orgId ->
-              selectedOrgDetails(orgId)
-            },
-            onNavigateToActivityDetails = { id ->
-              selectedActivityDetails(id)
-            },
-            onNavigateToVideoDetails = { id ->
-              selectedVideoDetails(id)
-            }
-          )
+          RootNavGraph(navController)
         }
       }
     },

@@ -73,6 +73,7 @@ kotlin {
       implementation(libs.coil.network.ktor3)
       implementation(libs.navigation.compose)
       implementation(libs.kotlinx.serialization.json)
+      implementation(libs.material.adaptive)
 
 //      implementation("com.apollographql.apollo:apollo-runtime-kotlin:2.5.14")
       implementation("com.apollographql.apollo:apollo-runtime:4.1.1")
@@ -102,10 +103,8 @@ kotlin {
     }
     androidMain.dependencies {
       implementation(libs.androidx.activity.compose)
-//      implementation(libs.compose.ui.tooling.preview)
+      implementation(libs.compose.ui.tooling.preview)
       implementation("androidx.compose.ui:ui:${libs.versions.compose.android.get()}")
-      implementation("androidx.compose.ui:ui-tooling-preview:${libs.versions.compose.android.get()}")
-
       implementation(libs.ktor.client.android)
     }
     iosMain.dependencies {

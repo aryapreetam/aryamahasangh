@@ -1,5 +1,5 @@
 [versions]
-agp = "8.8.0-alpha05"
+agp = "8.9.2"
 android-compileSdk = "35"
 android-minSdk = "24"
 android-targetSdk = "34"
@@ -7,29 +7,29 @@ androidx-appcompat = "1.7.0"
 androidx-constraintlayout = "2.2.0"
 androidx-core-ktx = "1.15.0"
 androidx-espresso-core = "3.6.1"
-androidx-lifecycle = "2.8.4"
+androidx-lifecycle = "2.9.0-alpha07"
 androidx-material = "1.12.0"
 androidx-test-junit = "1.2.1"
 coilCompose = "3.1.0"
-compose-multiplatform = "1.8.0-beta01"
+compose-multiplatform = "1.8.0"
 # for ui tooling
-compose-android = "1.8.0-beta02"
+compose-android = "1.8.0"
 junit = "4.13.2"
 
-kotlin = "2.1.20-RC"
+kotlin = "2.1.20"
 kermit = "2.0.5"
 # kotlin = "2.1.0-firework.32" # custom version for experimental hot reload support
-compose-hot-reload = "1.0.0-dev.32.1"
+compose-hot-reload = "1.0.0-alpha09"
 
 kotlinx-coroutines = "1.9.0"
-kotlinx-serialization = "1.8.0"
+kotlinx-serialization = "1.8.1"
 ktor = "3.1.0"
 
 logback = "1.5.12"
-navigationCompose = "2.9.0-alpha15"
-uiToolingPreviewDesktop = "1.8.0-beta01"
-uiToolingPreviewAndroid = "1.8.0-beta02"
-kotlinStdlib = "2.1.0-firework.32"
+navigationCompose = "2.9.0-beta01"
+adaptive = "1.1.0"
+uiToolingPreviewDesktop = "1.8.0"
+uiToolingPreviewAndroid = "1.8.0"
 runner = "1.5.2"
 core = "1.5.0"
 
@@ -80,11 +80,11 @@ compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = 
 compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview", version.ref = "compose-android" }
 androidx-ui-tooling-preview-android = { group = "androidx.compose.ui", name = "ui-tooling-preview-android", version.ref = "uiToolingPreviewAndroid" }
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
-kotlin-stdlib = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version.ref = "kotlinStdlib" }
 androidx-runner = { group = "androidx.test", name = "runner", version.ref = "runner" }
 androidx-core = { group = "androidx.test", name = "core", version.ref = "core" }
 compose-webview-multiplatform-desktop = { module = "io.github.kevinnzou:compose-webview-multiplatform-desktop", version.ref = "composeWebviewMultiplatform" }
 android-youtubeplayer-core = { module = "com.pierfrancescosoffritti.androidyoutubeplayer:core", version.ref = "androidYoutubePlayerCore" }
+material-adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "adaptive" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
@@ -94,7 +94,7 @@ composeCompiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "k
 kotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 ktor = { id = "io.ktor.plugin", version.ref = "ktor" }
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
-composeHotReload = { id = "org.jetbrains.compose-hot-reload", version.ref = "compose-hot-reload" }
+composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "compose-hot-reload" }
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 apollo = { id = "com.apollographql.apollo", version.ref = "apollo" }

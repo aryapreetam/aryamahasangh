@@ -1,6 +1,10 @@
 package org.aryamahasangh.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -18,7 +22,7 @@ import org.aryamahasangh.network.apolloClient
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun Orgs(navController: NavHostController, onNavigateToOrgDetails: (String) -> Unit) {
+fun OrgsScreen(navController: NavHostController, onNavigateToOrgDetails: (String) -> Unit) {
 
   val organisations = remember { mutableStateOf<List<OrganisationsQuery.Organisation>>(listOf()) }
   LaunchedEffect(Unit) {

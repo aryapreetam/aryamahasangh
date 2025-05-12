@@ -9,7 +9,12 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -46,7 +51,8 @@ fun AdmissionScreen(){
       state = pagerState,
       modifier = Modifier
         .fillMaxWidth()
-        .weight(1f)
+        .weight(1f),
+      userScrollEnabled = false
     ){
       Box(
         modifier = Modifier.fillMaxSize(),

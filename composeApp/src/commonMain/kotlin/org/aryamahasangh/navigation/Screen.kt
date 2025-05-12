@@ -5,7 +5,11 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed class Screen {
   @Serializable
+  data object OrgsSection: Screen()
+  @Serializable
   data object Orgs: Screen()
+  @Serializable
+  data object ActivitiesSection: Screen()
   @Serializable
   data object Activities: Screen()
   @Serializable
@@ -15,11 +19,35 @@ sealed class Screen {
   @Serializable
   data object Learning: Screen()
   @Serializable
+  data object LearningSection: Screen()
+
+  @Serializable
+  data object GurukulSection: Screen()
+
+  @Serializable
+  data object GurukulCollege: Screen()
+  @Serializable
+  data object BookSection: Screen()
+  @Serializable
+  data object BookOrderForm: Screen()
+  @Serializable
+  data object AryaNirmanSection: Screen()
+  @Serializable
+  data object AryaNirmanHome: Screen()
+  @Serializable
+  data object AryaSamajSection: Screen()
+  @Serializable
+  data object AryaSamajHome: Screen()
+  @Serializable
   data class VideoDetails(val learningItemId: String): Screen()
   @Serializable
   data class OrgDetails(val name: String): Screen()
   @Serializable
+  data object AboutSection: Screen()
+  @Serializable
   data object AboutUs: Screen()
+  @Serializable
+  data object AboutUsDetails: Screen()
   @Serializable
   data object AdmissionForm: Screen()
 }
