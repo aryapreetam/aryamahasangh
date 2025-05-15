@@ -1,21 +1,11 @@
 package org.aryamahasangh.screens
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -27,25 +17,62 @@ import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.error_profile_image
 import aryamahasangh.composeapp.generated.resources.mahasangh_logo_without_background
 import coil3.compose.AsyncImage
-import org.aryamahasangh.OrganisationQuery
-import org.aryamahasangh.network.apolloClient
+import kotlinx.coroutines.launch
+import org.aryamahasangh.LocalSnackbarHostState
+import org.aryamahasangh.viewmodel.AboutUsViewModel
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
-fun DetailedAboutUs() {
-  var organisation by remember { mutableStateOf<OrganisationQuery.Organisation?>(null) }
-
-  LaunchedEffect(Unit) {
-    val res = apolloClient.query(OrganisationQuery(name = "आर्य महासंघ")).execute()
-    organisation = res.data?.organisation
+fun DetailedAboutUs(viewModel: AboutUsViewModel) {
+  val scope = rememberCoroutineScope()
+  val snackbarHostState = LocalSnackbarHostState.current
+  
+  // Collect UI state from ViewModel
+  val uiState by viewModel.uiState.collectAsState()
+  
+  // Handle loading state
+  if (uiState.isLoading) {
+    Box(
+      modifier = Modifier.fillMaxSize(),
+      contentAlignment = Alignment.Center
+    ) {
+      LinearProgressIndicator()
+    }
+    return
+  }
+  
+  // Handle error state
+  uiState.error?.let { error ->
+    LaunchedEffect(error) {
+      snackbarHostState.showSnackbar(
+        message = error,
+        actionLabel = "Retry"
+      )
+    }
+    
+    Box(
+      modifier = Modifier.fillMaxSize(),
+      contentAlignment = Alignment.Center
+    ) {
+      Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+        Text("Failed to load about us information")
+        Button(onClick = { viewModel.loadOrganisationDetails("आर्य महासंघ") }) {
+          Text("Retry")
+        }
+      }
+    }
+    return
   }
 
   Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
     Column(
       modifier = Modifier.fillMaxWidth(),
       verticalArrangement = Arrangement.spacedBy(8.dp),
-      horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+      horizontalAlignment = Alignment.CenterHorizontally
     ){
       Image(
         painter = painterResource(resource = Res.drawable.mahasangh_logo_without_background),
@@ -83,5 +110,7 @@ fun DetailedAboutUs() {
 @Preview
 @Composable
 fun PreviewDetailedAboutUs(){
-  DetailedAboutUs()
+  // This is just a preview, so we don't need a real ViewModel
+  // In a real app, we would inject the ViewModel
+  // DetailedAboutUs(viewModel = AboutUsViewModel())
 }

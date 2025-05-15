@@ -24,6 +24,7 @@ compose-hot-reload = "1.0.0-alpha09"
 kotlinx-coroutines = "1.9.0"
 kotlinx-serialization = "1.8.1"
 ktor = "3.1.0"
+koin = "4.0.4"
 
 logback = "1.5.12"
 navigationCompose = "2.9.0-beta01"
@@ -39,6 +40,7 @@ androidYoutubePlayerCore = "12.1.1"
 androidx-activityCompose = "1.10.0"
 
 supabase = "3.1.2"
+material3Android = "1.3.2"
 
 [libraries]
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
@@ -85,6 +87,10 @@ androidx-core = { group = "androidx.test", name = "core", version.ref = "core" }
 compose-webview-multiplatform-desktop = { module = "io.github.kevinnzou:compose-webview-multiplatform-desktop", version.ref = "composeWebviewMultiplatform" }
 android-youtubeplayer-core = { module = "com.pierfrancescosoffritti.androidyoutubeplayer:core", version.ref = "androidYoutubePlayerCore" }
 material-adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "adaptive" }
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+koin-compose = { module = "io.insert-koin:koin-compose", version.ref = "koin" }
+koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }
+androidx-material3-android = { group = "androidx.compose.material3", name = "material3-android", version.ref = "material3Android" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

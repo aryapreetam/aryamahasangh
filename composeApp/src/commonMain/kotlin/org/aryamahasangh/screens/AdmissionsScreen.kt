@@ -9,30 +9,28 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import org.aryamahasangh.viewmodel.AdmissionsViewModel
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
-@Preview
 @Composable
-fun AdmissionScreen(){
+fun AdmissionScreen(viewModel: AdmissionsViewModel) {
   Column(modifier = Modifier.fillMaxSize()) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val pagerState = rememberPagerState { 2 }
+    
     LaunchedEffect(selectedTabIndex) {
       pagerState.animateScrollToPage(selectedTabIndex)
     }
+    
     LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress) {
       if(!pagerState.isScrollInProgress) {
         selectedTabIndex = pagerState.currentPage
       }
     }
+    
     ScrollableTabRow(
       selectedTabIndex = selectedTabIndex
     ){
@@ -47,6 +45,7 @@ fun AdmissionScreen(){
         text = { Text("प्राप्त आवेदन") }
       )
     }
+    
     HorizontalPager(
       state = pagerState,
       modifier = Modifier
@@ -59,11 +58,19 @@ fun AdmissionScreen(){
         contentAlignment = Alignment.Center
       ) {
         if(it == 0){
-          RegistrationForm()
+          RegistrationForm(viewModel)
         }else{
-          ReceivedApplicationsScreen()
+          ReceivedApplicationsScreen(viewModel)
         }
       }
     }
   }
+}
+
+@Preview
+@Composable
+fun AdmissionScreenPreview() {
+  // This is just a preview, so we don't need a real ViewModel
+  // In a real app, we would inject the ViewModel
+  // AdmissionScreen(viewModel = AdmissionsViewModel())
 }

@@ -19,7 +19,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import org.aryamahasangh.OrganisationalActivityDetailQuery.ContactPeople
-import org.aryamahasangh.screens.JoinUsScreen
 import kotlin.random.Random
 
 @Composable
@@ -29,10 +28,11 @@ fun DemoComposable(){
   //JoinUsComponent()
 }
 
-@Composable
-fun JoinUsComponent(){
-  JoinUsScreen()
-}
+//@OptIn(ExperimentalMaterial3Api::class)
+//@Composable
+//fun JoinUsComponent(){
+//  JoinUsScreen()
+//}
 
 //@Composable
 //fun AddOrganisationInputForm(){

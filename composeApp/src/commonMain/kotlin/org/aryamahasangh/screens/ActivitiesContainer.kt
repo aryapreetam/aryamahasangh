@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -14,8 +15,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ActivitiesContainer(navController: NavHostController, onNavigateToActivityDetails: (String) -> Unit) {
+fun ActivitiesContainer(
+  navController: NavHostController, 
+  onNavigateToActivityDetails: (String) -> Unit,
+  viewModel: org.aryamahasangh.viewmodel.ActivitiesViewModel
+) {
   Column(modifier = Modifier.fillMaxSize()) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val pagerState = rememberPagerState { 2 }
@@ -53,9 +59,9 @@ fun ActivitiesContainer(navController: NavHostController, onNavigateToActivityDe
         contentAlignment = Alignment.Center
       ) {
         if(it == 0){
-          ActivitiesScreen(navController, onNavigateToActivityDetails)
+          ActivitiesScreen(navController, onNavigateToActivityDetails, viewModel)
         }else{
-          ActivityForm()
+          ActivityForm(viewModel)
         }
       }
     }
