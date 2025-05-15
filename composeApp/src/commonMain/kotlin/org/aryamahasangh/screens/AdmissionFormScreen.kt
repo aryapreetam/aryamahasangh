@@ -38,13 +38,12 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import org.aryamahasangh.AddStudentAdmissionDataMutation
 import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.components.PhotoItem
-import org.aryamahasangh.network.apolloClient
 import org.aryamahasangh.network.bucket
 import org.aryamahasangh.type.AdmissionFormDataInput
 import org.aryamahasangh.utils.epochToDate
+import org.aryamahasangh.viewmodel.AdmissionsViewModel
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.uuid.ExperimentalUuidApi
@@ -510,13 +509,16 @@ fun SignatureSection(
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class, ExperimentalUuidApi::class)
 @Composable
-fun RegistrationForm() {
+fun RegistrationForm(viewModel: AdmissionsViewModel) {
 
   val scope = rememberCoroutineScope()
   val snackbarHostState = LocalSnackbarHostState.current
 
   var FormData by remember { mutableStateOf(FormData()) }
-  var isSubmittingData by remember { mutableStateOf(false) }
+
+  // Collect form submission state from ViewModel
+  val formSubmissionState by viewModel.admissionFormSubmissionState.collectAsState()
+  var isSubmittingData = formSubmissionState.isSubmitting
   var formSubmittingProgress by remember { mutableStateOf("")}
 
   // State for each field and its error status
@@ -1156,8 +1158,10 @@ fun RegistrationForm() {
               }
 
               println("Form Data: $FormData") // Print form data
-              val res = apolloClient.mutation(AddStudentAdmissionDataMutation(
-                input = AdmissionFormDataInput(
+
+              // Submit form using ViewModel
+              viewModel.submitAdmissionForm(
+                AdmissionFormDataInput(
                   id = Uuid.random().toString(),
                   studentName = FormData.studentName,
                   aadharNo = FormData.aadharNo,
@@ -1180,48 +1184,7 @@ fun RegistrationForm() {
                   studentSignature = FormData.studentSignature!!,
                   parentSignature = FormData.parentSignature!!,
                 )
-              )).execute()
-              isSubmittingData = false
-              if(res.data?.addStudentAdmissionData == true){
-                // student form submission successful
-                snackbarHostState.showSnackbar(
-                  message = "Admission form data successfully submitted",
-                )
-//                toaster.show(
-//                  message = "Admission form data successfully submitted",
-//                  type = ToastType.Success
-//                )
-                studentName = ""
-                aadharNo = ""
-                dob = ""
-                selectedBloodGroup = ""
-                previousClass = ""
-                marksObtained = ""
-                schoolName = ""
-                fatherName = ""
-                fatherOccupation = ""
-                fatherQualification = ""
-                motherName = ""
-                motherOccupation = ""
-                motherQualification = ""
-                fullAddress = ""
-                mobileNo = ""
-                alternateMobileNo = ""
-                attachedDocuments = listOf()
-                studentPhoto = null
-                studentSignature = null
-                parentSignature = null
-              }else{
-                // error submitting data
-                snackbarHostState.showSnackbar(
-                  message = "Error submitting form ${res.errors?.get(0)?.message}",
-                  actionLabel = "Close"
-                )
-//                toaster.show(
-//                  message = "Error submitting form ${res.errors?.get(0)?.message}",
-//                  type = ToastType.Error
-//                )
-              }
+              )
             }
           } else {
             // Form is invalid, errors are already displayed, just scroll to top
@@ -1243,6 +1206,50 @@ fun RegistrationForm() {
           Text("Submit", modifier = Modifier.padding(horizontal = 24.dp))
         }
       }
+
+      // Handle form submission result
+      if (formSubmissionState.isSuccess) {
+
+        // Reset form fields
+        studentName = ""
+        aadharNo = ""
+        dob = ""
+        selectedBloodGroup = ""
+        previousClass = ""
+        marksObtained = ""
+        schoolName = ""
+        fatherName = ""
+        fatherOccupation = ""
+        fatherQualification = ""
+        motherName = ""
+        motherOccupation = ""
+        motherQualification = ""
+        fullAddress = ""
+        mobileNo = ""
+        alternateMobileNo = ""
+        attachedDocuments = listOf()
+        studentPhoto = null
+        studentSignature = null
+        parentSignature = null
+
+        // Reset form submission state
+        viewModel.resetFormSubmissionState()
+
+        scope.launch {
+          // student form submission successful
+          snackbarHostState.showSnackbar(
+            message = "Admission form data successfully submitted",
+          )
+        }
+      } else if (formSubmissionState.error != null) {
+        scope.launch {
+          // error submitting data
+          snackbarHostState.showSnackbar(
+            message = "Error submitting form: ${formSubmissionState.error}",
+            actionLabel = "Close"
+          )
+        }
+      }
     }
   }
 }
@@ -1251,6 +1258,8 @@ fun RegistrationForm() {
 @Composable
 fun PreviewRegistrationForm() {
   MaterialTheme {
-    RegistrationForm()
+    // This is just a preview, so we don't need a real ViewModel
+    // In a real app, we would inject the ViewModel
+    // RegistrationForm(viewModel = AdmissionsViewModel())
   }
 }

@@ -75,6 +75,10 @@ kotlin {
       implementation(libs.kotlinx.serialization.json)
       implementation(libs.material.adaptive)
 
+      // Koin for Dependency Injection
+      implementation(libs.koin.core)
+      implementation(libs.koin.compose)
+
 //      implementation("com.apollographql.apollo:apollo-runtime-kotlin:2.5.14")
       implementation("com.apollographql.apollo:apollo-runtime:4.1.1")
       implementation("com.apollographql.apollo:apollo-normalized-cache:4.1.1")
@@ -106,6 +110,7 @@ kotlin {
       implementation(libs.compose.ui.tooling.preview)
       implementation("androidx.compose.ui:ui:${libs.versions.compose.android.get()}")
       implementation(libs.ktor.client.android)
+      implementation(libs.koin.androidx.compose)
     }
     iosMain.dependencies {
       implementation(libs.ktor.client.darwin)
@@ -149,6 +154,7 @@ android {
 }
 
 dependencies {
+  implementation(libs.androidx.material3.android)
   debugImplementation(compose.uiTooling)
 }
 

@@ -1,0 +1,7 @@
+ktor:
+  application:
+    modules:
+      - org.aryamahasangh.ApplicationKt.module
+  deployment:
+    port: 4000
+    host: 0.0.0.0

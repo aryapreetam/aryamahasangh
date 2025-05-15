@@ -27,15 +27,25 @@ import dev.burnoo.compose.remembersetting.rememberBooleanSetting
 import dev.burnoo.compose.remembersetting.rememberStringSetting
 import kotlinx.coroutines.launch
 import org.aryamahasangh.components.LoginDialog
+import org.aryamahasangh.di.getAppModules
 import org.aryamahasangh.navigation.RootNavGraph
 import org.aryamahasangh.navigation.Screen
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
+// Initialize Koin for dependency injection
+private val initKoin by lazy {
+  org.aryamahasangh.di.KoinInitializer.init()
+  true // Return a value to satisfy the lazy property
+}
+
 @Composable
 @Preview
 fun App() {
+  // Ensure Koin is initialized
+  initKoin
+
   AppTheme {
     AppDrawer()
   }
@@ -132,9 +142,9 @@ fun DrawerContent(
         ),
         onClick = {
           navController.navigate(option.route){
-//            popUpTo(navController.graph.findStartDestination()){
-//              saveState = true
-//            }
+            popUpTo(navController.graph.startDestDisplayName){
+              saveState = true
+            }
             launchSingleTop = true
             restoreState = true
             scope.launch {

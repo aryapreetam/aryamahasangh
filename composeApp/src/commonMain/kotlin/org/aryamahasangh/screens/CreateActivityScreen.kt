@@ -1,62 +1,15 @@
 package org.aryamahasangh.screens
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Done
-import androidx.compose.material.icons.filled.Face
-import androidx.compose.material.icons.filled.Schedule
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DatePicker
-import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.InputChip
-import androidx.compose.material3.InputChipDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TimePicker
-import androidx.compose.material3.rememberDatePickerState
-import androidx.compose.material3.rememberTimePickerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -73,24 +26,17 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import io.github.vinceglb.filekit.core.PlatformFile
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
+import kotlinx.datetime.*
 import kotlinx.datetime.Clock.System
-import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atTime
-import kotlinx.datetime.toLocalDateTime
-import kotlinx.serialization.Serializable
-import org.aryamahasangh.AddOrganisationActivityMutation
 import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.OrganisationsAndMembersQuery
 import org.aryamahasangh.OrganisationsAndMembersQuery.Member
 import org.aryamahasangh.OrganisationsAndMembersQuery.Organisation
-import org.aryamahasangh.network.apolloClient
 import org.aryamahasangh.network.bucket
 import org.aryamahasangh.type.ActivityType
 import org.aryamahasangh.type.OrganisationActivityInput
+import org.aryamahasangh.viewmodel.ActivitiesViewModel
+import org.koin.compose.koinInject
 
 val stringToActivityTypeMap = mapOf(
   "कक्षा" to ActivityType.COURSE,
@@ -106,17 +52,32 @@ val activityTypeToStringMap = mapOf(
   ActivityType.SESSION to "सत्र",
 )
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ActivityForm() { // Take FormData object directly
+fun CreateActivityScreen(viewModel: ActivitiesViewModel = koinInject()) {
+  ActivityForm(viewModel)
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@ExperimentalMaterial3Api
+@Composable
+fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
 
   var organisations by remember { mutableStateOf(emptyList<OrganisationsAndMembersQuery.Organisation>()) }
   var members by remember { mutableStateOf(emptyList<OrganisationsAndMembersQuery.Member>()) }
 
+  // Collect organizations and members from ViewModel
+  val organisationsAndMembersState by viewModel.organisationsAndMembersState.collectAsState()
+
+  // Update local state when ViewModel state changes
+  LaunchedEffect(organisationsAndMembersState) {
+    organisations = organisationsAndMembersState.organisations
+    members = organisationsAndMembersState.members
+  }
+
+  // Load organizations and members when the screen is shown
   LaunchedEffect(Unit) {
-    val orgsAndMembers = apolloClient.query(OrganisationsAndMembersQuery()).execute()
-    organisations = orgsAndMembers.data?.organisations ?: emptyList()
-    members = orgsAndMembers.data?.members ?: emptyList()
+    viewModel.loadOrganisationsAndMembers()
   }
 
   // State variables for form fields
@@ -176,7 +137,9 @@ fun ActivityForm() { // Take FormData object directly
 
   var additionalInstructions by remember { mutableStateOf("") }
 
-  var isSubmitting by remember { mutableStateOf(false) }
+  // Collect form submission state from ViewModel
+  val formSubmissionState by viewModel.activityFormSubmissionState.collectAsState()
+  val isSubmitting = formSubmissionState.isSubmitting
 
   val scrollState = rememberScrollState()
 
@@ -264,14 +227,8 @@ fun ActivityForm() { // Take FormData object directly
         || endDateError || endTimeError || contactPeopleError)
   }
 
-  @Serializable
-  data class InsertResponse(
-    val id: Int // Only the ID will be returned
-  )
-
   fun submitForm() {
     if (validateForm()) {
-      isSubmitting = true
       scope.launch {
         val attachedImages = mutableListOf<String>()
         try {
@@ -309,56 +266,9 @@ fun ActivityForm() { // Take FormData object directly
           },
           additionalInstructions = additionalInstructions
         )
-        val res = apolloClient.mutation(
-          AddOrganisationActivityMutation(
-            inp
-          )
-        ).execute()
 
-        isSubmitting = false
-        if (!res.hasErrors()) {
-          // Reset form
-          name = ""
-          selectedType = null
-          shortDescription = ""
-          description = ""
-          associatedOrganisations = emptySet()
-          address = ""
-          state = ""
-          district = ""
-          startDate = null
-          startTime = null
-          endDate = null
-          endTime = null
-          contactPeople = emptySet()
-          additionalInstructions = ""
-
-          startDateText = TextFieldValue("")
-          endDateText = TextFieldValue("")
-          startTimeText = TextFieldValue("")
-          endTimeText = TextFieldValue("")
-          postMap.clear()
-          attachedDocuments = listOf()
-
-          // Clear all error states
-          nameError = false
-          typesError = false
-          shortDescriptionError = false
-          descriptionError = false
-          associatedOrganisationsError = false
-          addressError = false
-          stateError = false
-          districtError = false
-          startDateError = false
-          startTimeError = false
-          endDateError = false
-          endTimeError = false
-          contactPeopleError = false
-          snackbarHostState.showSnackbar(
-            message = "A new activity has been created successfully.",
-          )
-        }
-        println("res: ${res}")
+        // Submit form using ViewModel
+        viewModel.createActivity(inp)
       }
     }
   }
@@ -653,6 +563,63 @@ fun ActivityForm() { // Take FormData object directly
           Spacer(modifier = Modifier.width(8.dp))
         }
         Text("गतिविधि बनाएं")
+      }
+    }
+
+    // Handle form submission result
+    if (formSubmissionState.isSuccess) {
+      // Reset form
+      name = ""
+      selectedType = null
+      shortDescription = ""
+      description = ""
+      associatedOrganisations = emptySet()
+      address = ""
+      state = ""
+      district = ""
+      startDate = null
+      startTime = null
+      endDate = null
+      endTime = null
+      contactPeople = emptySet()
+      additionalInstructions = ""
+
+      startDateText = TextFieldValue("")
+      endDateText = TextFieldValue("")
+      startTimeText = TextFieldValue("")
+      endTimeText = TextFieldValue("")
+      postMap.clear()
+      attachedDocuments = listOf()
+
+      // Clear all error states
+      nameError = false
+      typesError = false
+      shortDescriptionError = false
+      descriptionError = false
+      associatedOrganisationsError = false
+      addressError = false
+      stateError = false
+      districtError = false
+      startDateError = false
+      startTimeError = false
+      endDateError = false
+      endTimeError = false
+      contactPeopleError = false
+
+      // Reset form submission state
+      viewModel.resetFormSubmissionState()
+      scope.launch {
+        snackbarHostState.showSnackbar(
+          message = "A new activity has been created successfully.",
+        )
+      }
+    } else if (formSubmissionState.error != null) {
+      scope.launch {
+        // Error submitting form
+        snackbarHostState.showSnackbar(
+          message = "Error creating activity: ${formSubmissionState.error}",
+          actionLabel = "Close"
+        )
       }
     }
 

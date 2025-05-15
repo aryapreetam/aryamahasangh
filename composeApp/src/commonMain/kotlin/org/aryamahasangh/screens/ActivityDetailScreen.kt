@@ -34,27 +34,75 @@ import org.aryamahasangh.OrganisationalActivityDetailQuery.ContactPeople
 import org.aryamahasangh.OrganisationalActivityDetailQuery.OrganisationalActivity
 import org.aryamahasangh.components.activityTypeData
 import org.aryamahasangh.isWeb
-import org.aryamahasangh.network.apolloClient
 import org.aryamahasangh.utils.format
 import org.aryamahasangh.utils.formatDateTime
+import org.aryamahasangh.viewmodel.ActivitiesViewModel
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.koin.compose.koinInject
 
 @Composable
-fun ActivityDetailScreen(id: String) {
-  val activity = remember { mutableStateOf<OrganisationalActivityDetailQuery.OrganisationalActivity?>(null) }
-  LaunchedEffect(Unit) {
-    val res = apolloClient.query(OrganisationalActivityDetailQuery(id)).execute()
-    activity.value = res.data?.organisationalActivity
+fun ActivityDetailScreen(id: String, viewModel: ActivitiesViewModel = koinInject()) {
+  val scope = rememberCoroutineScope()
+  val snackbarHostState = LocalSnackbarHostState.current
+
+  // Load activity details
+  LaunchedEffect(id) {
+    viewModel.loadActivityDetail(id)
   }
 
-  if(activity.value == null) {
+  // Collect UI state from ViewModel
+  val uiState by viewModel.activityDetailUiState.collectAsState()
+
+  // Handle loading state
+  if (uiState.isLoading) {
+    Box(
+      modifier = Modifier.fillMaxSize(),
+      contentAlignment = Alignment.Center
+    ) {
+      LinearProgressIndicator()
+    }
     return
   }
 
-  val data = activity.value!!
+  // Handle error state
+  uiState.error?.let { error ->
+    LaunchedEffect(error) {
+      snackbarHostState.showSnackbar(
+        message = error,
+        actionLabel = "Retry"
+      )
+    }
 
-  ActivityDisplay(data)
+    Box(
+      modifier = Modifier.fillMaxSize(),
+      contentAlignment = Alignment.Center
+    ) {
+      Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+        Text("Failed to load activity details")
+        Button(onClick = { viewModel.loadActivityDetail(id) }) {
+          Text("Retry")
+        }
+      }
+    }
+    return
+  }
+
+  // Handle null activity
+  if (uiState.activity == null) {
+    Box(
+      modifier = Modifier.fillMaxSize(),
+      contentAlignment = Alignment.Center
+    ) {
+      Text("Activity not found")
+    }
+    return
+  }
+
+  ActivityDisplay(uiState.activity!!)
 }
 
 //@Preview
