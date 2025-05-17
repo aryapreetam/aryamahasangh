@@ -1,50 +1,186 @@
 package org.aryamahasangh.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.apollographql.apollo.api.Optional
+import dev.burnoo.compose.remembersetting.rememberBooleanSetting
 import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.OrganisationalActivitiesQuery
+import org.aryamahasangh.SettingKeys
 import org.aryamahasangh.components.ActivityListItem
 import org.aryamahasangh.type.ActivityFilterInput
 import org.aryamahasangh.type.ActivityPeriod
 import org.aryamahasangh.type.ActivityType
+import org.aryamahasangh.viewmodel.JoinUsUiState
 import org.aryamahasangh.viewmodel.JoinUsViewModel
+import org.aryamahasangh.viewmodel.LabelState
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @ExperimentalMaterial3Api
 @Composable
-@Preview
 fun JoinUsScreen(viewModel: JoinUsViewModel) {
-  Column(modifier = Modifier.padding(8.dp)) {
-    Text(
-      "नमस्ते जी,\n" +
-          "आप निर्मात्री सभा द्वारा आयोजित दो दिवसीय लघु गुरुकुल पाठ्यक्रम पूर्ण कर आर्य महासंघ से जुड़ सकते है। \n" +
-          "निचे आप अपना क्षेत्र चुनकर आपके क्षेत्रों में आयोजित होने वाले सत्रों के विवरण देख सकते है। "
-    )
+  val uiState by viewModel.uiState.collectAsState()
 
-    UpcomingActivitiesForm(viewModel)
+  LaunchedEffect(Unit) {
+    viewModel.loadJoinUsLabel()
+  }
+
+  UpcomingActivitiesForm(
+    uiState,
+    loadJoinUsLabel = viewModel::loadJoinUsLabel,
+    loadFilteredActivities = viewModel::loadFilteredActivities,
+    updateJoinUsLabel = viewModel::updateJoinUsLabel,
+    setEditMode = viewModel::setEditMode
+  )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview
+@Composable
+fun UpcomingActivitiesFormPreview(){
+  UpcomingActivitiesForm(
+    JoinUsUiState(
+      activities = listOf(),
+      isLoading = false,
+      error = null,
+      labelState = LabelState()
+    ),
+  )
+}
+
+@Composable
+fun EditImageButton(modifier: Modifier = Modifier, onClick: () -> Unit){
+  Box(
+    modifier = modifier.size(36.dp).clickable {
+      onClick()
+    },
+    contentAlignment = Alignment.Center
+  ){
+    Icon(
+      Icons.Default.Edit,
+      contentDescription = "edit",
+      Modifier.size(24.dp)
+    )
+  }
+}
+
+@Composable
+fun ButtonWithProgressIndicator(
+  modifier: Modifier = Modifier,
+  enabled: Boolean = true,
+  inProgress: Boolean = false,
+  onClick: () -> Unit
+){
+  Button(
+    modifier = modifier,
+    onClick = onClick,
+    enabled = enabled
+  ){
+    if(inProgress) {
+      CircularProgressIndicator(
+        Modifier.size(24.dp)
+      )
+    }
+    Text("Save")
+  }
+}
+
+@Preview
+@Composable
+fun JoinUsLabelPreviewWithEditMode(){
+  JoinUsLabel(labelState = LabelState(editMode = true))
+}
+
+@Preview
+@Composable
+fun JoinUsLabelPreview(){
+  JoinUsLabel(
+    labelState = LabelState(label = "आप निर्मात्री सभा द्वारा आयोजित दो दिवसीय लघु गुरुकुल पाठ्यक्रम पूर्ण कर आर्य महासंघ से जुड़ सकते है। \n" +
+      "निचे आप अपना क्षेत्र चुनकर आपके क्षेत्रों में आयोजित होने वाले सत्रों के विवरण देख सकते है। "),
+    isLoggedIn = true
+  )
+}
+
+@Composable
+fun JoinUsLabel(
+  labelState: LabelState = LabelState(),
+  updateLabel: (String) -> Unit = {},
+  onEditModeChange: (Boolean) -> Unit = {},
+  isLoggedIn: Boolean = false
+){
+  val (label, _, _, editMode) = labelState
+  Column(modifier = Modifier.fillMaxWidth()){
+    if(!editMode) {
+      Row(verticalAlignment = Alignment.CenterVertically){
+        Text(
+          modifier = Modifier.weight(1f),
+          text = label
+        )
+        if(isLoggedIn) {
+          EditImageButton(
+            onClick = { onEditModeChange(true) }
+          )
+        }
+      }
+    }else {
+      var localText by remember { mutableStateOf(labelState.label) }
+      OutlinedTextField(
+        modifier = Modifier.fillMaxWidth(),
+        minLines = 2,
+        value = localText,
+        onValueChange = {
+          localText = it
+        }
+      )
+      Row(
+        modifier = Modifier.align(Alignment.End),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+        TextButton(
+          enabled = !labelState.isUpdating,
+          onClick = { onEditModeChange(false) }
+        ){
+          Text("Cancel")
+        }
+        ButtonWithProgressIndicator(
+          enabled = !labelState.isUpdating,
+          inProgress = labelState.isUpdating
+        ) {
+          updateLabel(localText)
+        }
+      }
+    }
   }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @ExperimentalMaterial3Api
 @Composable
-fun UpcomingActivitiesForm(viewModel: JoinUsViewModel) {
+fun UpcomingActivitiesForm(
+  uiState: JoinUsUiState,
+  loadJoinUsLabel: () -> Unit = {},
+  loadFilteredActivities: (ActivityFilterInput) -> Unit = {},
+  updateJoinUsLabel: (String) -> Unit = {},
+  setEditMode: (Boolean) -> Unit = {}
+) {
   val scope = rememberCoroutineScope()
   val snackbarHostState = LocalSnackbarHostState.current
-  
+  var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
   var selectedState by remember { mutableStateOf<String>("") }
   var selectedDistrict by remember { mutableStateOf<String>("") }
-  
-  // Collect UI state from ViewModel
-  val uiState by viewModel.uiState.collectAsState()
+
+  LaunchedEffect(Unit){
+    loadJoinUsLabel()
+  }
 
   // Reset district on state change
   LaunchedEffect(selectedState) {
@@ -53,8 +189,15 @@ fun UpcomingActivitiesForm(viewModel: JoinUsViewModel) {
 
   val showActivitiesEnabled = selectedState.isNotEmpty()
 
-  Column(modifier = Modifier.padding(top = 8.dp)) {
+  Column(modifier = Modifier.padding(8.dp)) {
+    JoinUsLabel(
+      labelState = uiState.labelState,
+      updateLabel = { updateJoinUsLabel(it) },
+      onEditModeChange = { setEditMode(it) },
+      isLoggedIn = isLoggedIn
+    )
     FlowRow(
+      modifier = Modifier.padding(top = 4.dp),
       horizontalArrangement = Arrangement.spacedBy(8.dp),
       verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -83,7 +226,7 @@ fun UpcomingActivitiesForm(viewModel: JoinUsViewModel) {
           district = Optional.present(selectedDistrict),
           activityPeriod = Optional.present(ActivityPeriod.FUTURE)
         )
-        viewModel.loadFilteredActivities(activityFilter)
+        loadFilteredActivities(activityFilter)
       },
       enabled = showActivitiesEnabled && !uiState.isLoading,
       modifier = Modifier.align(Alignment.Start).padding(bottom = 8.dp)
@@ -127,7 +270,7 @@ fun UpcomingActivitiesForm(viewModel: JoinUsViewModel) {
               district = Optional.present(selectedDistrict),
               activityPeriod = Optional.present(ActivityPeriod.FUTURE)
             )
-            viewModel.loadFilteredActivities(activityFilter)
+            loadFilteredActivities(activityFilter)
           }) {
             Text("Retry")
           }

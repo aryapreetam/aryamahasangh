@@ -102,7 +102,7 @@ fun ActivityListItem(
         ){
           Icon(
             Icons.Default.Delete,
-            contentDescription = null,
+            contentDescription = "delete activity",
             Modifier.size(24.dp)
           )
         }

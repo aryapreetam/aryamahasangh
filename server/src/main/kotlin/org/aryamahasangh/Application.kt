@@ -166,6 +166,8 @@ class OrgsQuery : Query {
   suspend fun learningItems(): List<Video> = getVideos()
   suspend fun learningItem(id: String) = getVideos().find { it.id == id }
   suspend fun members(): List<Member> = getMembers().distinctBy { it.phoneNumber }
+  fun labels(): List<Label> = labels
+  fun label(key: String): String = labels.find { it.key == key }?.value ?: ""
 }
 
 @Serializable
@@ -291,8 +293,23 @@ class StudentAdmissionQuery : Query {
   }
 }
 
+var labels = listOf<Label>(
+  Label("join_us", "Join Us"),
+)
+
+data class Label(
+  val key: String,
+  val value: String
+)
+
 @OptIn(ExperimentalUuidApi::class)
 class OrgsMutation : Mutation {
+
+  fun updateJoinUsLabel(label: String): Boolean {
+    labels = labels.map { if(it.key == "join_us") Label("join_us", label) else it }
+    return true
+  }
+
 //  fun addOrganisation(input: OrganisationInput): Boolean {
 //    val org = Organisation(
 //      id = Uuid.random().toString(),

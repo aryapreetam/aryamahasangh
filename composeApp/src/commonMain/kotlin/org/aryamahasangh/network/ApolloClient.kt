@@ -19,7 +19,7 @@ import kotlinx.serialization.json.Json
 import org.aryamahasangh.isAndroid
 import org.aryamahasangh.type.LocalDateTime
 
-const val localDev = false
+const val localDev = true
 // "10.0.2.2"
 val host = if(isAndroid()) "10.0.2.2" else "localhost"
 val port = "4000"
