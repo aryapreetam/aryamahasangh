@@ -9,3 +9,7 @@ mutation AddStudentAdmissionData($input: AdmissionFormDataInput!) {
 mutation DeleteActivity($id: String!){
   removeActivity(activityId: $id)
 }
+
+mutation updateJoinUsLabel($label: String!){
+  updateJoinUsLabel(label: $label)
+}

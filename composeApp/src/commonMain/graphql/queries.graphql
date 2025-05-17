@@ -108,3 +108,7 @@ query StudentApplications{
     marksObtained
   }
 }
+
+query label($key: String!){
+  label(key: $key)
+}
