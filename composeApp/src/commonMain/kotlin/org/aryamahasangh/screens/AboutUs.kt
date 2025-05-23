@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -45,7 +46,12 @@ fun AboutUs(
       snackbarHostState.showSnackbar(
         message = error,
         actionLabel = "Retry"
-      )
+      ).run {
+        when(this){
+          SnackbarResult.Dismissed -> {println("Dismissed")}
+          SnackbarResult.ActionPerformed -> viewModel.loadOrganisationDetails("आर्य महासंघ")
+        }
+      }
     }
     
     Box(
