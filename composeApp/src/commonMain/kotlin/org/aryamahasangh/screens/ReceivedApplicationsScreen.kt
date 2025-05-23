@@ -9,7 +9,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import kotlinx.coroutines.launch
 import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.StudentApplicationsQuery
 import org.aryamahasangh.viewmodel.AdmissionsViewModel
@@ -105,7 +104,7 @@ fun StudentApplicationItem(data: StudentApplicationsQuery.StudentsApplied) {
     shape = RoundedCornerShape(4.dp),
     onClick = {}
   ){
-    Column(modifier = Modifier.padding(8.dp)) {
+    Box(modifier = Modifier.padding(8.dp)) {
       Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         AsyncImage(
           modifier = Modifier.size(96.dp),

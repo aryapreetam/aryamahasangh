@@ -166,8 +166,17 @@ class OrgsQuery : Query {
   suspend fun learningItems(): List<Video> = getVideos()
   suspend fun learningItem(id: String) = getVideos().find { it.id == id }
   suspend fun members(): List<Member> = getMembers().distinctBy { it.phoneNumber }
-  fun labels(): List<Label> = labels
-  fun label(key: String): String = labels.find { it.key == key }?.value ?: ""
+  suspend fun label(key: String): String = getLabel(key)
+}
+
+suspend fun getLabel(key: String): String {
+  val label = supabase.from("labels").select(columns = Columns.ALL){
+    filter {
+      eq("key", key)
+    }
+  }.decodeSingle<Label>()
+  println("label: $label")
+  return label.label
 }
 
 @Serializable
@@ -293,21 +302,26 @@ class StudentAdmissionQuery : Query {
   }
 }
 
-var labels = listOf<Label>(
-  Label("join_us", "Join Us"),
-)
-
+@Serializable
 data class Label(
   val key: String,
-  val value: String
+  val label: String
 )
 
 @OptIn(ExperimentalUuidApi::class)
 class OrgsMutation : Mutation {
 
-  fun updateJoinUsLabel(label: String): Boolean {
-    labels = labels.map { if(it.key == "join_us") Label("join_us", label) else it }
-    return true
+  suspend fun updateJoinUsLabel(label: String): Boolean {
+    try {
+      supabase.from("labels").upsert(Label("join_us", label)){
+        onConflict = "key"
+        ignoreDuplicates = false
+      }
+      return true
+    }catch (e: Exception){
+      println(e)
+      return false
+    }
   }
 
 //  fun addOrganisation(input: OrganisationInput): Boolean {
