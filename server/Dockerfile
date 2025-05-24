@@ -1,7 +1,7 @@
 # Multi-stage build for optimized Docker image
 
 # Stage 1: Dependency cache
-FROM gradle:8.10.2-jdk17-alpine AS deps
+FROM gradle:8.11.1-jdk17-alpine AS deps
 WORKDIR /app
 ENV GRADLE_USER_HOME /cache
 COPY gradle gradle
@@ -13,7 +13,7 @@ COPY gradle/libs.versions.toml gradle/
 RUN gradle :server:dependencies --no-daemon --build-cache
 
 # Stage 2: Build the application
-FROM gradle:8.10.2-jdk17-alpine AS build
+FROM gradle:8.11.1-jdk17-alpine AS build
 WORKDIR /app
 COPY --from=deps /cache /home/gradle/.gradle
 COPY . .
