@@ -37,10 +37,20 @@ fun LocalDateTime.toShortHumanReadable(): String {
 }
 
 fun format(dateTime: Any): String {
-  return LocalDateTime.parse(dateTime as String).toHumanReadable()
+  val dateTimeStr = dateTime as String
+  // Parse as Instant to handle timezone information
+  val instant = Instant.parse(dateTimeStr)
+  // Convert to LocalDateTime in the system's default timezone
+  val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+  return localDateTime.toHumanReadable()
 }
 fun formatShort(dateTime: Any): String {
-  return LocalDateTime.parse(dateTime as String).toShortHumanReadable()
+  val dateTimeStr = dateTime as String
+  // Parse as Instant to handle timezone information
+  val instant = Instant.parse(dateTimeStr)
+  // Convert to LocalDateTime in the system's default timezone
+  val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+  return localDateTime.toShortHumanReadable()
 }
 
 fun epochToDate(epochMillis: Long): String {

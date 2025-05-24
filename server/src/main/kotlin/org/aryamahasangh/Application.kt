@@ -84,12 +84,14 @@ fun Application.module() {
       packages = listOf("org.aryamahasangh")
       queries = listOf(
         OrgsQuery(),
-        StudentAdmissionQuery()
+        StudentAdmissionQuery(),
+        BookOrderQuery()
       )
       mutations = listOf(
         OrgsMutation(),
         ActivityMutation(),
-        StudentAdmissionMutations()
+        StudentAdmissionMutations(),
+        BookOrderMutations()
       )
       subscriptions = listOf(
         OrgSubscriptionService()
@@ -156,6 +158,25 @@ data class ActivityFilter(
   val district: String?,
   val activityPeriod: ActivityPeriod? = ActivityPeriod.All
 )
+
+@OptIn(ExperimentalUuidApi::class)
+class BookOrderQuery : Query {
+  suspend fun bookOrders(): List<BookOrder> = getBookOrders()
+  suspend fun bookOrder(id: String): BookOrder? = getBookOrders().find { it.id == id }
+  private suspend fun getBookOrders(): List<BookOrder> {
+    return supabase.from("book_orders").select().decodeList<BookOrder>()
+  }
+}
+
+@OptIn(ExperimentalUuidApi::class)
+class BookOrderMutations : Mutation {
+  suspend fun createBookOrder(input: BookOrderInput): BookOrder {
+    val bookOrder = supabase.from("book_orders").insert(input) {
+      select()
+    }.decodeSingle<BookOrder>()
+    return bookOrder
+  }
+}
 
 @OptIn(ExperimentalUuidApi::class)
 class OrgsQuery : Query {
@@ -321,6 +342,24 @@ class OrgsMutation : Mutation {
     }catch (e: Exception){
       println(e)
       return false
+    }
+  }
+
+  suspend fun updateOrganisationLogo(id: String, imageUrl: String): Boolean {
+    return try {
+      supabase.from("organisation").update(
+        {
+          Organisation::logo setTo imageUrl
+        }
+      ){
+        filter {
+          eq("id", id)
+        }
+      }
+      true
+    }catch (e: Exception){
+      println(e)
+      false
     }
   }
 
