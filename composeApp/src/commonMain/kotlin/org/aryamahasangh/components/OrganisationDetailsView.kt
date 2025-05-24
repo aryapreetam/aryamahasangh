@@ -76,7 +76,7 @@ fun OrganisationDetail(organisation: OrganisationQuery.Organisation, updateOrgan
                 scope.launch {
                   try {
                     val uploadResponse = bucket.upload(
-                      path = "${name}_logo_${Clock.System.now().epochSeconds}.jpg",
+                      path = "org_logo_${Clock.System.now().epochSeconds}.jpg",
                       data = file.readBytes()
                     )
                     val imageUrl = bucket.publicUrl(uploadResponse.path)

@@ -108,6 +108,7 @@ class OrganisationsViewModel(
   fun updateOrganisationLogo(orgId: String, name: String, imageUrl: String) {
     launch {
       // Set loading state
+      // FIXME This is not the correct way to do this, but it works for now
       _organisationDetailUiState.value = _organisationDetailUiState.value.copy(isLoading = true, error = null)
 
       // Call the repository to update the logo

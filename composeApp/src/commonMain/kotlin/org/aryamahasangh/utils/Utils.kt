@@ -37,6 +37,13 @@ fun LocalDateTime.toShortHumanReadable(): String {
 }
 
 fun format(dateTime: Any): String {
+  return LocalDateTime.parse(dateTime as String).toHumanReadable()
+}
+fun formatShort(dateTime: Any): String {
+  return LocalDateTime.parse(dateTime as String).toShortHumanReadable()
+}
+
+fun formatForBook(dateTime: Any): String {
   val dateTimeStr = dateTime as String
   // Parse as Instant to handle timezone information
   val instant = Instant.parse(dateTimeStr)
@@ -44,7 +51,7 @@ fun format(dateTime: Any): String {
   val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
   return localDateTime.toHumanReadable()
 }
-fun formatShort(dateTime: Any): String {
+fun formatShortForBook(dateTime: Any): String {
   val dateTimeStr = dateTime as String
   // Parse as Instant to handle timezone information
   val instant = Instant.parse(dateTimeStr)

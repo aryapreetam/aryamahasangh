@@ -129,6 +129,52 @@ fun OrderForm(viewModel: BookOrderViewModel) {
   var studentPhotoError by remember { mutableStateOf(false) }
   var studentPhotoErrorMessage by remember { mutableStateOf("") }
 
+  // Collect the createBookOrderState to detect successful submissions
+  val createBookOrderState by viewModel.createBookOrderState.collectAsState()
+
+  // Reset form fields when order is successfully created
+  LaunchedEffect(createBookOrderState?.createdBookOrder) {
+    if (createBookOrderState?.createdBookOrder != null) {
+      // Reset all form fields
+      yourName = ""
+      addressLine = ""
+      city = ""
+      address = ""
+      addressError = false
+      state = ""
+      district = ""
+      stateErrorMessage = ""
+      districtErrorMessage = ""
+      mobileNumber = ""
+      pinCode = ""
+      country = "India"
+      districtOfficerName = ""
+      districtOfficerNumber = ""
+      paymentReceiptUrl = ""
+
+      // Reset error states
+      yourNameError = null
+      addressLineError = null
+      cityError = null
+      districtError = null
+      stateError = null
+      mobileNumberError = null
+      pinCodeError = null
+      countryError = null
+      districtOfficerNameError = null
+      districtOfficerNumberError = null
+
+      // Reset photo
+      studentPhoto = null
+      studentPhotoError = false
+      studentPhotoErrorMessage = ""
+
+      // Keep submission message visible
+      showSubmissionMessage = true
+      submissionStatus = "फॉर्म सफलतापूर्वक जमा किया गया!"
+    }
+  }
+
   Column(
     modifier = Modifier.fillMaxSize()
   ) {
