@@ -27,7 +27,6 @@ import dev.burnoo.compose.remembersetting.rememberBooleanSetting
 import dev.burnoo.compose.remembersetting.rememberStringSetting
 import kotlinx.coroutines.launch
 import org.aryamahasangh.components.LoginDialog
-import org.aryamahasangh.di.getAppModules
 import org.aryamahasangh.navigation.RootNavGraph
 import org.aryamahasangh.navigation.Screen
 import org.jetbrains.compose.resources.DrawableResource
@@ -178,7 +177,7 @@ private fun checkIfSelected(currentDestination: String?, currentDrawerItem: Stri
   else if((currentDestination?.contains("Activities") == true || currentDestination?.contains("ActivityDetails") == true) && currentDrawerItem == Screen.ActivitiesSection.toString()) true
   else if((currentDestination?.contains("Orgs") == true || currentDestination?.contains("OrgDetails") == true) && currentDrawerItem == Screen.OrgsSection.toString()) true
   else if((currentDestination?.contains("Learning") == true || currentDestination?.contains("VideoDetails") == true) && currentDrawerItem == Screen.LearningSection.toString()) true
-  else if((currentDestination?.contains("BookOrderForm") == true) && currentDrawerItem == Screen.BookSection.toString()) true
+  else if((currentDestination?.contains("BookOrderForm") == true || currentDestination?.contains("BookOrderDetails") == true) && currentDrawerItem == Screen.BookSection.toString()) true
   else if((currentDestination?.contains("AryaNirmanHome") == true) && currentDrawerItem == Screen.AryaNirmanSection.toString()) true
   else if((currentDestination?.contains("AryaSamajHome") == true) && currentDrawerItem == Screen.AryaSamajSection.toString()) true
   else if((currentDestination?.contains("GurukulCollege") == true || currentDestination?.contains("AdmissionForm") == true) && currentDrawerItem == Screen.GurukulSection.toString()) true
@@ -279,7 +278,7 @@ fun MainContent(
         },
         navigationIcon = {
           val currentScreen = currentDestination?.substringAfterLast(".")
-          val shouldShowBack = listOf("AboutUsDetails", "ActivityDetails", "OrgDetails", "VideoDetails", "AdmissionForm").any { currentScreen?.startsWith(it) == true }
+          val shouldShowBack = listOf("AboutUsDetails", "ActivityDetails", "OrgDetails", "VideoDetails", "AdmissionForm", "BookOrderDetails").any { currentScreen?.startsWith(it) == true }
           if(shouldShowBack) {
             IconButton(onClick = {
               navController.navigateUp()

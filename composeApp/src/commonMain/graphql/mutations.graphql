@@ -13,3 +13,25 @@ mutation DeleteActivity($id: String!){
 mutation updateJoinUsLabel($label: String!){
   updateJoinUsLabel(label: $label)
 }
+
+mutation createBookOrder($input: BookOrderInput!){
+  createBookOrder(input: $input){
+    id
+    fullname
+    address
+    city
+    district
+    state
+    pincode
+    country
+    mobile
+    districtOfficerName
+    districtOfficerNumber
+    paymentReceiptUrl
+    createdAt
+  }
+}
+
+mutation updateOrganisationLogo($id: String!, $imageUrl: String!){
+  updateOrganisationLogo(id: $id, imageUrl: $imageUrl)
+}

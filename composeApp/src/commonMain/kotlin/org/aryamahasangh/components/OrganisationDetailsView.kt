@@ -1,6 +1,5 @@
 package org.aryamahasangh.components
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -8,6 +7,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -21,7 +23,16 @@ import aryamahasangh.composeapp.generated.resources.baseline_groups
 import aryamahasangh.composeapp.generated.resources.error_profile_image
 import aryamahasangh.composeapp.generated.resources.mahasangh_logo_without_background
 import coil3.compose.AsyncImage
+import dev.burnoo.compose.remembersetting.rememberBooleanSetting
+import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.core.PickerMode
+import io.github.vinceglb.filekit.core.PickerType
+import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 import org.aryamahasangh.OrganisationQuery
+import org.aryamahasangh.SettingKeys
+import org.aryamahasangh.network.bucket
+import org.aryamahasangh.screens.EditImageButton
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -42,8 +53,9 @@ fun SabhaPreview(){
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun OrganisationDetail(organisation: OrganisationQuery.Organisation){
+fun OrganisationDetail(organisation: OrganisationQuery.Organisation, updateOrganisationLogo: (String, String, String) -> Unit){
   val (id, name, logo, description, keyPeople ) = organisation
+  var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
   Column(modifier = Modifier.fillMaxSize().padding(8.dp)
     .verticalScroll(rememberScrollState())) {
     Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -52,13 +64,51 @@ fun OrganisationDetail(organisation: OrganisationQuery.Organisation){
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
       ){
-        if(logo == "mahasangh_logo_without_background") {
-          Image(
-            painter = painterResource(resource = drawableFromImageName(logo)),
-            contentDescription = "logo $logo",
-            modifier = Modifier.size(150.dp)
-          )
-        }else {
+        if(isLoggedIn){
+          Row(modifier = Modifier.padding()){
+            val scope = rememberCoroutineScope()
+            val launcher = rememberFilePickerLauncher(
+              type = PickerType.Image,
+              mode = PickerMode.Single,
+              title = "Select logo",
+            ) { file ->
+              if(file != null) {
+                scope.launch {
+                  try {
+                    val uploadResponse = bucket.upload(
+                      path = "${name}_logo_${Clock.System.now().epochSeconds}.jpg",
+                      data = file.readBytes()
+                    )
+                    val imageUrl = bucket.publicUrl(uploadResponse.path)
+                    updateOrganisationLogo(id, name, imageUrl)
+                  }catch (e: Exception){
+                    println("error uploading files: $e")
+                  }
+                }
+              }
+            }
+
+            AsyncImage(
+              model = logo,
+              contentDescription = "logo for $name",
+              contentScale = ContentScale.Fit,
+              modifier = Modifier.size(150.dp),
+              placeholder = BrushPainter(
+                Brush.linearGradient(
+                  listOf(
+                    Color(color = 0xFFFFFFFF),
+                    Color(color = 0xFFDDDDDD),
+                  )
+                )
+              ),
+              fallback = painterResource(Res.drawable.baseline_groups),
+              error = painterResource(Res.drawable.baseline_groups)
+            )
+            EditImageButton {
+              launcher.launch()
+            }
+          }
+        }else{
           AsyncImage(
             model = logo,
             contentDescription = "logo for $name",

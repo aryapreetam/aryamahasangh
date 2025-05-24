@@ -3,8 +3,9 @@ package org.aryamahasangh.repository
 import com.apollographql.apollo.ApolloClient
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import org.aryamahasangh.OrganisationsQuery
 import org.aryamahasangh.OrganisationQuery
+import org.aryamahasangh.OrganisationsQuery
+import org.aryamahasangh.UpdateOrganisationLogoMutation
 import org.aryamahasangh.util.Result
 import org.aryamahasangh.util.safeCall
 
@@ -21,6 +22,7 @@ interface OrganisationsRepository {
    * Get organisation details by name
    */
   fun getOrganisationByName(name: String): Flow<Result<OrganisationQuery.Organisation>>
+  fun updateOrganisationLogo(orgId: String, imageUrl: String): Flow<Result<Boolean>>
 }
 
 /**
@@ -54,5 +56,24 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
     }
 
     emit(result)
+  }
+
+  override fun updateOrganisationLogo(
+    orgId: String,
+    imageUrl: String
+  ): Flow<Result<Boolean>> {
+    return flow {
+      emit(Result.Loading)
+      val result = safeCall {
+        val response = apolloClient.mutation(
+          UpdateOrganisationLogoMutation(orgId, imageUrl)
+        ).execute()
+        if (response.hasErrors()) {
+          throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+        }
+        response.data?.updateOrganisationLogo ?: false
+      }
+      emit(result)
+    }
   }
 }

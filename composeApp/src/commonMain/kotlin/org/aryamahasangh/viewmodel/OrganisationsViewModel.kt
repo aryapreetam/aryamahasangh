@@ -3,8 +3,8 @@ package org.aryamahasangh.viewmodel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import org.aryamahasangh.OrganisationsQuery
 import org.aryamahasangh.OrganisationQuery
+import org.aryamahasangh.OrganisationsQuery
 import org.aryamahasangh.repository.OrganisationsRepository
 import org.aryamahasangh.util.Result
 
@@ -75,7 +75,7 @@ class OrganisationsViewModel(
   fun loadOrganisationDetail(name: String) {
     launch {
       _organisationDetailUiState.value = OrganisationDetailUiState(isLoading = true)
-      
+
       organisationsRepository.getOrganisationByName(name).collect { result ->
         when (result) {
           is Result.Loading -> {
@@ -90,6 +90,47 @@ class OrganisationsViewModel(
           }
           is Result.Error -> {
             _organisationDetailUiState.value = OrganisationDetailUiState(
+              isLoading = false,
+              error = result.message
+            )
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Update the logo of an organisation
+   * @param orgId The ID of the organisation to update
+   * @param name The name of the organisation (used to reload the details after update)
+   * @param imageUrl The URL of the new logo image
+   */
+  fun updateOrganisationLogo(orgId: String, name: String, imageUrl: String) {
+    launch {
+      // Set loading state
+      _organisationDetailUiState.value = _organisationDetailUiState.value.copy(isLoading = true, error = null)
+
+      // Call the repository to update the logo
+      organisationsRepository.updateOrganisationLogo(orgId, imageUrl).collect { result ->
+        when (result) {
+          is Result.Loading -> {
+            // Already set loading state above, no need to do anything here
+          }
+          is Result.Success -> {
+            if (result.data) {
+              // If update was successful, load the organisation details
+              loadOrganisationDetail(name)
+            } else {
+              // If update failed but didn't throw an exception
+              _organisationDetailUiState.value = _organisationDetailUiState.value.copy(
+                isLoading = false,
+                error = "Failed to update organisation logo"
+              )
+            }
+          }
+          is Result.Error -> {
+            // If there was an error, update the UI state
+            _organisationDetailUiState.value = _organisationDetailUiState.value.copy(
               isLoading = false,
               error = result.message
             )

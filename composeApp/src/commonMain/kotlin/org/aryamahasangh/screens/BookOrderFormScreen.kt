@@ -1,52 +1,43 @@
 package org.aryamahasangh.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PhotoLibrary
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import aryamahasangh.composeapp.generated.resources.Res
+import aryamahasangh.composeapp.generated.resources.qr_code
 import coil3.compose.AsyncImage
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.core.PickerMode
 import io.github.vinceglb.filekit.core.PickerType
 import io.github.vinceglb.filekit.core.PlatformFile
 import org.aryamahasangh.components.PhotoItem
+import org.aryamahasangh.type.BookOrderInput
+import org.aryamahasangh.viewmodel.BookOrderViewModel
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
-fun BookOrderFormScreen() {
+fun BookOrderFormScreen(viewModel: BookOrderViewModel) {
   val scrollState = rememberScrollState()
+  val createBookOrderState by viewModel.createBookOrderState.collectAsState()
+
   Column(Modifier.padding(12.dp).verticalScroll(scrollState),) {
     AsyncImage(
       model = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/images//ved_sanhita_order_form.webp",
@@ -62,19 +53,40 @@ fun BookOrderFormScreen() {
       text = "सभी आर्य /आर्याओं नमस्ते, आप सब को सादर सूचित किया जाता है की आर्य महासंघ के तत्वाधान में आर्ष ग्रन्थ प्रकाशन विभाग द्वारा चारों वेदों (ऋग्वेद , यजुर्वेद , सामवेद , अथर्ववेद ) की मूल संहिता प्रकाशित की गयी है। इसका उद्देश्य ईश्वर प्रदत्त संविधान अर्थात् वेद ज्ञान की पुस्तक प्रत्येक आर्य परिवार में पहुँचाना है। जिसका बिक्री मूल्य ००० rs.  है। जो भी आर्य / आर्या वेद संहिता को प्राप्त करना चाहते हैं उनसे निवेदन है कि इस फॉर्म  को भरकर सबमिट करे और निचे दिए हुए बैंक अकाउंट नंबर/UPI ID में भुगतान करके स्क्रीनशॉट साथ में जोड़ें। धन्यवाद।"
     )
     // form
-    OrderForm()
+    OrderForm(viewModel)
+
+    // Show success message if order was created successfully
+    createBookOrderState?.let { state ->
+      if (state.isLoading) {
+        CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+      } else if (state.error != null) {
+        Text(
+          text = "Error: ${state.error}",
+          color = MaterialTheme.colorScheme.error,
+          modifier = Modifier.padding(16.dp)
+        )
+      } else if (state.createdBookOrder != null) {
+        Text(
+          text = "Order submitted successfully!",
+          color = MaterialTheme.colorScheme.primary,
+          modifier = Modifier.padding(16.dp)
+        )
+      }
+    }
   }
 }
 
 @Composable
 @Preview
 fun OrderFormScreenPreview() {
-  OrderForm()
+  // In preview, we don't need a real viewModel
+  // This is just a placeholder for the preview
+  Text("Preview not available - requires viewModel")
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OrderForm() {
+fun OrderForm(viewModel: BookOrderViewModel) {
   // --- State for Form Fields ---
   var yourName by remember { mutableStateOf("") }
   var addressLine by remember { mutableStateOf("") } // Village/Colony/Sector/Apartment
@@ -95,7 +107,7 @@ fun OrderForm() {
   var country by remember { mutableStateOf("India") } // Default or could be OutlinedTextField
   var districtOfficerName by remember { mutableStateOf("") }
   var districtOfficerNumber by remember { mutableStateOf("") }
-  var paymentReceiptInfo by remember { mutableStateOf<String?>(null) } // Placeholder
+  var paymentReceiptUrl by remember { mutableStateOf("") } // URL for the payment receipt
 
   // --- State for Error Handling ---
   var yourNameError by remember { mutableStateOf<String?>(null) }
@@ -292,6 +304,8 @@ fun OrderForm() {
       )
     }
 
+    ResponsivePaymentDetails()
+
     Column{
       Text(
         modifier = Modifier.padding(vertical = 8.dp),
@@ -301,8 +315,16 @@ fun OrderForm() {
       ReceiptUploadSection(
         studentPhoto = studentPhoto,
         onPhotoSelected = { file ->
+          studentPhoto = file
+          // In a real app, you would upload the file to a server and get a URL back
+          // For now, we'll just use a placeholder URL
+          paymentReceiptUrl = file?.path ?: ""
+          studentPhotoError = false
+          studentPhotoErrorMessage = ""
         },
         onPhotoRemoved = { photo ->
+          studentPhoto = null
+          paymentReceiptUrl = ""
         },
         isError = studentPhotoError,
         errorMessage = studentPhotoErrorMessage
@@ -355,8 +377,25 @@ fun OrderForm() {
           println("Country (देश): $country")
           println("District Officer Name (जनपद अधिकारी नाम): $districtOfficerName")
           println("District Officer's Number (जनपद अधिकारी का नंबर): $districtOfficerNumber")
-          println("Payment Receipt: ${paymentReceiptInfo ?: "Not uploaded"}")
-          // TODO: Send data to backend or handle as needed
+          println("Payment Receipt: ${paymentReceiptUrl.ifEmpty { "Not uploaded" }}")
+
+          // Create BookOrderInput and submit to the repository
+          val bookOrderInput = BookOrderInput(
+            fullname = yourName,
+            address = addressLine,
+            city = city,
+            district = district,
+            state = state,
+            mobile = mobileNumber,
+            pincode = pinCode,
+            country = country,
+            districtOfficerName = districtOfficerName,
+            districtOfficerNumber = districtOfficerNumber,
+            paymentReceiptUrl = paymentReceiptUrl.ifEmpty { "Not provided" }
+          )
+
+          // Submit the order
+          viewModel.createBookOrder(bookOrderInput)
         } else {
           submissionStatus = "कृपया ऊपर दी गई त्रुटियों को सुधारें।"
           showSubmissionMessage = true
@@ -416,6 +455,167 @@ fun ReceiptUploadSection(
     }
     if (isError) {
       Text(text = errorMessage, color = MaterialTheme.colorScheme.error)
+    }
+  }
+}
+
+@Composable
+@Preview
+fun ResponsivePaymentDetails() {
+  // This is the top-level text, as seen in your image
+  Text(
+    text = "नीचे दिए गए माध्यम से आप भुगतान कर सकते है।", // "You can pay through the means given below."
+    fontSize = 16.sp,
+    modifier = Modifier.padding(top = 16.dp)
+  )
+
+  // The main component that handles responsiveness
+  BoxWithConstraints(
+    modifier = Modifier.padding(16.dp),
+  ) {
+    val isWideScreen = maxWidth > 600.dp // Define your breakpoint
+
+    if (isWideScreen) {
+      // Horizontal layout for wider screens
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+      ) {
+        QrCodeSection(modifier = Modifier.padding(end = 16.dp))
+        OrDivider(isHorizontalLayout = true, modifier = Modifier.padding(horizontal = 24.dp)) // Vertical divider
+        BankDetailsSection(modifier = Modifier.padding(start = 16.dp))
+      }
+    } else {
+      // Vertical layout for narrower screens
+      Column(
+      ) {
+        QrCodeSection(modifier = Modifier.padding(bottom = 16.dp))
+        OrDivider(isHorizontalLayout = false) // Horizontal divider
+        BankDetailsSection(modifier = Modifier.padding(top = 16.dp))
+      }
+    }
+  }
+}
+
+@Composable
+fun QrCodeSection(modifier: Modifier = Modifier) {
+  Column(
+    horizontalAlignment = Alignment.CenterHorizontally,
+    modifier = modifier
+  ) {
+    // Placeholder for QR Code - Replace with your actual QR code image
+    Box(
+      modifier = Modifier
+        .size(200.dp) // Adjust size as needed
+        .background(Color.LightGray), // Placeholder background
+      contentAlignment = Alignment.Center
+    ) {
+       Image(
+           painter = painterResource(Res.drawable.qr_code), // Replace with actual resource
+           contentDescription = "QR Code for UPI Payment",
+           modifier = Modifier.fillMaxSize(),
+           contentScale = ContentScale.Fit
+       )
+    }
+    Spacer(modifier = Modifier.height(8.dp))
+    Text(
+      text = "upi: test1234@upi",
+      fontSize = 14.sp,
+      fontWeight = FontWeight.Medium
+    )
+  }
+}
+
+@Composable
+fun BankDetailsSection(modifier: Modifier = Modifier) {
+  Column(
+    modifier = modifier,
+    horizontalAlignment = Alignment.Start // Align text to the start for bank details
+  ) {
+    Text("Bank details:", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+    Spacer(modifier = Modifier.height(8.dp))
+    BankDetailItem("Bank name:", "PNB Bank")
+    BankDetailItem("Branch:", "Sector-24 Rohini, Delhi")
+    BankDetailItem("Name in Bank:", "AARSH GRANTH PRAKASHAN NIDHI")
+    BankDetailItem("Account number:", "6582000100016320")
+    BankDetailItem("IFSC code:", "PUNB0658200")
+  }
+}
+
+@Composable
+fun BankDetailItem(label: String, value: String) {
+  Row {
+    Text(text = label, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(150.dp)) // Adjust width for alignment
+    Text(text = value)
+  }
+  Spacer(modifier = Modifier.height(4.dp))
+}
+
+@Composable
+fun OrDivider(
+  isHorizontalLayout: Boolean,
+  modifier: Modifier = Modifier // Modifier for the Box container of OrDivider
+) {
+  val dividerText = "OR"
+  val textHorizontalPadding = 8.dp
+  val textVerticalPadding = 4.dp // Padding above/below "OR" text
+
+  Box(
+    contentAlignment = Alignment.Center,
+    modifier = modifier.then( // Apply incoming modifier first
+      if (isHorizontalLayout) {
+        // For VERTICAL divider, we want it to attempt to fill the height of its parent Row.
+        Modifier.fillMaxHeight()
+      } else {
+        // For HORIZONTAL divider, it takes a percentage of available width.
+        Modifier.fillMaxWidth(0.7f) // Make horizontal divider a bit shorter
+      }
+    )
+  ) {
+    if (isHorizontalLayout) {
+      // VERTICAL DIVIDER: Line - Text - Line
+      Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center, // Center items within the column
+        modifier = Modifier.fillMaxHeight() // Column itself fills the Box's height
+      ) {
+        VerticalDivider(
+          color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+          modifier = Modifier
+            .weight(1f) // Top segment takes available space above text
+            .width(1.dp)
+        )
+        Text(
+          text = dividerText,
+          color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+          fontSize = 12.sp,
+          fontWeight = FontWeight.Bold,
+          modifier = Modifier.padding(vertical = textVerticalPadding)
+        )
+        VerticalDivider(
+          color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+          modifier = Modifier
+            .weight(1f) // Bottom segment takes available space below text
+            .width(1.dp)
+        )
+      }
+    } else {
+      // HORIZONTAL DIVIDER: A single Divider with Text on top (using background to "erase")
+      // The Box's contentAlignment = Alignment.Center will center both Divider and Text.
+      HorizontalDivider(
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+        modifier = Modifier
+          .fillMaxWidth() // Divider fills the width of its parent Box
+          .height(1.dp)
+      )
+      Text(
+        text = dividerText,
+        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+        fontSize = 12.sp,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier
+          .background(MaterialTheme.colorScheme.surface) // Erase line behind text
+          .padding(horizontal = textHorizontalPadding, vertical = textVerticalPadding)
+      )
     }
   }
 }

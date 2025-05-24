@@ -26,4 +26,6 @@ val repositoryModule = module {
 
   // Provide JoinUsRepository
   singleOf(::JoinUsRepositoryImpl) { bind<JoinUsRepository>() }
+
+  singleOf(::BookOrderRepositoryImpl) { bind<BookOrderRepository>() }
 }

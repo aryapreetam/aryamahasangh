@@ -25,4 +25,5 @@ val viewModelModule = module {
 
   // Provide JoinUsViewModel
   factoryOf(::JoinUsViewModel)
+  factoryOf(::BookOrderViewModel)
 }

@@ -112,3 +112,41 @@ query StudentApplications{
 query label($key: String!){
   label(key: $key)
 }
+
+query BookOrders{
+  bookOrders{
+    id
+    fullname
+    address
+    city
+    district
+    state
+    pincode
+    country
+    mobile
+    districtOfficerName
+    districtOfficerNumber
+    paymentReceiptUrl
+    createdAt
+    isFulfilled
+  }
+}
+
+query bookOrder($id: String!){
+  bookOrder(id: $id){
+    id
+    fullname
+    address
+    city
+    district
+    state
+    pincode
+    country
+    mobile
+    districtOfficerName
+    districtOfficerNumber
+    paymentReceiptUrl
+    createdAt
+    isFulfilled
+  }
+}
