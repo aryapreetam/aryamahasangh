@@ -83,6 +83,7 @@ fun OrgDetailScreen(
   
   OrganisationDetail(
     organisation = uiState.organisation!!,
-    viewModel::updateOrganisationLogo
+    viewModel::updateOrganisationLogo,
+    updateOrganisationDescription = viewModel::updateOrganisationDescription
   )
 }

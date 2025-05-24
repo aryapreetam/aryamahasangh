@@ -22,7 +22,9 @@ interface OrganisationsRepository {
    * Get organisation details by name
    */
   fun getOrganisationByName(name: String): Flow<Result<OrganisationQuery.Organisation>>
+  fun getOrganisationById(id: String): Flow<Result<OrganisationQuery.Organisation>>
   fun updateOrganisationLogo(orgId: String, imageUrl: String): Flow<Result<Boolean>>
+  fun updateOrganisationDescription(orgId: String, description: String): Flow<Result<Boolean>>
 }
 
 /**
@@ -58,6 +60,10 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
     emit(result)
   }
 
+  override fun getOrganisationById(id: String): Flow<Result<OrganisationQuery.Organisation>> {
+    TODO("Not yet implemented")
+  }
+
   override fun updateOrganisationLogo(
     orgId: String,
     imageUrl: String
@@ -75,5 +81,12 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
       }
       emit(result)
     }
+  }
+
+  override fun updateOrganisationDescription(
+    orgId: String,
+    description: String
+  ): Flow<Result<Boolean>> {
+    TODO("Not yet implemented")
   }
 }

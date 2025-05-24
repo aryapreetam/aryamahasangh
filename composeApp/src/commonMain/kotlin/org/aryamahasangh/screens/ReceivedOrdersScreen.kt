@@ -3,6 +3,7 @@ package org.aryamahasangh.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.LocationCity
@@ -78,12 +79,12 @@ fun BookOrderListItem(
   order: BookOrdersQuery.BookOrder,
   onClick: (String) -> Unit
 ) {
-  Card(
+  ElevatedCard(
     onClick = { onClick(order.id) },
     modifier = Modifier
       .fillMaxWidth()
-      .padding(horizontal = 16.dp, vertical = 8.dp),
-    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+      .padding(horizontal = 8.dp, vertical = 4.dp),
+    shape = RoundedCornerShape(4.dp),
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
   ) {
     Row(

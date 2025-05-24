@@ -33,6 +33,7 @@ import org.aryamahasangh.OrganisationQuery
 import org.aryamahasangh.SettingKeys
 import org.aryamahasangh.network.bucket
 import org.aryamahasangh.screens.EditImageButton
+import org.aryamahasangh.viewmodel.OrganisationDescriptionState
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -53,7 +54,11 @@ fun SabhaPreview(){
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun OrganisationDetail(organisation: OrganisationQuery.Organisation, updateOrganisationLogo: (String, String, String) -> Unit){
+fun OrganisationDetail(
+  organisation: OrganisationQuery.Organisation,
+  updateOrganisationLogo: (String, String, String) -> Unit,
+  updateOrganisationDescription: (String, String) -> Unit,
+){
   val (id, name, logo, description, keyPeople ) = organisation
   var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
   Column(modifier = Modifier.fillMaxSize().padding(8.dp)
@@ -128,7 +133,14 @@ fun OrganisationDetail(organisation: OrganisationQuery.Organisation, updateOrgan
         }
         Text(name, style = MaterialTheme.typography.headlineMedium)
       }
-      Text(description)
+      OrganisationDescription(
+        orgId = id,
+        description = description,
+        isLoggedIn = isLoggedIn,
+        organisationDescriptionState = OrganisationDescriptionState(),
+        onEditModeChange = { },
+        updateDescription = updateOrganisationDescription
+      )
     }
 
     if(keyPeople.isNotEmpty()){
@@ -168,4 +180,59 @@ fun OrganisationDetail(organisation: OrganisationQuery.Organisation, updateOrgan
       }
     }
   }
+}
+
+@Composable
+fun OrganisationDescription(
+  orgId: String,
+  description: String,
+  isLoggedIn: Boolean = false,
+  organisationDescriptionState: OrganisationDescriptionState,
+  onEditModeChange: (Boolean) -> Unit = {},
+  updateDescription: (String, String) -> Unit,
+) {
+//  var editMode by remember { mutableStateOf(false) }
+//  Column(modifier = Modifier.fillMaxWidth()){
+//    if(!editMode) {
+//      Row(verticalAlignment = Alignment.CenterVertically){
+//        Text(
+//          modifier = Modifier.weight(1f),
+//          text = description
+//        )
+//        if(isLoggedIn) {
+//          EditImageButton(
+//            onClick = { onEditModeChange(true) }
+//          )
+//        }
+//      }
+//    }else {
+//      var localText by remember { mutableStateOf(organisationDescriptionState.description) }
+//      OutlinedTextField(
+//        modifier = Modifier.fillMaxWidth(),
+//        minLines = 2,
+//        value = localText,
+//        onValueChange = {
+//          localText = it
+//        }
+//      )
+//      Row(
+//        modifier = Modifier.align(Alignment.End),
+//        horizontalArrangement = Arrangement.spacedBy(8.dp)
+//      ) {
+//        TextButton(
+//          enabled = !organisationDescriptionState.isUpdating,
+//          onClick = { onEditModeChange(false) }
+//        ){
+//          Text("Cancel")
+//        }
+//        ButtonWithProgressIndicator(
+//          enabled = !organisationDescriptionState.isUpdating,
+//          inProgress = organisationDescriptionState.isUpdating
+//        ) {
+//          updateDescription(orgId, localText)
+//        }
+//      }
+//    }
+//  }
+  Text(description)
 }

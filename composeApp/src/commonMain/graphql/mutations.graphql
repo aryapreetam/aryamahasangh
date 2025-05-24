@@ -35,3 +35,7 @@ mutation createBookOrder($input: BookOrderInput!){
 mutation updateOrganisationLogo($id: String!, $imageUrl: String!){
   updateOrganisationLogo(id: $id, imageUrl: $imageUrl)
 }
+
+mutation updateOrganisationDescription($id: String!, $description: String!){
+  updateOrganisationDescription(id: $id, description: $description)
+}

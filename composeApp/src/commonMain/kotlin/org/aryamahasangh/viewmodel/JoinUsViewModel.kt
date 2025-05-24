@@ -16,7 +16,7 @@ data class JoinUsUiState(
 )
 
 data class LabelState(
-  val label: String = "Join Us",
+  val label: String = "आर्य महासंघ से जुड़ें",
   val isUpdating: Boolean = false,
   val error: String? = null,
   val editMode: Boolean = false

@@ -26,6 +26,13 @@ data class OrganisationDetailUiState(
   val error: String? = null
 )
 
+data class OrganisationDescriptionState(
+  val description: String = "",
+  val isUpdating: Boolean = false,
+  val error: String? = null,
+  val editMode: Boolean = false
+)
+
 /**
  * ViewModel for the Organisations and Organisation Details screens
  */
@@ -139,5 +146,41 @@ class OrganisationsViewModel(
         }
       }
     }
+  }
+
+  fun updateOrganisationDescription(orgId: String, description: String){
+//    launch {
+//      // Set loading state
+//      // FIXME This is not the correct way to do this, but it works for now
+//      _organisationDetailUiState.value = _organisationDetailUiState.value.copy(isLoading = true, error = null)
+//
+//      // Call the repository to update the logo
+//      organisationsRepository.updateOrganisationDescription(orgId, imageUrl).collect { result ->
+//        when (result) {
+//          is Result.Loading -> {
+//            // Already set loading state above, no need to do anything here
+//          }
+//          is Result.Success -> {
+//            if (result.data) {
+//              // If update was successful, load the organisation details
+//              loadOrganisationDetail(name)
+//            } else {
+//              // If update failed but didn't throw an exception
+//              _organisationDetailUiState.value = _organisationDetailUiState.value.copy(
+//                isLoading = false,
+//                error = "Failed to update organisation logo"
+//              )
+//            }
+//          }
+//          is Result.Error -> {
+//            // If there was an error, update the UI state
+//            _organisationDetailUiState.value = _organisationDetailUiState.value.copy(
+//              isLoading = false,
+//              error = result.message
+//            )
+//          }
+//        }
+//      }
+//    }
   }
 }

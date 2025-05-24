@@ -20,7 +20,7 @@ fun LoginDialog(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
   var usernameError by remember { mutableStateOf(false) }
   var usernameErrorMessage by remember { mutableStateOf("Username is required") }
   var passwordError by remember { mutableStateOf(false) }
-  var passwordErrorMessage by remember { mutableStateOf("Password is required (min 8 chars, 1 special char)") }
+  var passwordErrorMessage by remember { mutableStateOf("Password is required (min 5 chars, 1 special char)") }
   var isLoggingIn by remember { mutableStateOf(false) }
   val coroutineScope = rememberCoroutineScope()
 
@@ -56,7 +56,10 @@ fun LoginDialog(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
           onValueChange = {
             if (it.length < 30)
               password = it
-            if (passwordError && it.length >= 8 && it.matches(Regex(".*[!@#\$%^&*()].*"))) {
+            if (passwordError && it.length >= 5
+              // Temporarily removed password requirements
+              //  && it.matches(Regex(".*[!@#\$%^&*()].*"))
+              ) {
               passwordError = false // Clear error on valid input
             }
           },
@@ -74,7 +77,8 @@ fun LoginDialog(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
       Button(
         onClick = {
           val isValidPassword =
-            password.isNotEmpty() && password.length >= 8 && password.matches(Regex(".*[!@#\$%^&*()].*"))
+            password.isNotEmpty() && password.length >= 5 
+                //&& password.matches(Regex(".*[!@#\$%^&*()].*"))
           usernameError = username.isEmpty()
           passwordError = !isValidPassword
 
@@ -83,11 +87,11 @@ fun LoginDialog(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
             coroutineScope.launch {
               delay(2000)
               isLoggingIn = false
-              if (username == "admin" && password == "arya@2018") {
+              if (username == "admin" && password == "79450") {
                 println("Login successful")
                 onLoginSuccess()
                 onDismiss()
-              } else if (username != "admin" && password != "arya@2018") {
+              } else if (username != "admin" && password != "79450") {
                 usernameError = true
                 usernameErrorMessage = "Incorrect username"
                 passwordError = true

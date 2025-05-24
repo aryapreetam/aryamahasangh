@@ -22,10 +22,14 @@ sealed class Screen {
   data object LearningSection: Screen()
 
   @Serializable
-  data object GurukulSection: Screen()
+  data object AryaGurukulSection: Screen()
 
   @Serializable
-  data object GurukulCollege: Screen()
+  data object AryaaGurukulSection: Screen()
+  @Serializable
+  data object AryaGurukulCollege: Screen()
+  @Serializable
+  data object AryaaGurukulCollege: Screen()
   @Serializable
   data object BookSection: Screen()
   @Serializable
@@ -36,6 +40,12 @@ sealed class Screen {
   data object AryaNirmanSection: Screen()
   @Serializable
   data object AryaNirmanHome: Screen()
+
+  @Serializable
+  data object AryaPariwarSection: Screen()
+
+  @Serializable
+  data object AryaPariwarHome: Screen()
   @Serializable
   data object AryaSamajSection: Screen()
   @Serializable
