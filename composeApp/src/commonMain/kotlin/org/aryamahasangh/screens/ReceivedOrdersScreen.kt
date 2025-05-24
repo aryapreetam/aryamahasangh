@@ -19,7 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.StateFlow
 import org.aryamahasangh.BookOrdersQuery
-import org.aryamahasangh.utils.formatShort
+import org.aryamahasangh.utils.formatShortForBook
 import org.aryamahasangh.viewmodel.BookOrderViewModel
 import org.aryamahasangh.viewmodel.BookOrdersUiState
 
@@ -104,7 +104,7 @@ fun BookOrderListItem(
 
         InfoRow(icon = Icons.Filled.LocationCity, text = "${order.city}, ${order.pincode}")
         InfoRow(icon = Icons.Filled.PhoneAndroid, text = order.mobile)
-        InfoRow(icon = Icons.Filled.CalendarToday, text = "Ordered: ${formatShort(order.createdAt)}")
+        InfoRow(icon = Icons.Filled.CalendarToday, text = "Ordered: ${formatShortForBook(order.createdAt)}")
       }
 
       // Optional: A small chip for fulfillment status
@@ -124,7 +124,7 @@ fun BookOrderListItem(
 }
 
 fun formatReadableDateTime(isoString: String): String {
-  return formatShort(isoString)
+  return formatShortForBook(isoString)
 }
 
 @Composable

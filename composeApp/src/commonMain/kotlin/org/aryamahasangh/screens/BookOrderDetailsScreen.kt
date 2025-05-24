@@ -15,7 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import org.aryamahasangh.utils.formatShort
+import org.aryamahasangh.utils.formatShortForBook
 import org.aryamahasangh.viewmodel.BookOrderDetailsUiState
 import org.aryamahasangh.viewmodel.BookOrderViewModel
 
@@ -182,7 +182,7 @@ fun BookOrderDetailsContent(
                 DetailItem(
                     icon = Icons.Default.CalendarToday,
                     label = "Order Date",
-                    value = formatShort(order.createdAt)
+                    value = formatShortForBook(order.createdAt)
                 )
 
                 // Uncomment if updatedAt field is available in the API response
