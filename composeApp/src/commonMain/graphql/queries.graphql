@@ -37,6 +37,26 @@ query organisation($name: String!) {
   }
 }
 
+query getOrganisationById($id: String!) {
+  organisationById(id: $id){
+    id
+    name
+    logo
+    description
+    keyPeople{
+      member{
+        name
+        profileImage
+        email
+        phoneNumber
+        educationalQualification
+      }
+      post
+      priority
+    }
+  }
+}
+
 query learningsItems {
   learningItems{
     id

@@ -31,6 +31,7 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
@@ -182,6 +183,7 @@ class BookOrderMutations : Mutation {
 class OrgsQuery : Query {
   suspend fun organisations(): List<Organisation> = getOrganisations()
   suspend fun organisation(name: String): Organisation? = getOrganisations().find { it.name == name }
+  suspend fun organisationById(id: String): Organisation? = getOrganisation(id)
   suspend fun organisationalActivities(filter: ActivityFilter? = null): List<OrganisationalActivity> = getOrganisationalActivities(filter)
   suspend fun organisationalActivity(id: String) =  getOrganisationalActivity(id)
   suspend fun learningItems(): List<Video> = getVideos()
@@ -363,36 +365,62 @@ class OrgsMutation : Mutation {
     }
   }
 
-//  fun addOrganisation(input: OrganisationInput): Boolean {
-//    val org = Organisation(
-//      id = Uuid.random().toString(),
-//      name = input.name,
-//      logo = input.logo,
-//      description = input.description,
-//      keyPeople = input.people
-//    )
-//    OrganisationPublisher.publishOrganisation(org)
-//    return true
-//  }
-//  fun addMemberToOrganisation(orgId: Uuid, orgMember: OrganisationalMember): Boolean {
-//    return false
-//  }
-//
-//  fun removeMemberFromOrganisation(orgId: Uuid, memberId: Uuid): Boolean {
-//    return false
-//  }
-//
-//  fun updateOrganisationMember(orgId: Uuid, memberId: Uuid, orgMemberDetails: OrganisationalMember): Boolean {
-//    return false
-//  }
-//
-//  fun updateOrganisationDetails(orgId: Uuid, name: String, description: String, logo: String): Boolean {
-//    return false
-//  }
-//
-//  fun removeOrganisation(orgId: Uuid): Boolean {
-//    return false
-//  }
+
+  suspend fun updateOrganisationDescription(id: String, description: String): Boolean {
+    return try {
+      supabase.from("organisation").update(
+        {
+          Organisation::description setTo description
+        }
+      ){
+        filter {
+          eq("id", id)
+        }
+      }
+      true
+    }catch (e: Exception){
+      println(e)
+      false
+    }
+  }
+
+  suspend fun removeMemberFromOrganisation(organisationMemberId: String): Boolean {
+    return try {
+      supabase.from("organisational_member").delete {
+        filter {
+          eq("id", organisationMemberId)
+        }
+      }
+      true
+    } catch(e: Exception){
+      println(e)
+      false
+    }
+  }
+
+  @Serializable
+  data class OrganisationMemberInput(
+    @SerialName("organisation_id")
+    val organisationId: String,
+    @SerialName("member_id")
+    val memberId: String,
+    @SerialName("post")
+    val post: String,
+    @SerialName("priority")
+    val priority: Int
+  )
+
+  suspend fun addMemberToOrganisation(orgId: String, memberId: String, post: String, priority: Int = 1): Boolean {
+    return try {
+      supabase.from("organisational_member").insert(
+        OrganisationMemberInput(orgId, memberId, post, priority)
+      )
+      true
+    } catch(e: Exception){
+      println(e)
+      false
+    }
+  }
 }
 
 @Serializable

@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun GurukulCollegeHomeScreen(navigateToAdmissionForm: () -> Unit) {
   Column(Modifier.padding(8.dp)) {
-    listOf("आर्या गुरुकुल महाविद्यालय", "आर्य गुरुकुल महाविद्यालय").forEach { name ->
+    listOf("आर्य गुरुकुल महाविद्यालय").forEach { name ->
       Text(
         text = name,
         style = MaterialTheme.typography.headlineSmall,
@@ -29,7 +29,7 @@ fun GurukulCollegeHomeScreen(navigateToAdmissionForm: () -> Unit) {
           OutlinedCard(
             onClick = {
               if(it == "गुरुकुल प्रवेश"){
-                navigateToAdmissionForm()
+                //navigateToAdmissionForm()
               }
             }
           ) {

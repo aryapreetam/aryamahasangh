@@ -2,9 +2,7 @@ package org.aryamahasangh
 
 import AppTheme
 import LocalThemeIsDark
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -92,8 +90,10 @@ val drawerOptions = listOf(
   DrawerOption("संलग्न संस्थाएं", Res.drawable.account_tree, Screen.OrgsSection),
   DrawerOption("हमसें जुडें", Res.drawable.handshake, Screen.JoinUs),
 
-  DrawerOption("गुरुकुल महाविद्यालय", Res.drawable.school, Screen.GurukulSection),
+  DrawerOption("आर्य गुरुकुल", Res.drawable.school, Screen.AryaGurukulSection),
+  DrawerOption("आर्या गुरुकुल", Res.drawable.school, Screen.AryaaGurukulSection),
   DrawerOption("आर्य-आर्या निर्माण", Res.drawable.interactive_space, Screen.AryaNirmanSection),
+  DrawerOption("आर्य परिवार", Res.drawable.family, Screen.AryaPariwarSection),
   DrawerOption("आर्य समाज संगठन", Res.drawable.diversity_3, Screen.AryaSamajSection),
   DrawerOption("आओ स्वाध्याय करें", Res.drawable.menu_book, Screen.Learning),
   DrawerOption("ग्रन्थ विभाग", Res.drawable.local_library, Screen.BookSection),
@@ -111,8 +111,8 @@ fun DrawerContent(
     derivedStateOf { backStackEntry?.destination?.route }
   }
 
-  Column(modifier = Modifier.width(250.dp).padding(8.dp)) {
-    Row(
+  Column(modifier = Modifier.width(250.dp).padding(8.dp).verticalScroll(rememberScrollState())) {
+  Row(
       modifier = Modifier.fillMaxWidth(),
       horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -160,10 +160,10 @@ fun DrawerContent(
       )
       if(option.title == "हमसें जुडें"){
         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-        Text("गुरुकुल", modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp), style = MaterialTheme.typography.titleMedium)
-      }else if(option.title == "गुरुकुल महाविद्यालय"){
+        Text("आर्ष विद्या", modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp), style = MaterialTheme.typography.titleMedium)
+      }else if(option.title == "आर्या गुरुकुल"){
         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-        Text("संगठन ", modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp), style = MaterialTheme.typography.titleMedium)
+        Text("संगठन कार्य ", modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp), style = MaterialTheme.typography.titleMedium)
       }else if(option.title == "आर्य समाज संगठन"){
         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
         Text("स्वाध्याय ", modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp), style = MaterialTheme.typography.titleMedium)
@@ -179,8 +179,10 @@ private fun checkIfSelected(currentDestination: String?, currentDrawerItem: Stri
   else if((currentDestination?.contains("Learning") == true || currentDestination?.contains("VideoDetails") == true) && currentDrawerItem == Screen.LearningSection.toString()) true
   else if((currentDestination?.contains("BookOrderForm") == true || currentDestination?.contains("BookOrderDetails") == true) && currentDrawerItem == Screen.BookSection.toString()) true
   else if((currentDestination?.contains("AryaNirmanHome") == true) && currentDrawerItem == Screen.AryaNirmanSection.toString()) true
+  else if((currentDestination?.contains("AryaPariwarHome") == true) && currentDrawerItem == Screen.AryaPariwarSection.toString()) true
   else if((currentDestination?.contains("AryaSamajHome") == true) && currentDrawerItem == Screen.AryaSamajSection.toString()) true
-  else if((currentDestination?.contains("GurukulCollege") == true || currentDestination?.contains("AdmissionForm") == true) && currentDrawerItem == Screen.GurukulSection.toString()) true
+  else if((currentDestination?.contains("AryaGurukulCollege") == true) && currentDrawerItem == Screen.AryaGurukulSection.toString()) true
+  else if((currentDestination?.contains("AryaaGurukulCollege") == true || currentDestination?.contains("AdmissionForm") == true) && currentDrawerItem == Screen.AryaaGurukulSection.toString()) true
   else if(currentDestination?.contains(currentDrawerItem) == true) true
   else false
 }
