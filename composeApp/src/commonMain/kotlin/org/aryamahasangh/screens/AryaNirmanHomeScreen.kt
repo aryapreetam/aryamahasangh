@@ -12,13 +12,18 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.apollographql.apollo.api.Optional
+import org.aryamahasangh.components.EventListItem
+import org.aryamahasangh.components.activityListItemsWithActions
+import org.aryamahasangh.components.dummyDirectionsCallback
 import org.aryamahasangh.type.ActivityFilterInput
 import org.aryamahasangh.type.ActivityPeriod
 import org.aryamahasangh.type.ActivityType
 import org.aryamahasangh.viewmodel.JoinUsViewModel
 
 @Composable
-fun AryaNirmanHomeScreen(viewModel: JoinUsViewModel) {
+fun AryaNirmanHomeScreen(
+  viewModel: JoinUsViewModel,
+  onNavigateToRegistrationForm: () -> Unit) {
   LaunchedEffect(Unit){
     val activityFilter = ActivityFilterInput(
       type = Optional.present(ActivityType.SESSION),
@@ -28,7 +33,7 @@ fun AryaNirmanHomeScreen(viewModel: JoinUsViewModel) {
   }
   val uiState by viewModel.uiState.collectAsState()
   Column(modifier = Modifier.padding(8.dp)){
-    Text("आगामी सत्र")
+    Text("आगामी सत्र", modifier = Modifier.padding(bottom = 8.dp))
     // Handle loading state
     if (uiState.isLoading) {
       Box(
@@ -87,7 +92,20 @@ fun AryaNirmanHomeScreen(viewModel: JoinUsViewModel) {
               .fillMaxSize()
               .weight(1f) // Limits height to remaining space
           ) {
-            ActivitiesList(activities = it)
+            FlowRow(
+              horizontalArrangement = Arrangement.spacedBy(8.dp),
+              verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+              activityListItemsWithActions.forEach {
+                EventListItem(
+                  event = it,
+                  onRegisterClick = {
+                    onNavigateToRegistrationForm()
+                  },
+                  onDirectionsClick = ::dummyDirectionsCallback
+                )
+              }
+            }
           }
         }
       }

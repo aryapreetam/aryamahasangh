@@ -56,35 +56,6 @@ class AuthorizationInterceptor() : HttpInterceptor {
   }
 }
 
-
-//class MyApolloInterceptor : ApolloInterceptor {
-//  override fun <D : Operation.Data> intercept(
-//    request: ApolloRequest<D>,
-//    chain: ApolloInterceptorChain
-//  ): Flow<ApolloResponse<D>> {
-//    val headers = request.httpHeaders
-//    val req = request.newBuilder()
-//    headers?.forEach {
-//      req.addHttpHeader(it.name, it.value)
-//    }
-//    req.addHttpHeader("custom", "jhjhj")
-//    req.addHttpHeader("Access-Control-Allow-Origin", "*")
-//
-//    return chain.proceed(req.build())
-//  }
-//}
-
-class SampleInterceptor : HttpInterceptor {
-  override suspend fun intercept(
-    request: HttpRequest,
-    chain: HttpInterceptorChain
-  ): HttpResponse {
-    val requestBuilder = request.newBuilder()
-    requestBuilder.addHeader("Custom", "fdfdfdf")
-    return chain.proceed(requestBuilder.build())
-  }
-}
-
 val supabaseClient = createSupabaseClient(
   supabaseUrl = "https://placeholder-staging-supabase.co",
   supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0bnd3aXdtbGpjd3pwc2F3ZG1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5MzE4OTMsImV4cCI6MjA1MDUwNzg5M30.cY4A4ZxqHA_1VRC-k6URVAHHkweHTR8FEYEzHYiu19A"

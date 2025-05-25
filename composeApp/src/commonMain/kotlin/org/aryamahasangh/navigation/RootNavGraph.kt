@@ -101,7 +101,15 @@ fun RootNavGraph(navController: NavHostController) {
     navigation<Screen.AryaNirmanSection>(startDestination = Screen.AryaNirmanHome){
       composable<Screen.AryaNirmanHome> {
         val viewModel = koinInject<JoinUsViewModel>()
-        AryaNirmanHomeScreen(viewModel)
+        AryaNirmanHomeScreen(
+          viewModel,
+          onNavigateToRegistrationForm = {
+            navController.navigate(Screen.AryaNirmanRegistrationForm)
+          })
+      }
+      composable<Screen.AryaNirmanRegistrationForm> {
+        val viewModel = koinInject<JoinUsViewModel>()
+        SatraRegistrationFormScreen()
       }
     }
     navigation<Screen.AryaPariwarSection>(startDestination = Screen.AryaPariwarHome){
