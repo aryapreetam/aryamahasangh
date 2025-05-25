@@ -92,11 +92,11 @@ val drawerOptions = listOf(
 
   DrawerOption("आर्य गुरुकुल", Res.drawable.school, Screen.AryaGurukulSection),
   DrawerOption("आर्या गुरुकुल", Res.drawable.school, Screen.AryaaGurukulSection),
-  DrawerOption("आर्य-आर्या निर्माण", Res.drawable.interactive_space, Screen.AryaNirmanSection),
+  DrawerOption("आर्य-आर्या निर्माण(सत्र)", Res.drawable.interactive_space, Screen.AryaNirmanSection),
   DrawerOption("आर्य परिवार", Res.drawable.family, Screen.AryaPariwarSection),
   DrawerOption("आर्य समाज संगठन", Res.drawable.diversity_3, Screen.AryaSamajSection),
   DrawerOption("आओ स्वाध्याय करें", Res.drawable.menu_book, Screen.Learning),
-  DrawerOption("ग्रन्थ विभाग", Res.drawable.local_library, Screen.BookSection),
+  // DrawerOption("ग्रन्थ विभाग", Res.drawable.local_library, Screen.BookSection),
   )
 
 
@@ -178,7 +178,7 @@ private fun checkIfSelected(currentDestination: String?, currentDrawerItem: Stri
   else if((currentDestination?.contains("Orgs") == true || currentDestination?.contains("OrgDetails") == true) && currentDrawerItem == Screen.OrgsSection.toString()) true
   else if((currentDestination?.contains("Learning") == true || currentDestination?.contains("VideoDetails") == true) && currentDrawerItem == Screen.LearningSection.toString()) true
   else if((currentDestination?.contains("BookOrderForm") == true || currentDestination?.contains("BookOrderDetails") == true) && currentDrawerItem == Screen.BookSection.toString()) true
-  else if((currentDestination?.contains("AryaNirmanHome") == true) && currentDrawerItem == Screen.AryaNirmanSection.toString()) true
+  else if((currentDestination?.contains("AryaNirmanHome") == true || currentDestination?.contains("AryaNirmanRegistrationForm") == true) && currentDrawerItem == Screen.AryaNirmanSection.toString()) true
   else if((currentDestination?.contains("AryaPariwarHome") == true) && currentDrawerItem == Screen.AryaPariwarSection.toString()) true
   else if((currentDestination?.contains("AryaSamajHome") == true) && currentDrawerItem == Screen.AryaSamajSection.toString()) true
   else if((currentDestination?.contains("AryaGurukulCollege") == true) && currentDrawerItem == Screen.AryaGurukulSection.toString()) true
@@ -280,7 +280,7 @@ fun MainContent(
         },
         navigationIcon = {
           val currentScreen = currentDestination?.substringAfterLast(".")
-          val shouldShowBack = listOf("AboutUsDetails", "ActivityDetails", "OrgDetails", "VideoDetails", "AdmissionForm", "BookOrderDetails").any { currentScreen?.startsWith(it) == true }
+          val shouldShowBack = listOf("AboutUsDetails", "ActivityDetails", "OrgDetails", "VideoDetails", "AdmissionForm", "BookOrderDetails", "AryaNirmanRegistrationForm").any { currentScreen?.startsWith(it) == true }
           if(shouldShowBack) {
             IconButton(onClick = {
               navController.navigateUp()

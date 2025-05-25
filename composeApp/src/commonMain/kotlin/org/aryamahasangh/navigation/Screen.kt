@@ -40,7 +40,8 @@ sealed class Screen {
   data object AryaNirmanSection: Screen()
   @Serializable
   data object AryaNirmanHome: Screen()
-
+  @Serializable
+  data object AryaNirmanRegistrationForm: Screen()
   @Serializable
   data object AryaPariwarSection: Screen()
 
