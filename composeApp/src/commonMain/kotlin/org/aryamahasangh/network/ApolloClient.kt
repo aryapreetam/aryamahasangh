@@ -16,18 +16,16 @@ import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.json.Json
-import org.aryamahasangh.isAndroid
+import org.aryamahasangh.config.AppConfig
 import org.aryamahasangh.type.LocalDateTime
 
-const val localDev = false
-// "10.0.2.2"
-val host = if(isAndroid()) "10.0.2.2" else "localhost"
-val port = "4000"
-var serverUrl = if(localDev) "http://${host}:${port}" else "https://aryamahasangh.onrender.com"
-var webSocketUrl = if(localDev) "ws://${host}:${port}" else "wss://aryamahasangh.onrender.com"
+/**
+ * Apollo GraphQL client configured using the unified configuration system.
+ * No hard-coded secrets - all configuration loaded from AppConfig.
+ */
 val apolloClient = ApolloClient.Builder()
-  .serverUrl("$serverUrl/graphql")
-  .webSocketServerUrl("$webSocketUrl/subscriptions")
+  .serverUrl(AppConfig.graphqlUrl)
+  .webSocketServerUrl(AppConfig.subscriptionsUrl)
   .addHttpHeader("Access-Control-Allow-Origin", "*")
   .httpEngine(KtorHttpEngine())
   .addHttpInterceptor(AuthorizationInterceptor())
@@ -85,9 +83,13 @@ class SampleInterceptor : HttpInterceptor {
   }
 }
 
+/**
+ * Supabase client configured using the unified configuration system.
+ * No hard-coded secrets - all configuration loaded from AppConfig.
+ */
 val supabaseClient = createSupabaseClient(
-  supabaseUrl = "https://ftnwwiwmljcwzpsawdmf.supabase.co",
-  supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0bnd3aXdtbGpjd3pwc2F3ZG1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5MzE4OTMsImV4cCI6MjA1MDUwNzg5M30.cY4A4ZxqHA_1VRC-k6URVAHHkweHTR8FEYEzHYiu19A"
+  supabaseUrl = AppConfig.supabaseUrl,
+  supabaseKey = AppConfig.supabaseKey
 ){
   install(Storage){
     resumable {
@@ -102,7 +104,6 @@ val supabaseClient = createSupabaseClient(
     prettyPrint = true
   })
 }
-const val BUCKET = "documents"
-val resumableClient = supabaseClient.storage[BUCKET].resumable
-val bucket = supabaseClient.storage[BUCKET]
+val resumableClient = supabaseClient.storage[AppConfig.STORAGE_BUCKET].resumable
+val bucket = supabaseClient.storage[AppConfig.STORAGE_BUCKET]
 
