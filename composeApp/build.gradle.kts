@@ -90,20 +90,23 @@ kotlin {
 
       implementation(libs.ktor.client.core)
 
+      implementation(libs.compose.remember.setting)
+
+      // filekit
       // Enables FileKit without Compose dependencies
       implementation("io.github.vinceglb:filekit-core:0.8.8")
       // Enables FileKit with Composable utilities
       implementation("io.github.vinceglb:filekit-compose:0.8.8")
 
-      implementation(platform("io.github.jan-tennert.supabase:bom:VERSION"))
 
-      implementation(platform("io.github.jan-tennert.supabase:bom:3.1.2"))
-      implementation("io.github.jan-tennert.supabase:auth-kt")
-      implementation("io.github.jan-tennert.supabase:storage-kt")
-      implementation("io.github.jan-tennert.supabase:postgrest-kt")
-      implementation("io.github.jan-tennert.supabase:realtime-kt")
-      implementation("io.github.dokar3:sonner:0.3.8")
-      implementation("dev.burnoo:compose-remember-setting:1.0.3")
+      // supabase
+      implementation(project.dependencies.platform(libs.supabase.bom)) // 👈 BOM for consistent versions
+      implementation(libs.supabase.postgrest)
+      implementation(libs.supabase.auth)
+      implementation(libs.supabase.realtime)
+      implementation(libs.supabase.storage)
+      implementation(libs.supabase.apollographql)
+      implementation(libs.supabase.coil)
     }
     androidMain.dependencies {
       implementation(libs.androidx.activity.compose)
@@ -181,8 +184,11 @@ apollo {
   service("service") {
     packageName.set("org.aryamahasangh")
     introspection {
-      endpointUrl.set("http://localhost:4000/graphql")
+      endpointUrl.set("https://ftnwwiwmljcwzpsawdmf.supabase.co/graphql/v1")
       schemaFile.set(file("src/commonMain/graphql/schema.json"))
+      mapScalar("timestamptz", "kotlinx.datetime.Instant", "com.apollographql.apollo3.api.CustomScalarAdapters")
+      headers.put("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0bnd3aXdtbGpjd3pwc2F3ZG1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5MzE4OTMsImV4cCI6MjA1MDUwNzg5M30.cY4A4ZxqHA_1VRC-k6URVAHHkweHTR8FEYEzHYiu19A")
+      headers.put("apikey", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0bnd3aXdtbGpjd3pwc2F3ZG1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5MzE4OTMsImV4cCI6MjA1MDUwNzg5M30.cY4A4ZxqHA_1VRC-k6URVAHHkweHTR8FEYEzHYiu19A")
     }
   }
 }

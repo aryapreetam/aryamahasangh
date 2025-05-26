@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.error_profile_image
-import com.dokar.sonner.rememberToasterState
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.core.PickerMode
 import io.github.vinceglb.filekit.core.PickerType
@@ -608,7 +607,6 @@ fun RegistrationForm(viewModel: AdmissionsViewModel) {
 
   val scrollState = rememberScrollState()
 
-  val toaster = rememberToasterState()
 
   //Validation function
   fun validateForm(): Boolean {

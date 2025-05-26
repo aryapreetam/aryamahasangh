@@ -1,172 +1,241 @@
-query organisations{
-  organisations{
-    id
-    name
-    description
+query Organisations{
+  organisationCollection{
+    edges{
+      node{
+        id
+        name
+        description
+      }
+    }
   }
 }
-
 query OrganisationsAndMembers{
-  members{
-    id,
-    name
-    profileImage
-  }
-  organisations{
-    id
-    name
-  }
-}
-query organisation($name: String!) {
-  organisation(name: $name){
-    id
-    name
-    logo
-    description
-    keyPeople{
-      member{
+  memberCollection{
+    edges{
+      node{
+        id
         name
-        profileImage
-        email
-        phoneNumber
-        educationalQualification
+        profile_image
       }
-      post
-      priority
     }
   }
-}
-
-query getOrganisationById($id: String!) {
-  organisationById(id: $id){
-    id
-    name
-    logo
-    description
-    keyPeople{
-      member{
+  organisationCollection{
+    edges{
+      node {
+        id
         name
-        profileImage
-        email
-        phoneNumber
-        educationalQualification
       }
-      post
-      priority
     }
   }
 }
 
-query learningsItems {
-  learningItems{
-    id
-    thumbnailUrl
-    title
-  }
-}
-
-query LearningItemDetail($id: String!){
-  learningItem(id: $id){
-    id
-    title
-    description
-    videoId
-    url
-    thumbnailUrl
-  }
-}
-
-query OrganisationalActivities($filter: ActivityFilterInput){
-  organisationalActivities(filter: $filter){
-    id
-    name
-    shortDescription
-    startDateTime
-    endDateTime
-    activityType
-    district
-  }
-}
-
-
-query organisationalActivityDetail($id: String!){
-  organisationalActivity(id: $id){
-    id,
-    name
-    shortDescription
-    longDescription
-    associatedOrganisations {
-      id
-      name
-    }
-    activityType
-    address
-    state
-    district
-    startDateTime
-    endDateTime
-    mediaFiles
-    additionalInstructions
-    contactPeople{
-      member{
+query Organisation($filter: organisationFilter) {
+  organisationCollection(filter: $filter){
+    edges{
+      node{
+        id
         name
-        profileImage
-        phoneNumber
+        logo
+        description
+        organisational_memberCollection{
+          edges{
+            node{
+              id
+              post
+              priority
+              member{
+                id
+                name
+                email
+                phone_number
+                profile_image
+                educational_qualification
+              }
+            }
+          }
+        }
       }
-      post
-      priority
     }
   }
 }
 
-query StudentApplications{
-  studentsApplied{
-    id
-    studentPhoto
-    studentName
-    previousClass
-    marksObtained
+query LearningItems {
+  learningCollection{
+    edges{
+      node{
+        id
+        thumbnail_url
+        title
+      }
+    }
   }
 }
 
-query label($key: String!){
-  label(key: $key)
+query LearningItem($filter: learningFilter) {
+  learningCollection(filter: $filter){
+    edges{
+      node{
+        id
+        thumbnail_url
+        title
+      }
+    }
+  }
 }
-
-query BookOrders{
-  bookOrders{
-    id
-    fullname
-    address
-    city
-    district
-    state
-    pincode
-    country
-    mobile
-    districtOfficerName
-    districtOfficerNumber
-    paymentReceiptUrl
-    createdAt
-    isFulfilled
+query OrganisationalActivities($filter: activitiesFilter){
+  activitiesCollection(filter: $filter){
+    edges{
+      node{
+        id
+        name
+        short_description
+        start_datetime
+        end_datetime
+        type
+        district
+      }
+    }
   }
 }
 
-query bookOrder($id: String!){
-  bookOrder(id: $id){
-    id
-    fullname
-    address
-    city
-    district
-    state
-    pincode
-    country
-    mobile
-    districtOfficerName
-    districtOfficerNumber
-    paymentReceiptUrl
-    createdAt
-    isFulfilled
+query OrganisationalActivityDetail($filter: activitiesFilter){
+  activitiesCollection(filter: $filter){
+    edges{
+      node{
+        id
+        name
+        short_description
+        long_description
+        start_datetime
+        end_datetime
+        type
+        address
+        state
+        district
+        media_files
+        additional_instructions
+        organisational_activityCollection{
+          edges{
+            node{
+              id
+              organisation{
+                id
+                name
+              }
+            }
+          }
+        }
+        activity_memberCollection{
+          edges{
+            node{
+              id
+              post
+              priority
+              member{
+                name
+                profile_image
+                phone_number
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query StudentsApplied {
+  admissionCollection{
+    edges{
+      node{
+        id
+        studentName
+        studentPhoto
+        previousClass
+        marksObtained
+      }
+    }
+  }
+}
+
+query AppLabel($labelKey: String!){
+  app_labelsCollection(filter: { label_key: { eq: $labelKey } }){
+    edges{
+      node{
+        id
+        label_value
+      }
+    }
+  }
+}
+
+query BookOrders {
+  book_ordersCollection {
+    edges {
+      node {
+        id
+        fullname
+        address
+        city
+        district
+        state
+        pincode
+        country
+        mobile
+        district_officer_name
+        district_officer_number
+        payment_receipt_url
+        created_at
+        is_fulfilled
+      }
+    }
+  }
+}
+
+query BookOrders($filter: book_ordersFilter) {
+  book_ordersCollection(filter: $filter) {
+    edges {
+      node {
+        id
+        fullname
+        address
+        city
+        district
+        state
+        pincode
+        country
+        mobile
+        district_officer_name
+        district_officer_number
+        payment_receipt_url
+        created_at
+        is_fulfilled
+      }
+    }
+  }
+}
+
+query UpcomingSatrActivities{
+  activitiesCollection{
+    edges{
+      node{
+        id
+        name
+        start_datetime
+        end_datetime
+        allowed_gender
+        district
+        state
+        latitude
+        longitude
+        satr_registrationCollection{
+          edges{
+            node{
+              id
+            }
+          }
+        }
+      }
+    }
   }
 }
