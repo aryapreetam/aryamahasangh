@@ -1,41 +1,108 @@
-mutation AddOrganisationActivity($input: OrganisationActivityInput!){
-  addOrganisationActivity(input: $input)
+fragment ActivityFields on activities {
+  id
+  name
+  short_description
+  long_description
+  start_datetime
+  end_datetime
+  type
+  address
+  state
+  district
+  media_files
+  additional_instructions
 }
 
-mutation AddStudentAdmissionData($input: AdmissionFormDataInput!) {
-  addStudentAdmissionData(input: $input)
-}
-
-mutation DeleteActivity($id: String!){
-  removeActivity(activityId: $id)
-}
-
-mutation updateJoinUsLabel($label: String!){
-  updateJoinUsLabel(label: $label)
-}
-
-mutation createBookOrder($input: BookOrderInput!){
-  createBookOrder(input: $input){
-    id
-    fullname
-    address
-    city
-    district
-    state
-    pincode
-    country
-    mobile
-    districtOfficerName
-    districtOfficerNumber
-    paymentReceiptUrl
-    createdAt
+mutation AddOrganisationActivity($input: activitiesInsertInput!) {
+  insertIntoactivitiesCollection(objects: [$input]) {
+    affectedCount
+    records {
+      ...ActivityFields
+      organisational_activityCollection {
+        edges {
+          node {
+            id
+            organisation {
+              id
+              name
+            }
+          }
+        }
+      }
+      activity_memberCollection {
+        edges {
+          node {
+            id
+            post
+            priority
+            member {
+              name
+              profile_image
+              phone_number
+            }
+          }
+        }
+      }
+    }
   }
 }
 
-mutation updateOrganisationLogo($id: String!, $imageUrl: String!){
-  updateOrganisationLogo(id: $id, imageUrl: $imageUrl)
+mutation AddStudentAdmissionData($input: admissionInsertInput!){
+  insertIntoadmissionCollection(objects: [$input]){
+    affectedCount
+  }
+}
+
+mutation DeleteActivity($id: String!) {
+  deleteFromactivitiesCollection(filter: {id: {eq: $id}}, atMost: 1) {
+    affectedCount
+  }
+}
+
+mutation updateJoinUsLabel($input: String!){
+  updateapp_labelsCollection(
+    set: { label_value: $input },
+    filter: { label_key: { eq: "join_us" } }){
+    affectedCount
+  }
+}
+
+mutation CreateBookOrder($input: book_ordersInsertInput!) {
+  insertIntobook_ordersCollection(objects: [$input]) {
+    affectedCount
+    records {
+      fullname
+      address
+      city
+      district
+      state
+      pincode
+      country
+      mobile
+      district_officer_name
+      district_officer_number
+      payment_receipt_url
+      created_at
+    }
+  }
+}
+
+mutation updateOrganisationLogo($id: String!, $imageUrl: String!) {
+  updateorganisationCollection(
+    set: {logo: $imageUrl}
+    filter: {id: {eq: $id}}
+    atMost: 1
+  ) {
+    affectedCount
+  }
 }
 
 mutation updateOrganisationDescription($id: String!, $description: String!){
-  updateOrganisationDescription(id: $id, description: $description)
+  updateorganisationCollection(
+    set: {description: $description}
+    filter: {id: {eq: $id}}
+    atMost: 1
+  ) {
+    affectedCount
+  }
 }
