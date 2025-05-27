@@ -13,6 +13,7 @@ import platform.posix.getenv
  * Loads secrets from bundle resources or environment variables
  */
 class IOSSecretsLoader : SecretsLoader {
+    @OptIn(ExperimentalForeignApi::class)
     override suspend fun loadSecrets(): Map<String, String> {
         val secrets = mutableMapOf<String, String>()
         

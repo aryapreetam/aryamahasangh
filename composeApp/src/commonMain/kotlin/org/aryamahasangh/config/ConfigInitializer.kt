@@ -1,6 +1,7 @@
 package org.aryamahasangh.config
 
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 /**
  * Cross-platform configuration initializer
@@ -18,30 +19,31 @@ object ConfigInitializer {
             println("⚠️ Configuration already initialized")
             return
         }
-        
-        try {
-            println("🔧 Initializing configuration...")
-            
-            // Load secrets using platform-specific loader
-            val secretsLoader = SecretsLoaderFactory.create()
-            val secrets = runBlocking { secretsLoader.loadSecrets() }
-            
-            // Initialize AppConfig with loaded secrets
-            AppConfig.initialize(secrets)
-            
-            isInitialized = true
-            println("✅ Configuration initialized successfully")
-            
-            // Log current configuration (without sensitive values)
-            logConfiguration()
-            
-        } catch (e: Exception) {
-            println("❌ Failed to initialize configuration: ${e.message}")
-            e.printStackTrace()
-            
-            // Initialize with empty config as fallback
-            AppConfig.initialize(emptyMap())
-            isInitialized = true
+        GlobalScope.launch {
+            try {
+                println("🔧 Initializing configuration...")
+
+                // Load secrets using platform-specific loader
+                val secretsLoader = SecretsLoaderFactory.create()
+                val secrets = secretsLoader.loadSecrets()
+
+                // Initialize AppConfig with loaded secrets
+                AppConfig.initialize(secrets)
+
+                isInitialized = true
+                println("✅ Configuration initialized successfully")
+
+                // Log current configuration (without sensitive values)
+                logConfiguration()
+
+            } catch (e: Exception) {
+                println("❌ Failed to initialize configuration: ${e.message}")
+                e.printStackTrace()
+
+                // Initialize with empty config as fallback
+                AppConfig.initialize(emptyMap())
+                isInitialized = true
+            }
         }
     }
     
