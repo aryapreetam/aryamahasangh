@@ -1,16 +1,16 @@
 package org.aryamahasangh.data.offline
 
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import org.aryamahasangh.data.cache.CacheManager
 import org.aryamahasangh.util.Result
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 /**
  * Represents an offline operation that needs to be synced
@@ -49,12 +49,12 @@ enum class NetworkState {
  * Manages offline operations and data synchronization
  */
 class OfflineManager(
-    private val cacheManager: CacheManager
+    val cacheManager: CacheManager
 ) {
     private val _networkState = MutableStateFlow(NetworkState.UNKNOWN)
     val networkState: StateFlow<NetworkState> = _networkState.asStateFlow()
     
-    private val _isOnline = MutableStateFlow(true)
+    val _isOnline = MutableStateFlow(true)
     val isOnline: StateFlow<Boolean> = _isOnline.asStateFlow()
     
     private val pendingOperations = mutableListOf<OfflineOperation>()
@@ -80,6 +80,7 @@ class OfflineManager(
     /**
      * Queue an operation for offline execution
      */
+    @OptIn(ExperimentalTime::class)
     suspend fun queueOperation(
         type: OperationType,
         data: Any,
@@ -90,7 +91,7 @@ class OfflineManager(
                 id = operationId,
                 type = type,
                 data = json.encodeToString(data),
-                timestamp = System.currentTimeMillis()
+                timestamp = Clock.System.now().epochSeconds
             )
             pendingOperations.add(operation)
             
@@ -211,7 +212,7 @@ class OfflineManager(
     /**
      * Execute operation with offline support
      */
-    suspend fun <T> executeWithOfflineSupport(
+    suspend inline fun <reified T> executeWithOfflineSupport(
         operation: suspend () -> Result<T>,
         offlineData: T? = null,
         cacheKey: String? = null
@@ -242,8 +243,9 @@ class OfflineManager(
         }
     }
     
+    @OptIn(ExperimentalTime::class)
     private fun generateOperationId(): String {
-        return "op_${System.currentTimeMillis()}_${(0..999).random()}"
+        return "op_${Clock.System.now().epochSeconds}_${(0..999).random()}"
     }
     
     companion object {
