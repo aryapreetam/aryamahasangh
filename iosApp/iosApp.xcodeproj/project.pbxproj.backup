@@ -8,17 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		058557BB273AAA24004C7B11 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 058557BA273AAA24004C7B11 /* Assets.xcassets */; };
-				CFGB17483656532fd7af46 /* config.json in Resources */,
-				SECB17483656532fd7af46 /* secrets.properties in Resources */,
 				CFGB1748365590e57b9726 /* config.json in Resources */,
 				SECB1748365590e57b9726 /* secrets.properties in Resources */,
 		058557D9273AAEEB004C7B11 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 058557D8273AAEEB004C7B11 /* Preview Assets.xcassets */; };
 		2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2152FB032600AC8F00CF470E /* iOSApp.swift */; };
 		7555FF83242A565900829871 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7555FF82242A565900829871 /* ContentView.swift */; };
-				SWFB17483656532fd7af46 /* Config.swift in Sources */,
-				CFG17483656532fd7af46 /* config.json */,
-				SWF17483656532fd7af46 /* Config.swift */,
-				SEC17483656532fd7af46 /* secrets.properties */,
 				SWFB1748365590e57b9726 /* Config.swift in Sources */,
 				CFG1748365590e57b9726 /* config.json */,
 				SWF1748365590e57b9726 /* Config.swift */,
@@ -26,9 +20,6 @@
 		CFGB1748365590e57b9726 /* config.json in Resources */ = {isa = PBXBuildFile; fileRef = CFG1748365590e57b9726 /* config.json */; };
 		SWFB1748365590e57b9726 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = SWF1748365590e57b9726 /* Config.swift */; };
 		SECB1748365590e57b9726 /* secrets.properties in Resources */ = {isa = PBXBuildFile; fileRef = SEC1748365590e57b9726 /* secrets.properties */; };
-		CFGB17483656532fd7af46 /* config.json in Resources */ = {isa = PBXBuildFile; fileRef = CFG17483656532fd7af46 /* config.json */; };
-		SWFB17483656532fd7af46 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = SWF17483656532fd7af46 /* Config.swift */; };
-		SECB17483656532fd7af46 /* secrets.properties in Resources */ = {isa = PBXBuildFile; fileRef = SEC17483656532fd7af46 /* secrets.properties */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,9 +28,6 @@
 		2152FB032600AC8F00CF470E /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
 		7555FF7B242A565900829871 /* AryaMahasangh.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AryaMahasangh.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7555FF82242A565900829871 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
-				CFG17483656532fd7af46 /* config.json */,
-				SWF17483656532fd7af46 /* Config.swift */,
-				SEC17483656532fd7af46 /* secrets.properties */,
 				CFG1748365590e57b9726 /* config.json */,
 				SWF1748365590e57b9726 /* Config.swift */,
 				SEC1748365590e57b9726 /* secrets.properties */,
@@ -48,9 +36,6 @@
 		CFG1748365590e57b9726 /* config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = config.json; sourceTree = "<group>"; };
 		SWF1748365590e57b9726 /* Config.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		SEC1748365590e57b9726 /* secrets.properties */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = secrets.properties; sourceTree = "<group>"; };
-		CFG17483656532fd7af46 /* config.json */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.json; path = config.json; sourceTree = "<group>"; };
-		SWF17483656532fd7af46 /* Config.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
-		SEC17483656532fd7af46 /* secrets.properties */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = secrets.properties; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -102,9 +87,6 @@
 			children = (
 				058557BA273AAA24004C7B11 /* Assets.xcassets */,
 				7555FF82242A565900829871 /* ContentView.swift */,
-				CFG17483656532fd7af46 /* config.json */,
-				SWF17483656532fd7af46 /* Config.swift */,
-				SEC17483656532fd7af46 /* secrets.properties */,
 				CFG1748365590e57b9726 /* config.json */,
 				SWF1748365590e57b9726 /* Config.swift */,
 				SEC1748365590e57b9726 /* secrets.properties */,
@@ -189,8 +171,6 @@
 			files = (
 				058557D9273AAEEB004C7B11 /* Preview Assets.xcassets in Resources */,
 				058557BB273AAA24004C7B11 /* Assets.xcassets in Resources */,
-				CFGB17483656532fd7af46 /* config.json in Resources */,
-				SECB17483656532fd7af46 /* secrets.properties in Resources */,
 				CFGB1748365590e57b9726 /* config.json in Resources */,
 				SECB1748365590e57b9726 /* secrets.properties in Resources */,
 			);
@@ -226,7 +206,6 @@
 			files = (
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
 				7555FF83242A565900829871 /* ContentView.swift in Sources */,
-				SWFB17483656532fd7af46 /* Config.swift in Sources */,
 				SWFB1748365590e57b9726 /* Config.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

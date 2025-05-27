@@ -23,6 +23,7 @@ composeApp/src/androidMain/assets/secrets.properties
 iosApp/iosApp/secrets.properties
 iosApp/iosApp/config.json
 iosApp/iosApp/Config.swift
+composeApp/src/iosMain/kotlin/org/aryamahasangh/config/IOSEmbeddedConfig.kt
 
 # Generated configuration files (auto-staged during builds)
 composeApp/src/wasmJsMain/resources/config.json

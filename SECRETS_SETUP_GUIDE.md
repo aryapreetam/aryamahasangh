@@ -171,6 +171,13 @@ prod.server.url=https://your-prod-server.com
 - Run the setup script to create it automatically
 - Check that the file is included in the iOS app bundle
 
+### iOS: "secrets.properties not found in iOS bundle"
+- Run the complete iOS setup: `./setup-ios-secrets.sh`
+- Ensure files are added to Xcode project as bundle resources
+- Check that files exist in `iosApp/iosApp/` directory
+- Verify Xcode project includes the files in Resources build phase
+- Clean and rebuild the iOS project in Xcode
+
 ### All Platforms: "Configuration not initialized"
 - Ensure `ConfigInitializer.initializeBlocking()` is called in main entry points
 - Check console logs for initialization errors
@@ -198,9 +205,11 @@ This setup includes the following changes:
 2. **Made initialization synchronous** in `ConfigInitializer.kt`
 3. **Updated main entry points** to use `initializeBlocking()`
 4. **Created setup script** `setup-secrets.sh` with iOS support
-5. **Updated .gitignore** to exclude all platform secrets files
-6. **Added Gradle automation** in `composeApp/build.gradle.kts`
-7. **Created platform-specific secrets files** for all platforms
+5. **Created iOS-specific scripts** `setup-ios-secrets.sh` and `add-ios-resources.sh`
+6. **Added iOS files to Xcode project** as bundle resources automatically
+7. **Updated .gitignore** to exclude all platform secrets files
+8. **Added Gradle automation** in `composeApp/build.gradle.kts`
+9. **Created platform-specific secrets files** for all platforms
 
 ## Gradle Automation
 
