@@ -232,10 +232,15 @@ tasks.register<Exec>("setupSecrets") {
     group = "secrets"
     description = "Setup secrets for all platforms (Desktop, Android, Web, iOS)"
     
-    workingDir = rootProject.projectDir
+    // Configuration cache compatible - capture values at configuration time
+    val rootDir = rootProject.projectDir
+    val secretsFile = File(rootDir, "secrets.properties")
+    val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+    
+    workingDir = rootDir
     
     // Use appropriate shell based on OS
-    if (System.getProperty("os.name").lowercase().contains("windows")) {
+    if (isWindows) {
         commandLine("cmd", "/c", "bash", "setup-secrets.sh")
     } else {
         commandLine("bash", "setup-secrets.sh")
@@ -243,7 +248,7 @@ tasks.register<Exec>("setupSecrets") {
     
     // Only run if secrets.properties exists
     onlyIf {
-        rootProject.file("secrets.properties").exists()
+        secretsFile.exists()
     }
     
     doFirst {
@@ -262,8 +267,11 @@ tasks.register("checkSecrets") {
     group = "secrets"
     description = "Check if secrets.properties file exists"
     
+    // Configuration cache compatible - capture values at configuration time
+    val secretsFilePath = File(rootProject.projectDir, "secrets.properties").absolutePath
+    
     doLast {
-        val secretsFile = rootProject.file("secrets.properties")
+        val secretsFile = File(secretsFilePath)
         if (!secretsFile.exists()) {
             logger.warn("""
                 ⚠️  WARNING: secrets.properties file not found!
