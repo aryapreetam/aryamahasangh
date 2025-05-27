@@ -11,22 +11,7 @@ object ErrorHandler {
      * Handles exceptions and converts them to appropriate AppError
      */
     fun handleException(exception: Throwable): AppError {
-        return when (exception) {
-            is java.net.UnknownHostException -> AppError.NetworkError.NoConnection
-            is java.net.SocketTimeoutException -> AppError.NetworkError.Timeout
-            is java.net.ConnectException -> AppError.NetworkError.NoConnection
-            is java.io.IOException -> AppError.NetworkError.UnknownNetworkError(exception)
-            is IllegalArgumentException -> AppError.ValidationError.Custom(
-                exception.message ?: "Invalid argument"
-            )
-            is IllegalStateException -> AppError.BusinessError.Custom(
-                exception.message ?: "Invalid state"
-            )
-            else -> AppError.UnknownError(
-                message = exception.message ?: "An unknown error occurred",
-                cause = exception
-            )
-        }
+        return exception.toAppError()
     }
     
     /**
