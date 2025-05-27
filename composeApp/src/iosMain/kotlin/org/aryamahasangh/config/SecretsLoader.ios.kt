@@ -81,24 +81,84 @@ class IOSSecretsLoader : SecretsLoader {
   private fun tryLoadFromBundle(secrets: MutableMap<String, String>): Boolean {
       return try {
           val bundle = NSBundle.mainBundle
-          val path = bundle.pathForResource("secrets", "properties")
+          println("🔍 Searching for secrets.properties in iOS bundle...")
           
-          if (path != null) {
-              val content = NSString.stringWithContentsOfFile(
-                  path = path,
-                  encoding = NSUTF8StringEncoding,
-                  error = null
-              )
-              
-              if (content != null) {
-                  secrets.putAll(SecretsUtils.parseProperties(content))
-                  return true
+          // Try different possible locations and names
+          val possiblePaths = listOf(
+              bundle.pathForResource("secrets", "properties"),
+              bundle.pathForResource("secrets.properties", null),
+              bundle.pathForResource("secrets", null),
+              bundle.pathForResource("config", "json"),
+              bundle.pathForResource("config.json", null)
+          )
+          
+          for ((index, path) in possiblePaths.withIndex()) {
+              println("🔍 Trying path ${index + 1}: $path")
+              if (path != null) {
+                  println("✅ Found file at: $path")
+                  val content = NSString.stringWithContentsOfFile(
+                      path = path,
+                      encoding = NSUTF8StringEncoding,
+                      error = null
+                  )
+                  
+                  if (content != null) {
+                      val contentStr = content.toString()
+                      if (contentStr.isNotBlank()) {
+                          // Determine file type and parse accordingly
+                          if (path.contains(".json")) {
+                              // Parse JSON config
+                              parseJsonConfig(contentStr, secrets)
+                          } else {
+                              // Parse properties file
+                              secrets.putAll(SecretsUtils.parseProperties(content))
+                          }
+                          println("✅ Successfully loaded secrets from iOS bundle: $path")
+                          println("🔍 Loaded ${secrets.size} properties")
+                          return true
+                      } else {
+                          println("⚠️ File found but content is empty: $path")
+                      }
+                  } else {
+                      println("❌ Could not read content from bundle file at path: $path")
+                  }
+              } else {
+                  println("❌ Path ${index + 1} not found")
               }
           }
+          
+          // Debug: List bundle path
+          val bundlePath = bundle.bundlePath
+          println("🔍 Bundle path: $bundlePath")
+          
+          println("❌ secrets.properties not found in iOS bundle")
           false
       } catch (e: Exception) {
-          println("⚠️ Error loading secrets from iOS bundle: ${e.message}")
+          println("❌ Error loading from iOS bundle: ${e.message}")
           false
+      }
+  }
+  
+  private fun parseJsonConfig(jsonContent: String, secrets: MutableMap<String, String>) {
+      try {
+          // Simple JSON parsing for our specific format
+          val lines = jsonContent.lines()
+          for (line in lines) {
+              val trimmed = line.trim()
+              if (trimmed.contains(":") && !trimmed.startsWith("{") && !trimmed.startsWith("}")) {
+                  val parts = trimmed.split(":", limit = 2)
+                  if (parts.size == 2) {
+                      val key = parts[0].trim().removeSurrounding("\"")
+                      val value = parts[1].trim().removeSurrounding("\"").removeSuffix(",")
+                      if (key.isNotEmpty() && value.isNotEmpty()) {
+                          secrets[key] = value
+                      }
+                  }
+              }
+          }
+          println("🔍 Parsed ${secrets.size} properties from JSON config")
+      } catch (e: Exception) {
+          println("❌ Error parsing JSON config: ${e.message}")
       }
   }
   
