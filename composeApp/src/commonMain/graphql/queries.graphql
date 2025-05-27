@@ -29,6 +29,36 @@ query OrganisationsAndMembers{
   }
 }
 
+query OrganisationDetailById($orgnisationId: String!) {
+  organisationCollection(filter: { id: { eq: $orgnisationId } } ){
+    edges{
+      node{
+        id
+        name
+        logo
+        description
+        organisational_memberCollection{
+          edges{
+            node{
+              id
+              post
+              priority
+              member{
+                id
+                name
+                email
+                phone_number
+                profile_image
+                educational_qualification
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 query Organisation($filter: organisationFilter) {
   organisationCollection(filter: $filter){
     edges{
@@ -96,11 +126,73 @@ fragment OrganisationalActivityShort on activities {
   district
 }
 
+query UpcomingSatrByRegion($state: String!, $district: String, $currentDateTime: Datetime){
+  activitiesCollection(
+    filter: {
+      state: {eq: $state},
+      district: {eq: $district},
+      start_datetime: {gt: $currentDateTime},
+      type: {eq: "SESSION"}
+    }
+  ){
+    edges{
+      node{
+        ...OrganisationalActivityShort
+      }
+    }
+  }
+}
+
 query OrganisationalActivities($filter: activitiesFilter){
   activitiesCollection(filter: $filter){
     edges{
       node{
         ...OrganisationalActivityShort
+      }
+    }
+  }
+}
+
+query OrganisationalActivityDetailById($activityId: String!){
+  activitiesCollection(filter: { id: { eq: $activityId } }){
+    edges{
+      node{
+        ...OrganisationalActivityShort
+        long_description
+        address
+        state
+        media_files
+        additional_instructions
+        capacity
+        latitude
+        longitude
+        allowed_gender
+        organisational_activityCollection{
+          edges{
+            node{
+              id
+              organisation{
+                id
+                name
+              }
+            }
+          }
+        }
+        activity_memberCollection{
+          edges{
+            node{
+              id
+              post
+              priority
+              member{
+                id
+                name
+                profile_image
+                phone_number
+              }
+            }
+          }
+        }
       }
     }
   }

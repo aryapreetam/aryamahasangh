@@ -28,7 +28,8 @@ kotlinxDatetime = "0.6.2"
 ktor = "3.1.3"
 koin = "4.0.4"
 
-logback = "1.5.18"
+# Do not not modify this, OR it will break android build
+logback = "1.2.11"
 navigationCompose = "2.9.0-beta01"
 adaptive = "1.1.0"
 uiToolingPreviewDesktop = "1.8.0"
