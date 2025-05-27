@@ -20,9 +20,13 @@ import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.configureWebResources
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.preloadFont
+import org.aryamahasangh.config.ConfigInitializer
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalResourceApi::class, InternalComposeUiApi::class)
 fun main() {
+  // Initialize cross-platform configuration
+  ConfigInitializer.initialize()
+  
   configureWebResources {
     // Overrides the resource location
     resourcePathMapping { path -> "./$path" }
