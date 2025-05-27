@@ -1,5 +1,6 @@
 package org.aryamahasangh.config
 
+import android.annotation.SuppressLint
 import android.content.Context
 import java.io.IOException
 
@@ -68,6 +69,7 @@ class AndroidSecretsLoader(private val context: Context) : SecretsLoader {
 }
 
 // Global context holder for Android
+@SuppressLint("StaticFieldLeak")
 object AndroidContextHolder {
   private var _context: Context? = null
   

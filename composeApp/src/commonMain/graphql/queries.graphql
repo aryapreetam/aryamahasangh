@@ -199,8 +199,8 @@ query BookOrders($filter: book_ordersFilter) {
   }
 }
 
-query UpcomingSatrActivities{
-  activitiesCollection{
+query UpcomingSatrActivities($currentDateTime: Datetime!){
+  activitiesCollection(filter: { start_datetime: {gt: $currentDateTime} }){
     edges{
       node{
         id
@@ -213,6 +213,9 @@ query UpcomingSatrActivities{
         latitude
         longitude
         satr_registrationCollection{
+          pageInfo{
+            startCursor
+          }
           edges{
             node{
               id
