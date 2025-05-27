@@ -6,26 +6,12 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import org.aryamahasangh.config.AppConfig
-import java.io.File
-import java.util.*
-
-fun loadSecretsFromFile(): Map<String, String> {
-    val file = File("secrets.properties")
-    if (!file.exists()) {
-        println("⚠️ secrets.properties not found.")
-        return emptyMap()
-    }
-
-    val props = Properties().apply {
-        file.inputStream().use { load(it) }
-    }
-
-    return props.entries.associate { it.key.toString() to it.value.toString() }
-}
+import org.aryamahasangh.config.ConfigInitializer
 
 fun main() = application {
-    AppConfig.init(loadSecretsFromFile())
+    // Initialize cross-platform configuration
+    ConfigInitializer.initialize()
+    
     Window(
         onCloseRequest = ::exitApplication,
         alwaysOnTop = true,

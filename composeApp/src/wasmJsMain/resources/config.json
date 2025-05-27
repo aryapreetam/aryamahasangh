@@ -1,0 +1,9 @@
+{
+  "environment": "dev",
+  "dev.supabase.url": "https://placeholder.supabase.co",
+  "dev.supabase.key": "placeholder-key",
+  "dev.server.url": "http://localhost:4000",
+  "prod.supabase.url": "https://prod.supabase.co",
+  "prod.supabase.key": "prod-key",
+  "prod.server.url": "https://prod-server.com"
+}

@@ -5,6 +5,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
+import java.util.Properties
 
 plugins {
   alias(libs.plugins.kotlinMultiplatform)
@@ -15,6 +16,25 @@ plugins {
   alias(libs.plugins.kotlinx.serialization)
   alias(libs.plugins.apollo)
 }
+
+// Load secrets from properties file
+fun loadSecrets(): Properties {
+  val secretsFile = rootProject.file("secrets.properties")
+  val secrets = Properties()
+  
+  if (secretsFile.exists()) {
+    secretsFile.inputStream().use { secrets.load(it) }
+  } else {
+    println("Warning: secrets.properties file not found. Using fallback values.")
+  }
+  
+  return secrets
+}
+
+val secrets = loadSecrets()
+val environment = secrets.getProperty("environment", "dev")
+val supabaseUrl = secrets.getProperty("$environment.supabase.url", "")
+val supabaseKey = secrets.getProperty("$environment.supabase.key", "")
 
 kotlin {
   androidTarget {
@@ -189,10 +209,10 @@ apollo {
     generateKotlinModels.set(true)
 
     introspection {
-      endpointUrl.set("https://ftnwwiwmljcwzpsawdmf.supabase.co/graphql/v1")
+      endpointUrl.set("$supabaseUrl/graphql/v1")
       schemaFile.set(file("src/commonMain/graphql/schema.graphqls"))
-      headers.put("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0bnd3aXdtbGpjd3pwc2F3ZG1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5MzE4OTMsImV4cCI6MjA1MDUwNzg5M30.cY4A4ZxqHA_1VRC-k6URVAHHkweHTR8FEYEzHYiu19A")
-      headers.put("apikey", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0bnd3aXdtbGpjd3pwc2F3ZG1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5MzE4OTMsImV4cCI6MjA1MDUwNzg5M30.cY4A4ZxqHA_1VRC-k6URVAHHkweHTR8FEYEzHYiu19A")
+      headers.put("Authorization", "Bearer $supabaseKey")
+      headers.put("apikey", supabaseKey)
     }
   }
 }
