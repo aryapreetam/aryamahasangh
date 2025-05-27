@@ -5,7 +5,7 @@ import org.aryamahasangh.config.ConfigInitializer
 
 fun MainViewController() = ComposeUIViewController { 
     // Initialize cross-platform configuration
-    ConfigInitializer.initialize()
+    ConfigInitializer.initializeBlocking()
     
     App() 
 }
