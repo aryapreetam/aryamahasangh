@@ -30,8 +30,8 @@ import org.aryamahasangh.type.Datetime
  * No hard-coded secrets - all configuration loaded from AppConfig.
  */
 val supabaseClient = createSupabaseClient(
-  supabaseUrl = "https://ftnwwiwmljcwzpsawdmf.supabase.co", // AppConfig.supabaseUrl,
-  supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0bnd3aXdtbGpjd3pwc2F3ZG1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5MzE4OTMsImV4cCI6MjA1MDUwNzg5M30.cY4A4ZxqHA_1VRC-k6URVAHHkweHTR8FEYEzHYiu19A" // AppConfig.supabaseKey
+  supabaseUrl = AppConfig.supabaseUrl,
+  supabaseKey = AppConfig.supabaseKey
 ){
   install(Storage){
     resumable {
