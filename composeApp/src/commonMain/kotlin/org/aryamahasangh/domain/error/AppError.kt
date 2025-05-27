@@ -105,10 +105,22 @@ sealed class AppError(
  * Extension function to convert exceptions to AppError
  */
 fun Throwable.toAppError(): AppError {
-    return when (this) {
-        is java.net.UnknownHostException -> AppError.NetworkError.NoConnection
-        is java.net.SocketTimeoutException -> AppError.NetworkError.Timeout
-        is java.net.ConnectException -> AppError.NetworkError.NoConnection
+    return when {
+        // Network-related exceptions (multiplatform compatible)
+        this::class.simpleName == "UnknownHostException" -> AppError.NetworkError.NoConnection
+        this::class.simpleName == "SocketTimeoutException" -> AppError.NetworkError.Timeout
+        this::class.simpleName == "ConnectException" -> AppError.NetworkError.NoConnection
+        this::class.simpleName == "IOException" -> AppError.NetworkError.UnknownNetworkError(this)
+        message?.contains("timeout", ignoreCase = true) == true -> AppError.NetworkError.Timeout
+        message?.contains("connection", ignoreCase = true) == true -> AppError.NetworkError.NoConnection
+        message?.contains("network", ignoreCase = true) == true -> AppError.NetworkError.UnknownNetworkError(this)
+        // Validation exceptions
+        this is IllegalArgumentException -> AppError.ValidationError.Custom(
+            this.message ?: "Invalid argument"
+        )
+        this is IllegalStateException -> AppError.BusinessError.Custom(
+            this.message ?: "Invalid state"
+        )
         else -> AppError.UnknownError(
             message = this.message ?: "Unknown error occurred",
             cause = this
