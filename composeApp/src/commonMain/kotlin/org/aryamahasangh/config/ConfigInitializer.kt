@@ -14,36 +14,44 @@ object ConfigInitializer {
      * Initialize configuration for the current platform
      * This should be called from each platform's main entry point
      */
-    fun initialize() {
+    suspend fun initialize() {
         if (isInitialized) {
             println("⚠️ Configuration already initialized")
             return
         }
+        try {
+            println("🔧 Initializing configuration...")
+
+            // Load secrets using platform-specific loader
+            val secretsLoader = SecretsLoaderFactory.create()
+            val secrets = secretsLoader.loadSecrets()
+
+            // Initialize AppConfig with loaded secrets
+            AppConfig.initialize(secrets)
+
+            isInitialized = true
+            println("✅ Configuration initialized successfully")
+
+            // Log current configuration (without sensitive values)
+            logConfiguration()
+
+        } catch (e: Exception) {
+            println("❌ Failed to initialize configuration: ${e.message}")
+            e.printStackTrace()
+
+            // Initialize with empty config as fallback
+            AppConfig.initialize(emptyMap())
+            isInitialized = true
+        }
+    }
+    
+    /**
+     * Initialize configuration synchronously (blocking)
+     * Use this for platforms that need immediate initialization
+     */
+    fun initializeBlocking() {
         GlobalScope.launch {
-            try {
-                println("🔧 Initializing configuration...")
-
-                // Load secrets using platform-specific loader
-                val secretsLoader = SecretsLoaderFactory.create()
-                val secrets = secretsLoader.loadSecrets()
-
-                // Initialize AppConfig with loaded secrets
-                AppConfig.initialize(secrets)
-
-                isInitialized = true
-                println("✅ Configuration initialized successfully")
-
-                // Log current configuration (without sensitive values)
-                logConfiguration()
-
-            } catch (e: Exception) {
-                println("❌ Failed to initialize configuration: ${e.message}")
-                e.printStackTrace()
-
-                // Initialize with empty config as fallback
-                AppConfig.initialize(emptyMap())
-                isInitialized = true
-            }
+            initialize()
         }
     }
     
