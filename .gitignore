@@ -19,3 +19,5 @@ captures
 
 # Configuration secrets (never commit)
 secrets.properties
+composeApp/src/androidMain/assets/secrets.properties
+iosApp/iosApp/secrets.properties

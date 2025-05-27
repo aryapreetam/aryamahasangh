@@ -10,7 +10,7 @@ import org.aryamahasangh.config.ConfigInitializer
 
 fun main() = application {
     // Initialize cross-platform configuration
-    ConfigInitializer.initialize()
+    ConfigInitializer.initializeBlocking()
     
     Window(
         onCloseRequest = ::exitApplication,

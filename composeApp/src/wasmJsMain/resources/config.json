@@ -1,9 +1,9 @@
 {
   "environment": "dev",
-  "dev.supabase.url": "https://placeholder.supabase.co",
-  "dev.supabase.key": "placeholder-key",
+  "dev.supabase.url": "https://test-dev.supabase.co",
+  "dev.supabase.key": "test-dev-key-12345",
   "dev.server.url": "http://localhost:4000",
-  "prod.supabase.url": "https://prod.supabase.co",
-  "prod.supabase.key": "prod-key",
-  "prod.server.url": "https://prod-server.com"
+  "prod.supabase.url": "https://test-prod.supabase.co",
+  "prod.supabase.key": "test-prod-key-67890",
+  "prod.server.url": "https://test-production-server.com"
 }
