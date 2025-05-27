@@ -5,7 +5,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
-import java.util.Properties
+import java.util.*
 
 plugins {
   alias(libs.plugins.kotlinMultiplatform)
@@ -161,7 +161,10 @@ android {
   }
   packaging {
     resources {
-      excludes += "/META-INF/{AL2.0,LGPL2.1}"
+      excludes += setOf(
+        "META-INF/INDEX.LIST",
+        "META-INF/io.netty.versions.properties"
+      )
     }
   }
   buildTypes {
