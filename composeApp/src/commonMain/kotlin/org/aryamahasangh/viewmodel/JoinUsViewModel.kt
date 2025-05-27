@@ -1,15 +1,14 @@
 package org.aryamahasangh.viewmodel
 
-import org.aryamahasangh.OrganisationalActivitiesQuery
+import org.aryamahasangh.features.activities.OrganisationalActivityShort
 import org.aryamahasangh.repository.JoinUsRepository
-import org.aryamahasangh.type.ActivityFilterInput
 import org.aryamahasangh.util.Result
 
 /**
  * UI state for the Join Us screen
  */
 data class JoinUsUiState(
-  val activities: List<OrganisationalActivitiesQuery.OrganisationalActivity>? = null,
+  val activities: List<OrganisationalActivityShort>? = null,
   val isLoading: Boolean = false,
   val error: String? = null,
   val labelState: LabelState = LabelState()
@@ -85,11 +84,11 @@ class JoinUsViewModel(
   /**
    * Load filtered activities
    */
-  fun loadFilteredActivities(filter: ActivityFilterInput) {
+  fun loadFilteredActivities(state: String, district: String): Unit {
     launch {
       updateState { it.copy(isLoading = true, error = null) }
       
-      joinUsRepository.getFilteredActivities(filter).collect { result ->
+      joinUsRepository.getFilteredActivities(state, district).collect { result ->
         when (result) {
           is Result.Loading -> {
             updateState { it.copy(isLoading = true, error = null) }

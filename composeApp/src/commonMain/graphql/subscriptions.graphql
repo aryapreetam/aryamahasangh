@@ -1,7 +1,0 @@
-subscription OnOrganisationCreated{
-  onOrganisationCreated{
-    name
-    description
-    logo
-  }
-}

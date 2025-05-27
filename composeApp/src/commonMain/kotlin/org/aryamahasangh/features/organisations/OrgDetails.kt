@@ -1,4 +1,4 @@
-package org.aryamahasangh.screens
+package org.aryamahasangh.features.organisations
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,23 +11,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
 import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.components.OrganisationDetail
-import org.aryamahasangh.viewmodel.OrganisationsViewModel
 
 @Composable
 fun OrgDetailScreen(
-  name: String, 
-  navController: NavHostController,
+  id: String,
   viewModel: OrganisationsViewModel
 ) {
   val scope = rememberCoroutineScope()
   val snackbarHostState = LocalSnackbarHostState.current
   
   // Load organisation details
-  LaunchedEffect(name) {
-    viewModel.loadOrganisationDetail(name)
+  LaunchedEffect(id) {
+    viewModel.loadOrganisationDetail(id)
   }
   
   // Collect UI state from ViewModel
@@ -62,7 +59,7 @@ fun OrgDetailScreen(
         verticalArrangement = Arrangement.spacedBy(8.dp)
       ) {
         Text("Failed to load organisation details")
-        Button(onClick = { viewModel.loadOrganisationDetail(name) }) {
+        Button(onClick = { viewModel.loadOrganisationDetail(id) }) {
           Text("Retry")
         }
       }

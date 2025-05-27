@@ -1,20 +1,24 @@
-package org.aryamahasangh.viewmodel
+package org.aryamahasangh.features.activities
 
+import com.apollographql.apollo.api.Optional
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import org.aryamahasangh.OrganisationalActivitiesQuery
-import org.aryamahasangh.OrganisationalActivityDetailQuery
-import org.aryamahasangh.OrganisationsAndMembersQuery
-import org.aryamahasangh.repository.ActivityRepository
-import org.aryamahasangh.type.OrganisationActivityInput
+import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
+import org.aryamahasangh.type.ActivitiesInsertInput
+import org.aryamahasangh.type.Gender_filter
 import org.aryamahasangh.util.Result
+import org.aryamahasangh.viewmodel.AdmissionFormSubmissionState
+import org.aryamahasangh.viewmodel.BaseViewModel
 
 /**
  * UI state for the Activities screen
  */
 data class ActivitiesUiState(
-  val activities: List<OrganisationalActivitiesQuery.OrganisationalActivity> = emptyList(),
+  val activities: List<OrganisationalActivityShort> = emptyList(),
   val isLoading: Boolean = false,
   val error: String? = null
 )
@@ -23,7 +27,7 @@ data class ActivitiesUiState(
  * UI state for the Activity Detail screen
  */
 data class ActivityDetailUiState(
-  val activity: OrganisationalActivityDetailQuery.OrganisationalActivity? = null,
+  val activity: OrganisationalActivity? = null,
   val isLoading: Boolean = false,
   val error: String? = null
 )
@@ -41,8 +45,8 @@ data class FormSubmissionState(
  * UI state for organizations and members
  */
 data class OrganisationsAndMembersUiState(
-  val organisations: List<OrganisationsAndMembersQuery.Organisation> = emptyList(),
-  val members: List<OrganisationsAndMembersQuery.Member> = emptyList(),
+  val organisations: List<Organisation> = emptyList(),
+  val members: List<Member> = emptyList(),
   val isLoading: Boolean = false,
   val error: String? = null
 )
@@ -155,11 +159,28 @@ class ActivitiesViewModel(
   /**
    * Create a new activity
    */
-  fun createActivity(input: OrganisationActivityInput) {
+  fun createActivity(input: ActivityInputData) {
+    val activity = ActivitiesInsertInput(
+      name = Optional.present(input.name),
+      type = Optional.present(input.type.name),
+      short_description = Optional.present(input.shortDescription),
+      long_description = Optional.present(input.longDescription),
+      address = Optional.present(input.address),
+      state = Optional.present(input.state),
+      district = Optional.present(input.district),
+      start_datetime = Optional.present(input.startDatetime.convertToInstant()),
+      end_datetime = Optional.present(input.endDatetime.convertToInstant()),
+      media_files= Optional.present(input.mediaFiles),
+      additional_instructions = Optional.present(input.additionalInstructions),
+      capacity = Optional.present(input.capacity),
+      latitude = Optional.present(input.latitude),
+      longitude = Optional.present(input.longitude),
+      allowed_gender = Optional.present(Gender_filter.valueOf(input.allowedGender)),
+    )
     launch {
       _formSubmissionState.value = AdmissionFormSubmissionState(isSubmitting = true)
 
-      when (val result = activityRepository.createActivity(input)) {
+      when (val result = activityRepository.createActivity(activity, input.contactPeople, input.associatedOrganisations)) {
         is Result.Success -> {
           _formSubmissionState.value = AdmissionFormSubmissionState(
             isSubmitting = false,
@@ -218,4 +239,8 @@ class ActivitiesViewModel(
       }
     }
   }
+}
+
+fun LocalDateTime.convertToInstant(): Instant {
+  return toInstant(TimeZone.currentSystemDefault())
 }

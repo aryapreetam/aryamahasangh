@@ -1,5 +1,9 @@
 package org.aryamahasangh.di
 
+import org.aryamahasangh.features.activities.ActivityRepository
+import org.aryamahasangh.features.activities.ActivityRepositoryImpl
+import org.aryamahasangh.features.organisations.OrganisationsRepository
+import org.aryamahasangh.features.organisations.OrganisationsRepositoryImpl
 import org.aryamahasangh.repository.*
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf

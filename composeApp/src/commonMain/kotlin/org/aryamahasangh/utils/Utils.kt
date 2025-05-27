@@ -39,8 +39,8 @@ fun LocalDateTime.toShortHumanReadable(): String {
 fun format(dateTime: Any): String {
   return LocalDateTime.parse(dateTime as String).toHumanReadable()
 }
-fun formatShort(dateTime: Any): String {
-  return LocalDateTime.parse(dateTime as String).toShortHumanReadable()
+fun formatShort(dateTime: LocalDateTime): String {
+  return dateTime.toShortHumanReadable()
 }
 
 fun formatForBook(dateTime: Any): String {

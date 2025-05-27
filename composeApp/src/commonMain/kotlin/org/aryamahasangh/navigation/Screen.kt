@@ -54,7 +54,7 @@ sealed class Screen {
   @Serializable
   data class VideoDetails(val learningItemId: String): Screen()
   @Serializable
-  data class OrgDetails(val name: String): Screen()
+  data class OrgDetails(val organisationId: String): Screen()
   @Serializable
   data object AboutSection: Screen()
   @Serializable

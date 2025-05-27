@@ -29,11 +29,11 @@ import io.github.vinceglb.filekit.core.PickerMode
 import io.github.vinceglb.filekit.core.PickerType
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import org.aryamahasangh.OrganisationQuery
 import org.aryamahasangh.SettingKeys
+import org.aryamahasangh.features.organisations.OrganisationDescriptionState
+import org.aryamahasangh.features.organisations.OrganisationDetail
 import org.aryamahasangh.network.bucket
 import org.aryamahasangh.screens.EditImageButton
-import org.aryamahasangh.viewmodel.OrganisationDescriptionState
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -55,11 +55,11 @@ fun SabhaPreview(){
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun OrganisationDetail(
-  organisation: OrganisationQuery.Organisation,
+  organisation: OrganisationDetail,
   updateOrganisationLogo: (String, String, String) -> Unit,
   updateOrganisationDescription: (String, String) -> Unit,
 ){
-  val (id, name, logo, description, keyPeople ) = organisation
+  val (id, name, description, logo, keyPeople ) = organisation
   var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
   Column(modifier = Modifier.fillMaxSize().padding(8.dp)
     .verticalScroll(rememberScrollState())) {
@@ -135,7 +135,7 @@ fun OrganisationDetail(
       }
       OrganisationDescription(
         orgId = id,
-        description = description,
+        description = description!!,
         isLoggedIn = isLoggedIn,
         organisationDescriptionState = OrganisationDescriptionState(),
         onEditModeChange = { },

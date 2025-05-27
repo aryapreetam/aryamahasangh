@@ -1,6 +1,6 @@
 package org.aryamahasangh.viewmodel
 
-import org.aryamahasangh.OrganisationQuery
+import org.aryamahasangh.features.organisations.OrganisationDetail
 import org.aryamahasangh.repository.AboutUsRepository
 import org.aryamahasangh.util.Result
 
@@ -8,7 +8,7 @@ import org.aryamahasangh.util.Result
  * UI state for the About Us screens
  */
 data class AboutUsUiState(
-  val organisation: OrganisationQuery.Organisation? = null,
+  val organisation: OrganisationDetail? = null,
   val isLoading: Boolean = false,
   val error: String? = null
 )

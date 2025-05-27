@@ -1,102 +1,54 @@
 package org.aryamahasangh.network
 
-import com.apollographql.adapter.datetime.KotlinxLocalDateTimeAdapter
-import com.apollographql.apollo.ApolloClient
+import com.apollographql.adapter.datetime.KotlinxInstantAdapter
+import com.apollographql.apollo.api.ApolloRequest
+import com.apollographql.apollo.api.ApolloResponse
+import com.apollographql.apollo.api.Operation
 import com.apollographql.apollo.api.http.HttpRequest
 import com.apollographql.apollo.api.http.HttpResponse
+import com.apollographql.apollo.interceptor.ApolloInterceptor
+import com.apollographql.apollo.interceptor.ApolloInterceptorChain
 import com.apollographql.apollo.network.http.HttpInterceptor
 import com.apollographql.apollo.network.http.HttpInterceptorChain
-import com.apollographql.ktor.http.KtorHttpEngine
+import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.graphql.GraphQL
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.serializer.KotlinXSerializer
 import io.github.jan.supabase.storage.Storage
 import io.github.jan.supabase.storage.resumable.SettingsResumableCache
 import io.github.jan.supabase.storage.storage
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.onEach
 import kotlinx.serialization.json.Json
 import org.aryamahasangh.config.AppConfig
-import org.aryamahasangh.type.LocalDateTime
+import org.aryamahasangh.type.Datetime
 
-/**
- * Apollo GraphQL client configured using the unified configuration system.
- * No hard-coded secrets - all configuration loaded from AppConfig.
- */
-val apolloClient = ApolloClient.Builder()
-  .serverUrl(AppConfig.graphqlUrl)
-  .webSocketServerUrl(AppConfig.subscriptionsUrl)
-  .addHttpHeader("Access-Control-Allow-Origin", "*")
-  .httpEngine(KtorHttpEngine())
-  .addHttpInterceptor(AuthorizationInterceptor())
-  .addCustomScalarAdapter(LocalDateTime.type, KotlinxLocalDateTimeAdapter)
-  .build()
-
-class AuthorizationInterceptor() : HttpInterceptor {
-  private val mutex = Mutex()
-
-  override suspend fun intercept(request: HttpRequest, chain: HttpInterceptorChain): HttpResponse {
-    var token = mutex.withLock {
-      // get current token
-      "Sample token"
-    }
-
-    val response = chain.proceed(request.newBuilder().addHeader("Authorization", "Bearer $token").build())
-
-    return if (response.statusCode == 401) {
-      token = mutex.withLock {
-        "Sample token"
-      }
-      chain.proceed(request.newBuilder().addHeader("Authorization", "Bearer $token").build())
-    } else {
-      response
-    }
-  }
-}
-
-
-//class MyApolloInterceptor : ApolloInterceptor {
-//  override fun <D : Operation.Data> intercept(
-//    request: ApolloRequest<D>,
-//    chain: ApolloInterceptorChain
-//  ): Flow<ApolloResponse<D>> {
-//    val headers = request.httpHeaders
-//    val req = request.newBuilder()
-//    headers?.forEach {
-//      req.addHttpHeader(it.name, it.value)
-//    }
-//    req.addHttpHeader("custom", "jhjhj")
-//    req.addHttpHeader("Access-Control-Allow-Origin", "*")
-//
-//    return chain.proceed(req.build())
-//  }
-//}
-
-class SampleInterceptor : HttpInterceptor {
-  override suspend fun intercept(
-    request: HttpRequest,
-    chain: HttpInterceptorChain
-  ): HttpResponse {
-    val requestBuilder = request.newBuilder()
-    requestBuilder.addHeader("Custom", "fdfdfdf")
-    return chain.proceed(requestBuilder.build())
-  }
-}
 
 /**
  * Supabase client configured using the unified configuration system.
  * No hard-coded secrets - all configuration loaded from AppConfig.
  */
 val supabaseClient = createSupabaseClient(
-  supabaseUrl = AppConfig.supabaseUrl,
-  supabaseKey = AppConfig.supabaseKey
+  supabaseUrl = "https://placeholder-staging-supabase.co", // AppConfig.supabaseUrl,
+  supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0bnd3aXdtbGpjd3pwc2F3ZG1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5MzE4OTMsImV4cCI6MjA1MDUwNzg5M30.cY4A4ZxqHA_1VRC-k6URVAHHkweHTR8FEYEzHYiu19A" // AppConfig.supabaseKey
 ){
   install(Storage){
     resumable {
       cache = SettingsResumableCache()
     }
   }
-  install(Postgrest){
+  install(Postgrest)
+  install(Auth)
+  install(GraphQL) {
+    apolloConfiguration {
+      addHttpInterceptor(httpInterceptor = ApolloHttpInterceptor())
+      addInterceptor(interceptor = LoggingApolloInterceptor())
+      addCustomScalarAdapter(
+        customScalarType = Datetime.type,
+        customScalarAdapter = KotlinxInstantAdapter
+      )
+    }
   }
   defaultSerializer = KotlinXSerializer(Json{
     ignoreUnknownKeys = true // Avoid errors if unknown fields are received
@@ -104,6 +56,25 @@ val supabaseClient = createSupabaseClient(
     prettyPrint = true
   })
 }
+
+ class ApolloHttpInterceptor : HttpInterceptor {
+   override suspend fun intercept(
+     request: HttpRequest,
+     chain: HttpInterceptorChain
+   ): HttpResponse {
+     return chain.proceed(request)
+   }
+ }
+
+class LoggingApolloInterceptor: ApolloInterceptor {
+  override fun <D : Operation.Data> intercept(request: ApolloRequest<D>, chain: ApolloInterceptorChain): Flow<ApolloResponse<D>> {
+    return chain.proceed(request).onEach {
+      println("Request: ${request.operation.toString()}")
+      println("Response ${it.data}")
+    }
+  }
+}
+
+
 val resumableClient = supabaseClient.storage[AppConfig.STORAGE_BUCKET].resumable
 val bucket = supabaseClient.storage[AppConfig.STORAGE_BUCKET]
-
