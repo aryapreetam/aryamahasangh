@@ -72,6 +72,20 @@ else
     echo "📋 Copying secrets.properties to iOS app bundle..."
     cp secrets.properties "$IOS_RESOURCES_DIR/secrets.properties"
     
+    # Create iOS JSON configuration file (more reliable for bundle inclusion)
+    echo "📋 Creating iOS config.json file..."
+    cat > "$IOS_RESOURCES_DIR/config.json" << EOF
+{
+  "environment": "${ENVIRONMENT:-dev}",
+  "dev.supabase.url": "${DEV_SUPABASE_URL:-}",
+  "dev.supabase.key": "${DEV_SUPABASE_KEY:-}",
+  "dev.server.url": "${DEV_SERVER_URL:-http://localhost:4000}",
+  "prod.supabase.url": "${PROD_SUPABASE_URL:-}",
+  "prod.supabase.key": "${PROD_SUPABASE_KEY:-}",
+  "prod.server.url": "${PROD_SERVER_URL:-}"
+}
+EOF
+    
     # Also create a Swift configuration file for easier bundle inclusion
     echo "📋 Creating iOS Config.swift file..."
     cat > "$IOS_RESOURCES_DIR/Config.swift" << EOF
@@ -91,7 +105,7 @@ struct AppConfig {
 }
 EOF
     
-    echo "✅ iOS secrets configured (properties + Swift config)"
+    echo "✅ iOS secrets configured (properties + JSON + Swift config)"
 fi
 
 echo ""

@@ -21,6 +21,7 @@ captures
 secrets.properties
 composeApp/src/androidMain/assets/secrets.properties
 iosApp/iosApp/secrets.properties
+iosApp/iosApp/config.json
 iosApp/iosApp/Config.swift
 
 # Generated configuration files (auto-staged during builds)
