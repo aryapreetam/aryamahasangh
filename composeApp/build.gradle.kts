@@ -219,3 +219,112 @@ apollo {
     }
   }
 }
+
+// ============================================================================
+// AUTOMATED SECRETS SETUP TASKS
+// ============================================================================
+
+/**
+ * Task to automatically run the setup-secrets.sh script
+ * This ensures secrets are properly configured for all platforms before compilation
+ */
+tasks.register<Exec>("setupSecrets") {
+    group = "secrets"
+    description = "Setup secrets for all platforms (Desktop, Android, Web, iOS)"
+    
+    workingDir = rootProject.projectDir
+    
+    // Use appropriate shell based on OS
+    if (System.getProperty("os.name").lowercase().contains("windows")) {
+        commandLine("cmd", "/c", "bash", "setup-secrets.sh")
+    } else {
+        commandLine("bash", "setup-secrets.sh")
+    }
+    
+    // Only run if secrets.properties exists
+    onlyIf {
+        rootProject.file("secrets.properties").exists()
+    }
+    
+    doFirst {
+        println("🔧 Running automated secrets setup...")
+    }
+    
+    doLast {
+        println("✅ Automated secrets setup completed")
+    }
+}
+
+/**
+ * Task to check if secrets.properties exists and warn if not
+ */
+tasks.register("checkSecrets") {
+    group = "secrets"
+    description = "Check if secrets.properties file exists"
+    
+    doLast {
+        val secretsFile = rootProject.file("secrets.properties")
+        if (!secretsFile.exists()) {
+            logger.warn("""
+                ⚠️  WARNING: secrets.properties file not found!
+                
+                To set up secrets for all platforms:
+                1. Copy the template: cp secrets.properties.template secrets.properties
+                2. Fill in your actual values in secrets.properties
+                3. Run: ./setup-secrets.sh
+                
+                Or the setup will run automatically when you build.
+            """.trimIndent())
+        } else {
+            println("✅ secrets.properties file found")
+        }
+    }
+}
+
+// ============================================================================
+// PLATFORM-SPECIFIC SETUP TASKS
+// ============================================================================
+
+// Hook setupSecrets to run before compilation tasks for all platforms
+tasks.matching { task ->
+    task.name.startsWith("compile") || 
+    task.name.contains("Compile") ||
+    task.name == "preBuild" ||
+    task.name.startsWith("assemble") ||
+    task.name.startsWith("bundle") ||
+    task.name == "run" ||
+    task.name == "runDebug" ||
+    task.name == "runRelease"
+}.configureEach {
+    dependsOn("setupSecrets")
+}
+
+// Android specific tasks
+tasks.matching { it.name.startsWith("assemble") }.configureEach {
+    dependsOn("setupSecrets")
+}
+
+// Desktop specific tasks  
+tasks.matching { it.name.contains("Desktop") || it.name == "run" }.configureEach {
+    dependsOn("setupSecrets")
+}
+
+// Web specific tasks
+tasks.matching { it.name.contains("Js") || it.name.contains("Wasm") }.configureEach {
+    dependsOn("setupSecrets")
+}
+
+// iOS specific tasks
+tasks.matching { it.name.contains("Ios") || it.name.contains("iOS") }.configureEach {
+    dependsOn("setupSecrets")
+}
+
+// Make checkSecrets run early in the build process
+tasks.named("preBuild") {
+    dependsOn("checkSecrets")
+}
+
+// Also run checkSecrets before setupSecrets
+tasks.named("setupSecrets") {
+    dependsOn("checkSecrets")
+}
