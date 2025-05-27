@@ -150,3 +150,58 @@ ConfigInitializer.initialize()  // ✅ Works everywhere
 ```
 
 This fix ensures the Compose Multiplatform project builds and runs successfully across all target platforms (Android, iOS, Desktop, Web) without any Java-specific dependencies.
+
+## 6. Apollo GraphQL Build Configuration Fix
+
+### Problem
+The `composeApp/build.gradle.kts` file contained hardcoded Supabase credentials in the Apollo GraphQL introspection configuration:
+
+```kotlin
+introspection {
+    endpointUrl.set("https://ftnwwiwmljcwzpsawdmf.supabase.co/graphql/v1")
+    headers.put("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
+    headers.put("apikey", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...")
+}
+```
+
+### Solution
+Implemented secrets loading in the Gradle build script to read from `secrets.properties`:
+
+```kotlin
+// Load secrets from properties file
+fun loadSecrets(): Properties {
+  val secretsFile = rootProject.file("secrets.properties")
+  val secrets = Properties()
+  
+  if (secretsFile.exists()) {
+    secretsFile.inputStream().use { secrets.load(it) }
+  } else {
+    println("Warning: secrets.properties file not found. Using fallback values.")
+  }
+  
+  return secrets
+}
+
+val secrets = loadSecrets()
+val environment = secrets.getProperty("environment", "dev")
+val supabaseUrl = secrets.getProperty("$environment.supabase.url", "")
+val supabaseKey = secrets.getProperty("$environment.supabase.key", "")
+
+apollo {
+  service("service") {
+    introspection {
+      endpointUrl.set("$supabaseUrl/graphql/v1")
+      headers.put("Authorization", "Bearer $supabaseKey")
+      headers.put("apikey", supabaseKey)
+    }
+  }
+}
+```
+
+### Benefits
+- **Security**: No hardcoded credentials in version control
+- **Environment Support**: Automatically uses dev/prod configuration based on environment setting
+- **Maintainability**: Single source of truth for all Supabase configuration
+- **Flexibility**: Easy to change environments without code modifications
+
+This completes the comprehensive secrets management solution for both runtime and build-time configurations.
