@@ -3,12 +3,16 @@ package org.aryamahasangh.domain.usecase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
-import org.aryamahasangh.OrganisationalActivitiesQuery
-import org.aryamahasangh.OrganisationalActivityDetailQuery
-import org.aryamahasangh.OrganisationsAndMembersQuery
-import org.aryamahasangh.repository.ActivityRepository
-import org.aryamahasangh.type.OrganisationActivityInput
+import org.aryamahasangh.features.activities.ActivityRepository
+import org.aryamahasangh.features.activities.OrganisationalActivity
+import org.aryamahasangh.features.activities.OrganisationalActivityShort
+import org.aryamahasangh.features.activities.OrganisationsAndMembers
+import org.aryamahasangh.features.activities.ActivityMember
+import org.aryamahasangh.features.activities.Organisation
+import org.aryamahasangh.features.activities.ActivityInputData
+import org.aryamahasangh.type.ActivitiesInsertInput
 import org.aryamahasangh.util.Result
+import org.aryamahasangh.domain.error.ErrorHandler
 
 /**
  * Use case for getting all activities with additional business logic
@@ -16,14 +20,14 @@ import org.aryamahasangh.util.Result
 class GetActivitiesUseCase(
     private val activityRepository: ActivityRepository
 ) {
-    operator fun invoke(): Flow<Result<List<OrganisationalActivitiesQuery.OrganisationalActivity>>> {
+    operator fun invoke(): Flow<Result<List<OrganisationalActivityShort>>> {
         return activityRepository.getActivities()
             .map { result ->
                 when (result) {
                     is Result.Success -> {
                         // Apply business logic: sort activities by date (newest first)
                         val sortedActivities = result.data.sortedByDescending { 
-                            it.createdAt ?: ""
+                            it.startDatetime.toString()
                         }
                         Result.Success(sortedActivities)
                     }
@@ -31,7 +35,8 @@ class GetActivitiesUseCase(
                 }
             }
             .catch { exception ->
-                emit(Result.Error("Failed to load activities: ${exception.message}", exception))
+                val appError = ErrorHandler.handleException(exception)
+                emit(Result.Error(appError.message, exception))
             }
     }
 }
@@ -42,14 +47,15 @@ class GetActivitiesUseCase(
 class GetActivityDetailUseCase(
     private val activityRepository: ActivityRepository
 ) {
-    suspend operator fun invoke(id: String): Result<OrganisationalActivityDetailQuery.OrganisationalActivity> {
+    suspend operator fun invoke(id: String): Result<OrganisationalActivity> {
         return if (id.isBlank()) {
             Result.Error("Activity ID cannot be empty")
         } else {
             try {
                 activityRepository.getActivityDetail(id)
             } catch (exception: Exception) {
-                Result.Error("Failed to load activity details: ${exception.message}", exception)
+                val appError = ErrorHandler.handleException(exception)
+                Result.Error(appError.message, exception)
             }
         }
     }
@@ -68,7 +74,8 @@ class DeleteActivityUseCase(
             try {
                 activityRepository.deleteActivity(id)
             } catch (exception: Exception) {
-                Result.Error("Failed to delete activity: ${exception.message}", exception)
+                val appError = ErrorHandler.handleException(exception)
+                Result.Error(appError.message, exception)
             }
         }
     }
@@ -80,29 +87,37 @@ class DeleteActivityUseCase(
 class CreateActivityUseCase(
     private val activityRepository: ActivityRepository
 ) {
-    suspend operator fun invoke(input: OrganisationActivityInput): Result<Boolean> {
+    suspend operator fun invoke(
+        activityInputData: ActivitiesInsertInput,
+        activityMembers: List<ActivityMember>,
+        associatedOrganisations: List<Organisation>
+    ): Result<Boolean> {
         return try {
             // Validate input
-            val validationResult = validateActivityInput(input)
+            val validationResult = validateActivityInput(activityInputData)
             if (validationResult != null) {
                 return Result.Error(validationResult)
             }
             
-            activityRepository.createActivity(input)
+            activityRepository.createActivity(activityInputData, activityMembers, associatedOrganisations)
         } catch (exception: Exception) {
-            Result.Error("Failed to create activity: ${exception.message}", exception)
+            val appError = ErrorHandler.handleException(exception)
+            Result.Error(appError.message, exception)
         }
     }
     
-    private fun validateActivityInput(input: OrganisationActivityInput): String? {
+    private fun validateActivityInput(input: ActivitiesInsertInput): String? {
         return when {
-            input.title.isNullOrBlank() -> "Activity title is required"
-            input.title!!.length < 3 -> "Activity title must be at least 3 characters"
-            input.title!!.length > 100 -> "Activity title must not exceed 100 characters"
-            input.description.isNullOrBlank() -> "Activity description is required"
-            input.description!!.length < 10 -> "Activity description must be at least 10 characters"
-            input.description!!.length > 1000 -> "Activity description must not exceed 1000 characters"
-            input.organisationId.isNullOrBlank() -> "Organisation ID is required"
+            input.name.isNullOrBlank() -> "Activity name is required"
+            input.name!!.length < 3 -> "Activity name must be at least 3 characters"
+            input.name!!.length > 100 -> "Activity name must not exceed 100 characters"
+            input.short_description.isNullOrBlank() -> "Activity description is required"
+            input.short_description!!.length < 10 -> "Activity description must be at least 10 characters"
+            input.short_description!!.length > 500 -> "Activity description must not exceed 500 characters"
+            input.type == null -> "Activity type is required"
+            input.district.isNullOrBlank() -> "District is required"
+            input.start_datetime == null -> "Start date and time is required"
+            input.end_datetime == null -> "End date and time is required"
             else -> null
         }
     }
@@ -114,11 +129,11 @@ class CreateActivityUseCase(
 class GetOrganisationsAndMembersUseCase(
     private val activityRepository: ActivityRepository
 ) {
-    private var cachedData: OrganisationsAndMembersQuery.Data? = null
+    private var cachedData: OrganisationsAndMembers? = null
     private var lastFetchTime: Long = 0
     private val cacheValidityDuration = 5 * 60 * 1000L // 5 minutes
     
-    suspend operator fun invoke(forceRefresh: Boolean = false): Result<OrganisationsAndMembersQuery.Data> {
+    suspend operator fun invoke(forceRefresh: Boolean = false): Result<OrganisationsAndMembers> {
         val currentTime = System.currentTimeMillis()
         
         // Return cached data if it's still valid and not forcing refresh
@@ -134,7 +149,8 @@ class GetOrganisationsAndMembersUseCase(
             }
             result
         } catch (exception: Exception) {
-            Result.Error("Failed to load organizations and members: ${exception.message}", exception)
+            val appError = ErrorHandler.handleException(exception)
+            Result.Error(appError.message, exception)
         }
     }
     
@@ -158,7 +174,11 @@ class ActivityManagementUseCase(
     
     suspend fun getActivityDetail(id: String) = getActivityDetailUseCase(id)
     
-    suspend fun createActivity(input: OrganisationActivityInput) = createActivityUseCase(input)
+    suspend fun createActivity(
+        activityInputData: ActivitiesInsertInput,
+        activityMembers: List<ActivityMember>,
+        associatedOrganisations: List<Organisation>
+    ) = createActivityUseCase(activityInputData, activityMembers, associatedOrganisations)
     
     suspend fun deleteActivity(id: String) = deleteActivityUseCase(id)
     
