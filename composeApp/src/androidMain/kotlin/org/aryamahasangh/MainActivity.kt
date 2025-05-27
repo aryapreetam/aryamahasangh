@@ -17,7 +17,7 @@ class MainActivity : ComponentActivity() {
         AndroidContextHolder.init(this)
         
         // Initialize cross-platform configuration
-        ConfigInitializer.initialize()
+        ConfigInitializer.initializeBlocking()
         
         // Initialize FileKit
         FileKit.init(this)

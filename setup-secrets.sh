@@ -1,0 +1,86 @@
+#!/bin/bash
+
+# Setup script for cross-platform secrets management
+# This script copies secrets.properties to all required locations
+
+echo "🔧 Setting up secrets for all platforms..."
+
+# Check if secrets.properties exists
+if [ ! -f "secrets.properties" ]; then
+    echo "❌ secrets.properties not found in project root"
+    echo "📝 Please copy secrets.properties.template to secrets.properties and fill in your values"
+    exit 1
+fi
+
+echo "✅ Found secrets.properties in project root"
+
+# Create Android assets directory if it doesn't exist
+ANDROID_ASSETS_DIR="composeApp/src/androidMain/assets"
+if [ ! -d "$ANDROID_ASSETS_DIR" ]; then
+    echo "📁 Creating Android assets directory: $ANDROID_ASSETS_DIR"
+    mkdir -p "$ANDROID_ASSETS_DIR"
+fi
+
+# Copy secrets to Android assets
+echo "📋 Copying secrets.properties to Android assets..."
+cp secrets.properties "$ANDROID_ASSETS_DIR/"
+echo "✅ Android secrets configured"
+
+# Update Web config.json with values from secrets.properties
+echo "🌐 Updating Web config.json..."
+WEB_CONFIG="composeApp/src/wasmJsMain/resources/config.json"
+
+# Function to read property from secrets.properties
+get_property() {
+    local key=$1
+    local value=$(grep "^$key=" secrets.properties | cut -d'=' -f2- | sed 's/^[[:space:]]*//' | sed 's/[[:space:]]*$//')
+    echo "$value"
+}
+
+# Read values from secrets.properties
+ENVIRONMENT=$(get_property "environment")
+DEV_SUPABASE_URL=$(get_property "dev.supabase.url")
+DEV_SUPABASE_KEY=$(get_property "dev.supabase.key")
+DEV_SERVER_URL=$(get_property "dev.server.url")
+PROD_SUPABASE_URL=$(get_property "prod.supabase.url")
+PROD_SUPABASE_KEY=$(get_property "prod.supabase.key")
+PROD_SERVER_URL=$(get_property "prod.server.url")
+
+# Create config.json with actual values
+cat > "$WEB_CONFIG" << EOF
+{
+  "environment": "${ENVIRONMENT:-dev}",
+  "dev.supabase.url": "${DEV_SUPABASE_URL:-}",
+  "dev.supabase.key": "${DEV_SUPABASE_KEY:-}",
+  "dev.server.url": "${DEV_SERVER_URL:-http://localhost:4000}",
+  "prod.supabase.url": "${PROD_SUPABASE_URL:-}",
+  "prod.supabase.key": "${PROD_SUPABASE_KEY:-}",
+  "prod.server.url": "${PROD_SERVER_URL:-}"
+}
+EOF
+
+echo "✅ Web config.json updated"
+
+# Setup iOS secrets
+echo "🍎 Setting up iOS secrets..."
+IOS_RESOURCES_DIR="iosApp/iosApp"
+if [ ! -d "$IOS_RESOURCES_DIR" ]; then
+    echo "⚠️ iOS app directory not found: $IOS_RESOURCES_DIR"
+    echo "   Skipping iOS setup..."
+else
+    # Copy secrets.properties to iOS app bundle
+    echo "📋 Copying secrets.properties to iOS app bundle..."
+    cp secrets.properties "$IOS_RESOURCES_DIR/secrets.properties"
+    echo "✅ iOS secrets configured"
+fi
+
+echo ""
+echo "🎉 Secrets setup complete for all platforms!"
+echo ""
+echo "📋 Summary:"
+echo "   ✅ Desktop: Uses secrets.properties from project root"
+echo "   ✅ Android: Uses secrets.properties from assets/"
+echo "   ✅ Web: Uses config.json with values from secrets.properties"
+echo "   ✅ iOS: Uses secrets.properties from app bundle"
+echo ""
+echo "🚀 You can now run your app on any platform with proper secrets loading!"

@@ -11,20 +11,38 @@ class DesktopSecretsLoader : SecretsLoader {
   override suspend fun loadSecrets(): Map<String, String> {
   val secrets = mutableMapOf<String, String>()
   // First, try to load from secrets.properties file
-  val secretsFile = File("../secrets.properties")
-  if (secretsFile.exists()) {
+  // Try multiple possible locations
+  val possiblePaths = listOf(
+    "secrets.properties",           // Current directory
+    "../secrets.properties",       // Parent directory
+    "../../secrets.properties"     // Grandparent directory
+  )
+  
+  var secretsFile: File? = null
+  for (path in possiblePaths) {
+    val file = File(path)
+    if (file.exists()) {
+      secretsFile = file
+      break
+    }
+  }
+  
+  if (secretsFile != null) {
     try {
       val props = Properties()
       secretsFile.inputStream().use { props.load(it) }
       props.entries.forEach { (key, value) ->
         secrets[key.toString()] = value.toString()
       }
-      println("✅ Loaded secrets from secrets.properties file")
+      println("✅ Loaded secrets from secrets.properties file: ${secretsFile.absolutePath}")
     } catch (e: Exception) {
       println("⚠️ Error loading secrets.properties: ${e.message}")
     }
   } else {
-    println("⚠️ secrets.properties file not found at: ${secretsFile.absolutePath}")
+    println("⚠️ secrets.properties file not found in any of these locations:")
+    possiblePaths.forEach { path ->
+      println("   - ${File(path).absolutePath}")
+    }
   }
 
   // Load environment variables as fallback/override
