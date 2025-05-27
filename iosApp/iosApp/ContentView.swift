@@ -12,8 +12,9 @@ struct ComposeView: UIViewControllerRepresentable {
 
 struct ContentView: View {
     var body: some View {
-        ComposeView()
-                .ignoresSafeArea(.keyboard) // Compose has own keyboard handler
+        // .ignoresSafeArea(.keyboard) // keeping .keyboard doesn't look good, so removing
+        // we can add it later.
+        ComposeView().ignoresSafeArea() // Compose has own keyboard handler
     }
 }
 

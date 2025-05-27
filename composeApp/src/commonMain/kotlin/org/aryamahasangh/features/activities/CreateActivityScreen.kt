@@ -6,6 +6,7 @@ import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -15,9 +16,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -33,6 +39,7 @@ import kotlinx.datetime.Clock.System
 import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.network.bucket
 import org.aryamahasangh.screens.*
+import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
 
 val stringToActivityTypeMap = mapOf(
@@ -134,6 +141,12 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
 
   var additionalInstructions by remember { mutableStateOf("") }
 
+  var eventCapacity by remember { mutableStateOf("100") }
+  var eventGenderAllowed by remember { mutableStateOf(GenderAllowed.ANY) }
+  var eventLatitude by remember { mutableStateOf("") }
+  var eventLongitude by remember { mutableStateOf("") }
+  var areEventDetailsValid by remember { mutableStateOf(false) } // Initially false until validated
+
   // Collect form submission state from ViewModel
   val formSubmissionState by viewModel.activityFormSubmissionState.collectAsState()
   val isSubmitting = formSubmissionState.isSubmitting
@@ -225,7 +238,7 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
   }
 
   fun submitForm() {
-    if (validateForm()) {
+    if (validateForm() && areEventDetailsValid) {
       scope.launch {
         val attachedImages = mutableListOf<String>()
         try {
@@ -494,6 +507,27 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
       }
     }
 
+    EventDetailsFields(
+      initialCapacity = eventCapacity.toIntOrNull() ?: 100,
+      initialGenderAllowed = eventGenderAllowed,
+      initialLatitude = eventLatitude,
+      initialLongitude = eventLongitude,
+      onDetailsChanged = { cap, gender, lat, lon ->
+        eventCapacity = cap
+        eventGenderAllowed = gender
+        eventLatitude = lat
+        eventLongitude = lon
+      },
+      onChooseLocationFromMapClick = {
+        // viewModel.launchMapPicker() // Example
+        println("Parent: Time to launch map picker!")
+      },
+      isFormValid = { isValid ->
+        areEventDetailsValid = isValid
+      }
+    )
+
+
     Text(
       modifier = Modifier.padding(top = 8.dp),
       text = "संबधित चित्र एवं पत्रिकाएं:",
@@ -516,6 +550,8 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
         attachedDocuments = (attachedDocuments + filePath).distinct()
       }
     })
+
+
 
     // Contact People
     ContactPeopleDropdown(
@@ -671,6 +707,257 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
       )
     }
 
+  }
+}
+
+
+enum class GenderAllowed {
+  ANY, MALE, FEMALE;
+
+  fun toDisplayName(): String {
+    return when (this) {
+      ANY -> "सभी के लिए"
+      MALE -> "केवल पुरुष"
+      FEMALE -> "केवल महिला"
+    }
+  }
+
+  companion object {
+    fun fromDisplayName(displayName: String): GenderAllowed? {
+      return values().find { it.toDisplayName() == displayName }
+    }
+  }
+}
+
+val genderAllowedDisplayOptions = GenderAllowed.values().map { it.toDisplayName() } // List of display names
+
+// --- Data class for these specific fields (can be part of a larger form data class) ---
+data class EventDetailsFormData(
+  val capacity: Int,
+  val genderAllowed: GenderAllowed,
+  val latitude: Double?, // Nullable if not yet set
+  val longitude: Double? // Nullable if not yet set
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EventDetailsFields(
+  initialCapacity: Int = 100,
+  initialGenderAllowed: GenderAllowed = GenderAllowed.ANY,
+  initialLatitude: String = "",
+  initialLongitude: String = "",
+  onDetailsChanged: (capacity: String, genderAllowed: GenderAllowed, latitude: String, longitude: String) -> Unit,
+  onChooseLocationFromMapClick: () -> Unit,
+  isFormValid: (Boolean) -> Unit
+) {
+  val focusManager = LocalFocusManager.current
+
+  var capacity by remember { mutableStateOf(initialCapacity.toString()) }
+  var capacityError by remember { mutableStateOf<String?>(null) }
+  val capacityFocusRequester = remember { FocusRequester() }
+
+  var selectedGenderAllowed by remember { mutableStateOf(initialGenderAllowed) }
+  var genderAllowedError by remember { mutableStateOf<String?>(null) }
+  var genderAllowedExpanded by remember { mutableStateOf(false) }
+
+  var latitude by remember { mutableStateOf(initialLatitude) }
+  var latitudeError by remember { mutableStateOf<String?>(null) }
+  val latitudeFocusRequester = remember { FocusRequester() }
+
+  var longitude by remember { mutableStateOf(initialLongitude) }
+  var longitudeError by remember { mutableStateOf<String?>(null) }
+  val longitudeFocusRequester = remember { FocusRequester() }
+
+  fun validateCapacity(showError: Boolean = true): Boolean {
+    val capInt = capacity.toIntOrNull()
+    return when {
+      capacity.isBlank() -> { if (showError) capacityError = "क्षमता आवश्यक है."; false }
+      capInt == null -> { if (showError) capacityError = "कृपया मान्य संख्या दर्ज करें."; false }
+      capInt <= 0 -> { if (showError) capacityError = "क्षमता 0 से अधिक होनी चाहिए."; false }
+      else -> { capacityError = null; true }
+    }
+  }
+
+  fun validateGenderAllowed(showError: Boolean = true): Boolean {
+    genderAllowedError = null
+    return true
+  }
+
+  fun validateLatitude(showError: Boolean = true): Boolean {
+    val latDouble = latitude.toDoubleOrNull()
+    return when {
+      latitude.isBlank() -> { if (showError) latitudeError = "अक्षांश आवश्यक है."; false }
+      latDouble == null -> { if (showError) latitudeError = "कृपया मान्य अक्षांश दर्ज करें (उदा. 28.6139)."; false }
+      latDouble < -90.0 || latDouble > 90.0 -> { if (showError) latitudeError = "अक्षांश -90 और 90 के बीच होना चाहिए."; false }
+      else -> { latitudeError = null; true }
+    }
+  }
+
+  fun validateLongitude(showError: Boolean = true): Boolean {
+    val lonDouble = longitude.toDoubleOrNull()
+    return when {
+      longitude.isBlank() -> { if (showError) longitudeError = "देशांतर आवश्यक है."; false }
+      lonDouble == null -> { if (showError) longitudeError = "कृपया मान्य देशांतर दर्ज करें (उदा. 77.2090)."; false }
+      lonDouble < -180.0 || lonDouble > 180.0 -> { if (showError) longitudeError = "देशांतर -180 और 180 के बीच होना चाहिए."; false }
+      else -> { longitudeError = null; true }
+    }
+  }
+
+  LaunchedEffect(capacity, selectedGenderAllowed, latitude, longitude) {
+    val isValid = validateCapacity(false) &&
+        validateGenderAllowed(false) &&
+        validateLatitude(false) &&
+        validateLongitude(false)
+    isFormValid(isValid)
+    onDetailsChanged(capacity, selectedGenderAllowed, latitude, longitude)
+  }
+
+  Column(
+    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+    verticalArrangement = Arrangement.spacedBy(16.dp)
+  ) {
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)){
+// Gender Allowed (Using standard ExposedDropdownMenuBox)
+      ExposedDropdownMenuBox(
+        expanded = genderAllowedExpanded,
+        onExpandedChange = { genderAllowedExpanded = !genderAllowedExpanded },
+        modifier = Modifier.width(150.dp) // Or a constrained width if preferred
+      ) {
+
+        OutlinedTextField(
+          value = selectedGenderAllowed.toDisplayName(), // Display the current selection's name
+          onValueChange = {}, // Not directly changeable
+          readOnly = true,
+          label = { Text("सत्र में प्रवेश") },
+          placeholder = { Text("लिंग अनुमति चुनें") }, // Placeholder
+          trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = genderAllowedExpanded) },
+          modifier = Modifier.fillMaxWidth().menuAnchor(),
+          isError = genderAllowedError != null, // Should always be false with default
+          supportingText = { genderAllowedError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
+        )
+        ExposedDropdownMenu(
+          expanded = genderAllowedExpanded,
+          onDismissRequest = { genderAllowedExpanded = false },
+        ) {
+          genderAllowedDisplayOptions.forEach { selectionDisplayName ->
+            DropdownMenuItem(
+              text = { Text(selectionDisplayName) },
+              onClick = {
+                selectedGenderAllowed = GenderAllowed.fromDisplayName(selectionDisplayName) ?: GenderAllowed.ANY
+                genderAllowedExpanded = false
+                // No real error to validate here as one is always selected
+                focusManager.moveFocus(FocusDirection.Next)
+              },
+              contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+            )
+          }
+        }
+      }
+
+      // Capacity
+      OutlinedTextField(
+        value = capacity,
+        onValueChange = {
+          if (it.isEmpty() || it.all { char -> char.isDigit() }) { capacity = it }
+          if (capacityError != null) validateCapacity()
+        },
+        label = { Text("क्षमता") },
+        modifier = Modifier.width(150.dp).focusRequester(capacityFocusRequester),
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }),
+        isError = capacityError != null,
+        supportingText = { capacityError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
+      )
+    }
+
+    // Location Section
+    Text("स्थान चुनें (Location)", style = MaterialTheme.typography.titleMedium)
+
+    OutlinedButton(
+      onClick = { onChooseLocationFromMapClick() },
+      contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+    ) {
+      Icon(Icons.Filled.Map, contentDescription = "मानचित्र से चुनें", modifier = Modifier.size(ButtonDefaults.IconSize))
+      Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+      Text("मानचित्र से चुनें")
+    }
+    Text("या मैन्युअल रूप से दर्ज करें:", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
+
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+      OutlinedTextField(
+        value = latitude,
+        onValueChange = {
+          if (it.isEmpty() || it.matches(Regex("^-?[0-9]*\\.?[0-9]*$"))) { latitude = it }
+          if (latitudeError != null) validateLatitude()
+        },
+        label = { Text("अक्षांश (Latitude)") },
+        modifier = Modifier.width(170.dp).focusRequester(latitudeFocusRequester),
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+        keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }),
+        isError = latitudeError != null,
+        supportingText = { latitudeError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
+      )
+
+      OutlinedTextField(
+        value = longitude,
+        onValueChange = {
+          if (it.isEmpty() || it.matches(Regex("^-?[0-9]*\\.?[0-9]*$"))) { longitude = it }
+          if (longitudeError != null) validateLongitude()
+        },
+        label = { Text("देशांतर (Longitude)") },
+        modifier = Modifier.width(170.dp).focusRequester(longitudeFocusRequester),
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+        keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+        isError = longitudeError != null,
+        supportingText = { longitudeError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
+      )
+    }
+  }
+}
+
+// --- Preview ---
+@Preview
+@Composable
+fun EventDetailsFieldsPreview() {
+  var currentCapacity by remember { mutableStateOf("100") }
+  var currentGenderAllowed by remember { mutableStateOf(GenderAllowed.ANY) }
+  var currentLatitude by remember { mutableStateOf("") }
+  var currentLongitude by remember { mutableStateOf("") }
+  var isFieldsValid by remember { mutableStateOf(false) }
+
+  MaterialTheme {
+    Surface(modifier = Modifier.padding(16.dp)) {
+      Column(modifier = Modifier.verticalScroll(rememberScrollState())) { // Added scroll for preview
+        EventDetailsFields(
+          initialCapacity = currentCapacity.toIntOrNull() ?: 100,
+          initialGenderAllowed = currentGenderAllowed,
+          initialLatitude = currentLatitude,
+          initialLongitude = currentLongitude,
+          onDetailsChanged = { cap, gender, lat, lon ->
+            currentCapacity = cap
+            currentGenderAllowed = gender
+            currentLatitude = lat
+            currentLongitude = lon
+          },
+          onChooseLocationFromMapClick = {
+            currentLatitude = "12.9716" // Simulate map pick
+            currentLongitude = "77.5946"
+          },
+          isFormValid = { isValid ->
+            isFieldsValid = isValid
+          }
+        )
+        Spacer(modifier = Modifier.height(20.dp))
+        Text("Form is valid: $isFieldsValid", color = if (isFieldsValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
+        Text("Current Capacity: $currentCapacity")
+        Text("Current Gender: ${currentGenderAllowed.toDisplayName()}")
+        Text("Current Latitude: $currentLatitude")
+        Text("Current Longitude: $currentLongitude")
+      }
+    }
   }
 }
 
