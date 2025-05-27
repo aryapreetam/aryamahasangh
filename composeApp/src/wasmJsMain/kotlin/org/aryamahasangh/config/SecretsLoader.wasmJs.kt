@@ -16,9 +16,9 @@ class WebSecretsLoader : SecretsLoader {
       try {
           val response: Response = window.fetch("./config.json").await()
           if (response.ok) {
-              val configText: String = response.text().await()
+              val configText: Any = response.text().await()
               // Parse simple JSON-like config (basic implementation)
-              parseJsonConfig(configText, secrets)
+              parseJsonConfig(configText.toString(), secrets)
               println("✅ Loaded secrets from web config.json")
           }
       } catch (e: Exception) {

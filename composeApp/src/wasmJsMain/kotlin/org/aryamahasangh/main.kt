@@ -25,7 +25,7 @@ import org.aryamahasangh.config.ConfigInitializer
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalResourceApi::class, InternalComposeUiApi::class)
 fun main() {
   // Initialize cross-platform configuration
-  ConfigInitializer.initialize()
+  ConfigInitializer.initializeBlocking()
   
   configureWebResources {
     // Overrides the resource location
