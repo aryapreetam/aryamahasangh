@@ -3,8 +3,9 @@ package org.aryamahasangh.data.cache
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 /**
  * Cache entry with expiration time
@@ -15,16 +16,17 @@ data class CacheEntry<T>(
     val timestamp: Long,
     val expirationTime: Long
 ) {
-    fun isExpired(): Boolean = System.currentTimeMillis() > expirationTime
+    @OptIn(ExperimentalTime::class)
+    fun isExpired(): Boolean = Clock.System.now().epochSeconds > expirationTime
 }
 
 /**
  * In-memory cache manager with TTL support
  */
 class CacheManager {
-    private val cache = mutableMapOf<String, String>()
-    private val mutex = Mutex()
-    private val json = Json { 
+    val cache = mutableMapOf<String, String>()
+    val mutex = Mutex()
+    val json = Json {
         ignoreUnknownKeys = true
         encodeDefaults = true
     }
@@ -32,6 +34,7 @@ class CacheManager {
     /**
      * Store data in cache with TTL
      */
+    @OptIn(ExperimentalTime::class)
     suspend inline fun <reified T> put(
         key: String, 
         data: T, 
@@ -40,8 +43,8 @@ class CacheManager {
         mutex.withLock {
             val entry = CacheEntry(
                 data = data,
-                timestamp = System.currentTimeMillis(),
-                expirationTime = System.currentTimeMillis() + ttlMs
+                timestamp = Clock.System.now().epochSeconds,
+                expirationTime = Clock.System.now().epochSeconds + ttlMs
             )
             cache[key] = json.encodeToString(entry)
         }
