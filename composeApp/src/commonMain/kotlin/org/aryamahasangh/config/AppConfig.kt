@@ -9,32 +9,51 @@ package org.aryamahasangh.config
 object AppConfig {
 
     private var config: Map<String, String> = emptyMap()
+    private var isInitialized = false
 
-    fun init(configValues: Map<String, String>) {
+    /**
+     * Initialize configuration with provided values
+     */
+    fun initialize(configValues: Map<String, String>) {
         config = configValues
+        isInitialized = true
     }
 
-    private val environment: String = config["environment"] ?: "dev"
-
-    val supabaseUrl: String by lazy {
-        get("supabase.url") ?: error("Supabase URL not configured")
+    /**
+     * Legacy init method for backward compatibility
+     */
+    fun init(configValues: Map<String, String>) {
+        initialize(configValues)
     }
 
-    val supabaseKey: String by lazy {
-        get("supabase.key") ?: error("Supabase key not configured")
-    }
+    /**
+     * Get current configuration (throws if not initialized)
+     */
+    val current: AppConfig
+        get() {
+            if (!isInitialized) {
+                error("AppConfig not initialized. Call AppConfig.initialize() first.")
+            }
+            return this
+        }
 
-    val serverUrl: String by lazy {
-        get("server.url") ?: error("Server URL not configured")
-    }
+    val environment: String
+        get() = config["environment"] ?: "dev"
 
-    val graphqlUrl: String by lazy {
-        "$serverUrl/graphql"
-    }
+    val supabaseUrl: String
+        get() = get("supabase.url") ?: error("Supabase URL not configured")
 
-    val subscriptionsUrl: String by lazy {
-        serverUrl.replace("http://", "ws://").replace("https://", "wss://") + "/subscriptions"
-    }
+    val supabaseKey: String
+        get() = get("supabase.key") ?: error("Supabase key not configured")
+
+    val serverUrl: String
+        get() = get("server.url") ?: error("Server URL not configured")
+
+    val graphqlUrl: String
+        get() = "$serverUrl/graphql"
+
+    val subscriptionsUrl: String
+        get() = serverUrl.replace("http://", "ws://").replace("https://", "wss://") + "/subscriptions"
 
     const val STORAGE_BUCKET = "documents"
 
