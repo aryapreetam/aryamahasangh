@@ -12,17 +12,39 @@ class WebSecretsLoader : SecretsLoader {
   override suspend fun loadSecrets(): Map<String, String> {
       val secrets = mutableMapOf<String, String>()
       
+      println("🌐 Loading secrets for Web platform...")
+      
       // Try to load from a config.json file (if available)
+      var configLoaded = false
       try {
+          println("🔍 Attempting to fetch ./config.json...")
           val response: Response = window.fetch("./config.json").await()
+          println("📡 Fetch response status: ${response.status}")
+          
           if (response.ok) {
               val configText: Any = response.text().await()
+              val configStr = configText.toString()
+              println("📄 Config file content length: ${configStr.length} characters")
+              
               // Parse simple JSON-like config (basic implementation)
-              parseJsonConfig(configText.toString(), secrets)
-              println("✅ Loaded secrets from web config.json")
+              parseJsonConfig(configStr, secrets)
+              
+              if (secrets.isNotEmpty()) {
+                  println("✅ Successfully loaded ${secrets.size} secrets from web config.json")
+                  secrets.forEach { (key, value) ->
+                      val maskedValue = if (key.contains("key", ignoreCase = true)) "***" else value
+                      println("   $key = $maskedValue")
+                  }
+                  configLoaded = true
+              } else {
+                  println("⚠️ Config file found but no secrets parsed")
+              }
+          } else {
+              println("❌ Config fetch failed with status: ${response.status}")
           }
       } catch (e: Exception) {
-          println("⚠️ config.json not found or error loading: ${e.message}")
+          println("❌ config.json not found or error loading: ${e.message}")
+          e.printStackTrace()
       }
       
       // Load from window environment variables (if set by build process)
@@ -30,7 +52,10 @@ class WebSecretsLoader : SecretsLoader {
       
       // If no secrets loaded, use default development values
       if (secrets.isEmpty()) {
+          println("⚠️ No secrets loaded from config.json or environment, using defaults")
           loadDefaultValues(secrets)
+      } else if (configLoaded) {
+          println("✅ Web secrets configuration loaded successfully")
       }
       
       return secrets

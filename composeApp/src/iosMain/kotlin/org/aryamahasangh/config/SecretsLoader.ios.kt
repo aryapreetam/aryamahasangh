@@ -81,7 +81,11 @@ class IOSSecretsLoader : SecretsLoader {
   private fun tryLoadFromBundle(secrets: MutableMap<String, String>): Boolean {
       return try {
           val bundle = NSBundle.mainBundle
-          println("🔍 Searching for secrets.properties in iOS bundle...")
+          println("🔍 Searching for secrets files in iOS bundle...")
+          
+          // Debug: Show bundle path
+          val bundlePath = bundle.bundlePath
+          println("🔍 Bundle path: $bundlePath")
           
           // Try different possible locations and names
           val possiblePaths = listOf(
@@ -92,8 +96,20 @@ class IOSSecretsLoader : SecretsLoader {
               bundle.pathForResource("config.json", null)
           )
           
+          println("🔍 Checking ${possiblePaths.size} possible file locations...")
+          
           for ((index, path) in possiblePaths.withIndex()) {
-              println("🔍 Trying path ${index + 1}: $path")
+              val fileName = when(index) {
+                  0 -> "secrets.properties (with extension)"
+                  1 -> "secrets.properties (no extension)"
+                  2 -> "secrets (no extension)"
+                  3 -> "config.json (with extension)"
+                  4 -> "config.json (no extension)"
+                  else -> "unknown"
+              }
+              
+              println("🔍 [$index] Trying $fileName: $path")
+              
               if (path != null) {
                   println("✅ Found file at: $path")
                   val content = NSString.stringWithContentsOfFile(
@@ -104,18 +120,28 @@ class IOSSecretsLoader : SecretsLoader {
                   
                   if (content != null) {
                       val contentStr = content.toString()
+                      println("📄 File content length: ${contentStr.length} characters")
+                      
                       if (contentStr.isNotBlank()) {
                           // Determine file type and parse accordingly
                           if (path.contains(".json")) {
-                              // Parse JSON config
+                              println("📋 Parsing as JSON config...")
                               parseJsonConfig(contentStr, secrets)
                           } else {
-                              // Parse properties file
+                              println("📋 Parsing as properties file...")
                               secrets.putAll(SecretsUtils.parseProperties(content))
                           }
-                          println("✅ Successfully loaded secrets from iOS bundle: $path")
-                          println("🔍 Loaded ${secrets.size} properties")
-                          return true
+                          
+                          if (secrets.isNotEmpty()) {
+                              println("✅ Successfully loaded ${secrets.size} secrets from iOS bundle: $path")
+                              secrets.forEach { (key, value) ->
+                                  val maskedValue = if (key.contains("key", ignoreCase = true)) "***" else value
+                                  println("   $key = $maskedValue")
+                              }
+                              return true
+                          } else {
+                              println("⚠️ File parsed but no secrets loaded from: $path")
+                          }
                       } else {
                           println("⚠️ File found but content is empty: $path")
                       }
@@ -123,19 +149,44 @@ class IOSSecretsLoader : SecretsLoader {
                       println("❌ Could not read content from bundle file at path: $path")
                   }
               } else {
-                  println("❌ Path ${index + 1} not found")
+                  println("❌ File not found: $fileName")
               }
           }
           
-          // Debug: List bundle path
-          val bundlePath = bundle.bundlePath
-          println("🔍 Bundle path: $bundlePath")
+          // List all files in the bundle for debugging
+          println("🔍 Listing all files in bundle for debugging...")
+          listBundleContents(bundle)
           
-          println("❌ secrets.properties not found in iOS bundle")
+          println("❌ No secrets files found in iOS bundle")
           false
       } catch (e: Exception) {
           println("❌ Error loading from iOS bundle: ${e.message}")
+          e.printStackTrace()
           false
+      }
+  }
+  
+  @OptIn(ExperimentalForeignApi::class)
+  private fun listBundleContents(bundle: NSBundle) {
+      try {
+          val bundlePath = bundle.bundlePath
+          if (bundlePath != null) {
+              val fileManager = NSFileManager.defaultManager
+              val contents = fileManager.contentsOfDirectoryAtPath(bundlePath, error = null)
+              if (contents != null) {
+                  println("📁 Bundle contents:")
+                  for (i in 0 until contents.count.toInt()) {
+                      val fileName = contents.objectAtIndex(i.toULong()) as? String
+                      if (fileName != null) {
+                          println("   - $fileName")
+                      }
+                  }
+              } else {
+                  println("❌ Could not list bundle contents")
+              }
+          }
+      } catch (e: Exception) {
+          println("❌ Error listing bundle contents: ${e.message}")
       }
   }
   

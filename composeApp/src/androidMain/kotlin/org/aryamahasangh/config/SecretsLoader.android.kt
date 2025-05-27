@@ -11,16 +11,45 @@ class AndroidSecretsLoader(private val context: Context) : SecretsLoader {
   override suspend fun loadSecrets(): Map<String, String> {
       val secrets = mutableMapOf<String, String>()
       
+      println("🤖 Loading secrets for Android platform...")
+      
       // Try to load from assets/secrets.properties
+      var assetsLoaded = false
       try {
+          println("🔍 Attempting to load secrets.properties from Android assets...")
           val inputStream = context.assets.open("secrets.properties")
           val content = inputStream.bufferedReader().use { it.readText() }
-          secrets.putAll(SecretsUtils.parseProperties(content))
-          println("✅ Loaded secrets from Android assets")
+          println("📄 Assets file content length: ${content.length} characters")
+          
+          val parsedSecrets = SecretsUtils.parseProperties(content)
+          secrets.putAll(parsedSecrets)
+          
+          if (secrets.isNotEmpty()) {
+              println("✅ Successfully loaded ${secrets.size} secrets from Android assets")
+              secrets.forEach { (key, value) ->
+                  val maskedValue = if (key.contains("key", ignoreCase = true)) "***" else value
+                  println("   $key = $maskedValue")
+              }
+              assetsLoaded = true
+          } else {
+              println("⚠️ Assets file found but no secrets parsed")
+          }
       } catch (e: IOException) {
-          println("⚠️ secrets.properties not found in Android assets: ${e.message}")
+          println("❌ secrets.properties not found in Android assets: ${e.message}")
+          
+          // Debug: List available assets
+          try {
+              val assetsList = context.assets.list("")
+              println("📁 Available assets:")
+              assetsList?.forEach { asset ->
+                  println("   - $asset")
+              }
+          } catch (ex: Exception) {
+              println("❌ Could not list assets: ${ex.message}")
+          }
       } catch (e: Exception) {
-          println("⚠️ Error loading secrets from Android assets: ${e.message}")
+          println("❌ Error loading secrets from Android assets: ${e.message}")
+          e.printStackTrace()
       }
       
       // Load environment variables as fallback/override
@@ -28,7 +57,10 @@ class AndroidSecretsLoader(private val context: Context) : SecretsLoader {
       
       // If no secrets loaded, use default development values
       if (secrets.isEmpty()) {
+          println("⚠️ No secrets loaded from assets or environment, using defaults")
           loadDefaultValues(secrets)
+      } else if (assetsLoaded) {
+          println("✅ Android secrets configuration loaded successfully")
       }
       
       return secrets
