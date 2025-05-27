@@ -1,4 +1,4 @@
-package org.aryamahasangh.screens
+package org.aryamahasangh.features.activities
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,14 +29,10 @@ import aryamahasangh.composeapp.generated.resources.error_profile_image
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
 import org.aryamahasangh.LocalSnackbarHostState
-import org.aryamahasangh.OrganisationalActivityDetailQuery
-import org.aryamahasangh.OrganisationalActivityDetailQuery.ContactPeople
-import org.aryamahasangh.OrganisationalActivityDetailQuery.OrganisationalActivity
 import org.aryamahasangh.components.activityTypeData
 import org.aryamahasangh.isWeb
 import org.aryamahasangh.utils.format
-import org.aryamahasangh.utils.formatDateTime
-import org.aryamahasangh.viewmodel.ActivitiesViewModel
+import org.aryamahasangh.utils.toHumanReadable
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
@@ -164,7 +160,7 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
       Spacer(modifier = Modifier.width(8.dp))
       Text(
         modifier = Modifier.background(MaterialTheme.colorScheme.outlineVariant).padding(vertical = 4.dp, horizontal = 16.dp),
-        text = "${activityTypeData[activity.activityType]}", style = MaterialTheme.typography.bodyLarge)
+        text = "${activityTypeData[activity.type]}", style = MaterialTheme.typography.bodyLarge)
     }
 
     // Description
@@ -192,7 +188,7 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
       activity.associatedOrganisations.forEach { associatedOrg ->
         AssistChip(
           onClick = { },
-          label = { Text(associatedOrg.name) }
+          label = { Text(associatedOrg.organisation.name) }
         )
       }
     }
@@ -213,7 +209,7 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
     ) {
       Icon(imageVector = Icons.Default.DateRange, contentDescription = "Start Date", tint = Color.Gray)
       Spacer(modifier = Modifier.width(4.dp))
-      Text(text = "प्रारंभ: ${formatDateTime(activity.startDateTime)}", style = MaterialTheme.typography.bodyMedium)
+      Text(text = "प्रारंभ: ${activity.startDatetime.toHumanReadable()}", style = MaterialTheme.typography.bodyMedium)
     }
 
     Row(
@@ -222,7 +218,7 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
     ) {
       Icon(imageVector = Icons.Default.DateRange, contentDescription = "End Date", tint = Color.Gray)
       Spacer(modifier = Modifier.width(4.dp))
-      Text(text = "समाप्ति: ${formatDateTime(activity.endDateTime)}", style = MaterialTheme.typography.bodyMedium)
+      Text(text = "समाप्ति: ${activity.endDatetime.toHumanReadable()}", style = MaterialTheme.typography.bodyMedium)
     }
 
     val uriHandler = LocalUriHandler.current
@@ -289,8 +285,10 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
 @Preview
 @Composable
 fun ContactPersonPreview() {
-  val contact = ContactPeople(
-    member = OrganisationalActivityDetailQuery.Member(
+  val contact = ActivityMember(
+    id = "",
+    member = Member(
+      id = "",
       name = "आचार्य संजीव आर्य",
       profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_sanjiv.webp",
       phoneNumber = "9045353309"
@@ -302,7 +300,7 @@ fun ContactPersonPreview() {
 }
 
 @Composable
-fun ContactPersonItem(contactPerson: ContactPeople) {
+fun ContactPersonItem(contactPerson: ActivityMember) {
   Row(
     modifier = Modifier.heightIn(48.dp, 65.dp).padding(vertical = 8.dp),
     verticalAlignment = Alignment.CenterVertically,

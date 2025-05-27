@@ -11,15 +11,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.apollographql.apollo.api.Optional
 import dev.burnoo.compose.remembersetting.rememberBooleanSetting
 import org.aryamahasangh.LocalSnackbarHostState
-import org.aryamahasangh.OrganisationalActivitiesQuery
 import org.aryamahasangh.SettingKeys
 import org.aryamahasangh.components.ActivityListItem
-import org.aryamahasangh.type.ActivityFilterInput
-import org.aryamahasangh.type.ActivityPeriod
-import org.aryamahasangh.type.ActivityType
+import org.aryamahasangh.features.activities.OrganisationalActivityShort
 import org.aryamahasangh.viewmodel.JoinUsUiState
 import org.aryamahasangh.viewmodel.JoinUsViewModel
 import org.aryamahasangh.viewmodel.LabelState
@@ -54,6 +50,7 @@ fun UpcomingActivitiesFormPreview(){
       error = null,
       labelState = LabelState()
     ),
+    loadFilteredActivities = {} as (String, String) -> Unit
   )
 }
 
@@ -168,7 +165,7 @@ fun JoinUsLabel(
 fun UpcomingActivitiesForm(
   uiState: JoinUsUiState,
   loadJoinUsLabel: () -> Unit = {},
-  loadFilteredActivities: (ActivityFilterInput) -> Unit = {},
+  loadFilteredActivities: (String, String) -> Unit = {} as (String, String) -> Unit,
   updateJoinUsLabel: (String) -> Unit = {},
   setEditMode: (Boolean) -> Unit = {}
 ) {
@@ -178,9 +175,9 @@ fun UpcomingActivitiesForm(
   var selectedState by remember { mutableStateOf<String>("") }
   var selectedDistrict by remember { mutableStateOf<String>("") }
 
-  LaunchedEffect(Unit){
-    loadJoinUsLabel()
-  }
+//  LaunchedEffect(Unit){
+//    loadJoinUsLabel()
+//  }
 
   // Reset district on state change
   LaunchedEffect(selectedState) {
@@ -220,13 +217,7 @@ fun UpcomingActivitiesForm(
     // Show Activities Button
     Button(
       onClick = {
-        val activityFilter = ActivityFilterInput(
-          type = Optional.present(ActivityType.SESSION),
-          state = Optional.present(selectedState),
-          district = Optional.present(selectedDistrict),
-          activityPeriod = Optional.present(ActivityPeriod.FUTURE)
-        )
-        loadFilteredActivities(activityFilter)
+        loadFilteredActivities(selectedState, selectedDistrict)
       },
       enabled = showActivitiesEnabled && !uiState.isLoading,
       modifier = Modifier.align(Alignment.Start).padding(bottom = 8.dp)
@@ -248,6 +239,7 @@ fun UpcomingActivitiesForm(
     // Handle error state
     uiState.error?.let { error ->
       LaunchedEffect(error) {
+        println(error)
         snackbarHostState.showSnackbar(
           message = error,
           actionLabel = "Retry"
@@ -264,13 +256,7 @@ fun UpcomingActivitiesForm(
         ) {
           Text("Failed to load activities")
           Button(onClick = { 
-            val activityFilter = ActivityFilterInput(
-              type = Optional.present(ActivityType.SESSION),
-              state = Optional.present(selectedState),
-              district = Optional.present(selectedDistrict),
-              activityPeriod = Optional.present(ActivityPeriod.FUTURE)
-            )
-            loadFilteredActivities(activityFilter)
+            loadFilteredActivities(selectedState, selectedDistrict)
           }) {
             Text("Retry")
           }
@@ -304,7 +290,7 @@ fun UpcomingActivitiesForm(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ActivitiesList(activities: List<OrganisationalActivitiesQuery.OrganisationalActivity>) {
+fun ActivitiesList(activities: List<OrganisationalActivityShort>) {
   LazyColumn(
     modifier = Modifier.fillMaxSize(),
     verticalArrangement = Arrangement.spacedBy(8.dp)

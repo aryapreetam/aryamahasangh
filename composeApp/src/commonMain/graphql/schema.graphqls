@@ -1,0 +1,2866 @@
+"""
+A high precision floating point value represented as a string
+"""
+scalar BigFloat
+
+"""
+Boolean expression comparing fields on type "BigFloat"
+"""
+input BigFloatFilter {
+  eq: BigFloat
+
+  gt: BigFloat
+
+  gte: BigFloat
+
+  in: [BigFloat!]
+
+  is: FilterIs
+
+  lt: BigFloat
+
+  lte: BigFloat
+
+  neq: BigFloat
+}
+
+"""
+Boolean expression comparing fields on type "BigFloatList"
+"""
+input BigFloatListFilter {
+  containedBy: [BigFloat!]
+
+  contains: [BigFloat!]
+
+  eq: [BigFloat!]
+
+  is: FilterIs
+
+  overlaps: [BigFloat!]
+}
+
+"""
+An arbitrary size integer represented as a string
+"""
+scalar BigInt
+
+"""
+Boolean expression comparing fields on type "BigInt"
+"""
+input BigIntFilter {
+  eq: BigInt
+
+  gt: BigInt
+
+  gte: BigInt
+
+  in: [BigInt!]
+
+  is: FilterIs
+
+  lt: BigInt
+
+  lte: BigInt
+
+  neq: BigInt
+}
+
+"""
+Boolean expression comparing fields on type "BigIntList"
+"""
+input BigIntListFilter {
+  containedBy: [BigInt!]
+
+  contains: [BigInt!]
+
+  eq: [BigInt!]
+
+  is: FilterIs
+
+  overlaps: [BigInt!]
+}
+
+"""
+Boolean expression comparing fields on type "Boolean"
+"""
+input BooleanFilter {
+  eq: Boolean
+
+  is: FilterIs
+}
+
+"""
+Boolean expression comparing fields on type "BooleanList"
+"""
+input BooleanListFilter {
+  containedBy: [Boolean!]
+
+  contains: [Boolean!]
+
+  eq: [Boolean!]
+
+  is: FilterIs
+
+  overlaps: [Boolean!]
+}
+
+"""
+An opaque string using for tracking a position in results during pagination
+"""
+scalar Cursor
+
+"""
+A date without time information
+"""
+scalar Date
+
+"""
+Boolean expression comparing fields on type "Date"
+"""
+input DateFilter {
+  eq: Date
+
+  gt: Date
+
+  gte: Date
+
+  in: [Date!]
+
+  is: FilterIs
+
+  lt: Date
+
+  lte: Date
+
+  neq: Date
+}
+
+"""
+Boolean expression comparing fields on type "DateList"
+"""
+input DateListFilter {
+  containedBy: [Date!]
+
+  contains: [Date!]
+
+  eq: [Date!]
+
+  is: FilterIs
+
+  overlaps: [Date!]
+}
+
+"""
+A date and time
+"""
+scalar Datetime
+
+"""
+Boolean expression comparing fields on type "Datetime"
+"""
+input DatetimeFilter {
+  eq: Datetime
+
+  gt: Datetime
+
+  gte: Datetime
+
+  in: [Datetime!]
+
+  is: FilterIs
+
+  lt: Datetime
+
+  lte: Datetime
+
+  neq: Datetime
+}
+
+"""
+Boolean expression comparing fields on type "DatetimeList"
+"""
+input DatetimeListFilter {
+  containedBy: [Datetime!]
+
+  contains: [Datetime!]
+
+  eq: [Datetime!]
+
+  is: FilterIs
+
+  overlaps: [Datetime!]
+}
+
+enum FilterIs {
+  NULL
+
+  NOT_NULL
+}
+
+"""
+Boolean expression comparing fields on type "Float"
+"""
+input FloatFilter {
+  eq: Float
+
+  gt: Float
+
+  gte: Float
+
+  in: [Float!]
+
+  is: FilterIs
+
+  lt: Float
+
+  lte: Float
+
+  neq: Float
+}
+
+"""
+Boolean expression comparing fields on type "FloatList"
+"""
+input FloatListFilter {
+  containedBy: [Float!]
+
+  contains: [Float!]
+
+  eq: [Float!]
+
+  is: FilterIs
+
+  overlaps: [Float!]
+}
+
+"""
+Boolean expression comparing fields on type "ID"
+"""
+input IDFilter {
+  eq: ID
+}
+
+"""
+Boolean expression comparing fields on type "Int"
+"""
+input IntFilter {
+  eq: Int
+
+  gt: Int
+
+  gte: Int
+
+  in: [Int!]
+
+  is: FilterIs
+
+  lt: Int
+
+  lte: Int
+
+  neq: Int
+}
+
+"""
+Boolean expression comparing fields on type "IntList"
+"""
+input IntListFilter {
+  containedBy: [Int!]
+
+  contains: [Int!]
+
+  eq: [Int!]
+
+  is: FilterIs
+
+  overlaps: [Int!]
+}
+
+"""
+A Javascript Object Notation value serialized as a string
+"""
+scalar JSON
+
+"""
+The root type for creating and mutating data
+"""
+type Mutation {
+  """
+  Deletes zero or more records from the `activities` collection
+  """
+  deleteFromactivitiesCollection("Restricts the mutation's impact to records matching the criteria" filter: activitiesFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): activitiesDeleteResponse!
+
+  """
+  Deletes zero or more records from the `activity_member` collection
+  """
+  deleteFromactivity_memberCollection("Restricts the mutation's impact to records matching the criteria" filter: activity_memberFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): activity_memberDeleteResponse!
+
+  """
+  Deletes zero or more records from the `admission` collection
+  """
+  deleteFromadmissionCollection("Restricts the mutation's impact to records matching the criteria" filter: admissionFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): admissionDeleteResponse!
+
+  """
+  Deletes zero or more records from the `app_labels` collection
+  """
+  deleteFromapp_labelsCollection("Restricts the mutation's impact to records matching the criteria" filter: app_labelsFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): app_labelsDeleteResponse!
+
+  """
+  Deletes zero or more records from the `book_orders` collection
+  """
+  deleteFrombook_ordersCollection("Restricts the mutation's impact to records matching the criteria" filter: book_ordersFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): book_ordersDeleteResponse!
+
+  """
+  Deletes zero or more records from the `learning` collection
+  """
+  deleteFromlearningCollection("Restricts the mutation's impact to records matching the criteria" filter: learningFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): learningDeleteResponse!
+
+  """
+  Deletes zero or more records from the `member` collection
+  """
+  deleteFrommemberCollection("Restricts the mutation's impact to records matching the criteria" filter: memberFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): memberDeleteResponse!
+
+  """
+  Deletes zero or more records from the `organisation` collection
+  """
+  deleteFromorganisationCollection("Restricts the mutation's impact to records matching the criteria" filter: organisationFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): organisationDeleteResponse!
+
+  """
+  Deletes zero or more records from the `organisational_activity` collection
+  """
+  deleteFromorganisational_activityCollection("Restricts the mutation's impact to records matching the criteria" filter: organisational_activityFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): organisational_activityDeleteResponse!
+
+  """
+  Deletes zero or more records from the `organisational_member` collection
+  """
+  deleteFromorganisational_memberCollection("Restricts the mutation's impact to records matching the criteria" filter: organisational_memberFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): organisational_memberDeleteResponse!
+
+  """
+  Deletes zero or more records from the `satr_registration` collection
+  """
+  deleteFromsatr_registrationCollection("Restricts the mutation's impact to records matching the criteria" filter: satr_registrationFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): satr_registrationDeleteResponse!
+
+  """
+  Adds one or more `activities` records to the collection
+  """
+  insertIntoactivitiesCollection(objects: [activitiesInsertInput!]!): activitiesInsertResponse
+
+  """
+  Adds one or more `activity_member` records to the collection
+  """
+  insertIntoactivity_memberCollection(objects: [activity_memberInsertInput!]!): activity_memberInsertResponse
+
+  """
+  Adds one or more `admission` records to the collection
+  """
+  insertIntoadmissionCollection(objects: [admissionInsertInput!]!): admissionInsertResponse
+
+  """
+  Adds one or more `app_labels` records to the collection
+  """
+  insertIntoapp_labelsCollection(objects: [app_labelsInsertInput!]!): app_labelsInsertResponse
+
+  """
+  Adds one or more `book_orders` records to the collection
+  """
+  insertIntobook_ordersCollection(objects: [book_ordersInsertInput!]!): book_ordersInsertResponse
+
+  """
+  Adds one or more `learning` records to the collection
+  """
+  insertIntolearningCollection(objects: [learningInsertInput!]!): learningInsertResponse
+
+  """
+  Adds one or more `member` records to the collection
+  """
+  insertIntomemberCollection(objects: [memberInsertInput!]!): memberInsertResponse
+
+  """
+  Adds one or more `organisation` records to the collection
+  """
+  insertIntoorganisationCollection(objects: [organisationInsertInput!]!): organisationInsertResponse
+
+  """
+  Adds one or more `organisational_activity` records to the collection
+  """
+  insertIntoorganisational_activityCollection(objects: [organisational_activityInsertInput!]!): organisational_activityInsertResponse
+
+  """
+  Adds one or more `organisational_member` records to the collection
+  """
+  insertIntoorganisational_memberCollection(objects: [organisational_memberInsertInput!]!): organisational_memberInsertResponse
+
+  """
+  Adds one or more `satr_registration` records to the collection
+  """
+  insertIntosatr_registrationCollection(objects: [satr_registrationInsertInput!]!): satr_registrationInsertResponse
+
+  """
+  Updates zero or more records in the `activities` collection
+  """
+  updateactivitiesCollection("Fields that are set will be updated for all records matching the `filter`" set: activitiesUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: activitiesFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): activitiesUpdateResponse!
+
+  """
+  Updates zero or more records in the `activity_member` collection
+  """
+  updateactivity_memberCollection("Fields that are set will be updated for all records matching the `filter`" set: activity_memberUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: activity_memberFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): activity_memberUpdateResponse!
+
+  """
+  Updates zero or more records in the `admission` collection
+  """
+  updateadmissionCollection("Fields that are set will be updated for all records matching the `filter`" set: admissionUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: admissionFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): admissionUpdateResponse!
+
+  """
+  Updates zero or more records in the `app_labels` collection
+  """
+  updateapp_labelsCollection("Fields that are set will be updated for all records matching the `filter`" set: app_labelsUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: app_labelsFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): app_labelsUpdateResponse!
+
+  """
+  Updates zero or more records in the `book_orders` collection
+  """
+  updatebook_ordersCollection("Fields that are set will be updated for all records matching the `filter`" set: book_ordersUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: book_ordersFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): book_ordersUpdateResponse!
+
+  """
+  Updates zero or more records in the `learning` collection
+  """
+  updatelearningCollection("Fields that are set will be updated for all records matching the `filter`" set: learningUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: learningFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): learningUpdateResponse!
+
+  """
+  Updates zero or more records in the `member` collection
+  """
+  updatememberCollection("Fields that are set will be updated for all records matching the `filter`" set: memberUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: memberFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): memberUpdateResponse!
+
+  """
+  Updates zero or more records in the `organisation` collection
+  """
+  updateorganisationCollection("Fields that are set will be updated for all records matching the `filter`" set: organisationUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: organisationFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): organisationUpdateResponse!
+
+  """
+  Updates zero or more records in the `organisational_activity` collection
+  """
+  updateorganisational_activityCollection("Fields that are set will be updated for all records matching the `filter`" set: organisational_activityUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: organisational_activityFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): organisational_activityUpdateResponse!
+
+  """
+  Updates zero or more records in the `organisational_member` collection
+  """
+  updateorganisational_memberCollection("Fields that are set will be updated for all records matching the `filter`" set: organisational_memberUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: organisational_memberFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): organisational_memberUpdateResponse!
+
+  """
+  Updates zero or more records in the `satr_registration` collection
+  """
+  updatesatr_registrationCollection("Fields that are set will be updated for all records matching the `filter`" set: satr_registrationUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: satr_registrationFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): satr_registrationUpdateResponse!
+}
+
+interface Node {
+  """
+  Retrieves a record by `ID`
+  """
+  nodeId: ID!
+}
+
+"""
+Any type not handled by the type system
+"""
+scalar Opaque
+
+"""
+Boolean expression comparing fields on type "Opaque"
+"""
+input OpaqueFilter {
+  eq: Opaque
+
+  is: FilterIs
+}
+
+"""
+Defines a per-field sorting order
+"""
+enum OrderByDirection {
+  """
+  Ascending order, nulls first
+  """
+  AscNullsFirst
+
+  """
+  Ascending order, nulls last
+  """
+  AscNullsLast
+
+  """
+  Descending order, nulls first
+  """
+  DescNullsFirst
+
+  """
+  Descending order, nulls last
+  """
+  DescNullsLast
+}
+
+type PageInfo {
+  endCursor: String
+
+  hasNextPage: Boolean!
+
+  hasPreviousPage: Boolean!
+
+  startCursor: String
+}
+
+"""
+The root type for querying data
+"""
+type Query {
+  """
+  A pagable collection of type `activities`
+  """
+  activitiesCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: activitiesFilter, "Sort order to apply to the collection" orderBy: [activitiesOrderBy!]): activitiesConnection
+
+  """
+  A pagable collection of type `activity_member`
+  """
+  activity_memberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: activity_memberFilter, "Sort order to apply to the collection" orderBy: [activity_memberOrderBy!]): activity_memberConnection
+
+  """
+  A pagable collection of type `admission`
+  """
+  admissionCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: admissionFilter, "Sort order to apply to the collection" orderBy: [admissionOrderBy!]): admissionConnection
+
+  """
+  A pagable collection of type `app_labels`
+  """
+  app_labelsCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: app_labelsFilter, "Sort order to apply to the collection" orderBy: [app_labelsOrderBy!]): app_labelsConnection
+
+  """
+  A pagable collection of type `book_orders`
+  """
+  book_ordersCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: book_ordersFilter, "Sort order to apply to the collection" orderBy: [book_ordersOrderBy!]): book_ordersConnection
+
+  """
+  A pagable collection of type `learning`
+  """
+  learningCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: learningFilter, "Sort order to apply to the collection" orderBy: [learningOrderBy!]): learningConnection
+
+  """
+  A pagable collection of type `member`
+  """
+  memberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: memberFilter, "Sort order to apply to the collection" orderBy: [memberOrderBy!]): memberConnection
+
+  """
+  Retrieve a record by its `ID`
+  """
+  node("The record's `ID`" nodeId: ID!): Node
+
+  """
+  A pagable collection of type `organisation`
+  """
+  organisationCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: organisationFilter, "Sort order to apply to the collection" orderBy: [organisationOrderBy!]): organisationConnection
+
+  """
+  A pagable collection of type `organisational_activity`
+  """
+  organisational_activityCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: organisational_activityFilter, "Sort order to apply to the collection" orderBy: [organisational_activityOrderBy!]): organisational_activityConnection
+
+  """
+  A pagable collection of type `organisational_member`
+  """
+  organisational_memberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: organisational_memberFilter, "Sort order to apply to the collection" orderBy: [organisational_memberOrderBy!]): organisational_memberConnection
+
+  """
+  A pagable collection of type `satr_registration`
+  """
+  satr_registrationCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: satr_registrationFilter, "Sort order to apply to the collection" orderBy: [satr_registrationOrderBy!]): satr_registrationConnection
+}
+
+"""
+Boolean expression comparing fields on type "String"
+"""
+input StringFilter {
+  eq: String
+
+  gt: String
+
+  gte: String
+
+  ilike: String
+
+  in: [String!]
+
+  iregex: String
+
+  is: FilterIs
+
+  like: String
+
+  lt: String
+
+  lte: String
+
+  neq: String
+
+  regex: String
+
+  startsWith: String
+}
+
+"""
+Boolean expression comparing fields on type "StringList"
+"""
+input StringListFilter {
+  containedBy: [String!]
+
+  contains: [String!]
+
+  eq: [String!]
+
+  is: FilterIs
+
+  overlaps: [String!]
+}
+
+"""
+A time without date information
+"""
+scalar Time
+
+"""
+Boolean expression comparing fields on type "Time"
+"""
+input TimeFilter {
+  eq: Time
+
+  gt: Time
+
+  gte: Time
+
+  in: [Time!]
+
+  is: FilterIs
+
+  lt: Time
+
+  lte: Time
+
+  neq: Time
+}
+
+"""
+Boolean expression comparing fields on type "TimeList"
+"""
+input TimeListFilter {
+  containedBy: [Time!]
+
+  contains: [Time!]
+
+  eq: [Time!]
+
+  is: FilterIs
+
+  overlaps: [Time!]
+}
+
+"""
+A universally unique identifier
+"""
+scalar UUID
+
+"""
+Boolean expression comparing fields on type "UUID"
+"""
+input UUIDFilter {
+  eq: UUID
+
+  in: [UUID!]
+
+  is: FilterIs
+
+  neq: UUID
+}
+
+"""
+Boolean expression comparing fields on type "UUIDList"
+"""
+input UUIDListFilter {
+  containedBy: [UUID!]
+
+  contains: [UUID!]
+
+  eq: [UUID!]
+
+  is: FilterIs
+
+  overlaps: [UUID!]
+}
+
+"""
+A Directive provides a way to describe alternate runtime execution and type validation behavior in a GraphQL document.\n\nIn some cases, you need to provide options to alter GraphQL execution behavior in ways field arguments will not suffice, such as conditionally including or skipping a field. Directives provide this by describing additional information to the executor.
+"""
+type __Directive {
+  args(includeDeprecated: Boolean = false): [__InputValue!]!
+
+  description: String
+
+  isRepeatable: Boolean!
+
+  locations: [__DirectiveLocation!]!
+
+  name: String!
+}
+
+"""
+A Directive can be adjacent to many parts of the GraphQL language, a __DirectiveLocation describes one such possible adjacencies.
+"""
+enum __DirectiveLocation {
+  """
+  Location adjacent to a query operation.
+  """
+  QUERY
+
+  """
+  Location adjacent to a mutation operation.
+  """
+  MUTATION
+
+  """
+  Location adjacent to a subscription operation.
+  """
+  SUBSCRIPTION
+
+  """
+  Location adjacent to a field.
+  """
+  FIELD
+
+  """
+  Location adjacent to a fragment definition.
+  """
+  FRAGMENT_DEFINITION
+
+  """
+  Location adjacent to a fragment spread.
+  """
+  FRAGMENT_SPREAD
+
+  """
+  Location adjacent to an inline fragment.
+  """
+  INLINE_FRAGMENT
+
+  """
+  Location adjacent to a variable definition.
+  """
+  VARIABLE_DEFINITION
+
+  """
+  Location adjacent to a schema definition.
+  """
+  SCHEMA
+
+  """
+  Location adjacent to a scalar definition.
+  """
+  SCALAR
+
+  """
+  Location adjacent to an object type definition.
+  """
+  OBJECT
+
+  """
+  Location adjacent to a field definition.
+  """
+  FIELD_DEFINITION
+
+  """
+  Location adjacent to an argument definition.
+  """
+  ARGUMENT_DEFINITION
+
+  """
+  Location adjacent to an interface definition.
+  """
+  INTERFACE
+
+  """
+  Location adjacent to a union definition.
+  """
+  UNION
+
+  """
+  Location adjacent to an enum definition.
+  """
+  ENUM
+
+  """
+  Location adjacent to an enum value definition.
+  """
+  ENUM_VALUE
+
+  """
+  Location adjacent to an input object type definition.
+  """
+  INPUT_OBJECT
+
+  """
+  Location adjacent to an input object field definition.
+  """
+  INPUT_FIELD_DEFINITION
+}
+
+"""
+One possible value for a given Enum. Enum values are unique values, not a placeholder for a string or numeric value. However an Enum value is returned in a JSON response as a string.
+"""
+type __EnumValue {
+  deprecationReason: String
+
+  description: String
+
+  isDeprecated: Boolean!
+
+  name: String!
+}
+
+"""
+Object and Interface types are described by a list of Fields, each of which has a name, potentially a list of arguments, and a return type.
+"""
+type __Field {
+  args(includeDeprecated: Boolean = false): [__InputValue!]!
+
+  deprecationReason: String
+
+  description: String
+
+  isDeprecated: Boolean!
+
+  name: String!
+
+  type: __Type!
+}
+
+"""
+Arguments provided to Fields or Directives and the input fields of an InputObject are represented as Input Values which describe their type and optionally a default value.
+"""
+type __InputValue {
+  """
+  A GraphQL-formatted string representing the default value for this input value.
+  """
+  defaultValue: String
+
+  deprecationReason: String
+
+  description: String
+
+  isDeprecated: Boolean!
+
+  name: String!
+
+  type: __Type!
+}
+
+"""
+A GraphQL Schema defines the capabilities of a GraphQL server. It exposes all available types and directives on the server, as well as the entry points for query, mutation, and subscription operations.
+"""
+type __Schema {
+  description: String
+
+  """
+  A list of all directives supported by this server.
+  """
+  directives(includeDeprecated: Boolean = false): [__Directive!]!
+
+  """
+  If this server supports mutation, the type that mutation operations will be rooted at.
+  """
+  mutationType: __Type
+
+  """
+  The type that query operations will be rooted at.
+  """
+  queryType: __Type!
+
+  """
+  If this server support subscription, the type that subscription operations will be rooted at.
+  """
+  subscriptionType: __Type
+
+  """
+  A list of all types supported by this server.
+  """
+  types: [__Type!]!
+}
+
+"""
+The fundamental unit of any GraphQL Schema is the type. There are many kinds of types in GraphQL as represented by the `__TypeKind` enum.\n\nDepending on the kind of a type, certain fields describe information about that type. Scalar types provide no information beyond a name, description and optional `specifiedByURL`, while Enum types provide their values. Object and Interface types provide the fields they describe. Abstract types, Union and Interface, provide the Object types possible at runtime. List and NonNull types compose other types 
+"""
+type __Type {
+  description: String
+
+  enumValues(includeDeprecated: Boolean = false): [__EnumValue!]
+
+  fields(includeDeprecated: Boolean = false): [__Field!]
+
+  inputFields(includeDeprecated: Boolean = false): [__InputValue!]
+
+  interfaces: [__Type!]
+
+  kind: __TypeKind!
+
+  name: String
+
+  ofType: __Type
+
+  possibleTypes: [__Type!]
+
+  specifiedByURL: String
+}
+
+"""
+An enum describing what kind of type a given `__Type` is.
+"""
+enum __TypeKind {
+  SCALAR
+
+  OBJECT
+
+  INTERFACE
+
+  UNION
+
+  ENUM
+
+  INPUT_OBJECT
+
+  LIST
+
+  NON_NULL
+}
+
+type activities implements Node {
+  """
+  Globally Unique Record Identifier
+  """
+  nodeId: ID!
+
+  id: String!
+
+  name: String
+
+  type: String
+
+  short_description: String
+
+  long_description: String
+
+  address: String
+
+  state: String
+
+  district: String
+
+  start_datetime: Datetime
+
+  end_datetime: Datetime
+
+  media_files: [String]!
+
+  additional_instructions: String
+
+  capacity: Int
+
+  latitude: Float
+
+  longitude: Float
+
+  allowed_gender: gender_filter
+
+  organisational_activityCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: organisational_activityFilter, "Sort order to apply to the collection" orderBy: [organisational_activityOrderBy!]): organisational_activityConnection
+
+  activity_memberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: activity_memberFilter, "Sort order to apply to the collection" orderBy: [activity_memberOrderBy!]): activity_memberConnection
+
+  satr_registrationCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: satr_registrationFilter, "Sort order to apply to the collection" orderBy: [satr_registrationOrderBy!]): satr_registrationConnection
+}
+
+type activitiesConnection {
+  edges: [activitiesEdge!]!
+
+  pageInfo: PageInfo!
+}
+
+type activitiesDeleteResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [activities!]!
+}
+
+type activitiesEdge {
+  cursor: String!
+
+  node: activities!
+}
+
+input activitiesFilter {
+  id: StringFilter
+
+  name: StringFilter
+
+  type: StringFilter
+
+  short_description: StringFilter
+
+  long_description: StringFilter
+
+  address: StringFilter
+
+  state: StringFilter
+
+  district: StringFilter
+
+  start_datetime: DatetimeFilter
+
+  end_datetime: DatetimeFilter
+
+  media_files: StringListFilter
+
+  additional_instructions: StringFilter
+
+  capacity: IntFilter
+
+  latitude: FloatFilter
+
+  longitude: FloatFilter
+
+  allowed_gender: gender_filterFilter
+
+  nodeId: IDFilter
+
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [activitiesFilter!]
+
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [activitiesFilter!]
+
+  """
+  Negates a filter
+  """
+  not: activitiesFilter
+}
+
+input activitiesInsertInput {
+  id: String
+
+  name: String
+
+  type: String
+
+  short_description: String
+
+  long_description: String
+
+  address: String
+
+  state: String
+
+  district: String
+
+  start_datetime: Datetime
+
+  end_datetime: Datetime
+
+  media_files: [String]
+
+  additional_instructions: String
+
+  capacity: Int
+
+  latitude: Float
+
+  longitude: Float
+
+  allowed_gender: gender_filter
+}
+
+type activitiesInsertResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [activities!]!
+}
+
+input activitiesOrderBy {
+  id: OrderByDirection
+
+  name: OrderByDirection
+
+  type: OrderByDirection
+
+  short_description: OrderByDirection
+
+  long_description: OrderByDirection
+
+  address: OrderByDirection
+
+  state: OrderByDirection
+
+  district: OrderByDirection
+
+  start_datetime: OrderByDirection
+
+  end_datetime: OrderByDirection
+
+  additional_instructions: OrderByDirection
+
+  capacity: OrderByDirection
+
+  latitude: OrderByDirection
+
+  longitude: OrderByDirection
+
+  allowed_gender: OrderByDirection
+}
+
+input activitiesUpdateInput {
+  id: String
+
+  name: String
+
+  type: String
+
+  short_description: String
+
+  long_description: String
+
+  address: String
+
+  state: String
+
+  district: String
+
+  start_datetime: Datetime
+
+  end_datetime: Datetime
+
+  media_files: [String]
+
+  additional_instructions: String
+
+  capacity: Int
+
+  latitude: Float
+
+  longitude: Float
+
+  allowed_gender: gender_filter
+}
+
+type activitiesUpdateResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [activities!]!
+}
+
+type activity_member implements Node {
+  """
+  Globally Unique Record Identifier
+  """
+  nodeId: ID!
+
+  id: UUID!
+
+  activity_id: String
+
+  member_id: String
+
+  post: String
+
+  priority: Int
+
+  member: member
+
+  activities: activities
+}
+
+type activity_memberConnection {
+  edges: [activity_memberEdge!]!
+
+  pageInfo: PageInfo!
+}
+
+type activity_memberDeleteResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [activity_member!]!
+}
+
+type activity_memberEdge {
+  cursor: String!
+
+  node: activity_member!
+}
+
+input activity_memberFilter {
+  id: UUIDFilter
+
+  activity_id: StringFilter
+
+  member_id: StringFilter
+
+  post: StringFilter
+
+  priority: IntFilter
+
+  nodeId: IDFilter
+
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [activity_memberFilter!]
+
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [activity_memberFilter!]
+
+  """
+  Negates a filter
+  """
+  not: activity_memberFilter
+}
+
+input activity_memberInsertInput {
+  id: UUID
+
+  activity_id: String
+
+  member_id: String
+
+  post: String
+
+  priority: Int
+}
+
+type activity_memberInsertResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [activity_member!]!
+}
+
+input activity_memberOrderBy {
+  id: OrderByDirection
+
+  activity_id: OrderByDirection
+
+  member_id: OrderByDirection
+
+  post: OrderByDirection
+
+  priority: OrderByDirection
+}
+
+input activity_memberUpdateInput {
+  id: UUID
+
+  activity_id: String
+
+  member_id: String
+
+  post: String
+
+  priority: Int
+}
+
+type activity_memberUpdateResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [activity_member!]!
+}
+
+type admission implements Node {
+  """
+  Globally Unique Record Identifier
+  """
+  nodeId: ID!
+
+  id: String!
+
+  studentName: String
+
+  aadharNo: String
+
+  dob: String
+
+  bloodGroup: String
+
+  previousClass: String
+
+  marksObtained: String
+
+  schoolName: String
+
+  fatherName: String
+
+  fatherOccupation: String
+
+  fatherQualification: String
+
+  motherName: String
+
+  motherOccupation: String
+
+  motherQualification: String
+
+  fullAddress: String
+
+  mobileNo: String
+
+  alternateMobileNo: String
+
+  attachedDocuments: [String]
+
+  studentPhoto: String
+
+  studentSignature: String
+
+  parentSignature: String
+}
+
+type admissionConnection {
+  edges: [admissionEdge!]!
+
+  pageInfo: PageInfo!
+}
+
+type admissionDeleteResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [admission!]!
+}
+
+type admissionEdge {
+  cursor: String!
+
+  node: admission!
+}
+
+input admissionFilter {
+  id: StringFilter
+
+  studentName: StringFilter
+
+  aadharNo: StringFilter
+
+  dob: StringFilter
+
+  bloodGroup: StringFilter
+
+  previousClass: StringFilter
+
+  marksObtained: StringFilter
+
+  schoolName: StringFilter
+
+  fatherName: StringFilter
+
+  fatherOccupation: StringFilter
+
+  fatherQualification: StringFilter
+
+  motherName: StringFilter
+
+  motherOccupation: StringFilter
+
+  motherQualification: StringFilter
+
+  fullAddress: StringFilter
+
+  mobileNo: StringFilter
+
+  alternateMobileNo: StringFilter
+
+  attachedDocuments: StringListFilter
+
+  studentPhoto: StringFilter
+
+  studentSignature: StringFilter
+
+  parentSignature: StringFilter
+
+  nodeId: IDFilter
+
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [admissionFilter!]
+
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [admissionFilter!]
+
+  """
+  Negates a filter
+  """
+  not: admissionFilter
+}
+
+input admissionInsertInput {
+  id: String
+
+  studentName: String
+
+  aadharNo: String
+
+  dob: String
+
+  bloodGroup: String
+
+  previousClass: String
+
+  marksObtained: String
+
+  schoolName: String
+
+  fatherName: String
+
+  fatherOccupation: String
+
+  fatherQualification: String
+
+  motherName: String
+
+  motherOccupation: String
+
+  motherQualification: String
+
+  fullAddress: String
+
+  mobileNo: String
+
+  alternateMobileNo: String
+
+  attachedDocuments: [String]
+
+  studentPhoto: String
+
+  studentSignature: String
+
+  parentSignature: String
+}
+
+type admissionInsertResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [admission!]!
+}
+
+input admissionOrderBy {
+  id: OrderByDirection
+
+  studentName: OrderByDirection
+
+  aadharNo: OrderByDirection
+
+  dob: OrderByDirection
+
+  bloodGroup: OrderByDirection
+
+  previousClass: OrderByDirection
+
+  marksObtained: OrderByDirection
+
+  schoolName: OrderByDirection
+
+  fatherName: OrderByDirection
+
+  fatherOccupation: OrderByDirection
+
+  fatherQualification: OrderByDirection
+
+  motherName: OrderByDirection
+
+  motherOccupation: OrderByDirection
+
+  motherQualification: OrderByDirection
+
+  fullAddress: OrderByDirection
+
+  mobileNo: OrderByDirection
+
+  alternateMobileNo: OrderByDirection
+
+  studentPhoto: OrderByDirection
+
+  studentSignature: OrderByDirection
+
+  parentSignature: OrderByDirection
+}
+
+input admissionUpdateInput {
+  id: String
+
+  studentName: String
+
+  aadharNo: String
+
+  dob: String
+
+  bloodGroup: String
+
+  previousClass: String
+
+  marksObtained: String
+
+  schoolName: String
+
+  fatherName: String
+
+  fatherOccupation: String
+
+  fatherQualification: String
+
+  motherName: String
+
+  motherOccupation: String
+
+  motherQualification: String
+
+  fullAddress: String
+
+  mobileNo: String
+
+  alternateMobileNo: String
+
+  attachedDocuments: [String]
+
+  studentPhoto: String
+
+  studentSignature: String
+
+  parentSignature: String
+}
+
+type admissionUpdateResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [admission!]!
+}
+
+type app_labels implements Node {
+  """
+  Globally Unique Record Identifier
+  """
+  nodeId: ID!
+
+  id: UUID!
+
+  created_at: Datetime!
+
+  label_key: String
+
+  label_value: String
+}
+
+type app_labelsConnection {
+  edges: [app_labelsEdge!]!
+
+  pageInfo: PageInfo!
+}
+
+type app_labelsDeleteResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [app_labels!]!
+}
+
+type app_labelsEdge {
+  cursor: String!
+
+  node: app_labels!
+}
+
+input app_labelsFilter {
+  id: UUIDFilter
+
+  created_at: DatetimeFilter
+
+  label_key: StringFilter
+
+  label_value: StringFilter
+
+  nodeId: IDFilter
+
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [app_labelsFilter!]
+
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [app_labelsFilter!]
+
+  """
+  Negates a filter
+  """
+  not: app_labelsFilter
+}
+
+input app_labelsInsertInput {
+  id: UUID
+
+  created_at: Datetime
+
+  label_key: String
+
+  label_value: String
+}
+
+type app_labelsInsertResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [app_labels!]!
+}
+
+input app_labelsOrderBy {
+  id: OrderByDirection
+
+  created_at: OrderByDirection
+
+  label_key: OrderByDirection
+
+  label_value: OrderByDirection
+}
+
+input app_labelsUpdateInput {
+  id: UUID
+
+  created_at: Datetime
+
+  label_key: String
+
+  label_value: String
+}
+
+type app_labelsUpdateResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [app_labels!]!
+}
+
+type book_orders implements Node {
+  """
+  Globally Unique Record Identifier
+  """
+  nodeId: ID!
+
+  id: UUID!
+
+  fullname: String!
+
+  address: String
+
+  city: String
+
+  district: String
+
+  state: String
+
+  mobile: String
+
+  pincode: String
+
+  country: String
+
+  district_officer_name: String
+
+  district_officer_number: String
+
+  payment_receipt_url: String
+
+  is_fulfilled: Boolean
+
+  created_at: Datetime
+}
+
+type book_ordersConnection {
+  edges: [book_ordersEdge!]!
+
+  pageInfo: PageInfo!
+}
+
+type book_ordersDeleteResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [book_orders!]!
+}
+
+type book_ordersEdge {
+  cursor: String!
+
+  node: book_orders!
+}
+
+input book_ordersFilter {
+  id: UUIDFilter
+
+  fullname: StringFilter
+
+  address: StringFilter
+
+  city: StringFilter
+
+  district: StringFilter
+
+  state: StringFilter
+
+  mobile: StringFilter
+
+  pincode: StringFilter
+
+  country: StringFilter
+
+  district_officer_name: StringFilter
+
+  district_officer_number: StringFilter
+
+  payment_receipt_url: StringFilter
+
+  is_fulfilled: BooleanFilter
+
+  created_at: DatetimeFilter
+
+  nodeId: IDFilter
+
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [book_ordersFilter!]
+
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [book_ordersFilter!]
+
+  """
+  Negates a filter
+  """
+  not: book_ordersFilter
+}
+
+input book_ordersInsertInput {
+  id: UUID
+
+  fullname: String
+
+  address: String
+
+  city: String
+
+  district: String
+
+  state: String
+
+  mobile: String
+
+  pincode: String
+
+  country: String
+
+  district_officer_name: String
+
+  district_officer_number: String
+
+  payment_receipt_url: String
+
+  is_fulfilled: Boolean
+
+  created_at: Datetime
+}
+
+type book_ordersInsertResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [book_orders!]!
+}
+
+input book_ordersOrderBy {
+  id: OrderByDirection
+
+  fullname: OrderByDirection
+
+  address: OrderByDirection
+
+  city: OrderByDirection
+
+  district: OrderByDirection
+
+  state: OrderByDirection
+
+  mobile: OrderByDirection
+
+  pincode: OrderByDirection
+
+  country: OrderByDirection
+
+  district_officer_name: OrderByDirection
+
+  district_officer_number: OrderByDirection
+
+  payment_receipt_url: OrderByDirection
+
+  is_fulfilled: OrderByDirection
+
+  created_at: OrderByDirection
+}
+
+input book_ordersUpdateInput {
+  id: UUID
+
+  fullname: String
+
+  address: String
+
+  city: String
+
+  district: String
+
+  state: String
+
+  mobile: String
+
+  pincode: String
+
+  country: String
+
+  district_officer_name: String
+
+  district_officer_number: String
+
+  payment_receipt_url: String
+
+  is_fulfilled: Boolean
+
+  created_at: Datetime
+}
+
+type book_ordersUpdateResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [book_orders!]!
+}
+
+enum gender_filter {
+  male
+
+  female
+
+  any
+}
+
+"""
+Boolean expression comparing fields on type "gender_filter"
+"""
+input gender_filterFilter {
+  eq: gender_filter
+
+  in: [gender_filter!]
+
+  is: FilterIs
+
+  neq: gender_filter
+}
+
+type learning implements Node {
+  """
+  Globally Unique Record Identifier
+  """
+  nodeId: ID!
+
+  id: String!
+
+  title: String
+
+  description: String
+
+  url: String
+
+  thumbnail_url: String
+
+  video_id: String
+}
+
+type learningConnection {
+  edges: [learningEdge!]!
+
+  pageInfo: PageInfo!
+}
+
+type learningDeleteResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [learning!]!
+}
+
+type learningEdge {
+  cursor: String!
+
+  node: learning!
+}
+
+input learningFilter {
+  id: StringFilter
+
+  title: StringFilter
+
+  description: StringFilter
+
+  url: StringFilter
+
+  thumbnail_url: StringFilter
+
+  video_id: StringFilter
+
+  nodeId: IDFilter
+
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [learningFilter!]
+
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [learningFilter!]
+
+  """
+  Negates a filter
+  """
+  not: learningFilter
+}
+
+input learningInsertInput {
+  id: String
+
+  title: String
+
+  description: String
+
+  url: String
+
+  thumbnail_url: String
+
+  video_id: String
+}
+
+type learningInsertResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [learning!]!
+}
+
+input learningOrderBy {
+  id: OrderByDirection
+
+  title: OrderByDirection
+
+  description: OrderByDirection
+
+  url: OrderByDirection
+
+  thumbnail_url: OrderByDirection
+
+  video_id: OrderByDirection
+}
+
+input learningUpdateInput {
+  id: String
+
+  title: String
+
+  description: String
+
+  url: String
+
+  thumbnail_url: String
+
+  video_id: String
+}
+
+type learningUpdateResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [learning!]!
+}
+
+type member implements Node {
+  """
+  Globally Unique Record Identifier
+  """
+  nodeId: ID!
+
+  id: String!
+
+  name: String
+
+  profile_image: String
+
+  educational_qualification: String
+
+  phone_number: String
+
+  email: String
+
+  organisational_memberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: organisational_memberFilter, "Sort order to apply to the collection" orderBy: [organisational_memberOrderBy!]): organisational_memberConnection
+
+  activity_memberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: activity_memberFilter, "Sort order to apply to the collection" orderBy: [activity_memberOrderBy!]): activity_memberConnection
+}
+
+type memberConnection {
+  edges: [memberEdge!]!
+
+  pageInfo: PageInfo!
+}
+
+type memberDeleteResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [member!]!
+}
+
+type memberEdge {
+  cursor: String!
+
+  node: member!
+}
+
+input memberFilter {
+  id: StringFilter
+
+  name: StringFilter
+
+  profile_image: StringFilter
+
+  educational_qualification: StringFilter
+
+  phone_number: StringFilter
+
+  email: StringFilter
+
+  nodeId: IDFilter
+
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [memberFilter!]
+
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [memberFilter!]
+
+  """
+  Negates a filter
+  """
+  not: memberFilter
+}
+
+input memberInsertInput {
+  id: String
+
+  name: String
+
+  profile_image: String
+
+  educational_qualification: String
+
+  phone_number: String
+
+  email: String
+}
+
+type memberInsertResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [member!]!
+}
+
+input memberOrderBy {
+  id: OrderByDirection
+
+  name: OrderByDirection
+
+  profile_image: OrderByDirection
+
+  educational_qualification: OrderByDirection
+
+  phone_number: OrderByDirection
+
+  email: OrderByDirection
+}
+
+input memberUpdateInput {
+  id: String
+
+  name: String
+
+  profile_image: String
+
+  educational_qualification: String
+
+  phone_number: String
+
+  email: String
+}
+
+type memberUpdateResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [member!]!
+}
+
+type organisation implements Node {
+  """
+  Globally Unique Record Identifier
+  """
+  nodeId: ID!
+
+  id: String!
+
+  name: String
+
+  logo: String
+
+  description: String
+
+  organisational_memberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: organisational_memberFilter, "Sort order to apply to the collection" orderBy: [organisational_memberOrderBy!]): organisational_memberConnection
+
+  organisational_activityCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: organisational_activityFilter, "Sort order to apply to the collection" orderBy: [organisational_activityOrderBy!]): organisational_activityConnection
+}
+
+type organisationConnection {
+  edges: [organisationEdge!]!
+
+  pageInfo: PageInfo!
+}
+
+type organisationDeleteResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [organisation!]!
+}
+
+type organisationEdge {
+  cursor: String!
+
+  node: organisation!
+}
+
+input organisationFilter {
+  id: StringFilter
+
+  name: StringFilter
+
+  logo: StringFilter
+
+  description: StringFilter
+
+  nodeId: IDFilter
+
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [organisationFilter!]
+
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [organisationFilter!]
+
+  """
+  Negates a filter
+  """
+  not: organisationFilter
+}
+
+input organisationInsertInput {
+  id: String
+
+  name: String
+
+  logo: String
+
+  description: String
+}
+
+type organisationInsertResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [organisation!]!
+}
+
+input organisationOrderBy {
+  id: OrderByDirection
+
+  name: OrderByDirection
+
+  logo: OrderByDirection
+
+  description: OrderByDirection
+}
+
+input organisationUpdateInput {
+  id: String
+
+  name: String
+
+  logo: String
+
+  description: String
+}
+
+type organisationUpdateResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [organisation!]!
+}
+
+type organisational_activity implements Node {
+  """
+  Globally Unique Record Identifier
+  """
+  nodeId: ID!
+
+  id: String!
+
+  activity_id: String
+
+  organisation_id: String
+
+  organisation: organisation
+
+  activities: activities
+}
+
+type organisational_activityConnection {
+  edges: [organisational_activityEdge!]!
+
+  pageInfo: PageInfo!
+}
+
+type organisational_activityDeleteResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [organisational_activity!]!
+}
+
+type organisational_activityEdge {
+  cursor: String!
+
+  node: organisational_activity!
+}
+
+input organisational_activityFilter {
+  id: StringFilter
+
+  activity_id: StringFilter
+
+  organisation_id: StringFilter
+
+  nodeId: IDFilter
+
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [organisational_activityFilter!]
+
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [organisational_activityFilter!]
+
+  """
+  Negates a filter
+  """
+  not: organisational_activityFilter
+}
+
+input organisational_activityInsertInput {
+  id: String
+
+  activity_id: String
+
+  organisation_id: String
+}
+
+type organisational_activityInsertResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [organisational_activity!]!
+}
+
+input organisational_activityOrderBy {
+  id: OrderByDirection
+
+  activity_id: OrderByDirection
+
+  organisation_id: OrderByDirection
+}
+
+input organisational_activityUpdateInput {
+  id: String
+
+  activity_id: String
+
+  organisation_id: String
+}
+
+type organisational_activityUpdateResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [organisational_activity!]!
+}
+
+type organisational_member implements Node {
+  """
+  Globally Unique Record Identifier
+  """
+  nodeId: ID!
+
+  id: String!
+
+  organisation_id: String!
+
+  member_id: String!
+
+  post: String
+
+  priority: Int
+
+  organisation: organisation!
+
+  member: member!
+}
+
+type organisational_memberConnection {
+  edges: [organisational_memberEdge!]!
+
+  pageInfo: PageInfo!
+}
+
+type organisational_memberDeleteResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [organisational_member!]!
+}
+
+type organisational_memberEdge {
+  cursor: String!
+
+  node: organisational_member!
+}
+
+input organisational_memberFilter {
+  id: StringFilter
+
+  organisation_id: StringFilter
+
+  member_id: StringFilter
+
+  post: StringFilter
+
+  priority: IntFilter
+
+  nodeId: IDFilter
+
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [organisational_memberFilter!]
+
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [organisational_memberFilter!]
+
+  """
+  Negates a filter
+  """
+  not: organisational_memberFilter
+}
+
+input organisational_memberInsertInput {
+  id: String
+
+  organisation_id: String
+
+  member_id: String
+
+  post: String
+
+  priority: Int
+}
+
+type organisational_memberInsertResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [organisational_member!]!
+}
+
+input organisational_memberOrderBy {
+  id: OrderByDirection
+
+  organisation_id: OrderByDirection
+
+  member_id: OrderByDirection
+
+  post: OrderByDirection
+
+  priority: OrderByDirection
+}
+
+input organisational_memberUpdateInput {
+  id: String
+
+  organisation_id: String
+
+  member_id: String
+
+  post: String
+
+  priority: Int
+}
+
+type organisational_memberUpdateResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [organisational_member!]!
+}
+
+type satr_registration implements Node {
+  """
+  Globally Unique Record Identifier
+  """
+  nodeId: ID!
+
+  id: UUID!
+
+  created_at: Datetime!
+
+  fullname: String
+
+  gender: String
+
+  mobile: String
+
+  aadhar_no: String
+
+  educational_qualification: String
+
+  address: String
+
+  inspiration_source: String
+
+  inspiration_source_name: String
+
+  inspiration_source_no: String
+
+  has_trained_arya_in_family: Boolean
+
+  trained_arya_name: String
+
+  trained_arya_no: String
+
+  activity_id: String!
+
+  activities: activities!
+}
+
+type satr_registrationConnection {
+  edges: [satr_registrationEdge!]!
+
+  pageInfo: PageInfo!
+}
+
+type satr_registrationDeleteResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [satr_registration!]!
+}
+
+type satr_registrationEdge {
+  cursor: String!
+
+  node: satr_registration!
+}
+
+input satr_registrationFilter {
+  id: UUIDFilter
+
+  created_at: DatetimeFilter
+
+  fullname: StringFilter
+
+  gender: StringFilter
+
+  mobile: StringFilter
+
+  aadhar_no: StringFilter
+
+  educational_qualification: StringFilter
+
+  address: StringFilter
+
+  inspiration_source: StringFilter
+
+  inspiration_source_name: StringFilter
+
+  inspiration_source_no: StringFilter
+
+  has_trained_arya_in_family: BooleanFilter
+
+  trained_arya_name: StringFilter
+
+  trained_arya_no: StringFilter
+
+  activity_id: StringFilter
+
+  nodeId: IDFilter
+
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [satr_registrationFilter!]
+
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [satr_registrationFilter!]
+
+  """
+  Negates a filter
+  """
+  not: satr_registrationFilter
+}
+
+input satr_registrationInsertInput {
+  id: UUID
+
+  created_at: Datetime
+
+  fullname: String
+
+  gender: String
+
+  mobile: String
+
+  aadhar_no: String
+
+  educational_qualification: String
+
+  address: String
+
+  inspiration_source: String
+
+  inspiration_source_name: String
+
+  inspiration_source_no: String
+
+  has_trained_arya_in_family: Boolean
+
+  trained_arya_name: String
+
+  trained_arya_no: String
+
+  activity_id: String
+}
+
+type satr_registrationInsertResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [satr_registration!]!
+}
+
+input satr_registrationOrderBy {
+  id: OrderByDirection
+
+  created_at: OrderByDirection
+
+  fullname: OrderByDirection
+
+  gender: OrderByDirection
+
+  mobile: OrderByDirection
+
+  aadhar_no: OrderByDirection
+
+  educational_qualification: OrderByDirection
+
+  address: OrderByDirection
+
+  inspiration_source: OrderByDirection
+
+  inspiration_source_name: OrderByDirection
+
+  inspiration_source_no: OrderByDirection
+
+  has_trained_arya_in_family: OrderByDirection
+
+  trained_arya_name: OrderByDirection
+
+  trained_arya_no: OrderByDirection
+
+  activity_id: OrderByDirection
+}
+
+input satr_registrationUpdateInput {
+  id: UUID
+
+  created_at: Datetime
+
+  fullname: String
+
+  gender: String
+
+  mobile: String
+
+  aadhar_no: String
+
+  educational_qualification: String
+
+  address: String
+
+  inspiration_source: String
+
+  inspiration_source_name: String
+
+  inspiration_source_no: String
+
+  has_trained_arya_in_family: Boolean
+
+  trained_arya_name: String
+
+  trained_arya_no: String
+
+  activity_id: String
+}
+
+type satr_registrationUpdateResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [satr_registration!]!
+}
+
+"""
+This field or fragment will be included only when the `if` argument is true.
+"""
+directive @include ("Included when true" if: Boolean!) on FIELD|FRAGMENT_SPREAD|INLINE_FRAGMENT
+
+"""
+This field or fragment will be skipped when the `if` argument is true.
+"""
+directive @skip ("Skipped when true" if: Boolean!) on FIELD|FRAGMENT_SPREAD|INLINE_FRAGMENT
+
+schema {
+  query: Query
+  mutation: Mutation
+}

@@ -78,21 +78,29 @@ query LearningItem($filter: learningFilter) {
         id
         thumbnail_url
         title
+        video_id
+        url
+        description
       }
     }
   }
 }
+
+fragment OrganisationalActivityShort on activities {
+  id
+  name
+  short_description
+  start_datetime
+  end_datetime
+  type
+  district
+}
+
 query OrganisationalActivities($filter: activitiesFilter){
   activitiesCollection(filter: $filter){
     edges{
       node{
-        id
-        name
-        short_description
-        start_datetime
-        end_datetime
-        type
-        district
+        ...OrganisationalActivityShort
       }
     }
   }
@@ -102,18 +110,16 @@ query OrganisationalActivityDetail($filter: activitiesFilter){
   activitiesCollection(filter: $filter){
     edges{
       node{
-        id
-        name
-        short_description
+        ...OrganisationalActivityShort
         long_description
-        start_datetime
-        end_datetime
-        type
         address
         state
-        district
         media_files
         additional_instructions
+        capacity
+        latitude
+        longitude
+        allowed_gender
         organisational_activityCollection{
           edges{
             node{
@@ -132,6 +138,7 @@ query OrganisationalActivityDetail($filter: activitiesFilter){
               post
               priority
               member{
+                id
                 name
                 profile_image
                 phone_number
@@ -164,29 +171,6 @@ query AppLabel($labelKey: String!){
       node{
         id
         label_value
-      }
-    }
-  }
-}
-
-query BookOrders {
-  book_ordersCollection {
-    edges {
-      node {
-        id
-        fullname
-        address
-        city
-        district
-        state
-        pincode
-        country
-        mobile
-        district_officer_name
-        district_officer_number
-        payment_receipt_url
-        created_at
-        is_fulfilled
       }
     }
   }

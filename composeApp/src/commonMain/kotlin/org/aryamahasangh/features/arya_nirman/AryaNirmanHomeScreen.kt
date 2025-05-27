@@ -1,4 +1,4 @@
-package org.aryamahasangh.screens
+package org.aryamahasangh.features.arya_nirman
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.Button
@@ -15,9 +15,7 @@ import com.apollographql.apollo.api.Optional
 import org.aryamahasangh.components.EventListItem
 import org.aryamahasangh.components.activityListItemsWithActions
 import org.aryamahasangh.components.dummyDirectionsCallback
-import org.aryamahasangh.type.ActivityFilterInput
-import org.aryamahasangh.type.ActivityPeriod
-import org.aryamahasangh.type.ActivityType
+import org.aryamahasangh.features.activities.ActivityType
 import org.aryamahasangh.viewmodel.JoinUsViewModel
 
 @Composable
@@ -25,11 +23,7 @@ fun AryaNirmanHomeScreen(
   viewModel: JoinUsViewModel,
   onNavigateToRegistrationForm: () -> Unit) {
   LaunchedEffect(Unit){
-    val activityFilter = ActivityFilterInput(
-      type = Optional.present(ActivityType.SESSION),
-      activityPeriod = Optional.present(ActivityPeriod.FUTURE)
-    )
-    viewModel.loadFilteredActivities(activityFilter)
+    viewModel.loadFilteredActivities("", "")
   }
   val uiState by viewModel.uiState.collectAsState()
   Column(modifier = Modifier.padding(8.dp)){
@@ -64,10 +58,6 @@ fun AryaNirmanHomeScreen(
         ) {
           Text("Failed to load activities")
           Button(onClick = {
-            val activityFilter = ActivityFilterInput(
-              type = Optional.present(ActivityType.SESSION),
-              activityPeriod = Optional.present(ActivityPeriod.FUTURE)
-            )
             //loadFilteredActivities(activityFilter)
           }) {
             Text("Retry")

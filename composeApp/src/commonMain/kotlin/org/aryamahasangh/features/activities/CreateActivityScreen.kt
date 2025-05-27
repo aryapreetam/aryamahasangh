@@ -1,6 +1,8 @@
-package org.aryamahasangh.screens
+package org.aryamahasangh.features.activities
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -29,13 +31,8 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 import kotlinx.datetime.Clock.System
 import org.aryamahasangh.LocalSnackbarHostState
-import org.aryamahasangh.OrganisationsAndMembersQuery
-import org.aryamahasangh.OrganisationsAndMembersQuery.Member
-import org.aryamahasangh.OrganisationsAndMembersQuery.Organisation
 import org.aryamahasangh.network.bucket
-import org.aryamahasangh.type.ActivityType
-import org.aryamahasangh.type.OrganisationActivityInput
-import org.aryamahasangh.viewmodel.ActivitiesViewModel
+import org.aryamahasangh.screens.*
 import org.koin.compose.koinInject
 
 val stringToActivityTypeMap = mapOf(
@@ -63,8 +60,8 @@ fun CreateActivityScreen(viewModel: ActivitiesViewModel = koinInject()) {
 @Composable
 fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
 
-  var organisations by remember { mutableStateOf(emptyList<OrganisationsAndMembersQuery.Organisation>()) }
-  var members by remember { mutableStateOf(emptyList<OrganisationsAndMembersQuery.Member>()) }
+  var organisations by remember { mutableStateOf(emptyList<Organisation>()) }
+  var members by remember { mutableStateOf(emptyList<Member>()) }
 
   // Collect organizations and members from ViewModel
   val organisationsAndMembersState by viewModel.organisationsAndMembersState.collectAsState()
@@ -234,7 +231,7 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
         try {
           attachedDocuments.forEach {
             val uploadResponse = bucket.upload(
-              path = "${Clock.System.now().epochSeconds}.jpg",
+              path = "${System.now().epochSeconds}.jpg",
               data = it.readBytes()
             )
             attachedImages.add(bucket.publicUrl(uploadResponse.path))
@@ -247,24 +244,27 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
           println("error uploading files: $e")
           return@launch
         }
-
-        val inp = OrganisationActivityInput(
+        val inp = ActivityInputData(
           name = name,
           shortDescription = shortDescription,
           longDescription = description,
-          activityType = stringToActivityTypeMap[selectedType!!]!!,
+          type = stringToActivityTypeMap[selectedType!!]!!,
           address = address,
           state = state,
           district = district,
-          associatedOrganisations = associatedOrganisations.map { it.id },
-          startDateTime = startDate?.atTime(startTime!!).toString(),
-          endDateTime = endDate?.atTime(endTime!!).toString(),
+          associatedOrganisations = associatedOrganisations.toList(),
+          startDatetime = startDate?.atTime(startTime!!)!!,
+          endDatetime = endDate?.atTime(endTime!!)!!,
           mediaFiles = attachedImages,
           contactPeople = contactPeople.map {
             val (role, priority) = postMap[it.id] ?: Pair("", 0)
-            listOf(it.id, role, priority.toString())
+            ActivityMember(it.id, role, it,priority)
           },
-          additionalInstructions = additionalInstructions
+          additionalInstructions = additionalInstructions,
+          capacity = 100,
+          allowedGender = "any",
+          latitude = null,
+          longitude = null,
         )
 
         // Submit form using ViewModel
@@ -681,7 +681,7 @@ fun CustomDatePickerDialog(
   onDismissRequest: () -> Unit,
   disablePastDates: Boolean = true
 ) {
-  val today = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+  val today = System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
   val datePickerState = rememberDatePickerState(
     selectableDates = if (disablePastDates) {
@@ -852,7 +852,7 @@ fun ContactPeopleDropdown(
               modifier = Modifier.padding(vertical = 12.dp),
               Arrangement.spacedBy(8.dp)
             ) {
-              if (member.profileImage.isNotEmpty()) {
+              if (!member.profileImage.isNullOrEmpty()) {
                 AsyncImage(
                   model = ImageRequest.Builder(LocalPlatformContext.current)
                     .data(member.profileImage)
@@ -934,7 +934,7 @@ fun ContactPeopleDropdown(
 //              expanded = false
             },
             leadingIcon = {
-              if (member.profileImage.isNotEmpty()) {
+              if (!member.profileImage.isNullOrEmpty()) {
                 AsyncImage(
                   model = ImageRequest.Builder(LocalPlatformContext.current)
                     .data(member.profileImage)
@@ -1035,11 +1035,11 @@ fun CustomTextField(
         )
       }
     },
-    interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    interactionSource = remember { MutableInteractionSource() }
       .also { interactionSource ->
         LaunchedEffect(interactionSource) {
           interactionSource.interactions.collect { interaction ->
-            if (interaction is androidx.compose.foundation.interaction.PressInteraction.Release) {
+            if (interaction is PressInteraction.Release) {
               onClick()
             }
           }

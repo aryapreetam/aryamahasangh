@@ -1,5 +1,7 @@
 package org.aryamahasangh.di
 
+import org.aryamahasangh.features.activities.ActivitiesViewModel
+import org.aryamahasangh.features.organisations.OrganisationsViewModel
 import org.aryamahasangh.viewmodel.*
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module

@@ -16,9 +16,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.burnoo.compose.remembersetting.rememberBooleanSetting
-import org.aryamahasangh.OrganisationalActivitiesQuery.OrganisationalActivity
 import org.aryamahasangh.SettingKeys
-import org.aryamahasangh.type.ActivityType
+import org.aryamahasangh.features.activities.ActivityType
+import org.aryamahasangh.features.activities.OrganisationalActivity
+import org.aryamahasangh.features.activities.OrganisationalActivityShort
 import org.aryamahasangh.utils.formatShort
 
 val activityTypeData = mapOf(
@@ -28,30 +29,15 @@ val activityTypeData = mapOf(
   ActivityType.SESSION to "सत्र"
 )
 
-//@Preview
-//@Composable
-//fun ActivityListItemPreview() {
-//  val data = OrganisationalActivity(
-//    id = "3",
-//    name = "आर्य प्रशिक्षण सत्र",
-//    description = "महान संत परम्पराओं को जानने का बौद्धिक प्रकल्प",
-//    startDateTime = "2025-05-10T14:00:00",
-//    endDateTime = "2025-05-10T15:00:00",
-//    activityType = ActivityType.SESSION,
-//    district = "Bangalore"
-//  )
-//  ActivityListItem(data){}
-//}
-
 @Composable
 fun ActivityListItem(
-  activity: OrganisationalActivity,
+  activity: OrganisationalActivityShort,
   handleOnClick: () -> Unit = {},
   handleDeleteActivity: () -> Unit = {}
 ) {
 
-  val startDate = formatShort(activity.startDateTime)
-  val endDate = formatShort(activity.endDateTime)
+  val startDate = formatShort(activity.startDatetime)
+  val endDate = formatShort(activity.endDatetime)
   var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
   var showConfirmDialog by remember { mutableStateOf(false) }
 
@@ -72,7 +58,7 @@ fun ActivityListItem(
         Spacer(modifier = Modifier.height(2.dp))
         Text(
           modifier = Modifier.background(MaterialTheme.colorScheme.outlineVariant).padding(vertical = 1.dp, horizontal = 8.dp),
-          text = "${activityTypeData[activity.activityType]}", style = MaterialTheme.typography.bodyLarge)
+          text = "${activityTypeData[activity.type]}", style = MaterialTheme.typography.bodyLarge)
         Spacer(modifier = Modifier.height(4.dp))
         Text(text = activity.shortDescription, style = MaterialTheme.typography.bodyMedium,
           maxLines = 1)

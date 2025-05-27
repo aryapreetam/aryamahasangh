@@ -1,4 +1,4 @@
-package org.aryamahasangh.screens
+package org.aryamahasangh.features.organisations
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Button

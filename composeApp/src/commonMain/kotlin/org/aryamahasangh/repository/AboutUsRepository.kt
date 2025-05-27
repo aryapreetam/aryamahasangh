@@ -1,9 +1,15 @@
 package org.aryamahasangh.repository
 
 import com.apollographql.apollo.ApolloClient
+import com.apollographql.apollo.api.Optional
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import org.aryamahasangh.OrganisationQuery
+import org.aryamahasangh.features.activities.Member
+import org.aryamahasangh.features.organisations.OrganisationDetail
+import org.aryamahasangh.features.organisations.OrganisationalMember
+import org.aryamahasangh.type.OrganisationFilter
+import org.aryamahasangh.type.StringFilter
 import org.aryamahasangh.util.Result
 import org.aryamahasangh.util.safeCall
 
@@ -14,7 +20,7 @@ interface AboutUsRepository {
   /**
    * Get organisation details by name
    */
-  fun getOrganisationByName(name: String): Flow<Result<OrganisationQuery.Organisation>>
+  fun getOrganisationByName(name: String): Flow<Result<OrganisationDetail>>
 }
 
 /**
@@ -22,15 +28,38 @@ interface AboutUsRepository {
  */
 class AboutUsRepositoryImpl(private val apolloClient: ApolloClient) : AboutUsRepository {
 
-  override fun getOrganisationByName(name: String): Flow<Result<OrganisationQuery.Organisation>> = flow {
+  override fun getOrganisationByName(name: String): Flow<Result<OrganisationDetail>> = flow {
     emit(Result.Loading)
 
     val result = safeCall {
-      val response = apolloClient.query(OrganisationQuery(name)).execute()
+      val response = apolloClient.query(OrganisationQuery(
+        filter = Optional.present(OrganisationFilter(name = Optional.present(StringFilter(eq = Optional.present(name))))))
+      ).execute()
       if (response.hasErrors()) {
         throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
       }
-      response.data?.organisation ?: throw Exception("Organisation not found")
+      response.data?.organisationCollection?.edges?.map {
+        OrganisationDetail(
+          id = it.node.id,
+          name = it.node.name!!,
+          description = it.node.description!!,
+          logo = it.node.logo,
+          members = it.node.organisational_memberCollection?.edges?.map {
+            val (id, post, priority, member) = it.node
+            OrganisationalMember(
+              id = id,
+              post = post!!,
+              priority = priority!!,
+              member = Member(
+                id = member.id,
+                name = member.name!!,
+                profileImage = member.profile_image ?: "",
+                phoneNumber = member.phone_number ?: ""
+              )
+            )
+          }!!
+        )
+      }[0]  ?: throw Exception("Organisation not found")
     }
 
     emit(result)

@@ -1,6 +1,7 @@
 package org.aryamahasangh.di
 
-import org.aryamahasangh.network.apolloClient
+import io.github.jan.supabase.graphql.graphql
+import org.aryamahasangh.network.supabaseClient
 import org.koin.core.module.Module
 import org.koin.dsl.module
 
@@ -9,7 +10,7 @@ import org.koin.dsl.module
  */
 val appModule = module {
   // Provide Apollo Client
-  single { apolloClient }
+  single { supabaseClient.graphql.apolloClient }
 }
 
 /**

@@ -29,7 +29,7 @@ fun AryaaGurukulHomeScreen(navigateToAdmissionForm: () -> Unit) {
           OutlinedCard(
             onClick = {
               if(it == "गुरुकुल प्रवेश"){
-                navigateToAdmissionForm()
+                //navigateToAdmissionForm()
               }
             }
           ) {

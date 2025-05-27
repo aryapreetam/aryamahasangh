@@ -3,8 +3,7 @@ package org.aryamahasangh.viewmodel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import org.aryamahasangh.LearningsItemsQuery
-import org.aryamahasangh.LearningItemDetailQuery
+import org.aryamahasangh.repository.LearningItem
 import org.aryamahasangh.repository.LearningRepository
 import org.aryamahasangh.util.Result
 
@@ -12,7 +11,7 @@ import org.aryamahasangh.util.Result
  * UI state for the Learning screen
  */
 data class LearningUiState(
-  val learningItems: List<LearningsItemsQuery.LearningItem> = emptyList(),
+  val learningItems: List<LearningItem> = emptyList(),
   val isLoading: Boolean = false,
   val error: String? = null
 )
@@ -21,7 +20,7 @@ data class LearningUiState(
  * UI state for the Video Player screen
  */
 data class VideoPlayerUiState(
-  val learningItem: LearningItemDetailQuery.LearningItem? = null,
+  val learningItem: LearningItem? = null,
   val isLoading: Boolean = false,
   val error: String? = null
 )

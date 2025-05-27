@@ -1,4 +1,4 @@
-package org.aryamahasangh.screens
+package org.aryamahasangh.features.activities
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,7 +20,7 @@ import androidx.navigation.NavHostController
 fun ActivitiesContainer(
   navController: NavHostController, 
   onNavigateToActivityDetails: (String) -> Unit,
-  viewModel: org.aryamahasangh.viewmodel.ActivitiesViewModel
+  viewModel: ActivitiesViewModel
 ) {
   Column(modifier = Modifier.fillMaxSize()) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }

@@ -1,4 +1,4 @@
-package org.aryamahasangh.screens
+package org.aryamahasangh.features.arya_nirman
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke

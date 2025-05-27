@@ -11,6 +11,15 @@ import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import dev.burnoo.compose.remembersetting.rememberBooleanSetting
 import org.aryamahasangh.SettingKeys
+import org.aryamahasangh.features.activities.ActivitiesContainer
+import org.aryamahasangh.features.activities.ActivitiesScreen
+import org.aryamahasangh.features.activities.ActivitiesViewModel
+import org.aryamahasangh.features.activities.ActivityDetailScreen
+import org.aryamahasangh.features.arya_nirman.AryaNirmanHomeScreen
+import org.aryamahasangh.features.arya_nirman.SatraRegistrationFormScreen
+import org.aryamahasangh.features.organisations.OrgDetailScreen
+import org.aryamahasangh.features.organisations.OrganisationsViewModel
+import org.aryamahasangh.features.organisations.OrgsScreen
 import org.aryamahasangh.screens.*
 import org.aryamahasangh.viewmodel.*
 import org.koin.compose.koinInject
@@ -39,9 +48,9 @@ fun RootNavGraph(navController: NavHostController) {
         var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
         val viewModel = koinInject<ActivitiesViewModel>()
         if(isLoggedIn){
-          ActivitiesContainer(navController, {  }, viewModel)
+          ActivitiesContainer(navController, { }, viewModel)
         }else{
-          ActivitiesScreen(navController, {  }, viewModel)
+          ActivitiesScreen(navController, { }, viewModel)
         }
       }
       composable<Screen.ActivityDetails> {
@@ -53,12 +62,14 @@ fun RootNavGraph(navController: NavHostController) {
     navigation<Screen.OrgsSection>(startDestination = Screen.Orgs){
       composable<Screen.Orgs> {
         val viewModel = koinInject<OrganisationsViewModel>()
-        OrgsScreen(navController, {}, viewModel)
+        OrgsScreen(onNavigateToOrgDetails = {
+          navController.navigate(Screen.OrgDetails(it))
+        }, viewModel)
       }
       composable<Screen.OrgDetails>{
-        val orgId = it.toRoute<Screen.OrgDetails>().name
+        val orgId = it.toRoute<Screen.OrgDetails>().organisationId
         val viewModel = koinInject<OrganisationsViewModel>()
-        OrgDetailScreen(orgId, navController, viewModel)
+        OrgDetailScreen(orgId,  viewModel)
       }
     }
     composable<Screen.JoinUs> {

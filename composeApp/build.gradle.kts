@@ -1,3 +1,4 @@
+
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.compose.reload.ComposeHotRun
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
@@ -79,13 +80,7 @@ kotlin {
       implementation(libs.koin.core)
       implementation(libs.koin.compose)
 
-//      implementation("com.apollographql.apollo:apollo-runtime-kotlin:2.5.14")
-      implementation("com.apollographql.apollo:apollo-runtime:4.1.1")
-      implementation("com.apollographql.apollo:apollo-normalized-cache:4.1.1")
-      implementation("com.apollographql.ktor:apollo-engine-ktor:0.1.1")
-      implementation("com.apollographql.adapters:apollo-adapters-core:0.0.4")
-      implementation("com.apollographql.adapters:apollo-adapters-kotlinx-datetime:0.0.4")
-      implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.2")
+      implementation(libs.kotlinx.datetime)
 
 
       implementation(libs.ktor.client.core)
@@ -107,6 +102,10 @@ kotlin {
       implementation(libs.supabase.storage)
       implementation(libs.supabase.apollographql)
       implementation(libs.supabase.coil)
+
+      // apollo adapters
+      implementation(libs.apollo.adapters.core)
+      implementation(libs.apollo.adapters.kotlinx.datetime)
     }
     androidMain.dependencies {
       implementation(libs.androidx.activity.compose)
@@ -158,6 +157,7 @@ android {
 
 dependencies {
   implementation(libs.androidx.material3.android)
+  implementation(project(":server"))
   debugImplementation(compose.uiTooling)
 }
 
@@ -183,10 +183,14 @@ tasks.register<ComposeHotRun>("runHot"){
 apollo {
   service("service") {
     packageName.set("org.aryamahasangh")
+    mapScalar("Datetime", "kotlinx.datetime.Instant")
+
+    // If you're using adapters, you can also set this
+    generateKotlinModels.set(true)
+
     introspection {
       endpointUrl.set("https://ftnwwiwmljcwzpsawdmf.supabase.co/graphql/v1")
-      schemaFile.set(file("src/commonMain/graphql/schema.json"))
-      mapScalar("timestamptz", "kotlinx.datetime.Instant", "com.apollographql.apollo3.api.CustomScalarAdapters")
+      schemaFile.set(file("src/commonMain/graphql/schema.graphqls"))
       headers.put("Authorization", "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0bnd3aXdtbGpjd3pwc2F3ZG1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5MzE4OTMsImV4cCI6MjA1MDUwNzg5M30.cY4A4ZxqHA_1VRC-k6URVAHHkweHTR8FEYEzHYiu19A")
       headers.put("apikey", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0bnd3aXdtbGpjd3pwc2F3ZG1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5MzE4OTMsImV4cCI6MjA1MDUwNzg5M30.cY4A4ZxqHA_1VRC-k6URVAHHkweHTR8FEYEzHYiu19A")
     }
