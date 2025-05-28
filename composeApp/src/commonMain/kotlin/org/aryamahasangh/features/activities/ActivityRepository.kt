@@ -1,10 +1,10 @@
 package org.aryamahasangh.features.activities
 
 import com.apollographql.apollo.ApolloClient
-import com.apollographql.apollo.api.Optional
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.Serializable
 import org.aryamahasangh.*
 import org.aryamahasangh.network.supabaseClient
 import org.aryamahasangh.type.ActivitiesInsertInput
@@ -66,7 +66,7 @@ class ActivityRepositoryImpl(private val apolloClient: ApolloClient) : ActivityR
 
   override suspend fun getActivityDetail(id: String): Result<OrganisationalActivity> {
     return safeCall {
-      val response = apolloClient.query(OrganisationalActivityDetailQuery(filter = Optional.absent())).execute()
+      val response = apolloClient.query(OrganisationalActivityDetailByIdQuery(id)).execute()
       if (response.hasErrors()) {
         throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
       }
@@ -101,20 +101,19 @@ class ActivityRepositoryImpl(private val apolloClient: ApolloClient) : ActivityR
           supabaseClient.from("organisational_activity").insert(organisations)
           val members = activityMembers.map {
             ActivityMemberInsertData(
-              activity_id = it.id,
-              member_id = activityId,
+              activity_id = activityId,
+              member_id = it.member.id,
               post = it.post,
               priority = it.priority
             )
           }
           supabaseClient.from("activity_member").insert(members)
-          true
         } catch (e: Exception){
           // FIXME notify about the error to the user
-          println(e)
+          throw Exception("Unknown error occurred ${e.message}")
         }
       }
-      false
+      true
     }
   }
 
@@ -143,11 +142,13 @@ class ActivityRepositoryImpl(private val apolloClient: ApolloClient) : ActivityR
   }
 }
 
+@Serializable
 data class OrganisationalActivityInsertData(
   val organisation_id: String,
   val activity_id: String
 )
 
+@Serializable
 data class ActivityMemberInsertData(
   val activity_id: String,
   val member_id: String,

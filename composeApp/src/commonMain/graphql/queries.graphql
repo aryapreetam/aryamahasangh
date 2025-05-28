@@ -304,6 +304,7 @@ query UpcomingSatrActivities($currentDateTime: Datetime!){
         state
         latitude
         longitude
+        capacity
         satr_registrationCollection{
           pageInfo{
             startCursor

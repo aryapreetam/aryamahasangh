@@ -29,3 +29,12 @@ You can open the web application by running the `:composeApp:wasmJsBrowserDevelo
 
 ## Download graphql schema
 ./gradlew downloadApolloSchema --endpoint="http://localhost:4000/graphql" --schema="composeApp/src/commonMain/graphql/schema.json"
+
+## view for listening to satra registration changes
+```sql
+create or replace view satr_registration_count as
+select activity_id, count(*)::int as count
+from satr_registration
+group by activity_id
+```
+ 

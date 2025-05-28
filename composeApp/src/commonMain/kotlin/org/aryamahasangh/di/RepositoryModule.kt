@@ -2,6 +2,8 @@ package org.aryamahasangh.di
 
 import org.aryamahasangh.features.activities.ActivityRepository
 import org.aryamahasangh.features.activities.ActivityRepositoryImpl
+import org.aryamahasangh.features.arya_nirman.AryaNirmanRepository
+import org.aryamahasangh.features.arya_nirman.AryaNirmanRepositoryImpl
 import org.aryamahasangh.features.organisations.OrganisationsRepository
 import org.aryamahasangh.features.organisations.OrganisationsRepositoryImpl
 import org.aryamahasangh.repository.*
@@ -32,4 +34,5 @@ val repositoryModule = module {
   singleOf(::JoinUsRepositoryImpl) { bind<JoinUsRepository>() }
 
   singleOf(::BookOrderRepositoryImpl) { bind<BookOrderRepository>() }
+  singleOf(::AryaNirmanRepositoryImpl) { bind<AryaNirmanRepository>() }
 }

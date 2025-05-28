@@ -3,8 +3,8 @@ package org.aryamahasangh.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Navigation // New Directions Icon
-import androidx.compose.material.icons.outlined.LocationOn // New Place Icon
+import androidx.compose.material.icons.filled.Navigation
+import androidx.compose.material.icons.outlined.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -17,7 +17,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.aryamahasangh.features.activities.GenderAllowed
+import org.aryamahasangh.features.arya_nirman.UpcomingActivity
+import org.aryamahasangh.features.arya_nirman.convertDates
 
 // --- Data Structures ---
 
@@ -70,7 +72,7 @@ fun TextStyle.asSpanStyle() = SpanStyle(
 
 @Composable
 fun EventListItem(
-  event: EventItemData,
+  event: UpcomingActivity,
   onRegisterClick: (eventId: String) -> Unit,
   onDirectionsClick: (place: String) -> Unit,
   modifier: Modifier = Modifier
@@ -103,15 +105,17 @@ fun EventListItem(
       Text(
         text = buildAnnotatedString {
           withStyle(style = baseTextStyle.asSpanStyle().copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)) {
-            append(event.title)
+            append(event.name)
           }
           append(" ")
           withStyle(style = MaterialTheme.typography.labelMedium.asSpanStyle().copy(color = MaterialTheme.colorScheme.secondary)) {
-            append(when(event.genderRestriction){
-              GenderRestriction.MALE -> "(पुरुष)"
-              GenderRestriction.FEMALE -> "(महिला)"
-              GenderRestriction.UNISEX -> ""
-            })
+            append(
+              when(event.genderAllowed){
+                GenderAllowed.ANY -> ""
+                GenderAllowed.MALE -> "(पुरुष)"
+                GenderAllowed.FEMALE ->"(महिला)"
+              }
+            )
           }
         },
       )
@@ -119,12 +123,13 @@ fun EventListItem(
       // Date and Time
       Text(
         text = buildAnnotatedString {
+          val (dateRange, timeRange) = convertDates(event.startDateTime, event.endDateTime)
           withStyle(style = SpanStyle(fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)) {
-            append(event.dateRange)
+            append(dateRange)
           }
           append(" | ")
           withStyle(style = SpanStyle(fontSize = 13.sp, color = subtleTextColor)) {
-            append(event.timeRange)
+            append(timeRange)
           }
         },
         style = MaterialTheme.typography.bodyMedium
@@ -145,13 +150,13 @@ fun EventListItem(
           )
           Spacer(modifier = Modifier.width(6.dp))
           Text(
-            text = event.place,
+            text = event.district,
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface
           )
         }
         IconButton(
-          onClick = { onDirectionsClick(event.place) },
+          onClick = { onDirectionsClick("") },
           modifier = Modifier.size(48.dp)
         ) {
           Icon(
@@ -241,64 +246,64 @@ val sampleEventMaleOnly = EventItemData(
   seatsFilled = 150
 )
 
-val activityListItemsWithActions = listOf(sampleEventAvailable, sampleEventFullFemaleOnly, sampleEventMaleOnly)
-
-@OptIn(ExperimentalLayoutApi::class) // For FlowRow
-@Preview
-@Composable
-fun EventListItemCombinedPreview() {
-
-
-  MaterialTheme { // Essential for Material 3 previews
-    Surface(color = MaterialTheme.colorScheme.background) {
-      // To demonstrate inside a FlowRow (optional, shows how it might look if multiple items)
-      // Or use LazyColumn for a scrollable list
-      Column(
-        modifier = Modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-      ) {
-        Text("Events (Column Layout):", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 8.dp))
-        EventListItem(
-          event = sampleEventAvailable,
-          onRegisterClick = ::dummyRegisterCallback,
-          onDirectionsClick = ::dummyDirectionsCallback
-        )
-        EventListItem(
-          event = sampleEventFullFemaleOnly,
-          onRegisterClick = ::dummyRegisterCallback,
-          onDirectionsClick = ::dummyDirectionsCallback
-        )
-        EventListItem(
-          event = sampleEventMaleOnly,
-          onRegisterClick = ::dummyRegisterCallback,
-          onDirectionsClick = ::dummyDirectionsCallback
-        )
-
-        Spacer(Modifier.height(20.dp))
-        Text("Events (FlowRow Layout - if screen is wide enough):", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 8.dp))
-
-        BoxWithConstraints {
-          FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            maxItemsInEachRow = if (maxWidth > 600.dp) 2 else 1 // Example responsive FlowRow
-          ) {
-            EventListItem(
-              event = sampleEventAvailable.copy(id="flow1", title="फ्लो आइटम १"), // Flow Item 1
-              onRegisterClick = ::dummyRegisterCallback,
-              onDirectionsClick = ::dummyDirectionsCallback,
-              modifier = Modifier.weight(1f) // Example for FlowRow distribution
-            )
-            EventListItem(
-              event = sampleEventFullFemaleOnly.copy(id="flow2", title="फ्लो आइटम २"), // Flow Item 2
-              onRegisterClick = ::dummyRegisterCallback,
-              onDirectionsClick = ::dummyDirectionsCallback,
-              modifier = Modifier.weight(1f) // Example for FlowRow distribution
-            )
-          }
-        }
-      }
-    }
-  }
-}
+//val activityListItemsWithActions = listOf(sampleEventAvailable, sampleEventFullFemaleOnly, sampleEventMaleOnly)
+//
+//@OptIn(ExperimentalLayoutApi::class) // For FlowRow
+//@Preview
+//@Composable
+//fun EventListItemCombinedPreview() {
+//
+//
+//  MaterialTheme { // Essential for Material 3 previews
+//    Surface(color = MaterialTheme.colorScheme.background) {
+//      // To demonstrate inside a FlowRow (optional, shows how it might look if multiple items)
+//      // Or use LazyColumn for a scrollable list
+//      Column(
+//        modifier = Modifier.padding(16.dp),
+//        verticalArrangement = Arrangement.spacedBy(16.dp)
+//      ) {
+//        Text("Events (Column Layout):", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 8.dp))
+//        EventListItem(
+//          event = sampleEventAvailable,
+//          onRegisterClick = ::dummyRegisterCallback,
+//          onDirectionsClick = ::dummyDirectionsCallback
+//        )
+//        EventListItem(
+//          event = sampleEventFullFemaleOnly,
+//          onRegisterClick = ::dummyRegisterCallback,
+//          onDirectionsClick = ::dummyDirectionsCallback
+//        )
+//        EventListItem(
+//          event = sampleEventMaleOnly,
+//          onRegisterClick = ::dummyRegisterCallback,
+//          onDirectionsClick = ::dummyDirectionsCallback
+//        )
+//
+//        Spacer(Modifier.height(20.dp))
+//        Text("Events (FlowRow Layout - if screen is wide enough):", style = MaterialTheme.typography.headlineSmall, modifier = Modifier.padding(bottom = 8.dp))
+//
+//        BoxWithConstraints {
+//          FlowRow(
+//            modifier = Modifier.fillMaxWidth(),
+//            horizontalArrangement = Arrangement.spacedBy(8.dp),
+//            verticalArrangement = Arrangement.spacedBy(8.dp),
+//            maxItemsInEachRow = if (maxWidth > 600.dp) 2 else 1 // Example responsive FlowRow
+//          ) {
+//            EventListItem(
+//              event = sampleEventAvailable.copy(id="flow1", title="फ्लो आइटम १"), // Flow Item 1
+//              onRegisterClick = ::dummyRegisterCallback,
+//              onDirectionsClick = ::dummyDirectionsCallback,
+//              modifier = Modifier.weight(1f) // Example for FlowRow distribution
+//            )
+//            EventListItem(
+//              event = sampleEventFullFemaleOnly.copy(id="flow2", title="फ्लो आइटम २"), // Flow Item 2
+//              onRegisterClick = ::dummyRegisterCallback,
+//              onDirectionsClick = ::dummyDirectionsCallback,
+//              modifier = Modifier.weight(1f) // Example for FlowRow distribution
+//            )
+//          }
+//        }
+//      }
+//    }
+//  }
+//}

@@ -13,12 +13,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavHostController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ActivitiesContainer(
-  navController: NavHostController, 
   onNavigateToActivityDetails: (String) -> Unit,
   viewModel: ActivitiesViewModel
 ) {
@@ -59,7 +57,7 @@ fun ActivitiesContainer(
         contentAlignment = Alignment.Center
       ) {
         if(it == 0){
-          ActivitiesScreen(navController, onNavigateToActivityDetails, viewModel)
+          ActivitiesScreen(onNavigateToActivityDetails, viewModel)
         }else{
           ActivityForm(viewModel)
         }

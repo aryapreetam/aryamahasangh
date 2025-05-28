@@ -4,6 +4,7 @@ import com.apollographql.apollo.api.Optional
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -137,11 +138,13 @@ class ActivitiesViewModel(
 
       when (val result = activityRepository.getActivityDetail(id)) {
         is Result.Success -> {
-          _activityDetailUiState.value = ActivityDetailUiState(
-            activity = result.data,
-            isLoading = false,
-            error = null
-          )
+          _activityDetailUiState.update {
+            ActivityDetailUiState(
+              activity = result.data,
+              isLoading = false,
+              error = null
+            )
+          }
         }
         is Result.Error -> {
           _activityDetailUiState.value = ActivityDetailUiState(

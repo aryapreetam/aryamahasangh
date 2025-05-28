@@ -39,11 +39,11 @@ import org.koin.compose.koinInject
 
 @Composable
 fun ActivityDetailScreen(id: String, viewModel: ActivitiesViewModel = koinInject()) {
-  val scope = rememberCoroutineScope()
   val snackbarHostState = LocalSnackbarHostState.current
 
   // Load activity details
   LaunchedEffect(id) {
+    println("Loading activity details for ID: $id")
     viewModel.loadActivityDetail(id)
   }
 
