@@ -20,20 +20,20 @@ fun AdmissionScreen(viewModel: AdmissionsViewModel) {
   Column(modifier = Modifier.fillMaxSize()) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val pagerState = rememberPagerState { 2 }
-    
+
     LaunchedEffect(selectedTabIndex) {
       pagerState.animateScrollToPage(selectedTabIndex)
     }
-    
+
     LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress) {
-      if(!pagerState.isScrollInProgress) {
+      if (!pagerState.isScrollInProgress) {
         selectedTabIndex = pagerState.currentPage
       }
     }
-    
+
     ScrollableTabRow(
       selectedTabIndex = selectedTabIndex
-    ){
+    ) {
       Tab(
         selected = selectedTabIndex == 0,
         onClick = { selectedTabIndex = 0 },
@@ -45,23 +45,26 @@ fun AdmissionScreen(viewModel: AdmissionsViewModel) {
         text = { Text("प्राप्त आवेदन") }
       )
     }
-    
+
     HorizontalPager(
       state = pagerState,
-      modifier = Modifier
-        .fillMaxWidth()
-        .weight(1f),
+      modifier =
+        Modifier
+          .fillMaxWidth()
+          .weight(1f),
       userScrollEnabled = false
-    ){
+    ) {
       Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
       ) {
-        if(it == 0){
-          RegistrationForm(viewModel)
-        }else{
-          ReceivedApplicationsScreen(viewModel)
-        }
+        if (it == 0)
+          {
+            RegistrationForm(viewModel)
+          } else
+          {
+            ReceivedApplicationsScreen(viewModel)
+          }
       }
     }
   }

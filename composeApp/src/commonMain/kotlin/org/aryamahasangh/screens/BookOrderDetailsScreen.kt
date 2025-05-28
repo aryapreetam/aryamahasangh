@@ -1,16 +1,15 @@
 package org.aryamahasangh.screens
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import org.aryamahasangh.viewmodel.BookOrderViewModel
 
 @Composable
 fun BookOrderDetailsScreen(
-    viewModel: BookOrderViewModel,
-    orderId: String,
-    onBackClick: () -> Unit
+  viewModel: BookOrderViewModel,
+  orderId: String,
+  onBackClick: () -> Unit
 ) {
-    // Load the order details when the screen is first displayed
+  // Load the order details when the screen is first displayed
 //    LaunchedEffect(orderId) {
 //        viewModel.getBookOrderById(orderId)
 //    }
@@ -23,12 +22,12 @@ fun BookOrderDetailsScreen(
 //    )
 }
 //
-//@OptIn(ExperimentalMaterial3Api::class)
-//@Composable
-//fun BookOrderDetailsContent(
+// @OptIn(ExperimentalMaterial3Api::class)
+// @Composable
+// fun BookOrderDetailsContent(
 //    uiState: BookOrderDetailsUiState,
 //    onBackClick: () -> Unit
-//) {
+// ) {
 //    Box(
 //        modifier = Modifier
 //            .fillMaxSize()
@@ -191,10 +190,10 @@ fun BookOrderDetailsScreen(
 //            )
 //        }
 //    }
-//}
+// }
 //
-//@Composable
-//fun SectionTitle(text: String) {
+// @Composable
+// fun SectionTitle(text: String) {
 //    Text(
 //        text = text,
 //        style = MaterialTheme.typography.titleMedium,
@@ -202,14 +201,14 @@ fun BookOrderDetailsScreen(
 //        color = MaterialTheme.colorScheme.primary,
 //        modifier = Modifier.padding(bottom = 8.dp)
 //    )
-//}
+// }
 //
-//@Composable
-//fun DetailItem(
+// @Composable
+// fun DetailItem(
 //    icon: ImageVector,
 //    label: String,
 //    value: String
-//) {
+// ) {
 //    Row(
 //        modifier = Modifier
 //            .fillMaxWidth()
@@ -235,9 +234,8 @@ fun BookOrderDetailsScreen(
 //            )
 //        }
 //    }
-//}
+// }
 
 @Composable
-fun BookOrderDetailsPreview(
-) {
+fun BookOrderDetailsPreview() {
 }

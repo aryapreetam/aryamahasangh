@@ -24,37 +24,39 @@ fun PhotoItem(
   var showName by remember { mutableStateOf(false) }
 
   LaunchedEffect(file) {
-    bytes = if (file.supportsStreams()) {
-      val size = file.getSize()
-      if (size != null && size > 0L) {
-        val buffer = ByteArray(size.toInt())
-        val tmpBuffer = ByteArray(1000)
-        var totalBytesRead = 0
-        file.getStream().use {
-          while (it.hasBytesAvailable()) {
-            val numRead = it.readInto(tmpBuffer, 1000)
-            tmpBuffer.copyInto(
-              buffer,
-              destinationOffset = totalBytesRead,
-              endIndex = numRead,
-            )
-            totalBytesRead += numRead
+    bytes =
+      if (file.supportsStreams()) {
+        val size = file.getSize()
+        if (size != null && size > 0L) {
+          val buffer = ByteArray(size.toInt())
+          val tmpBuffer = ByteArray(1000)
+          var totalBytesRead = 0
+          file.getStream().use {
+            while (it.hasBytesAvailable()) {
+              val numRead = it.readInto(tmpBuffer, 1000)
+              tmpBuffer.copyInto(
+                buffer,
+                destinationOffset = totalBytesRead,
+                endIndex = numRead,
+              )
+              totalBytesRead += numRead
+            }
           }
+          buffer
+        } else {
+          file.readBytes()
         }
-        buffer
       } else {
         file.readBytes()
       }
-    } else {
-      file.readBytes()
-    }
   }
 
   Surface(
     onClick = { showName = !showName },
-    modifier = Modifier
-      .aspectRatio(1f)
-      .clip(shape = MaterialTheme.shapes.medium)
+    modifier =
+      Modifier
+        .aspectRatio(1f)
+        .clip(shape = MaterialTheme.shapes.medium)
   ) {
     Box(modifier = Modifier.fillMaxSize()) {
       bytes?.let {
@@ -62,8 +64,9 @@ fun PhotoItem(
           bytes,
           contentDescription = file.name,
           contentScale = ContentScale.Crop,
-          modifier = Modifier
-            .fillMaxSize()
+          modifier =
+            Modifier
+              .fillMaxSize()
         )
       }
 

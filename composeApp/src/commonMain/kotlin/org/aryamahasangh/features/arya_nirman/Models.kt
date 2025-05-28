@@ -24,21 +24,22 @@ data class SatrRegistrationCount(
   val activity_id: String
 )
 
-
 fun convertDates(fromDateTime: LocalDateTime, toDateTime: LocalDateTime): Pair<String, String> {
-  val devanagariDigits = mapOf(
-    '0' to '०', '1' to '१', '2' to '२', '3' to '३', '4' to '४',
-    '5' to '५', '6' to '६', '7' to '७', '8' to '८', '9' to '९'
-  )
+  val devanagariDigits =
+    mapOf(
+      '0' to '०', '1' to '१', '2' to '२', '3' to '३', '4' to '४',
+      '5' to '५', '6' to '६', '7' to '७', '8' to '८', '9' to '९'
+    )
 
   fun toDevanagari(input: String): String {
     return input.map { devanagariDigits[it] ?: it }.joinToString("")
   }
 
-  val monthNames = arrayOf(
-    "जनवरी", "फ़रवरी", "मार्च", "अप्रैल", "मई", "जून",
-    "जुलाई", "अगस्त", "सितंबर", "अक्टूबर", "नवंबर", "दिसंबर"
-  )
+  val monthNames =
+    arrayOf(
+      "जनवरी", "फ़रवरी", "मार्च", "अप्रैल", "मई", "जून",
+      "जुलाई", "अगस्त", "सितंबर", "अक्टूबर", "नवंबर", "दिसंबर"
+    )
 
   val fromDay = fromDateTime.dayOfMonth
   val toDay = toDateTime.dayOfMonth
@@ -47,29 +48,41 @@ fun convertDates(fromDateTime: LocalDateTime, toDateTime: LocalDateTime): Pair<S
   val fromYear = fromDateTime.year
   val toYear = toDateTime.year
 
-  val dateStr = when {
-    fromYear == toYear && fromMonth == toMonth && fromDay == toDay -> {
-      "${toDevanagari("$fromDay")} ${monthNames[fromMonth - 1]}, ${toDevanagari("$fromYear")}"
+  val dateStr =
+    when {
+      fromYear == toYear && fromMonth == toMonth && fromDay == toDay -> {
+        "${toDevanagari("$fromDay")} ${monthNames[fromMonth - 1]}, ${toDevanagari("$fromYear")}"
+      }
+      fromYear == toYear && fromMonth == toMonth -> {
+        "${toDevanagari(
+          "$fromDay"
+        )}-${toDevanagari("$toDay")} ${monthNames[fromMonth - 1]}, ${toDevanagari("$fromYear")}"
+      }
+      fromYear == toYear -> {
+        "${toDevanagari(
+          "$fromDay"
+        )} ${monthNames[fromMonth - 1]} - ${toDevanagari(
+          "$toDay"
+        )} ${monthNames[toMonth - 1]}, ${toDevanagari("$fromYear")}"
+      }
+      else -> {
+        "${toDevanagari(
+          "$fromDay"
+        )} ${monthNames[fromMonth - 1]}, ${toDevanagari(
+          "$fromYear"
+        )} - ${toDevanagari("$toDay")} ${monthNames[toMonth - 1]}, ${toDevanagari("$toYear")}"
+      }
     }
-    fromYear == toYear && fromMonth == toMonth -> {
-      "${toDevanagari("$fromDay")}-${toDevanagari("$toDay")} ${monthNames[fromMonth - 1]}, ${toDevanagari("$fromYear")}"
-    }
-    fromYear == toYear -> {
-      "${toDevanagari("$fromDay")} ${monthNames[fromMonth - 1]} - ${toDevanagari("$toDay")} ${monthNames[toMonth - 1]}, ${toDevanagari("$fromYear")}"
-    }
-    else -> {
-      "${toDevanagari("$fromDay")} ${monthNames[fromMonth - 1]}, ${toDevanagari("$fromYear")} - ${toDevanagari("$toDay")} ${monthNames[toMonth - 1]}, ${toDevanagari("$toYear")}"
-    }
-  }
 
-  fun getTimePeriod(hour: Int): String = when (hour) {
-    in 4 until 6 -> "भोर"
-    in 6 until 12 -> "प्रातः"
-    in 12 until 16 -> "अपराह्न"
-    in 16 until 19 -> "सायं"
-    in 19 until 22 -> "रात्रि"
-    else -> "मध्यरात्रि"
-  }
+  fun getTimePeriod(hour: Int): String =
+    when (hour) {
+      in 4 until 6 -> "भोर"
+      in 6 until 12 -> "प्रातः"
+      in 12 until 16 -> "अपराह्न"
+      in 16 until 19 -> "सायं"
+      in 19 until 22 -> "रात्रि"
+      else -> "मध्यरात्रि"
+    }
 
   fun formatTime(ldt: LocalDateTime): String {
     val hour = ldt.hour

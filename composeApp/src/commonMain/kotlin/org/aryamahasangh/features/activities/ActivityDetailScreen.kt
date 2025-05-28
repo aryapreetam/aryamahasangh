@@ -101,9 +101,9 @@ fun ActivityDetailScreen(id: String, viewModel: ActivitiesViewModel = koinInject
   ActivityDisplay(uiState.activity!!)
 }
 
-//@Preview
-//@Composable
-//fun ActivityDisplayPreview(){
+// @Preview
+// @Composable
+// fun ActivityDisplayPreview(){
 //  val activity = OrganisationalActivityDetailQuery.OrganisationalActivity(
 //    id = "",
 //    name =  "नियमित संध्या अनुष्ठान अभियान",
@@ -137,21 +137,22 @@ fun ActivityDetailScreen(id: String, viewModel: ActivitiesViewModel = koinInject
 //  Surface(Modifier.background(Color.White)){
 //    ActivityDisplay(activity)
 //  }
-//}
+// }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ActivityDisplay(activity: OrganisationalActivity) {
   println(activity)
-  //Profile Image URLS
+  // Profile Image URLS
   Column(
-    modifier = Modifier
-      .fillMaxSize()
-      .padding(8.dp)
-      .verticalScroll(rememberScrollState())
+    modifier =
+      Modifier
+        .fillMaxSize()
+        .padding(8.dp)
+        .verticalScroll(rememberScrollState())
   ) {
     // Name and Activity Type
-    Column() {
+    Column {
       Text(
         text = activity.name,
         style = MaterialTheme.typography.headlineSmall,
@@ -159,8 +160,13 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
       )
       Spacer(modifier = Modifier.width(8.dp))
       Text(
-        modifier = Modifier.background(MaterialTheme.colorScheme.outlineVariant).padding(vertical = 4.dp, horizontal = 16.dp),
-        text = "${activityTypeData[activity.type]}", style = MaterialTheme.typography.bodyLarge)
+        modifier =
+          Modifier.background(
+            MaterialTheme.colorScheme.outlineVariant
+          ).padding(vertical = 4.dp, horizontal = 16.dp),
+        text = "${activityTypeData[activity.type]}",
+        style = MaterialTheme.typography.bodyLarge
+      )
     }
 
     // Description
@@ -183,8 +189,9 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
       fontWeight = FontWeight.Bold,
     )
     FlowRow(
-      horizontalArrangement =  Arrangement.spacedBy(4.dp),
-      verticalArrangement =  Arrangement.spacedBy(-12.dp)) {
+      horizontalArrangement = Arrangement.spacedBy(4.dp),
+      verticalArrangement = Arrangement.spacedBy(-12.dp)
+    ) {
       activity.associatedOrganisations.forEach { associatedOrg ->
         AssistChip(
           onClick = { },
@@ -199,7 +206,10 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
     ) {
       Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Place", tint = Color.Gray)
       Spacer(modifier = Modifier.width(4.dp))
-      Text(text = "स्थान: ${activity.address}, ${activity.district}, ${activity.state}.", style = MaterialTheme.typography.bodyMedium)
+      Text(
+        text = "स्थान: ${activity.address}, ${activity.district}, ${activity.state}.",
+        style = MaterialTheme.typography.bodyMedium
+      )
     }
 
     // Start and End Date/Time
@@ -227,15 +237,17 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
     if (activity.mediaFiles.isNotEmpty()) {
       LazyRow(
         modifier = Modifier.padding(top = 8.dp, bottom = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
         items(activity.mediaFiles) { imageUrl ->
           AsyncImage(
             model = imageUrl,
             contentDescription = "Thumbnail ",
             contentScale = ContentScale.Crop,
-            modifier = Modifier.size(150.dp).clickable(onClick = {
-              uriHandler.openUri(imageUrl)
-            }),
+            modifier =
+              Modifier.size(150.dp).clickable(onClick = {
+                uriHandler.openUri(imageUrl)
+              }),
           )
         }
       }
@@ -258,7 +270,6 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
         ContactPersonItem(contactPerson = contactPerson)
       }
     }
-
 
     // Additional Instructions
     if (activity.additionalInstructions.isNotEmpty()) {
@@ -285,17 +296,19 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
 @Preview
 @Composable
 fun ContactPersonPreview() {
-  val contact = ActivityMember(
-    id = "",
-    member = Member(
+  val contact =
+    ActivityMember(
       id = "",
-      name = "आचार्य संजीव आर्य",
-      profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_sanjiv.webp",
-      phoneNumber = "9045353309"
-    ),
-    post = "अध्यक्ष",
-    priority = 1
-  )
+      member =
+        Member(
+          id = "",
+          name = "आचार्य संजीव आर्य",
+          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_sanjiv.webp",
+          phoneNumber = "9045353309"
+        ),
+      post = "अध्यक्ष",
+      priority = 1
+    )
   ContactPersonItem(contact)
 }
 
@@ -310,17 +323,19 @@ fun ContactPersonItem(contactPerson: ActivityMember) {
       model = contactPerson.member.profileImage,
       contentDescription = "Profile Image",
       contentScale = ContentScale.Crop,
-      modifier = Modifier
-        .size(50.dp)
-        .clip(CircleShape),
-      placeholder = BrushPainter(
-        Brush.linearGradient(
-          listOf(
-            Color(color = 0xFFFFFFFF),
-            Color(color = 0xFFDDDDDD),
+      modifier =
+        Modifier
+          .size(50.dp)
+          .clip(CircleShape),
+      placeholder =
+        BrushPainter(
+          Brush.linearGradient(
+            listOf(
+              Color(color = 0xFFFFFFFF),
+              Color(color = 0xFFDDDDDD),
+            )
           )
-        )
-      ),
+        ),
       fallback = painterResource(Res.drawable.error_profile_image),
       error = painterResource(Res.drawable.error_profile_image)
     )
@@ -328,16 +343,16 @@ fun ContactPersonItem(contactPerson: ActivityMember) {
     Spacer(modifier = Modifier.width(8.dp))
 
     Column {
-        Text(
-          text = contactPerson.member.name,
-          style = MaterialTheme.typography.bodyLarge,
-          fontWeight = FontWeight.Bold
-        )
-        Spacer(modifier = Modifier.width(4.dp))
-        Text(
-          text = contactPerson.post,
-          style = MaterialTheme.typography.bodySmall
-        )
+      Text(
+        text = contactPerson.member.name,
+        style = MaterialTheme.typography.bodyLarge,
+        fontWeight = FontWeight.Bold
+      )
+      Spacer(modifier = Modifier.width(4.dp))
+      Text(
+        text = contactPerson.post,
+        style = MaterialTheme.typography.bodySmall
+      )
     }
     VerticalDivider(
       modifier = Modifier.padding(top = 12.dp, bottom = 12.dp, start = 12.dp),
@@ -350,7 +365,7 @@ fun ContactPersonItem(contactPerson: ActivityMember) {
     IconButton(
       onClick = {
         uriHandler.openUri("tel:${contactPerson.member.phoneNumber}")
-        if(isWeb()) {
+        if (isWeb()) {
           scope.launch {
             snackbarHostState.showSnackbar(
               message = "If you do not have calling apps installed, you can manually call to ${contactPerson.member.phoneNumber}",
@@ -359,25 +374,26 @@ fun ContactPersonItem(contactPerson: ActivityMember) {
           }
         }
       }
-    ){
+    ) {
       Icon(
         imageVector = Icons.Default.Call,
-        contentDescription = "Call", tint = Color.Gray
+        contentDescription = "Call",
+        tint = Color.Gray
       )
     }
   }
 }
 
-//Helper Functions
+// Helper Functions
 
 fun formatDateTime(dateTimeString: Any): String {
   return format(dateTimeString)
 }
 
-//@Preview
-//@Composable
-//fun PreviewLeadershipWorkshopScreen() {
+// @Preview
+// @Composable
+// fun PreviewLeadershipWorkshopScreen() {
 //  MaterialTheme { // Ensure MaterialTheme is provided in preview
 //    LeadershipWorkshopScreen(data)
 //  }
-//}
+// }

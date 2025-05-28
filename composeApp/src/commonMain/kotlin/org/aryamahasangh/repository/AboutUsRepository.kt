@@ -27,41 +27,50 @@ interface AboutUsRepository {
  * Implementation of AboutUsRepository that uses Apollo GraphQL client
  */
 class AboutUsRepositoryImpl(private val apolloClient: ApolloClient) : AboutUsRepository {
+  override fun getOrganisationByName(name: String): Flow<Result<OrganisationDetail>> =
+    flow {
+      emit(Result.Loading)
 
-  override fun getOrganisationByName(name: String): Flow<Result<OrganisationDetail>> = flow {
-    emit(Result.Loading)
-
-    val result = safeCall {
-      val response = apolloClient.query(OrganisationQuery(
-        filter = Optional.present(OrganisationFilter(name = Optional.present(StringFilter(eq = Optional.present(name))))))
-      ).execute()
-      if (response.hasErrors()) {
-        throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-      }
-      response.data?.organisationCollection?.edges?.map {
-        OrganisationDetail(
-          id = it.node.id,
-          name = it.node.name!!,
-          description = it.node.description!!,
-          logo = it.node.logo,
-          members = it.node.organisational_memberCollection?.edges?.map {
-            val (id, post, priority, member) = it.node
-            OrganisationalMember(
-              id = id,
-              post = post!!,
-              priority = priority!!,
-              member = Member(
-                id = member.id,
-                name = member.name!!,
-                profileImage = member.profile_image ?: "",
-                phoneNumber = member.phone_number ?: ""
+      val result =
+        safeCall {
+          val response =
+            apolloClient.query(
+              OrganisationQuery(
+                filter =
+                  Optional.present(
+                    OrganisationFilter(name = Optional.present(StringFilter(eq = Optional.present(name))))
+                  )
               )
+            ).execute()
+          if (response.hasErrors()) {
+            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+          }
+          response.data?.organisationCollection?.edges?.map {
+            OrganisationDetail(
+              id = it.node.id,
+              name = it.node.name!!,
+              description = it.node.description!!,
+              logo = it.node.logo,
+              members =
+                it.node.organisational_memberCollection?.edges?.map {
+                  val (id, post, priority, member) = it.node
+                  OrganisationalMember(
+                    id = id,
+                    post = post!!,
+                    priority = priority!!,
+                    member =
+                      Member(
+                        id = member.id,
+                        name = member.name!!,
+                        profileImage = member.profile_image ?: "",
+                        phoneNumber = member.phone_number ?: ""
+                      )
+                  )
+                }!!
             )
-          }!!
-        )
-      }[0]  ?: throw Exception("Organisation not found")
-    }
+          }[0] ?: throw Exception("Organisation not found")
+        }
 
-    emit(result)
-  }
+      emit(result)
+    }
 }

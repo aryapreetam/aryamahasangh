@@ -17,12 +17,10 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.capitalize
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
@@ -37,15 +35,12 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.components.PhotoItem
-import org.aryamahasangh.network.bucket
 import org.aryamahasangh.utils.epochToDate
 import org.aryamahasangh.viewmodel.AdmissionsViewModel
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import kotlin.uuid.ExperimentalUuidApi
-import kotlin.uuid.Uuid
 
 data class FormData(
   val studentName: String = "",
@@ -91,12 +86,10 @@ fun isValidDate(date: String): Boolean {
     val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
     val inputDate = LocalDate(year, month, day)
     inputDate <= now
-
   } catch (e: Exception) {
     false
   }
 }
-
 
 @Composable
 fun AadharVisualTransformation(): VisualTransformation {
@@ -111,25 +104,27 @@ fun AadharVisualTransformation(): VisualTransformation {
     }
     TransformedText(
       AnnotatedString(formatted),
-      offsetMapping = object : OffsetMapping {
-        override fun originalToTransformed(offset: Int): Int {
-          if (offset <= 4) return offset
-          if (offset <= 8) return offset + 1
-          if (offset <= 12) return offset + 2
-          return 14
-        }
+      offsetMapping =
+        object : OffsetMapping {
+          override fun originalToTransformed(offset: Int): Int {
+            if (offset <= 4) return offset
+            if (offset <= 8) return offset + 1
+            if (offset <= 12) return offset + 2
+            return 14
+          }
 
-        override fun transformedToOriginal(offset: Int): Int {
-          if (offset <= 4) return offset
-          if (offset <= 9) return offset - 1
-          if (offset <= 14) return offset - 2
-          return 12
+          override fun transformedToOriginal(offset: Int): Int {
+            if (offset <= 4) return offset
+            if (offset <= 9) return offset - 1
+            if (offset <= 14) return offset - 2
+            return 12
+          }
         }
-      })
+    )
   }
 }
 
-//class DateTransformation : VisualTransformation {
+// class DateTransformation : VisualTransformation {
 //  override fun filter(text: AnnotatedString): TransformedText {
 //    println("filter text: $text, ${text.text}")
 //    val formattedText = formatDate(text.text)
@@ -213,7 +208,7 @@ fun AadharVisualTransformation(): VisualTransformation {
 //      return toOriginalOff
 //    }
 //  }
-//}
+// }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -231,10 +226,10 @@ fun DatePickerTextField(
 
   val focusRequester = remember { FocusRequester() }
 
-
   OutlinedTextField(
-    modifier = modifier
-      .focusRequester(focusRequester),
+    modifier =
+      modifier
+        .focusRequester(focusRequester),
     value = value,
     label = { Text("जन्म तिथि") },
     onValueChange = { onValueChange(it.take(10)) },
@@ -249,7 +244,11 @@ fun DatePickerTextField(
     singleLine = true,
     maxLines = 1,
     isError = isError,
-    supportingText = { if (isError) { Text(errorMessage) } }
+    supportingText = {
+      if (isError) {
+        Text(errorMessage)
+      }
+    }
   )
 
   if (showDatePickerDialog.value) {
@@ -284,7 +283,6 @@ fun DatePickerTextField(
   }
 }
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BloodGroupDropdown(
@@ -308,7 +306,8 @@ fun BloodGroupDropdown(
         readOnly = true,
         singleLine = true,
         placeholder = { Text("चुनें") },
-        modifier = Modifier
+        modifier =
+          Modifier
             .fillMaxWidth()
             .onGloballyPositioned { coordinates ->
               textFieldSize = coordinates.size.toSize()
@@ -316,7 +315,11 @@ fun BloodGroupDropdown(
         label = { Text("रक्त वर्ग") },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
         isError = isError,
-        supportingText = { if (isError) { Text(errorMessage) } }
+        supportingText = {
+          if (isError) {
+            Text(errorMessage)
+          }
+        }
       )
       ExposedDropdownMenu(
         expanded = expanded,
@@ -359,15 +362,16 @@ fun DocumentGrid(
 //        textAlign = TextAlign.Start)
     }
     FlowRow(
-      verticalArrangement =  Arrangement.spacedBy(8.dp),
-      horizontalArrangement =  Arrangement.spacedBy(8.dp)
+      verticalArrangement = Arrangement.spacedBy(8.dp),
+      horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
       for (document in documents) {
         val docName = document.name
         Box(modifier = Modifier.width(120.dp).padding(8.dp)) {
           Column {
             PhotoItem(document, onRemoveFile = onDocumentRemoved)
-            Text(text = docName,
+            Text(
+              text = docName,
               maxLines = 2,
               style = MaterialTheme.typography.labelSmall,
               modifier = Modifier.padding(4.dp)
@@ -384,14 +388,15 @@ fun DocumentGrid(
 
 @Composable
 fun ButtonForFilePicker(label: String?, onFilesSelected: (List<PlatformFile>?) -> Unit) {
-  val launcher = rememberFilePickerLauncher(
-    type = PickerType.File(extensions = listOf("png", "jpg", "jpeg", "webp", "pdf", "docx")),
-    mode = PickerMode.Multiple(),
-    title = "Select documents",
-  ) { files ->
-    println(files)
-    onFilesSelected(files)
-  }
+  val launcher =
+    rememberFilePickerLauncher(
+      type = PickerType.File(extensions = listOf("png", "jpg", "jpeg", "webp", "pdf", "docx")),
+      mode = PickerMode.Multiple(),
+      title = "Select documents",
+    ) { files ->
+      println(files)
+      onFilesSelected(files)
+    }
   OutlinedButton(onClick = {
     launcher.launch()
   }) {
@@ -408,23 +413,26 @@ fun StudentPhotoSection(
   errorMessage: String
 ) {
   Column(horizontalAlignment = Alignment.Start) {
-    val launcher = rememberFilePickerLauncher(
-      type = PickerType.Image,
-      mode = PickerMode.Single,
-      title = "Select photo",
-    ) { file ->
-      onPhotoSelected(file)
-    }
-    Box(modifier = Modifier.size(120.dp)) {
-      if(studentPhoto != null){
-        PhotoItem(studentPhoto, onRemoveFile = onPhotoRemoved)
-      }else{
-        Image(
-          painter = painterResource(resource = Res.drawable.error_profile_image),
-          contentDescription = "Error profile image",
-          contentScale = ContentScale.Crop,
-        )
+    val launcher =
+      rememberFilePickerLauncher(
+        type = PickerType.Image,
+        mode = PickerMode.Single,
+        title = "Select photo",
+      ) { file ->
+        onPhotoSelected(file)
       }
+    Box(modifier = Modifier.size(120.dp)) {
+      if (studentPhoto != null)
+        {
+          PhotoItem(studentPhoto, onRemoveFile = onPhotoRemoved)
+        } else
+        {
+          Image(
+            painter = painterResource(resource = Res.drawable.error_profile_image),
+            contentDescription = "Error profile image",
+            contentScale = ContentScale.Crop,
+          )
+        }
     }
 
     OutlinedButton(onClick = {
@@ -438,7 +446,6 @@ fun StudentPhotoSection(
   }
 }
 
-
 @Composable
 fun SignatureSection(
   signatureFile: PlatformFile?,
@@ -448,7 +455,7 @@ fun SignatureSection(
   isError: Boolean,
   errorMessage: String
 ) {
-  Column() {
+  Column {
     Text(
       modifier = Modifier.padding(vertical = 8.dp),
       text = "$label के हस्ताक्षर:",
@@ -457,35 +464,40 @@ fun SignatureSection(
     Row(
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.spacedBy(8.dp)
-      ) {
+    ) {
       if (signatureFile != null) {
         Box(
-          modifier = Modifier
-            .size(150.dp)){
+          modifier =
+            Modifier
+              .size(150.dp)
+        ) {
           PhotoItem(signatureFile, onRemoveFile = onRemoveSignature)
         }
       } else {
         Box(
-          modifier = Modifier
-            .size(150.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+          modifier =
+            Modifier
+              .size(150.dp)
+              .clip(RoundedCornerShape(8.dp))
+              .background(MaterialTheme.colorScheme.surfaceVariant),
           contentAlignment = Alignment.Center
         ) {
-          Text(text = "No signature added",
+          Text(
+            text = "No signature added",
             modifier = Modifier.fillMaxWidth(1f).padding(8.dp),
             textAlign = TextAlign.Center
           )
         }
       }
-      Column() {
-        val launcher = rememberFilePickerLauncher(
-          type = PickerType.Image,
-          mode = PickerMode.Single,
-          title = "Select photo",
-        ) { file ->
-          onSignatureSelected(file)
-        }
+      Column {
+        val launcher =
+          rememberFilePickerLauncher(
+            type = PickerType.Image,
+            mode = PickerMode.Single,
+            title = "Select photo",
+          ) { file ->
+            onSignatureSelected(file)
+          }
         OutlinedButton(onClick = {
           launcher.launch()
         }) {
@@ -493,7 +505,7 @@ fun SignatureSection(
         }
 
         OutlinedButton(onClick = {
-          //onSignatureSelected("path")
+          // onSignatureSelected("path")
         }) {
           Text("Draw Signature")
         }

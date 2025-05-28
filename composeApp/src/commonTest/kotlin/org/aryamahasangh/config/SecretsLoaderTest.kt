@@ -1,8 +1,7 @@
 package org.aryamahasangh.config
 
 class SecretsLoaderTest {
-
-//    @Test
+  //    @Test
 //    fun testParseProperties() {
 //        val propertiesContent = """
 //            # This is a comment

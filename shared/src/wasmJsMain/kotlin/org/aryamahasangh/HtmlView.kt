@@ -26,7 +26,6 @@ private class ComponentInfo<T : Element> {
   lateinit var updater: Updater<T>
 }
 
-
 private class FocusSwitcher<T : Element>(
   private val info: ComponentInfo<T>,
   private val focusManager: FocusManager
@@ -64,9 +63,9 @@ private class FocusSwitcher<T : Element>(
           if (it.isFocused && !isRequesting) {
             focusManager.clearFocus(force = true)
             val component = info.container.firstElementChild
-            if(component != null) {
+            if (component != null) {
               requestFocus(component)
-            }else {
+            } else {
               moveForward()
             }
           }
@@ -81,9 +80,9 @@ private class FocusSwitcher<T : Element>(
             focusManager.clearFocus(force = true)
 
             val component = info.container.lastElementChild
-            if(component != null) {
+            if (component != null) {
               requestFocus(component)
-            }else {
+            } else {
               moveBackward()
             }
           }
@@ -93,29 +92,36 @@ private class FocusSwitcher<T : Element>(
   }
 }
 
-private fun requestFocus(element: Element) : Unit = js("""
+private fun requestFocus(element: Element): Unit =
+  js(
+    """
     {
         element.focus();
     }
-""")
+"""
+  )
 
-private fun initializingElement(element: Element) : Unit = js("""
+private fun initializingElement(element: Element): Unit =
+  js(
+    """
     {
         element.style.position = 'absolute';
         element.style.margin = '0px';
     }
-""")
+"""
+  )
 
-private fun changeCoordinates(element: Element,width: Float,height: Float,x: Float,y: Float) : Unit = js("""
+private fun changeCoordinates(element: Element, width: Float, height: Float, x: Float, y: Float): Unit =
+  js(
+    """
     {
         element.style.width = width + 'px';
         element.style.height = height + 'px';
         element.style.left = x + 'px';
         element.style.top = y + 'px';
     }
-""")
-
-
+"""
+  )
 
 @Composable
 fun <T : Element> HtmlView(
@@ -123,9 +129,6 @@ fun <T : Element> HtmlView(
   modifier: Modifier = Modifier,
   update: (T) -> Unit = NoOpUpdate
 ) {
-
-
-
   val componentInfo = remember { ComponentInfo<T>() }
 
   val root = LocalLayerContainer.current
@@ -134,19 +137,26 @@ fun <T : Element> HtmlView(
   val focusSwitcher = remember { FocusSwitcher(componentInfo, focusManager) }
 
   Box(
-    modifier = modifier.onGloballyPositioned { coordinates ->
-      val location = coordinates.positionInWindow().round()
-      val size = coordinates.size
-      changeCoordinates(componentInfo.component,size.width / density, size.height / density, location.x / density,location.y / density)
-    }
+    modifier =
+      modifier.onGloballyPositioned { coordinates ->
+        val location = coordinates.positionInWindow().round()
+        val size = coordinates.size
+        changeCoordinates(
+          componentInfo.component,
+          size.width / density,
+          size.height / density,
+          location.x / density,
+          location.y / density
+        )
+      }
   ) {
     focusSwitcher.Content()
   }
 
   DisposableEffect(factory) {
-    componentInfo.container = document.createElement("div",NoOpUpdate)
+    componentInfo.container = document.createElement("div", NoOpUpdate)
     componentInfo.component = document.factory()
-    root.insertBefore(componentInfo.container,root.firstChild)
+    root.insertBefore(componentInfo.container, root.firstChild)
     componentInfo.container.append(componentInfo.component)
     componentInfo.updater = Updater(componentInfo.component, update)
     initializingElement(componentInfo.component)
@@ -161,19 +171,19 @@ fun <T : Element> HtmlView(
   }
 }
 
-
 private class Updater<T : Element>(
   private val component: T,
   update: (T) -> Unit
 ) {
   private var isDisposed = false
 
-  private val snapshotObserver = SnapshotStateObserver { command ->
-    command()
-  }
+  private val snapshotObserver =
+    SnapshotStateObserver { command ->
+      command()
+    }
 
   private val scheduleUpdate = { _: T ->
-    if(isDisposed.not()) {
+    if (isDisposed.not()) {
       performUpdate()
     }
   }

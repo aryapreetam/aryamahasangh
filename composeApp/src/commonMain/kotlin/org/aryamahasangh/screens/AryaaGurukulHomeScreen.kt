@@ -28,9 +28,10 @@ fun AryaaGurukulHomeScreen(navigateToAdmissionForm: () -> Unit) {
         listOf("वर्तमान कार्य", "गुरुकुल प्रवेश", "शिविर पंजीकरण", "आगामी बैठक", "कक्षाएं").forEach {
           OutlinedCard(
             onClick = {
-              if(it == "गुरुकुल प्रवेश"){
-                //navigateToAdmissionForm()
-              }
+              if (it == "गुरुकुल प्रवेश")
+                {
+                  // navigateToAdmissionForm()
+                }
             }
           ) {
             Text(

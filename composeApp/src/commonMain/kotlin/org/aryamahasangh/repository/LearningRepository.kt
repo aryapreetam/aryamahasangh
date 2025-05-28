@@ -42,36 +42,45 @@ data class LearningItem(
  * Implementation of LearningRepository that uses Apollo GraphQL client
  */
 class LearningRepositoryImpl(private val apolloClient: ApolloClient) : LearningRepository {
+  override fun getLearningItems(): Flow<Result<List<LearningItem>>> =
+    flow {
+      emit(Result.Loading)
 
-  override fun getLearningItems(): Flow<Result<List<LearningItem>>> = flow {
-    emit(Result.Loading)
+      val result =
+        safeCall {
+          val response = apolloClient.query(LearningItemsQuery()).execute()
+          if (response.hasErrors()) {
+            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+          }
+          response.data?.learningCollection?.edges?.map {
+            val item = it.node
+            LearningItem(
+              id = item.id,
+              title = item.title!!,
+              thumbnailUrl = item.thumbnail_url!!,
+            )
+          } ?: emptyList()
+        }
 
-    val result = safeCall {
-      val response = apolloClient.query(LearningItemsQuery()).execute()
-      if (response.hasErrors()) {
-        throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-      }
-      response.data?.learningCollection?.edges?.map {
-        val item = it.node
-        LearningItem(
-          id = item.id,
-          title = item.title!!,
-          thumbnailUrl = item.thumbnail_url!!,
-        )
-      } ?: emptyList()
+      emit(result)
     }
-
-    emit(result)
-  }
 
   override suspend fun getLearningItemDetail(id: String): Result<LearningItem> {
     return safeCall {
-      val response = apolloClient.query(LearningItemQuery(
-        filter = Optional.present(
-          LearningFilter(id = Optional.present(
-            StringFilter(eq = Optional.present(id))
-          ))))
-      ).execute()
+      val response =
+        apolloClient.query(
+          LearningItemQuery(
+            filter =
+              Optional.present(
+                LearningFilter(
+                  id =
+                    Optional.present(
+                      StringFilter(eq = Optional.present(id))
+                    )
+                )
+              )
+          )
+        ).execute()
       if (response.hasErrors()) {
         throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
       }

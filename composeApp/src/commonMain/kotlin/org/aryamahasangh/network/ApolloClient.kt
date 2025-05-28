@@ -25,58 +25,63 @@ import kotlinx.serialization.json.Json
 import org.aryamahasangh.config.AppConfig
 import org.aryamahasangh.type.Datetime
 
-
 /**
  * Supabase client configured using the unified configuration system.
  * No hard-coded secrets - all configuration loaded from AppConfig.
  */
-val supabaseClient = createSupabaseClient(
-  supabaseUrl = AppConfig.supabaseUrl,
-  supabaseKey = AppConfig.supabaseKey
-){
-  install(Storage){
-    resumable {
-      cache = SettingsResumableCache()
+val supabaseClient =
+  createSupabaseClient(
+    supabaseUrl = AppConfig.supabaseUrl,
+    supabaseKey = AppConfig.supabaseKey
+  ) {
+    install(Storage) {
+      resumable {
+        cache = SettingsResumableCache()
+      }
     }
-  }
-  install(Postgrest)
-  install(Realtime)
-  install(Auth)
-  install(GraphQL) {
-    apolloConfiguration {
-      addHttpInterceptor(httpInterceptor = ApolloHttpInterceptor())
-      addInterceptor(interceptor = LoggingApolloInterceptor())
-      addCustomScalarAdapter(
-        customScalarType = Datetime.type,
-        customScalarAdapter = KotlinxInstantAdapter
+    install(Postgrest)
+    install(Realtime)
+    install(Auth)
+    install(GraphQL) {
+      apolloConfiguration {
+        addHttpInterceptor(httpInterceptor = ApolloHttpInterceptor())
+        addInterceptor(interceptor = LoggingApolloInterceptor())
+        addCustomScalarAdapter(
+          customScalarType = Datetime.type,
+          customScalarAdapter = KotlinxInstantAdapter
+        )
+      }
+    }
+    defaultSerializer =
+      KotlinXSerializer(
+        Json {
+          ignoreUnknownKeys = true // Avoid errors if unknown fields are received
+          encodeDefaults = true
+          prettyPrint = true
+        }
       )
-    }
   }
-  defaultSerializer = KotlinXSerializer(Json{
-    ignoreUnknownKeys = true // Avoid errors if unknown fields are received
-    encodeDefaults = true
-    prettyPrint = true
-  })
+
+class ApolloHttpInterceptor : HttpInterceptor {
+  override suspend fun intercept(
+    request: HttpRequest,
+    chain: HttpInterceptorChain
+  ): HttpResponse {
+    return chain.proceed(request)
+  }
 }
 
- class ApolloHttpInterceptor : HttpInterceptor {
-   override suspend fun intercept(
-     request: HttpRequest,
-     chain: HttpInterceptorChain
-   ): HttpResponse {
-     return chain.proceed(request)
-   }
- }
-
-class LoggingApolloInterceptor: ApolloInterceptor {
-  override fun <D : Operation.Data> intercept(request: ApolloRequest<D>, chain: ApolloInterceptorChain): Flow<ApolloResponse<D>> {
+class LoggingApolloInterceptor : ApolloInterceptor {
+  override fun <D : Operation.Data> intercept(
+    request: ApolloRequest<D>,
+    chain: ApolloInterceptorChain
+  ): Flow<ApolloResponse<D>> {
     return chain.proceed(request).onEach {
-      println("Request: ${request.operation.toString()}")
+      println("Request: ${request.operation}")
       println("Response ${it.data}")
     }
   }
 }
-
 
 val resumableClient = supabaseClient.storage[AppConfig.STORAGE_BUCKET].resumable
 val bucket = supabaseClient.storage[AppConfig.STORAGE_BUCKET]

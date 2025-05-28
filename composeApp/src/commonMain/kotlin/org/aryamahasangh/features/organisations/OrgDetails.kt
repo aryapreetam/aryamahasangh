@@ -21,15 +21,15 @@ fun OrgDetailScreen(
 ) {
   val scope = rememberCoroutineScope()
   val snackbarHostState = LocalSnackbarHostState.current
-  
+
   // Load organisation details
   LaunchedEffect(id) {
     viewModel.loadOrganisationDetail(id)
   }
-  
+
   // Collect UI state from ViewModel
   val uiState by viewModel.organisationDetailUiState.collectAsState()
-  
+
   // Handle loading state
   if (uiState.isLoading) {
     Box(
@@ -40,7 +40,7 @@ fun OrgDetailScreen(
     }
     return
   }
-  
+
   // Handle error state
   uiState.error?.let { error ->
     LaunchedEffect(error) {
@@ -49,7 +49,7 @@ fun OrgDetailScreen(
         actionLabel = "Retry"
       )
     }
-    
+
     Box(
       modifier = Modifier.fillMaxSize(),
       contentAlignment = Alignment.Center
@@ -66,7 +66,7 @@ fun OrgDetailScreen(
     }
     return
   }
-  
+
   // Handle null organisation
   if (uiState.organisation == null) {
     Box(
@@ -77,7 +77,7 @@ fun OrgDetailScreen(
     }
     return
   }
-  
+
   OrganisationDetail(
     organisation = uiState.organisation!!,
     viewModel::updateOrganisationLogo,

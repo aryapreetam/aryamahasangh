@@ -27,28 +27,27 @@ data class LabelState(
 class JoinUsViewModel(
   private val joinUsRepository: JoinUsRepository
 ) : BaseViewModel<JoinUsUiState>(JoinUsUiState()) {
-
-
   // Add this function to your ViewModel
   fun setEditMode(enabled: Boolean) {
     updateState { it.copy(labelState = it.labelState.copy(editMode = enabled)) }
   }
 
-  fun loadJoinUsLabel(){
+  fun loadJoinUsLabel() {
     launch {
-
       joinUsRepository.getJoinUsLabel().collect { result ->
         when (result) {
           is Result.Loading -> {
-            //updateState { it.copy(isLoading = true, error = null) }
+            // updateState { it.copy(isLoading = true, error = null) }
             println("loading label ")
           }
           is Result.Success -> {
-            updateState { it.copy(
-              labelState = LabelState(label = result.data, isUpdating = false, error = null, editMode = false),
-              isLoading = false,
-              error = null
-            )}
+            updateState {
+              it.copy(
+                labelState = LabelState(label = result.data, isUpdating = false, error = null, editMode = false),
+                isLoading = false,
+                error = null
+              )
+            }
             println("label loaded successfully: ${result.data}")
           }
           is Result.Error -> {
@@ -63,9 +62,13 @@ class JoinUsViewModel(
     launch {
       updateState { it.copy(labelState = it.labelState.copy(isUpdating = true, editMode = true)) }
       joinUsRepository.updateLabel(label).collect { result ->
-        when(result){
+        when (result) {
           is Result.Error -> {
-            updateState { it.copy(labelState = it.labelState.copy(isUpdating = false, error = result.message, editMode = true)) }
+            updateState {
+              it.copy(
+                labelState = it.labelState.copy(isUpdating = false, error = result.message, editMode = true)
+              )
+            }
             println("error updating label: ${result.message}")
           }
           is Result.Loading -> {
@@ -84,27 +87,31 @@ class JoinUsViewModel(
   /**
    * Load filtered activities
    */
-  fun loadFilteredActivities(state: String, district: String): Unit {
+  fun loadFilteredActivities(state: String, district: String) {
     launch {
       updateState { it.copy(isLoading = true, error = null) }
-      
+
       joinUsRepository.getFilteredActivities(state, district).collect { result ->
         when (result) {
           is Result.Loading -> {
             updateState { it.copy(isLoading = true, error = null) }
           }
           is Result.Success -> {
-            updateState { it.copy(
-              activities = result.data,
-              isLoading = false,
-              error = null
-            )}
+            updateState {
+              it.copy(
+                activities = result.data,
+                isLoading = false,
+                error = null
+              )
+            }
           }
           is Result.Error -> {
-            updateState { it.copy(
-              isLoading = false,
-              error = result.message
-            )}
+            updateState {
+              it.copy(
+                isLoading = false,
+                error = result.message
+              )
+            }
           }
         }
       }

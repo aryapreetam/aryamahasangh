@@ -51,7 +51,7 @@ fun App() {
 val LocalSnackbarHostState =
   compositionLocalOf<SnackbarHostState> { error("SnackbarHostState is not found") }
 
-//CompositionLocal for Authentication State:
+// CompositionLocal for Authentication State:
 val LocalAuthState = compositionLocalOf { mutableStateOf(false) }
 
 @Composable
@@ -66,7 +66,6 @@ object SettingKeys {
   const val userEmail = "userEmail"
 }
 
-
 @Composable
 fun AppDrawer() {
   BoxWithConstraints(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -74,7 +73,7 @@ fun AppDrawer() {
     val navController = rememberNavController()
     val isLargeScreen = maxWidth > 840.dp
     if (isLargeScreen) {
-      Box(modifier = Modifier.width(1280.dp)){
+      Box(modifier = Modifier.width(1280.dp)) {
         LargeScreens(drawerState, navController)
       }
     } else {
@@ -84,21 +83,21 @@ fun AppDrawer() {
 }
 
 data class DrawerOption(val title: String, val icon: DrawableResource, val route: Screen = Screen.AboutSection)
-val drawerOptions = listOf(
-  DrawerOption("हमारे बारे मे", Res.drawable.info, Screen.AboutSection),
-  DrawerOption("गतिविधियां", Res.drawable.local_activity, Screen.ActivitiesSection),
-  DrawerOption("संलग्न संस्थाएं", Res.drawable.account_tree, Screen.OrgsSection),
-  DrawerOption("हमसें जुडें", Res.drawable.handshake, Screen.JoinUs),
 
-  DrawerOption("आर्य गुरुकुल", Res.drawable.school, Screen.AryaGurukulSection),
-  DrawerOption("आर्या गुरुकुल", Res.drawable.school, Screen.AryaaGurukulSection),
-  DrawerOption("आर्य-आर्या निर्माण(सत्र)", Res.drawable.interactive_space, Screen.AryaNirmanSection),
-  DrawerOption("आर्य परिवार", Res.drawable.family, Screen.AryaPariwarSection),
-  DrawerOption("आर्य समाज संगठन", Res.drawable.diversity_3, Screen.AryaSamajSection),
-  DrawerOption("आओ स्वाध्याय करें", Res.drawable.menu_book, Screen.Learning),
-  // DrawerOption("ग्रन्थ विभाग", Res.drawable.local_library, Screen.BookSection),
+val drawerOptions =
+  listOf(
+    DrawerOption("हमारे बारे मे", Res.drawable.info, Screen.AboutSection),
+    DrawerOption("गतिविधियां", Res.drawable.local_activity, Screen.ActivitiesSection),
+    DrawerOption("संलग्न संस्थाएं", Res.drawable.account_tree, Screen.OrgsSection),
+    DrawerOption("हमसें जुडें", Res.drawable.handshake, Screen.JoinUs),
+    DrawerOption("आर्य गुरुकुल", Res.drawable.school, Screen.AryaGurukulSection),
+    DrawerOption("आर्या गुरुकुल", Res.drawable.school, Screen.AryaaGurukulSection),
+    DrawerOption("आर्य-आर्या निर्माण(सत्र)", Res.drawable.interactive_space, Screen.AryaNirmanSection),
+    DrawerOption("आर्य परिवार", Res.drawable.family, Screen.AryaPariwarSection),
+    DrawerOption("आर्य समाज संगठन", Res.drawable.diversity_3, Screen.AryaSamajSection),
+    DrawerOption("आओ स्वाध्याय करें", Res.drawable.menu_book, Screen.Learning),
+    // DrawerOption("ग्रन्थ विभाग", Res.drawable.local_library, Screen.BookSection),
   )
-
 
 @Composable
 fun DrawerContent(
@@ -112,7 +111,7 @@ fun DrawerContent(
   }
 
   Column(modifier = Modifier.width(250.dp).padding(8.dp).verticalScroll(rememberScrollState())) {
-  Row(
+    Row(
       modifier = Modifier.fillMaxWidth(),
       horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
@@ -122,10 +121,13 @@ fun DrawerContent(
         modifier = Modifier.width(64.dp)
       )
       Column(
-        modifier = Modifier.padding(top = 8.dp)) {
-        Text("आर्य महासंघ",
+        modifier = Modifier.padding(top = 8.dp)
+      ) {
+        Text(
+          "आर्य महासंघ",
           style = MaterialTheme.typography.titleLarge,
-          fontWeight = FontWeight.Bold)
+          fontWeight = FontWeight.Bold
+        )
         Text("कृण्वन्तो विश्वमार्यम", style = MaterialTheme.typography.bodyMedium)
       }
     }
@@ -135,13 +137,14 @@ fun DrawerContent(
         label = {
           Text(option.title, style = MaterialTheme.typography.bodyLarge)
         },
-        selected = checkIfSelected(
-          currentDestination,
-          option.route.toString()
-        ),
+        selected =
+          checkIfSelected(
+            currentDestination,
+            option.route.toString()
+          ),
         onClick = {
-          navController.navigate(option.route){
-            popUpTo(navController.graph.startDestDisplayName){
+          navController.navigate(option.route) {
+            popUpTo(navController.graph.startDestDisplayName) {
               saveState = true
             }
             launchSingleTop = true
@@ -158,52 +161,80 @@ fun DrawerContent(
           )
         },
       )
-      if(option.title == "हमसें जुडें"){
-        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-        Text("आर्ष विद्या", modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp), style = MaterialTheme.typography.titleMedium)
-      }else if(option.title == "आर्या गुरुकुल"){
-        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-        Text("संगठन कार्य ", modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp), style = MaterialTheme.typography.titleMedium)
-      }else if(option.title == "आर्य समाज संगठन"){
-        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-        Text("स्वाध्याय ", modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp), style = MaterialTheme.typography.titleMedium)
-      }
+      if (option.title == "हमसें जुडें")
+        {
+          HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+          Text(
+            "आर्ष विद्या",
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
+            style = MaterialTheme.typography.titleMedium
+          )
+        } else if (option.title == "आर्या गुरुकुल")
+        {
+          HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+          Text(
+            "संगठन कार्य ",
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
+            style = MaterialTheme.typography.titleMedium
+          )
+        } else if (option.title == "आर्य समाज संगठन")
+        {
+          HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+          Text(
+            "स्वाध्याय ",
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
+            style = MaterialTheme.typography.titleMedium
+          )
+        }
     }
   }
 }
 
-private fun checkIfSelected(currentDestination: String?, currentDrawerItem: String): Boolean{
-  return if((currentDestination?.contains("AboutUs") == true || currentDestination?.contains("AboutUsDetails") == true) && currentDrawerItem == Screen.AboutSection.toString()) true
-  else if((currentDestination?.contains("Activities") == true || currentDestination?.contains("ActivityDetails") == true) && currentDrawerItem == Screen.ActivitiesSection.toString()) true
-  else if((currentDestination?.contains("Orgs") == true || currentDestination?.contains("OrgDetails") == true) && currentDrawerItem == Screen.OrgsSection.toString()) true
-  else if((currentDestination?.contains("Learning") == true || currentDestination?.contains("VideoDetails") == true) && currentDrawerItem == Screen.LearningSection.toString()) true
-  else if((currentDestination?.contains("BookOrderForm") == true || currentDestination?.contains("BookOrderDetails") == true) && currentDrawerItem == Screen.BookSection.toString()) true
-  else if((currentDestination?.contains("AryaNirmanHome") == true || currentDestination?.contains("AryaNirmanRegistrationForm") == true) && currentDrawerItem == Screen.AryaNirmanSection.toString()) true
-  else if((currentDestination?.contains("AryaPariwarHome") == true) && currentDrawerItem == Screen.AryaPariwarSection.toString()) true
-  else if((currentDestination?.contains("AryaSamajHome") == true) && currentDrawerItem == Screen.AryaSamajSection.toString()) true
-  else if((currentDestination?.contains("AryaGurukulCollege") == true) && currentDrawerItem == Screen.AryaGurukulSection.toString()) true
-  else if((currentDestination?.contains("AryaaGurukulCollege") == true || currentDestination?.contains("AdmissionForm") == true) && currentDrawerItem == Screen.AryaaGurukulSection.toString()) true
-  else if(currentDestination?.contains(currentDrawerItem) == true) true
-  else false
+private fun checkIfSelected(currentDestination: String?, currentDrawerItem: String): Boolean {
+  return if ((currentDestination?.contains("AboutUs") == true || currentDestination?.contains("AboutUsDetails") == true) && currentDrawerItem == Screen.AboutSection.toString()) {
+    true
+  } else if ((currentDestination?.contains("Activities") == true || currentDestination?.contains("ActivityDetails") == true) && currentDrawerItem == Screen.ActivitiesSection.toString()) {
+    true
+  } else if ((currentDestination?.contains("Orgs") == true || currentDestination?.contains("OrgDetails") == true) && currentDrawerItem == Screen.OrgsSection.toString()) {
+    true
+  } else if ((currentDestination?.contains("Learning") == true || currentDestination?.contains("VideoDetails") == true) && currentDrawerItem == Screen.LearningSection.toString()) {
+    true
+  } else if ((currentDestination?.contains("BookOrderForm") == true || currentDestination?.contains("BookOrderDetails") == true) && currentDrawerItem == Screen.BookSection.toString()) {
+    true
+  } else if ((currentDestination?.contains("AryaNirmanHome") == true || currentDestination?.contains("AryaNirmanRegistrationForm") == true) && currentDrawerItem == Screen.AryaNirmanSection.toString()) {
+    true
+  } else if ((currentDestination?.contains("AryaPariwarHome") == true) && currentDrawerItem == Screen.AryaPariwarSection.toString()) {
+    true
+  } else if ((currentDestination?.contains("AryaSamajHome") == true) && currentDrawerItem == Screen.AryaSamajSection.toString()) {
+    true
+  } else if ((currentDestination?.contains("AryaGurukulCollege") == true) && currentDrawerItem == Screen.AryaGurukulSection.toString()) {
+    true
+  } else if ((currentDestination?.contains("AryaaGurukulCollege") == true || currentDestination?.contains("AdmissionForm") == true) && currentDrawerItem == Screen.AryaaGurukulSection.toString()) {
+    true
+  } else if (currentDestination?.contains(currentDrawerItem) == true) {
+    true
+  } else {
+    false
+  }
 }
 
 @Composable
 fun LargeScreens(
   drawerState: DrawerState,
   navController: NavHostController,
-){
+) {
   PermanentNavigationDrawer(
     drawerContent = {
       PermanentDrawerSheet {
         DrawerContent(drawerState, navController)
       }
     }
-  ){
+  ) {
     Row(modifier = Modifier.fillMaxSize(1f).background(MaterialTheme.colorScheme.surfaceDim)) {
       VerticalDivider(
         modifier = Modifier.padding(top = 4.dp, bottom = 4.dp, end = 4.dp)
       )
-      MainContent( drawerState, navController)
+      MainContent(drawerState, navController)
     }
   }
 }
@@ -227,10 +258,10 @@ fun SmallScreens(
   )
 }
 
-fun getScreenTitle(route: String?): String{
+fun getScreenTitle(route: String?): String {
   val routeString = route?.substring(route.lastIndexOf(".") + 1)
   println("routeString: $routeString")
-  return when(routeString) {
+  return when (routeString) {
     "AboutUs" -> "हमारे बारे मे"
     "Activities" -> "गतिविधियां"
     "JoinUs" -> "हमसें जुडें"
@@ -262,7 +293,7 @@ fun MainContent(
     derivedStateOf { backStackEntry?.destination?.route }
   }
 
-  LaunchedEffect(currentDestination){
+  LaunchedEffect(currentDestination) {
     println("currentRoute: $currentDestination")
   }
 
@@ -273,21 +304,34 @@ fun MainContent(
     topBar = {
       TopAppBar(
         title = {
-          Row(modifier = Modifier.fillMaxWidth().basicMarquee().padding(top = 2.dp),
-            horizontalArrangement = Arrangement.Center) {
-            //Text(if(screenTitle.isNotEmpty()) screenTitle else "॥ ओ३म् ॥")
+          Row(
+            modifier = Modifier.fillMaxWidth().basicMarquee().padding(top = 2.dp),
+            horizontalArrangement = Arrangement.Center
+          ) {
+            // Text(if(screenTitle.isNotEmpty()) screenTitle else "॥ ओ३म् ॥")
           }
         },
         navigationIcon = {
           val currentScreen = currentDestination?.substringAfterLast(".")
-          val shouldShowBack = listOf("AboutUsDetails", "ActivityDetails", "OrgDetails", "VideoDetails", "AdmissionForm", "BookOrderDetails", "AryaNirmanRegistrationForm").any { currentScreen?.startsWith(it) == true }
-          if(shouldShowBack) {
+          val shouldShowBack =
+            listOf(
+              "AboutUsDetails",
+              "ActivityDetails",
+              "OrgDetails",
+              "VideoDetails",
+              "AdmissionForm",
+              "BookOrderDetails",
+              "AryaNirmanRegistrationForm"
+            ).any {
+              currentScreen?.startsWith(it) == true
+            }
+          if (shouldShowBack) {
             IconButton(onClick = {
               navController.navigateUp()
             }) {
               Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back Arrow")
             }
-          }else {
+          } else {
             IconButton(onClick = { scope.launch { drawerState.open() } }) {
               Icon(Icons.Default.Menu, contentDescription = "Open Drawer")
             }
@@ -297,9 +341,9 @@ fun MainContent(
           var isDark by LocalThemeIsDark.current
           TooltipBox(
             positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-            tooltip = { PlainTooltip { Text(if(isDark) "Toggle to light" else "Toggle to dark") } },
+            tooltip = { PlainTooltip { Text(if (isDark) "Toggle to light" else "Toggle to dark") } },
             state = rememberTooltipState()
-          ){
+          ) {
             IconButton(
               onClick = { isDark = !isDark }
             ) {
@@ -310,56 +354,58 @@ fun MainContent(
             }
           }
 
-          if(isLoggedIn){
-            TooltipBox(
-              positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-              tooltip = { PlainTooltip { Text("Logout") } },
-              state = rememberTooltipState()
-            ) {
-              IconButton(
-                onClick = { showLogoutDialog = true }
+          if (isLoggedIn)
+            {
+              TooltipBox(
+                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                tooltip = { PlainTooltip { Text("Logout") } },
+                state = rememberTooltipState()
               ) {
-                Icon(
-                  Icons.AutoMirrored.Filled.Logout,
-                  contentDescription = "logout"
-                )
+                IconButton(
+                  onClick = { showLogoutDialog = true }
+                ) {
+                  Icon(
+                    Icons.AutoMirrored.Filled.Logout,
+                    contentDescription = "logout"
+                  )
+                }
+              }
+            } else
+            {
+              TooltipBox(
+                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                tooltip = { PlainTooltip { Text("Login") } },
+                state = rememberTooltipState()
+              ) {
+                IconButton(
+                  onClick = { showLoginDialog = true }
+                ) {
+                  Icon(
+                    Icons.AutoMirrored.Filled.Login,
+                    contentDescription = "login"
+                  )
+                }
               }
             }
-          }else{
-            TooltipBox(
-              positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-              tooltip = { PlainTooltip { Text("Login") } },
-              state = rememberTooltipState()
-            ) {
-              IconButton(
-                onClick = { showLoginDialog = true }
-              ) {
-                Icon(
-                  Icons.AutoMirrored.Filled.Login,
-                  contentDescription = "login"
-                )
-              }
-            }
-          }
         }
       )
     },
     content = { paddingValues ->
-      Column (
-        modifier = Modifier
-          .fillMaxSize(1.0f)
-          .padding(paddingValues)
+      Column(
+        modifier =
+          Modifier
+            .fillMaxSize(1.0f)
+            .padding(paddingValues)
       ) {
         CompositionLocalProvider(
           LocalSnackbarHostState provides snackbarHostState,
           LocalAuthState provides authState
-        ){
+        ) {
           RootNavGraph(navController)
         }
       }
     },
     bottomBar = {
-
     }
   )
   // Login Dialog

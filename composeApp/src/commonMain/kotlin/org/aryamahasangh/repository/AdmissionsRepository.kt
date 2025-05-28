@@ -21,8 +21,7 @@ interface AdmissionsRepository {
  * Implementation of AdmissionsRepository that uses Apollo GraphQL client
  */
 class AdmissionsRepositoryImpl(private val apolloClient: ApolloClient) : AdmissionsRepository {
-
-//  override fun getStudentApplications(): Flow<Result<List<StudentApplicationsQuery.StudentsApplied>>> = flow {
+  //  override fun getStudentApplications(): Flow<Result<List<StudentApplicationsQuery.StudentsApplied>>> = flow {
 //    emit(Result.Loading)
 //
 //    val result = safeCall {

@@ -20,10 +20,10 @@ fun OrgsScreen(
   viewModel: OrganisationsViewModel
 ) {
   val snackbarHostState = LocalSnackbarHostState.current
-  
+
   // Collect UI state from ViewModel
   val uiState by viewModel.uiState.collectAsState()
-  
+
   // Handle loading state
   if (uiState.isLoading) {
     Box(
@@ -34,7 +34,7 @@ fun OrgsScreen(
     }
     return
   }
-  
+
   // Handle error state
   uiState.error?.let { error ->
     LaunchedEffect(error) {
@@ -43,7 +43,7 @@ fun OrgsScreen(
         actionLabel = "Retry"
       )
     }
-    
+
     Box(
       modifier = Modifier.fillMaxSize(),
       contentAlignment = Alignment.Center
@@ -60,7 +60,7 @@ fun OrgsScreen(
     }
     return
   }
-  
+
   // Handle empty state
   if (uiState.organisations.isEmpty()) {
     Box(

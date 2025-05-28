@@ -42,7 +42,7 @@ fun JoinUsScreen(viewModel: JoinUsViewModel) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
-fun UpcomingActivitiesFormPreview(){
+fun UpcomingActivitiesFormPreview() {
   UpcomingActivitiesForm(
     JoinUsUiState(
       activities = listOf(),
@@ -55,13 +55,14 @@ fun UpcomingActivitiesFormPreview(){
 }
 
 @Composable
-fun EditImageButton(modifier: Modifier = Modifier, onClick: () -> Unit){
+fun EditImageButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
   Box(
-    modifier = modifier.size(36.dp).clickable {
-      onClick()
-    },
+    modifier =
+      modifier.size(36.dp).clickable {
+        onClick()
+      },
     contentAlignment = Alignment.Center
-  ){
+  ) {
     Icon(
       Icons.Default.Edit,
       contentDescription = "edit",
@@ -76,13 +77,13 @@ fun ButtonWithProgressIndicator(
   enabled: Boolean = true,
   inProgress: Boolean = false,
   onClick: () -> Unit
-){
+) {
   Button(
     modifier = modifier,
     onClick = onClick,
     enabled = enabled
-  ){
-    if(inProgress) {
+  ) {
+    if (inProgress) {
       CircularProgressIndicator(
         Modifier.size(24.dp)
       )
@@ -93,16 +94,20 @@ fun ButtonWithProgressIndicator(
 
 @Preview
 @Composable
-fun JoinUsLabelPreviewWithEditMode(){
+fun JoinUsLabelPreviewWithEditMode() {
   JoinUsLabel(labelState = LabelState(editMode = true))
 }
 
 @Preview
 @Composable
-fun JoinUsLabelPreview(){
+fun JoinUsLabelPreview() {
   JoinUsLabel(
-    labelState = LabelState(label = "आप निर्मात्री सभा द्वारा आयोजित दो दिवसीय लघु गुरुकुल पाठ्यक्रम पूर्ण कर आर्य महासंघ से जुड़ सकते है। \n" +
-      "निचे आप अपना क्षेत्र चुनकर आपके क्षेत्रों में आयोजित होने वाले सत्रों के विवरण देख सकते है। "),
+    labelState =
+      LabelState(
+        label =
+          "आप निर्मात्री सभा द्वारा आयोजित दो दिवसीय लघु गुरुकुल पाठ्यक्रम पूर्ण कर आर्य महासंघ से जुड़ सकते है। \n" +
+            "निचे आप अपना क्षेत्र चुनकर आपके क्षेत्रों में आयोजित होने वाले सत्रों के विवरण देख सकते है। "
+      ),
     isLoggedIn = true
   )
 }
@@ -113,22 +118,22 @@ fun JoinUsLabel(
   updateLabel: (String) -> Unit = {},
   onEditModeChange: (Boolean) -> Unit = {},
   isLoggedIn: Boolean = false
-){
+) {
   val (label, _, _, editMode) = labelState
-  Column(modifier = Modifier.fillMaxWidth()){
-    if(!editMode) {
-      Row(verticalAlignment = Alignment.CenterVertically){
+  Column(modifier = Modifier.fillMaxWidth()) {
+    if (!editMode) {
+      Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
           modifier = Modifier.weight(1f),
           text = label
         )
-        if(isLoggedIn) {
+        if (isLoggedIn) {
           EditImageButton(
             onClick = { onEditModeChange(true) }
           )
         }
       }
-    }else {
+    } else {
       var localText by remember { mutableStateOf(labelState.label) }
       OutlinedTextField(
         modifier = Modifier.fillMaxWidth(),
@@ -145,7 +150,7 @@ fun JoinUsLabel(
         TextButton(
           enabled = !labelState.isUpdating,
           onClick = { onEditModeChange(false) }
-        ){
+        ) {
           Text("Cancel")
         }
         ButtonWithProgressIndicator(
@@ -235,7 +240,7 @@ fun UpcomingActivitiesForm(
       }
       return
     }
-    
+
     // Handle error state
     uiState.error?.let { error ->
       LaunchedEffect(error) {
@@ -245,7 +250,7 @@ fun UpcomingActivitiesForm(
           actionLabel = "Retry"
         )
       }
-      
+
       Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -255,7 +260,7 @@ fun UpcomingActivitiesForm(
           verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
           Text("Failed to load activities")
-          Button(onClick = { 
+          Button(onClick = {
             loadFilteredActivities(selectedState, selectedDistrict)
           }) {
             Text("Retry")
@@ -267,18 +272,20 @@ fun UpcomingActivitiesForm(
 
     uiState.activities.let {
       if (it != null) {
-        if(it.isEmpty()){
+        if (it.isEmpty())
+          {
+            Box(
+              modifier = Modifier.fillMaxSize(),
+              contentAlignment = Alignment.Center
+            ) {
+              Text("No sessions have been planned in this area!")
+            }
+          } else {
           Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-          ) {
-            Text("No sessions have been planned in this area!")
-          }
-        }else {
-          Box(
-            modifier = Modifier
-              .fillMaxSize()
-              .weight(1f) // Limits height to remaining space
+            modifier =
+              Modifier
+                .fillMaxSize()
+                .weight(1f) // Limits height to remaining space
           ) {
             ActivitiesList(activities = it)
           }
@@ -335,7 +342,7 @@ fun StateDropdown(
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
 //        colors = ExposedDropdownMenuDefaults.textFieldColors(),
         isError = isError,
-        supportingText =  { if(isError && errorMessage.isNotEmpty()) Text(errorMessage) else null}
+        supportingText = { if (isError && errorMessage.isNotEmpty()) Text(errorMessage) else null }
       )
       ExposedDropdownMenu(
         expanded = expanded,
@@ -386,7 +393,7 @@ fun DistrictDropdown(
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
 //        colors = ExposedDropdownMenuDefaults.textFieldColors(),
         isError = isError,
-        supportingText =  { if(isError && errorMessage.isNotEmpty()) Text(errorMessage) else null}
+        supportingText = { if (isError && errorMessage.isNotEmpty()) Text(errorMessage) else null }
       )
       ExposedDropdownMenu(
         expanded = expanded,
@@ -415,7 +422,6 @@ fun DistrictDropdown(
     }
   }
 }
-
 
 val indianStatesToDistricts =
   mapOf(

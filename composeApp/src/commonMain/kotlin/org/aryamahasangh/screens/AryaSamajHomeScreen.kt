@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+
 @Composable
 fun AryaSamajHomeScreen() {
   Column(Modifier.padding(8.dp)) {
@@ -24,7 +25,7 @@ fun AryaSamajHomeScreen() {
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.padding(bottom = 16.dp)
       ) {
-        listOf("प्रातःकालीन मंत्र","उपासना","संध्या","अग्निहोत्र","भोजन मन्त्र","शयन मंत्र","वैदिक राष्ट्रीय प्रार्थना","स्वराज्य यज्ञ","नवसंवत्सर यज्ञ","वासंती नवसस्येष्टि (होली)","शारदीय नवसस्येष्टि (दीपावली)").forEach {
+        listOf("प्रातःकालीन मंत्र", "उपासना", "संध्या", "अग्निहोत्र", "भोजन मन्त्र", "शयन मंत्र", "वैदिक राष्ट्रीय प्रार्थना", "स्वराज्य यज्ञ", "नवसंवत्सर यज्ञ", "वासंती नवसस्येष्टि (होली)", "शारदीय नवसस्येष्टि (दीपावली)").forEach {
           OutlinedCard(
             onClick = {}
           ) {

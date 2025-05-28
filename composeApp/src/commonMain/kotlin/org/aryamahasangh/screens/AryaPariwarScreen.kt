@@ -10,7 +10,7 @@ import org.aryamahasangh.viewmodel.JoinUsViewModel
 
 @Composable
 fun AryaPariwarScreen(viewModel: JoinUsViewModel) {
-  Column(Modifier.padding(8.dp)){
+  Column(Modifier.padding(8.dp)) {
     Text("Arya Pariwar")
   }
 }

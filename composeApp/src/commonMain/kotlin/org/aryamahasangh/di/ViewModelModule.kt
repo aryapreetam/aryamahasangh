@@ -11,25 +11,26 @@ import org.koin.dsl.module
 /**
  * Module for providing ViewModels
  */
-val viewModelModule = module {
-  // Provide ActivitiesViewModel
-  factoryOf(::ActivitiesViewModel)
+val viewModelModule =
+  module {
+    // Provide ActivitiesViewModel
+    factoryOf(::ActivitiesViewModel)
 
-  // Provide LearningViewModel
-  factoryOf(::LearningViewModel)
+    // Provide LearningViewModel
+    factoryOf(::LearningViewModel)
 
-  // Provide AboutUsViewModel
-  factoryOf(::AboutUsViewModel)
+    // Provide AboutUsViewModel
+    factoryOf(::AboutUsViewModel)
 
-  // Provide OrganisationsViewModel
-  factoryOf(::OrganisationsViewModel)
+    // Provide OrganisationsViewModel
+    factoryOf(::OrganisationsViewModel)
 
-  // Provide AdmissionsViewModel
-  factoryOf(::AdmissionsViewModel)
+    // Provide AdmissionsViewModel
+    factoryOf(::AdmissionsViewModel)
 
-  // Provide JoinUsViewModel
-  factoryOf(::JoinUsViewModel)
-  factoryOf(::BookOrderViewModel)
-  factoryOf(::AryaNirmanViewModel)
-  factoryOf(::SatraRegistrationViewModel)
-}
+    // Provide JoinUsViewModel
+    factoryOf(::JoinUsViewModel)
+    factoryOf(::BookOrderViewModel)
+    factoryOf(::AryaNirmanViewModel)
+    factoryOf(::SatraRegistrationViewModel)
+  }

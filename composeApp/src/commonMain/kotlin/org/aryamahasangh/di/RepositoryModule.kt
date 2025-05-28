@@ -14,25 +14,26 @@ import org.koin.dsl.module
 /**
  * Module for providing repositories
  */
-val repositoryModule = module {
-  // Provide ActivityRepository
-  singleOf(::ActivityRepositoryImpl) { bind<ActivityRepository>() }
+val repositoryModule =
+  module {
+    // Provide ActivityRepository
+    singleOf(::ActivityRepositoryImpl) { bind<ActivityRepository>() }
 
-  // Provide LearningRepository
-  singleOf(::LearningRepositoryImpl) { bind<LearningRepository>() }
+    // Provide LearningRepository
+    singleOf(::LearningRepositoryImpl) { bind<LearningRepository>() }
 
-  // Provide AboutUsRepository
-  singleOf(::AboutUsRepositoryImpl) { bind<AboutUsRepository>() }
+    // Provide AboutUsRepository
+    singleOf(::AboutUsRepositoryImpl) { bind<AboutUsRepository>() }
 
-  // Provide OrganisationsRepository
-  singleOf(::OrganisationsRepositoryImpl) { bind<OrganisationsRepository>() }
+    // Provide OrganisationsRepository
+    singleOf(::OrganisationsRepositoryImpl) { bind<OrganisationsRepository>() }
 
-  // Provide AdmissionsRepository
-  singleOf(::AdmissionsRepositoryImpl) { bind<AdmissionsRepository>() }
+    // Provide AdmissionsRepository
+    singleOf(::AdmissionsRepositoryImpl) { bind<AdmissionsRepository>() }
 
-  // Provide JoinUsRepository
-  singleOf(::JoinUsRepositoryImpl) { bind<JoinUsRepository>() }
+    // Provide JoinUsRepository
+    singleOf(::JoinUsRepositoryImpl) { bind<JoinUsRepository>() }
 
-  singleOf(::BookOrderRepositoryImpl) { bind<BookOrderRepository>() }
-  singleOf(::AryaNirmanRepositoryImpl) { bind<AryaNirmanRepository>() }
-}
+    singleOf(::BookOrderRepositoryImpl) { bind<BookOrderRepository>() }
+    singleOf(::AryaNirmanRepositoryImpl) { bind<AryaNirmanRepository>() }
+  }

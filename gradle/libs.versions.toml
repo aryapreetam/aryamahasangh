@@ -16,6 +16,7 @@ compose-android = "1.8.2"
 composeRememberSetting = "1.0.3"
 filekit = "0.10.0-beta04"
 junit = "4.13.2"
+ktlint = "12.3.0"
 
 kotlin = "2.1.21"
 kermit = "2.0.5"
@@ -105,11 +106,11 @@ supabase-auth = { module = "io.github.jan-tennert.supabase:auth-kt", version.ref
 supabase-realtime = { module = "io.github.jan-tennert.supabase:realtime-kt", version.ref = "supabase" }
 supabase-storage = { module = "io.github.jan-tennert.supabase:storage-kt", version.ref = "supabase" }
 supabase-apollographql = { module = "io.github.jan-tennert.supabase:apollo-graphql", version.ref = "supabase" }
-supabase-coil = { module = "io.github.jan-tennert.supabase:coil3-integration", version="supabase" }
+supabase-coil = { module = "io.github.jan-tennert.supabase:coil3-integration", version = "supabase" }
 
 # apollo adapters
-apollo-adapters-core = { module = "com.apollographql.adapters:apollo-adapters-core", version="0.0.6" }
-apollo-adapters-kotlinx-datetime = { module = "com.apollographql.adapters:apollo-adapters-kotlinx-datetime", version="0.0.6" }
+apollo-adapters-core = { module = "com.apollographql.adapters:apollo-adapters-core", version = "0.0.6" }
+apollo-adapters-kotlinx-datetime = { module = "com.apollographql.adapters:apollo-adapters-kotlinx-datetime", version = "0.0.6" }
 
 # filekit
 # filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "filekit" }
@@ -129,3 +130,4 @@ composeHotReload = { id = "org.jetbrains.compose.hot-reload", version.ref = "com
 kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 apollo = { id = "com.apollographql.apollo", version.ref = "apollo" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }

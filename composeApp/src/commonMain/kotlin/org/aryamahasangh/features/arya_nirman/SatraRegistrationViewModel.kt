@@ -12,7 +12,7 @@ data class RegistrationUiState(
 class SatraRegistrationViewModel(
   private val aryaNirmanRepository: AryaNirmanRepository
 ) : BaseViewModel<RegistrationUiState>(RegistrationUiState()) {
-  fun createRegistration(activityId: String, data: RegistrationData){
+  fun createRegistration(activityId: String, data: RegistrationData) {
     launch {
       aryaNirmanRepository.registerForActivity(activityId = activityId, data = data).collect { result ->
         when (result) {
@@ -20,19 +20,23 @@ class SatraRegistrationViewModel(
             updateState { it.copy(isLoading = true, error = null, data = false) }
           }
           is Result.Success -> {
-            updateState { it.copy(
-              isLoading = false,
-              error = null,
-              data = result.data
-            )}
+            updateState {
+              it.copy(
+                isLoading = false,
+                error = null,
+                data = result.data
+              )
+            }
           }
 
           is Result.Error -> {
-            updateState { it.copy(
-              isLoading = false,
-              error = result.message,
-              data = null,
-            )}
+            updateState {
+              it.copy(
+                isLoading = false,
+                error = result.message,
+                data = null,
+              )
+            }
           }
         }
       }

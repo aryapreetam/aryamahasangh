@@ -32,7 +32,6 @@ fun LoginDialog(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp)
       ) {
-
         OutlinedTextField(
           value = username,
           onValueChange = {
@@ -54,12 +53,13 @@ fun LoginDialog(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
         OutlinedTextField(
           value = password,
           onValueChange = {
-            if (it.length < 30)
+            if (it.length < 30) {
               password = it
+            }
             if (passwordError && it.length >= 5
               // Temporarily removed password requirements
               //  && it.matches(Regex(".*[!@#\$%^&*()].*"))
-              ) {
+            ) {
               passwordError = false // Clear error on valid input
             }
           },
@@ -77,8 +77,8 @@ fun LoginDialog(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
       Button(
         onClick = {
           val isValidPassword =
-            password.isNotEmpty() && password.length >= 5 
-                //&& password.matches(Regex(".*[!@#\$%^&*()].*"))
+            password.isNotEmpty() && password.length >= 5
+          // && password.matches(Regex(".*[!@#\$%^&*()].*"))
           usernameError = username.isEmpty()
           passwordError = !isValidPassword
 
@@ -126,5 +126,4 @@ fun LoginDialog(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
     },
     shape = MaterialTheme.shapes.medium
   )
-
 }

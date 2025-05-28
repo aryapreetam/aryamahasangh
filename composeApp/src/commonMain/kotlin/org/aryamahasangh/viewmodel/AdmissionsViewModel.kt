@@ -1,14 +1,14 @@
 package org.aryamahasangh.viewmodel
 
-//import org.aryamahasangh.StudentApplicationsQuery
-//import org.aryamahasangh.type.AdmissionFormDataInput
+// import org.aryamahasangh.StudentApplicationsQuery
+// import org.aryamahasangh.type.AdmissionFormDataInput
 import org.aryamahasangh.repository.AdmissionsRepository
 
 /**
  * UI state for the Admissions screens
  */
 data class AdmissionsUiState(
-  //val studentApplications: List<StudentApplicationsQuery.StudentsApplied> = emptyList(),
+  // val studentApplications: List<StudentApplicationsQuery.StudentsApplied> = emptyList(),
   val isLoading: Boolean = false,
   val error: String? = null
 )
@@ -28,7 +28,6 @@ data class AdmissionFormSubmissionState(
 class AdmissionsViewModel(
   private val admissionsRepository: AdmissionsRepository
 ) : BaseViewModel<AdmissionsUiState>(AdmissionsUiState()) {
-
   // Separate state for form submission
 //  private val _admissionFormSubmissionState = MutableStateFlow(AdmissionFormSubmissionState())
 //  val admissionFormSubmissionState: StateFlow<AdmissionFormSubmissionState> = _admissionFormSubmissionState.asStateFlow()

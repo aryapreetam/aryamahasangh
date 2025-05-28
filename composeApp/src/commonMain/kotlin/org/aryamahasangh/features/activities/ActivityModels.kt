@@ -119,6 +119,7 @@ data class OrganisationalActivity(
 ) {
   companion object
 }
+
 fun OrganisationalActivity.Companion.camelCased(node: OrganisationalActivityDetailByIdQuery.Node): OrganisationalActivity {
   val organisationalActivityShort = node.organisationalActivityShort.camelCased()
   return OrganisationalActivity(
@@ -138,25 +139,34 @@ fun OrganisationalActivity.Companion.camelCased(node: OrganisationalActivityDeta
     startDatetime = organisationalActivityShort.startDatetime,
     longDescription = node.long_description!!,
     additionalInstructions = node.additional_instructions ?: "",
-    contactPeople = node.activity_memberCollection?.edges?.map {
-      val member = it.node.member!!
-       ActivityMember(
-         id = it.node.id.toString(),
-         post = it.node.post.toString(),
-         member = Member(id=member.id, name = member.name!!, phoneNumber = member.phone_number ?: "",  profileImage = member.profile_image ?: "" ),
-         priority = it.node.priority!!
-       )
-    }!!,
-    associatedOrganisations = node.organisational_activityCollection?.edges?.map {
-      val (id, name) = it.node.organisation!!
-      AssociatedOrganisation(
-        id = it.node.id,
-        organisation = Organisation(id = id, name = name!!))
-    }!!
+    contactPeople =
+      node.activity_memberCollection?.edges?.map {
+        val member = it.node.member!!
+        ActivityMember(
+          id = it.node.id.toString(),
+          post = it.node.post.toString(),
+          member =
+            Member(
+              id = member.id,
+              name = member.name!!,
+              phoneNumber = member.phone_number ?: "",
+              profileImage = member.profile_image ?: ""
+            ),
+          priority = it.node.priority!!
+        )
+      }!!,
+    associatedOrganisations =
+      node.organisational_activityCollection?.edges?.map {
+        val (id, name) = it.node.organisation!!
+        AssociatedOrganisation(
+          id = it.node.id,
+          organisation = Organisation(id = id, name = name!!)
+        )
+      }!!
   )
 }
 
-fun getLocalDateTime(timestamptzStr: Any): LocalDateTime{
+fun getLocalDateTime(timestamptzStr: Any): LocalDateTime {
   val dateTimeStr = timestamptzStr as String
   // Parse as Instant to handle timezone information
   val instant = Instant.parse(dateTimeStr)

@@ -7,7 +7,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
 import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.YoutubeVideoPlayer
 import org.aryamahasangh.viewmodel.LearningViewModel
@@ -16,15 +15,15 @@ import org.aryamahasangh.viewmodel.LearningViewModel
 fun VideoDetailsScreen(learningItemId: String, viewModel: LearningViewModel) {
   val scope = rememberCoroutineScope()
   val snackbarHostState = LocalSnackbarHostState.current
-  
+
   // Load learning item details
   LaunchedEffect(learningItemId) {
     viewModel.loadLearningItemDetail(learningItemId)
   }
-  
+
   // Collect UI state from ViewModel
   val uiState by viewModel.videoPlayerUiState.collectAsState()
-  
+
   // Handle loading state
   if (uiState.isLoading) {
     Box(
@@ -35,7 +34,7 @@ fun VideoDetailsScreen(learningItemId: String, viewModel: LearningViewModel) {
     }
     return
   }
-  
+
   // Handle error state
   uiState.error?.let { error ->
     LaunchedEffect(error) {
@@ -44,7 +43,7 @@ fun VideoDetailsScreen(learningItemId: String, viewModel: LearningViewModel) {
         actionLabel = "Retry"
       )
     }
-    
+
     Box(
       modifier = Modifier.fillMaxSize(),
       contentAlignment = Alignment.Center
@@ -61,7 +60,7 @@ fun VideoDetailsScreen(learningItemId: String, viewModel: LearningViewModel) {
     }
     return
   }
-  
+
   // Handle null learning item
   if (uiState.learningItem == null) {
     Box(
@@ -72,7 +71,7 @@ fun VideoDetailsScreen(learningItemId: String, viewModel: LearningViewModel) {
     }
     return
   }
-  
+
   val detail = uiState.learningItem!!
   Column(
     modifier = Modifier.fillMaxSize().padding(16.dp),
@@ -84,8 +83,10 @@ fun VideoDetailsScreen(learningItemId: String, viewModel: LearningViewModel) {
       style = MaterialTheme.typography.titleLarge,
       fontWeight = FontWeight.Bold,
     )
-    Text("ईश्वर के नाम की व्याख्या भाग 1: " +
+    Text(
+      "ईश्वर के नाम की व्याख्या भाग 1: " +
         "प्रस्तुत श्रव्यकणिका में आचार्य जी ने सत्यार्थ प्रकाश के प्रथम समुल्लास में वर्णित ईश्वर के नामों, जैसे वरुण, अर्यमा, इंद्र, वृहस्पति इत्यादि की व्याख्या अत्यंत सरल शब्दों में की है। \n" +
-        "वैसे तो प्रथम समुल्लास सत्यार्थ प्रकाश में सबसे कठिन माना जाता है पर आचार्य जी ने इसे विविध उदहारण देकर रुचिपूर्वक बनाया है।")
+        "वैसे तो प्रथम समुल्लास सत्यार्थ प्रकाश में सबसे कठिन माना जाता है पर आचार्य जी ने इसे विविध उदहारण देकर रुचिपूर्वक बनाया है।"
+    )
   }
 }

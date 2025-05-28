@@ -73,22 +73,22 @@ fun ReceivedApplicationsScreen(viewModel: AdmissionsViewModel) {
 //  }
 }
 //
-//val data = StudentApplicationsQuery.StudentsApplied(
+// val data = StudentApplicationsQuery.StudentsApplied(
 //  id = "fdfdfdf",
 //  studentName = "आर्य प्रितम",
 //  studentPhoto = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/documents//123312312123_student_photo_1741460570.jpg",
 //  previousClass = "7th",
 //  marksObtained = "73 %"
-//)
+// )
 //
-//@Preview
-//@Composable
-//fun StudentApplicationItemPreview() {
+// @Preview
+// @Composable
+// fun StudentApplicationItemPreview() {
 //  StudentApplicationItem(data)
-//}
+// }
 //
-//@Composable
-//fun StudentApplicationItem(data: StudentApplicationsQuery.StudentsApplied) {
+// @Composable
+// fun StudentApplicationItem(data: StudentApplicationsQuery.StudentsApplied) {
 //  ElevatedCard(
 //    modifier = Modifier.width(300.dp),
 //    shape = RoundedCornerShape(4.dp),
@@ -119,4 +119,4 @@ fun ReceivedApplicationsScreen(viewModel: AdmissionsViewModel) {
 //      }
 //    }
 //  }
-//}
+// }

@@ -59,10 +59,11 @@ fun ActivitiesScreen(
 
   // Display activities
   Column(
-    modifier = Modifier
-      .fillMaxSize()
-      .padding(8.dp)
-      .verticalScroll(rememberScrollState())
+    modifier =
+      Modifier
+        .fillMaxSize()
+        .padding(8.dp)
+        .verticalScroll(rememberScrollState())
   ) {
     FlowRow(
       verticalArrangement = Arrangement.spacedBy(8.dp),

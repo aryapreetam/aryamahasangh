@@ -16,17 +16,17 @@ import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.mahasangh_logo_without_background
 import aryamahasangh.composeapp.generated.resources.noto_sans_devanagari
 import kotlinx.browser.document
+import org.aryamahasangh.config.ConfigInitializer
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.configureWebResources
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.preloadFont
-import org.aryamahasangh.config.ConfigInitializer
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalResourceApi::class, InternalComposeUiApi::class)
 fun main() {
   // Initialize cross-platform configuration
   ConfigInitializer.initializeBlocking()
-  
+
   configureWebResources {
     // Overrides the resource location
     resourcePathMapping { path -> "./$path" }
@@ -37,23 +37,24 @@ fun main() {
 
     CompositionLocalProvider(LocalLayerContainer provides document.getElementById("components")!!) {
       val fontDevanagari by preloadFont(Res.font.noto_sans_devanagari)
-      if(fontDevanagari != null) {
+      if (fontDevanagari != null) {
         println("font devanagari is ready")
         App()
-      }else{
-        // Displays the progress indicator to address a FOUT or the app being temporarily non-functional during loading
-        Box(
-          modifier = Modifier.fillMaxSize(),
-          contentAlignment = Alignment.Center
-        ) {
-          Image(
-            modifier = Modifier.width(250.dp),
-            painter = painterResource(Res.drawable.mahasangh_logo_without_background),
-            contentDescription = "Arya Mahasangh logo"
-          )
+      } else
+        {
+          // Displays the progress indicator to address a FOUT or the app being temporarily non-functional during loading
+          Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+          ) {
+            Image(
+              modifier = Modifier.width(250.dp),
+              painter = painterResource(Res.drawable.mahasangh_logo_without_background),
+              contentDescription = "Arya Mahasangh logo"
+            )
+          }
+          println("Fonts are not ready yet")
         }
-        println("Fonts are not ready yet")
-      }
     }
   }
 }
