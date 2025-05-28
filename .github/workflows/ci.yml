@@ -224,3 +224,65 @@ jobs:
       env:
         NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
         NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+  android-release:
+    name: Android Release Build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/dev'
+    needs: [test, code-quality]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        
+    - name: Cache Gradle packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+          
+    - name: Decode Keystore
+      run: |
+        echo ${{ secrets.KEYSTORE_BASE64 }} | base64 -d > aryamahasangh.jks
+      
+    - name: Create secrets.properties
+      run: |
+        cp secrets.properties.template secrets.properties
+        sed -i 's|dev.supabase.url=|dev.supabase.url=${{ secrets.SUPABASE_URL }}|' secrets.properties
+        sed -i 's|dev.supabase.key=|dev.supabase.key=${{ secrets.SUPABASE_KEY }}|' secrets.properties
+        sed -i 's|prod.supabase.url=|prod.supabase.url=${{ secrets.SUPABASE_URL }}|' secrets.properties
+        sed -i 's|prod.supabase.key=|prod.supabase.key=${{ secrets.SUPABASE_KEY }}|' secrets.properties
+        
+    - name: Make gradlew executable
+      run: chmod +x ./gradlew
+      
+    - name: Build Release APK
+      run: ./gradlew :composeApp:assembleRelease
+      env:
+        KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+      
+    - name: Generate release timestamp
+      id: timestamp
+      run: echo "timestamp=$(date +'%Y%m%d_%H%M%S')" >> $GITHUB_OUTPUT
+      
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: composeApp/build/outputs/apk/release/composeApp-release.apk
+        tag_name: android_release_${{ steps.timestamp.outputs.timestamp }}
+        name: AryaMahasangh_${{ steps.timestamp.outputs.timestamp }}.apk
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
