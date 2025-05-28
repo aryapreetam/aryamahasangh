@@ -1,6 +1,8 @@
 package org.aryamahasangh.di
 
 import org.aryamahasangh.features.activities.ActivitiesViewModel
+import org.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
+import org.aryamahasangh.features.arya_nirman.SatraRegistrationViewModel
 import org.aryamahasangh.features.organisations.OrganisationsViewModel
 import org.aryamahasangh.viewmodel.*
 import org.koin.core.module.dsl.factoryOf
@@ -28,4 +30,6 @@ val viewModelModule = module {
   // Provide JoinUsViewModel
   factoryOf(::JoinUsViewModel)
   factoryOf(::BookOrderViewModel)
+  factoryOf(::AryaNirmanViewModel)
+  factoryOf(::SatraRegistrationViewModel)
 }

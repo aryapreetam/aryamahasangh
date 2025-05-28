@@ -9,16 +9,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavHostController
 import kotlinx.coroutines.launch
 import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.components.ActivityListItem
-import org.aryamahasangh.navigation.Screen
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ActivitiesScreen(
-  navController: NavHostController, 
   onNavigateToActivityDetails: (String) -> Unit,
   viewModel: ActivitiesViewModel
 ) {
@@ -72,11 +69,11 @@ fun ActivitiesScreen(
       horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
       uiState.activities.forEach { activity ->
+
         ActivityListItem(
           activity = activity,
           handleOnClick = {
             onNavigateToActivityDetails(activity.id)
-            navController.navigate(Screen.ActivityDetails(activity.id))
           }
         ) {
           // Delete activity

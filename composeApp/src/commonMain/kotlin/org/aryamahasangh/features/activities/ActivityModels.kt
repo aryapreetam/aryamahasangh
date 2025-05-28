@@ -5,7 +5,7 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.SerialName
-import org.aryamahasangh.OrganisationalActivityDetailQuery
+import org.aryamahasangh.OrganisationalActivityDetailByIdQuery
 import org.aryamahasangh.fragment.OrganisationalActivityShort
 
 data class ActivityResponse(
@@ -119,7 +119,7 @@ data class OrganisationalActivity(
 ) {
   companion object
 }
-fun OrganisationalActivity.Companion.camelCased(node: OrganisationalActivityDetailQuery.Node): OrganisationalActivity {
+fun OrganisationalActivity.Companion.camelCased(node: OrganisationalActivityDetailByIdQuery.Node): OrganisationalActivity {
   val organisationalActivityShort = node.organisationalActivityShort.camelCased()
   return OrganisationalActivity(
     id = organisationalActivityShort.id,

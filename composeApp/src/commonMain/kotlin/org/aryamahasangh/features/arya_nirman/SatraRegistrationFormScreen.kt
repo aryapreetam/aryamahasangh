@@ -22,7 +22,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 
 // --- Data Model for Form Submission ---
@@ -61,8 +60,13 @@ val inspirationOptions = InspirationType.values().toList()
 @Composable
 fun SatraRegistrationFormScreen(
   onRegistrationSuccess: () -> Unit = {}, // Callback for successful registration
-  onRegistrationFailed: () -> Unit = {}  // Callback for failed registration (e.g. server error, not validation)
+  onRegistrationFailed: () -> Unit = {},  // Callback for failed registration (e.g. server error, not validation)
+  viewModel: SatraRegistrationViewModel,
+  activityId: String,
 ) {
+
+  val uiState by viewModel.uiState.collectAsState()
+
   val snackbarHostState = remember { SnackbarHostState() }
   val coroutineScope = rememberCoroutineScope()
   val scrollState = rememberScrollState()
@@ -348,15 +352,7 @@ fun SatraRegistrationFormScreen(
         trainedAryaPhone = if (hasTrainedAryaInFamily) trainedAryaPhone else null, // NEW
         instructionsAcknowledged = instructionsAcknowledged
       )
-      println("पंजीकरण डेटा: $data") // Emulate submission
-      coroutineScope.launch {
-        snackbarHostState.showSnackbar(
-          message = "आपने सफलतापूर्वक पंजीकरण करा लिया है!",
-          duration = SnackbarDuration.Long
-        )
-      }
-      resetForm()
-      onRegistrationSuccess()
+      viewModel.createRegistration(activityId = activityId, data)
     } else {
       coroutineScope.launch {
         snackbarHostState.showSnackbar(
@@ -711,7 +707,7 @@ fun SatraRegistrationFormScreen(
       Button(
         onClick = { handleSubmit() },
         modifier = Modifier.height(52.dp),
-        enabled = isFormCompletelyValid,
+        enabled = isFormCompletelyValid || !uiState.isLoading,
       ) {
         Text(
           "पंजीकृत करें",
@@ -720,6 +716,26 @@ fun SatraRegistrationFormScreen(
           modifier = Modifier.padding(horizontal = 24.dp)
         ) // Register
       }
+
+      if(uiState.data == true) {
+        coroutineScope.launch {
+          snackbarHostState.showSnackbar(
+            message = "आपने सफलतापूर्वक पंजीकरण करा लिया है!",
+            duration = SnackbarDuration.Long
+          )
+        }
+        resetForm()
+        onRegistrationSuccess()
+      }else if(uiState.error != null) {
+        coroutineScope.launch {
+          snackbarHostState.showSnackbar(
+            message = "Registration failed: ${uiState.error}",
+            duration = SnackbarDuration.Long
+          )
+        }
+        onRegistrationFailed()
+      }
+
       Spacer(modifier = Modifier.height(24.dp)) // Space at the bottom
     }
   }
@@ -730,16 +746,16 @@ fun SatraRegistrationFormScreen(
 // 1. Add the following import: import androidx.compose.ui.tooling.preview.Preview
 // 2. Uncomment the Preview composables below
 //
- @Preview
- @Composable
- fun RegistrationFormScreenPreviewMobileLight() {
-   MaterialTheme(colorScheme = lightColorScheme()) { // Use your app's light theme or a default one
-     SatraRegistrationFormScreen(
-       onRegistrationSuccess = { println("Preview: Registration Success!") },
-       onRegistrationFailed = { println("Preview: Registration Failed!") }
-     )
-   }
- }
+// @Preview
+// @Composable
+// fun RegistrationFormScreenPreviewMobileLight() {
+//   MaterialTheme(colorScheme = lightColorScheme()) { // Use your app's light theme or a default one
+//     SatraRegistrationFormScreen(
+//       onRegistrationSuccess = { println("Preview: Registration Success!") },
+//       onRegistrationFailed = { println("Preview: Registration Failed!") },
+//     )
+//   }
+// }
 //
 // @Preview(showBackground = true, name = "Registration Form Mobile (Dark)", widthDp = 380, heightDp = 1200)
 // @Composable

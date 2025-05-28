@@ -19,7 +19,6 @@ fun OrgsScreen(
   onNavigateToOrgDetails: (String) -> Unit,
   viewModel: OrganisationsViewModel
 ) {
-  val scope = rememberCoroutineScope()
   val snackbarHostState = LocalSnackbarHostState.current
   
   // Collect UI state from ViewModel

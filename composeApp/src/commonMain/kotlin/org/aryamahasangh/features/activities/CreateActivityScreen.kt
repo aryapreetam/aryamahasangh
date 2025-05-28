@@ -25,7 +25,9 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import coil3.compose.AsyncImage
@@ -274,10 +276,10 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
             ActivityMember(it.id, role, it,priority)
           },
           additionalInstructions = additionalInstructions,
-          capacity = 100,
-          allowedGender = "any",
-          latitude = null,
-          longitude = null,
+          capacity = eventCapacity.toIntOrNull() ?: 0,
+          allowedGender =  eventGenderAllowed.name.toLowerCase(Locale.current),
+          latitude = eventLatitude.toDoubleOrNull() ?: 0.0,
+          longitude = eventLongitude.toDoubleOrNull() ?: 0.0,
         )
 
         // Submit form using ViewModel
@@ -724,7 +726,7 @@ enum class GenderAllowed {
 
   companion object {
     fun fromDisplayName(displayName: String): GenderAllowed? {
-      return values().find { it.toDisplayName() == displayName }
+      return entries.find { it.toDisplayName() == displayName }
     }
   }
 }

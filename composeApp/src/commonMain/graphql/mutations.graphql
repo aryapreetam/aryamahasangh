@@ -106,3 +106,44 @@ mutation updateOrganisationDescription($id: String!, $description: String!){
     affectedCount
   }
 }
+
+mutation registerForSatr(
+  $fullName: String!,
+  $gender: String!,
+  $mobile: String!,
+  $aadharNo: String!,
+  $educationalQualification: String!,
+  $address: String!,
+  $inspirationSource: String!,
+  $inspirationSourceName: String,
+  $inspirationSourceNo: String,
+  $hasTrainedAryaInFamily: Boolean!,
+  $trainedAryaName: String,
+  $trainedAryaNo: String,
+  $activityId: String!,
+){
+  insertIntosatr_registrationCollection(
+    objects: [
+      {
+        fullname: $fullName,
+        gender: $gender,
+        mobile: $mobile,
+        aadhar_no: $aadharNo,
+        educational_qualification: $educationalQualification,
+        address: $address,
+        inspiration_source: $inspirationSource,
+        inspiration_source_name: $inspirationSourceName,
+        inspiration_source_no: $inspirationSourceNo,
+        has_trained_arya_in_family: $hasTrainedAryaInFamily,
+        trained_arya_name: $trainedAryaName,
+        trained_arya_no: $trainedAryaNo,
+        activity_id: $activityId,
+      }
+    ]
+  ){
+    affectedCount
+    records {
+      id
+    }
+  }
+}

@@ -16,7 +16,9 @@ import org.aryamahasangh.features.activities.ActivitiesScreen
 import org.aryamahasangh.features.activities.ActivitiesViewModel
 import org.aryamahasangh.features.activities.ActivityDetailScreen
 import org.aryamahasangh.features.arya_nirman.AryaNirmanHomeScreen
+import org.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
 import org.aryamahasangh.features.arya_nirman.SatraRegistrationFormScreen
+import org.aryamahasangh.features.arya_nirman.SatraRegistrationViewModel
 import org.aryamahasangh.features.organisations.OrgDetailScreen
 import org.aryamahasangh.features.organisations.OrganisationsViewModel
 import org.aryamahasangh.features.organisations.OrgsScreen
@@ -47,10 +49,14 @@ fun RootNavGraph(navController: NavHostController) {
       composable<Screen.Activities> {
         var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
         val viewModel = koinInject<ActivitiesViewModel>()
+        val onNavigateToDetails = { id: String ->
+          println("navigating to details: $id")
+          navController.navigate(Screen.ActivityDetails(id))
+        }
         if(isLoggedIn){
-          ActivitiesContainer(navController, { }, viewModel)
+          ActivitiesContainer( onNavigateToDetails, viewModel)
         }else{
-          ActivitiesScreen(navController, { }, viewModel)
+          ActivitiesScreen( onNavigateToDetails, viewModel)
         }
       }
       composable<Screen.ActivityDetails> {
@@ -111,16 +117,17 @@ fun RootNavGraph(navController: NavHostController) {
     }
     navigation<Screen.AryaNirmanSection>(startDestination = Screen.AryaNirmanHome){
       composable<Screen.AryaNirmanHome> {
-        val viewModel = koinInject<JoinUsViewModel>()
+        val viewModel = koinInject<AryaNirmanViewModel>()
         AryaNirmanHomeScreen(
           viewModel,
           onNavigateToRegistrationForm = {
-            navController.navigate(Screen.AryaNirmanRegistrationForm)
+            navController.navigate(Screen.AryaNirmanRegistrationForm(activityId = it))
           })
       }
       composable<Screen.AryaNirmanRegistrationForm> {
-        val viewModel = koinInject<JoinUsViewModel>()
-        SatraRegistrationFormScreen()
+        val viewModel = koinInject<SatraRegistrationViewModel>()
+        val id = it.toRoute<Screen.AryaNirmanRegistrationForm>().activityId
+        SatraRegistrationFormScreen(viewModel = viewModel, activityId = id)
       }
     }
     navigation<Screen.AryaPariwarSection>(startDestination = Screen.AryaPariwarHome){
