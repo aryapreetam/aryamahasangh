@@ -7,7 +7,12 @@ on:
     branches: [ master, dev ]
 
 permissions:
-  security-events: write  # Required for uploading SARIF results
+  security-events: write    # Required for uploading security scan results
+  contents: write          # Required for creating releases and artifacts
+  actions: write          # Required for workflow operations
+  checks: write           # Required for status checks
+  pull-requests: write    # Required for PR comments
+  issues: write           # Required for issue comments
   contents: read         # Required for actions/checkout
 
 env:
@@ -159,6 +164,10 @@ jobs:
   security:
     name: Security Scan
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
     
     steps:
     - name: Checkout code

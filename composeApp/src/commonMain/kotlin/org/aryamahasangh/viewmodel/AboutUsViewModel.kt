@@ -19,7 +19,6 @@ data class AboutUsUiState(
 class AboutUsViewModel(
   private val aboutUsRepository: AboutUsRepository
 ) : BaseViewModel<AboutUsUiState>(AboutUsUiState()) {
-
   init {
     loadOrganisationDetails("आर्य महासंघ")
   }
@@ -35,17 +34,21 @@ class AboutUsViewModel(
             updateState { it.copy(isLoading = true, error = null) }
           }
           is Result.Success -> {
-            updateState { it.copy(
-              organisation = result.data,
-              isLoading = false,
-              error = null
-            )}
+            updateState {
+              it.copy(
+                organisation = result.data,
+                isLoading = false,
+                error = null
+              )
+            }
           }
           is Result.Error -> {
-            updateState { it.copy(
-              isLoading = false,
-              error = result.message
-            )}
+            updateState {
+              it.copy(
+                isLoading = false,
+                error = result.message
+              )
+            }
           }
         }
       }

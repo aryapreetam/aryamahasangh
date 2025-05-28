@@ -58,7 +58,6 @@ data class OrganisationsAndMembersUiState(
 class ActivitiesViewModel(
   private val activityRepository: ActivityRepository
 ) : BaseViewModel<ActivitiesUiState>(ActivitiesUiState()) {
-
   // Separate state for activity details
   private val _activityDetailUiState = MutableStateFlow(ActivityDetailUiState())
   val activityDetailUiState: StateFlow<ActivityDetailUiState> = _activityDetailUiState.asStateFlow()
@@ -86,17 +85,21 @@ class ActivitiesViewModel(
             updateState { it.copy(isLoading = true, error = null) }
           }
           is Result.Success -> {
-            updateState { it.copy(
-              activities = result.data,
-              isLoading = false,
-              error = null
-            )}
+            updateState {
+              it.copy(
+                activities = result.data,
+                isLoading = false,
+                error = null
+              )
+            }
           }
           is Result.Error -> {
-            updateState { it.copy(
-              isLoading = false,
-              error = result.message
-            )}
+            updateState {
+              it.copy(
+                isLoading = false,
+                error = result.message
+              )
+            }
           }
         }
       }
@@ -147,10 +150,11 @@ class ActivitiesViewModel(
           }
         }
         is Result.Error -> {
-          _activityDetailUiState.value = ActivityDetailUiState(
-            isLoading = false,
-            error = result.message
-          )
+          _activityDetailUiState.value =
+            ActivityDetailUiState(
+              isLoading = false,
+              error = result.message
+            )
         }
         is Result.Loading -> {
           // This shouldn't happen with the current implementation
@@ -163,42 +167,52 @@ class ActivitiesViewModel(
    * Create a new activity
    */
   fun createActivity(input: ActivityInputData) {
-    val activity = ActivitiesInsertInput(
-      name = Optional.present(input.name),
-      type = Optional.present(input.type.name),
-      short_description = Optional.present(input.shortDescription),
-      long_description = Optional.present(input.longDescription),
-      address = Optional.present(input.address),
-      state = Optional.present(input.state),
-      district = Optional.present(input.district),
-      start_datetime = Optional.present(input.startDatetime.convertToInstant()),
-      end_datetime = Optional.present(input.endDatetime.convertToInstant()),
-      media_files= Optional.present(input.mediaFiles),
-      additional_instructions = Optional.present(input.additionalInstructions),
-      capacity = Optional.present(input.capacity),
-      latitude = Optional.present(input.latitude),
-      longitude = Optional.present(input.longitude),
-      allowed_gender = Optional.present(Gender_filter.valueOf(input.allowedGender)),
-    )
+    val activity =
+      ActivitiesInsertInput(
+        name = Optional.present(input.name),
+        type = Optional.present(input.type.name),
+        short_description = Optional.present(input.shortDescription),
+        long_description = Optional.present(input.longDescription),
+        address = Optional.present(input.address),
+        state = Optional.present(input.state),
+        district = Optional.present(input.district),
+        start_datetime = Optional.present(input.startDatetime.convertToInstant()),
+        end_datetime = Optional.present(input.endDatetime.convertToInstant()),
+        media_files = Optional.present(input.mediaFiles),
+        additional_instructions = Optional.present(input.additionalInstructions),
+        capacity = Optional.present(input.capacity),
+        latitude = Optional.present(input.latitude),
+        longitude = Optional.present(input.longitude),
+        allowed_gender = Optional.present(Gender_filter.valueOf(input.allowedGender)),
+      )
     launch {
       _formSubmissionState.value = AdmissionFormSubmissionState(isSubmitting = true)
 
-      when (val result = activityRepository.createActivity(activity, input.contactPeople, input.associatedOrganisations)) {
-        is Result.Success -> {
-          _formSubmissionState.value = AdmissionFormSubmissionState(
-            isSubmitting = false,
-            isSuccess = result.data,
-            error = null
+      when (
+        val result =
+          activityRepository.createActivity(
+            activity,
+            input.contactPeople,
+            input.associatedOrganisations
           )
+      ) {
+        is Result.Success -> {
+          _formSubmissionState.value =
+            AdmissionFormSubmissionState(
+              isSubmitting = false,
+              isSuccess = result.data,
+              error = null
+            )
           // Reload activities to include the new one
           loadActivities()
         }
         is Result.Error -> {
-          _formSubmissionState.value = AdmissionFormSubmissionState(
-            isSubmitting = false,
-            isSuccess = false,
-            error = result.message
-          )
+          _formSubmissionState.value =
+            AdmissionFormSubmissionState(
+              isSubmitting = false,
+              isSuccess = false,
+              error = result.message
+            )
         }
         is Result.Loading -> {
           // This shouldn't happen with the current implementation
@@ -223,18 +237,20 @@ class ActivitiesViewModel(
 
       when (val result = activityRepository.getOrganisationsAndMembers()) {
         is Result.Success -> {
-          _organisationsAndMembersState.value = OrganisationsAndMembersUiState(
-            organisations = result.data.organisations ?: emptyList(),
-            members = result.data.members ?: emptyList(),
-            isLoading = false,
-            error = null
-          )
+          _organisationsAndMembersState.value =
+            OrganisationsAndMembersUiState(
+              organisations = result.data.organisations ?: emptyList(),
+              members = result.data.members ?: emptyList(),
+              isLoading = false,
+              error = null
+            )
         }
         is Result.Error -> {
-          _organisationsAndMembersState.value = OrganisationsAndMembersUiState(
-            isLoading = false,
-            error = result.message
-          )
+          _organisationsAndMembersState.value =
+            OrganisationsAndMembersUiState(
+              isLoading = false,
+              error = result.message
+            )
         }
         is Result.Loading -> {
           // This shouldn't happen with the current implementation

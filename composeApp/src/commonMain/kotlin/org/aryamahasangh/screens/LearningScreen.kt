@@ -24,7 +24,7 @@ import org.koin.compose.koinInject
 
 @Composable
 fun LearningScreen(
-  navController: NavHostController, 
+  navController: NavHostController,
   onNavigateToActivityDetails: (String) -> Unit,
   viewModel: LearningViewModel = koinInject()
 ) {
@@ -82,8 +82,16 @@ fun LearningScreen(
     return
   }
 
-  Column(modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp).fillMaxSize(1f).verticalScroll(rememberScrollState())) {
-    Text("सत्यार्थ प्रकाश",
+  Column(
+    modifier =
+      Modifier.padding(
+        start = 8.dp,
+        end = 8.dp,
+        bottom = 8.dp
+      ).fillMaxSize(1f).verticalScroll(rememberScrollState())
+  ) {
+    Text(
+      "सत्यार्थ प्रकाश",
       style = MaterialTheme.typography.titleLarge,
       modifier = Modifier.padding(vertical = 8.dp),
       fontWeight = FontWeight.Bold
@@ -95,11 +103,12 @@ fun LearningScreen(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
       ) {
         uiState.learningItems.forEach { video ->
-          val modifier = Modifier.clickable {
-            onNavigateToActivityDetails(video.id)
-            navController.navigate(Screen.VideoDetails(video.id))
-          }
-          Column(modifier = if(isSmallScreen) modifier.fillMaxWidth() else modifier.width(240.dp)) {
+          val modifier =
+            Modifier.clickable {
+              onNavigateToActivityDetails(video.id)
+              navController.navigate(Screen.VideoDetails(video.id))
+            }
+          Column(modifier = if (isSmallScreen) modifier.fillMaxWidth() else modifier.width(240.dp)) {
             AsyncImage(
               modifier = Modifier.aspectRatio(16f / 9f),
               model = video.thumbnailUrl,

@@ -467,24 +467,27 @@ fun ReceiptUploadSection(
   errorMessage: String
 ) {
   Column(horizontalAlignment = Alignment.Start) {
-    val launcher = rememberFilePickerLauncher(
-      type = PickerType.Image,
-      mode = PickerMode.Single,
-      title = "रसीद जोड़ें",
-    ) { file ->
-      onPhotoSelected(file)
-    }
-    Box(modifier = Modifier.size(120.dp)) {
-      if(studentPhoto != null){
-        PhotoItem(studentPhoto, onRemoveFile = onPhotoRemoved)
-      }else{
-        Icon(
-          imageVector = Icons.Filled.PhotoLibrary,
-          contentDescription = "Selected",
-          modifier = Modifier.size(96.dp).padding(16.dp),
-          tint = MaterialTheme.colorScheme.outlineVariant
-        )
+    val launcher =
+      rememberFilePickerLauncher(
+        type = PickerType.Image,
+        mode = PickerMode.Single,
+        title = "रसीद जोड़ें",
+      ) { file ->
+        onPhotoSelected(file)
       }
+    Box(modifier = Modifier.size(120.dp)) {
+      if (studentPhoto != null)
+        {
+          PhotoItem(studentPhoto, onRemoveFile = onPhotoRemoved)
+        } else
+        {
+          Icon(
+            imageVector = Icons.Filled.PhotoLibrary,
+            contentDescription = "Selected",
+            modifier = Modifier.size(96.dp).padding(16.dp),
+            tint = MaterialTheme.colorScheme.outlineVariant
+          )
+        }
     }
 
     OutlinedButton(onClick = {
@@ -525,8 +528,7 @@ fun ResponsivePaymentDetails() {
       }
     } else {
       // Vertical layout for narrower screens
-      Column(
-      ) {
+      Column {
         QrCodeSection(modifier = Modifier.padding(bottom = 16.dp))
         OrDivider(isHorizontalLayout = false) // Horizontal divider
         BankDetailsSection(modifier = Modifier.padding(top = 16.dp))
@@ -543,17 +545,19 @@ fun QrCodeSection(modifier: Modifier = Modifier) {
   ) {
     // Placeholder for QR Code - Replace with your actual QR code image
     Box(
-      modifier = Modifier
-        .size(200.dp) // Adjust size as needed
-        .background(Color.LightGray), // Placeholder background
+      modifier =
+        Modifier
+          .size(200.dp) // Adjust size as needed
+          .background(Color.LightGray),
+      // Placeholder background
       contentAlignment = Alignment.Center
     ) {
-       Image(
-           painter = painterResource(Res.drawable.qr_code), // Replace with actual resource
-           contentDescription = "QR Code for UPI Payment",
-           modifier = Modifier.fillMaxSize(),
-           contentScale = ContentScale.Fit
-       )
+      Image(
+        painter = painterResource(Res.drawable.qr_code), // Replace with actual resource
+        contentDescription = "QR Code for UPI Payment",
+        modifier = Modifier.fillMaxSize(),
+        contentScale = ContentScale.Fit
+      )
     }
     Spacer(modifier = Modifier.height(8.dp))
     Text(
@@ -583,7 +587,11 @@ fun BankDetailsSection(modifier: Modifier = Modifier) {
 @Composable
 fun BankDetailItem(label: String, value: String) {
   Row {
-    Text(text = label, fontWeight = FontWeight.SemiBold, modifier = Modifier.width(150.dp)) // Adjust width for alignment
+    Text(
+      text = label,
+      fontWeight = FontWeight.SemiBold,
+      modifier = Modifier.width(150.dp)
+    ) // Adjust width for alignment
     Text(text = value)
   }
   Spacer(modifier = Modifier.height(4.dp))
@@ -600,15 +608,16 @@ fun OrDivider(
 
   Box(
     contentAlignment = Alignment.Center,
-    modifier = modifier.then( // Apply incoming modifier first
-      if (isHorizontalLayout) {
-        // For VERTICAL divider, we want it to attempt to fill the height of its parent Row.
-        Modifier.fillMaxHeight()
-      } else {
-        // For HORIZONTAL divider, it takes a percentage of available width.
-        Modifier.fillMaxWidth(0.7f) // Make horizontal divider a bit shorter
-      }
-    )
+    modifier =
+      modifier.then( // Apply incoming modifier first
+        if (isHorizontalLayout) {
+          // For VERTICAL divider, we want it to attempt to fill the height of its parent Row.
+          Modifier.fillMaxHeight()
+        } else {
+          // For HORIZONTAL divider, it takes a percentage of available width.
+          Modifier.fillMaxWidth(0.7f) // Make horizontal divider a bit shorter
+        }
+      )
   ) {
     if (isHorizontalLayout) {
       // VERTICAL DIVIDER: Line - Text - Line
@@ -619,9 +628,10 @@ fun OrDivider(
       ) {
         VerticalDivider(
           color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-          modifier = Modifier
-            .weight(1f) // Top segment takes available space above text
-            .width(1.dp)
+          modifier =
+            Modifier
+              .weight(1f) // Top segment takes available space above text
+              .width(1.dp)
         )
         Text(
           text = dividerText,
@@ -632,9 +642,10 @@ fun OrDivider(
         )
         VerticalDivider(
           color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-          modifier = Modifier
-            .weight(1f) // Bottom segment takes available space below text
-            .width(1.dp)
+          modifier =
+            Modifier
+              .weight(1f) // Bottom segment takes available space below text
+              .width(1.dp)
         )
       }
     } else {
@@ -642,18 +653,20 @@ fun OrDivider(
       // The Box's contentAlignment = Alignment.Center will center both Divider and Text.
       HorizontalDivider(
         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
-        modifier = Modifier
-          .fillMaxWidth() // Divider fills the width of its parent Box
-          .height(1.dp)
+        modifier =
+          Modifier
+            .fillMaxWidth() // Divider fills the width of its parent Box
+            .height(1.dp)
       )
       Text(
         text = dividerText,
         color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
         fontSize = 12.sp,
         fontWeight = FontWeight.Bold,
-        modifier = Modifier
-          .background(MaterialTheme.colorScheme.surface) // Erase line behind text
-          .padding(horizontal = textHorizontalPadding, vertical = textVerticalPadding)
+        modifier =
+          Modifier
+            .background(MaterialTheme.colorScheme.surface) // Erase line behind text
+            .padding(horizontal = textHorizontalPadding, vertical = textVerticalPadding)
       )
     }
   }

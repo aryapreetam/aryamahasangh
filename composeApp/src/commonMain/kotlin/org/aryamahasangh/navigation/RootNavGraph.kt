@@ -29,8 +29,8 @@ import org.koin.compose.koinInject
 @ExperimentalMaterial3Api
 @Composable
 fun RootNavGraph(navController: NavHostController) {
-  NavHost(navController = navController, startDestination = Screen.AboutSection){
-    navigation<Screen.AboutSection>(startDestination = Screen.AboutUs){
+  NavHost(navController = navController, startDestination = Screen.AboutSection) {
+    navigation<Screen.AboutSection>(startDestination = Screen.AboutUs) {
       composable<Screen.AboutUs> {
         val viewModel = koinInject<AboutUsViewModel>()
         AboutUs(
@@ -45,7 +45,7 @@ fun RootNavGraph(navController: NavHostController) {
         DetailedAboutUs(viewModel = viewModel)
       }
     }
-    navigation<Screen.ActivitiesSection>(startDestination = Screen.Activities){
+    navigation<Screen.ActivitiesSection>(startDestination = Screen.Activities) {
       composable<Screen.Activities> {
         var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
         val viewModel = koinInject<ActivitiesViewModel>()
@@ -53,11 +53,13 @@ fun RootNavGraph(navController: NavHostController) {
           println("navigating to details: $id")
           navController.navigate(Screen.ActivityDetails(id))
         }
-        if(isLoggedIn){
-          ActivitiesContainer( onNavigateToDetails, viewModel)
-        }else{
-          ActivitiesScreen( onNavigateToDetails, viewModel)
-        }
+        if (isLoggedIn)
+          {
+            ActivitiesContainer(onNavigateToDetails, viewModel)
+          } else
+          {
+            ActivitiesScreen(onNavigateToDetails, viewModel)
+          }
       }
       composable<Screen.ActivityDetails> {
         val id = it.toRoute<Screen.ActivityDetails>().id
@@ -65,27 +67,27 @@ fun RootNavGraph(navController: NavHostController) {
         ActivityDetailScreen(id, viewModel)
       }
     }
-    navigation<Screen.OrgsSection>(startDestination = Screen.Orgs){
+    navigation<Screen.OrgsSection>(startDestination = Screen.Orgs) {
       composable<Screen.Orgs> {
         val viewModel = koinInject<OrganisationsViewModel>()
         OrgsScreen(onNavigateToOrgDetails = {
           navController.navigate(Screen.OrgDetails(it))
         }, viewModel)
       }
-      composable<Screen.OrgDetails>{
+      composable<Screen.OrgDetails> {
         val orgId = it.toRoute<Screen.OrgDetails>().organisationId
         val viewModel = koinInject<OrganisationsViewModel>()
-        OrgDetailScreen(orgId,  viewModel)
+        OrgDetailScreen(orgId, viewModel)
       }
     }
     composable<Screen.JoinUs> {
       val viewModel = koinInject<JoinUsViewModel>()
       JoinUsScreen(viewModel)
     }
-    navigation<Screen.LearningSection>(startDestination = Screen.Learning){
+    navigation<Screen.LearningSection>(startDestination = Screen.Learning) {
       composable<Screen.Learning> {
         val viewModel = koinInject<LearningViewModel>()
-        LearningScreen(navController, {  }, viewModel)
+        LearningScreen(navController, { }, viewModel)
       }
       composable<Screen.VideoDetails> {
         val id = it.toRoute<Screen.VideoDetails>().learningItemId
@@ -93,19 +95,19 @@ fun RootNavGraph(navController: NavHostController) {
         VideoDetailsScreen(id, viewModel)
       }
     }
-    navigation<Screen.BookSection>(startDestination = Screen.BookOrderForm){
-
+    navigation<Screen.BookSection>(startDestination = Screen.BookOrderForm) {
       composable<Screen.BookOrderForm> {
         var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
         val viewModel = koinInject<BookOrderViewModel>()
-        if(isLoggedIn){
-          BookOrdersContainer(
-            viewModel = viewModel,
-            onNavigateToDetails = {
-              navController.navigate(Screen.BookOrderDetails(it))
-            }
-          )
-        }else {
+        if (isLoggedIn)
+          {
+            BookOrdersContainer(
+              viewModel = viewModel,
+              onNavigateToDetails = {
+                navController.navigate(Screen.BookOrderDetails(it))
+              }
+            )
+          } else {
           BookOrderFormScreen(viewModel = viewModel)
         }
       }
@@ -115,14 +117,15 @@ fun RootNavGraph(navController: NavHostController) {
         BookOrderDetailsScreen(viewModel, id, {})
       }
     }
-    navigation<Screen.AryaNirmanSection>(startDestination = Screen.AryaNirmanHome){
+    navigation<Screen.AryaNirmanSection>(startDestination = Screen.AryaNirmanHome) {
       composable<Screen.AryaNirmanHome> {
         val viewModel = koinInject<AryaNirmanViewModel>()
         AryaNirmanHomeScreen(
           viewModel,
           onNavigateToRegistrationForm = {
             navController.navigate(Screen.AryaNirmanRegistrationForm(activityId = it))
-          })
+          }
+        )
       }
       composable<Screen.AryaNirmanRegistrationForm> {
         val viewModel = koinInject<SatraRegistrationViewModel>()
@@ -130,19 +133,19 @@ fun RootNavGraph(navController: NavHostController) {
         SatraRegistrationFormScreen(viewModel = viewModel, activityId = id)
       }
     }
-    navigation<Screen.AryaPariwarSection>(startDestination = Screen.AryaPariwarHome){
+    navigation<Screen.AryaPariwarSection>(startDestination = Screen.AryaPariwarHome) {
       composable<Screen.AryaPariwarHome> {
         val viewModel = koinInject<JoinUsViewModel>()
         AryaPariwarScreen(viewModel)
       }
     }
-    navigation<Screen.AryaSamajSection>(startDestination = Screen.AryaSamajHome){
+    navigation<Screen.AryaSamajSection>(startDestination = Screen.AryaSamajHome) {
       composable<Screen.AryaSamajHome> {
         AryaSamajHomeScreen()
       }
     }
 
-    navigation<Screen.AryaGurukulSection>(startDestination = Screen.AryaGurukulCollege){
+    navigation<Screen.AryaGurukulSection>(startDestination = Screen.AryaGurukulCollege) {
       composable<Screen.AryaGurukulCollege> {
         GurukulCollegeHomeScreen(
           navigateToAdmissionForm = {
@@ -151,7 +154,7 @@ fun RootNavGraph(navController: NavHostController) {
         )
       }
     }
-    navigation<Screen.AryaaGurukulSection>(startDestination = Screen.AryaaGurukulCollege){
+    navigation<Screen.AryaaGurukulSection>(startDestination = Screen.AryaaGurukulCollege) {
       composable<Screen.AryaaGurukulCollege> {
         AryaaGurukulHomeScreen(
           navigateToAdmissionForm = {
@@ -162,11 +165,13 @@ fun RootNavGraph(navController: NavHostController) {
       composable<Screen.AdmissionForm> {
         var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
         val viewModel = koinInject<AdmissionsViewModel>()
-        if(isLoggedIn){
-          AdmissionScreen(viewModel)
-        }else{
-          RegistrationForm(viewModel)
-        }
+        if (isLoggedIn)
+          {
+            AdmissionScreen(viewModel)
+          } else
+          {
+            RegistrationForm(viewModel)
+          }
       }
     }
   }

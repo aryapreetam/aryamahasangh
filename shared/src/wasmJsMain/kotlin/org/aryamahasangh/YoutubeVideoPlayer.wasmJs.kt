@@ -15,9 +15,9 @@ actual fun YoutubeVideoPlayer(videoUrl: String) {
       modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f),
       factory = {
         val iframe = createElement("iframe") as HTMLIFrameElement
-        iframe.setAttribute("width","100%")
-        iframe.setAttribute("height","100%")
-        iframe.setAttribute("src","https://www.youtube.com/embed/${videoUrl}")
+        iframe.setAttribute("width", "100%")
+        iframe.setAttribute("height", "100%")
+        iframe.setAttribute("src", "https://www.youtube.com/embed/$videoUrl")
         iframe
       }
     )

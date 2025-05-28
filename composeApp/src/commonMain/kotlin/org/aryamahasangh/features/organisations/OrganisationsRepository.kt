@@ -27,7 +27,9 @@ interface OrganisationsRepository {
    * Get organisation details by name
    */
   fun getOrganisationById(id: String): Flow<Result<OrganisationDetail>>
+
   fun updateOrganisationLogo(orgId: String, imageUrl: String): Flow<Result<Boolean>>
+
   fun updateOrganisationDescription(orgId: String, description: String): Flow<Result<Boolean>>
 }
 
@@ -35,61 +37,71 @@ interface OrganisationsRepository {
  * Implementation of OrganisationsRepository that uses Apollo GraphQL client
  */
 class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : OrganisationsRepository {
+  override fun getOrganisations(): Flow<Result<List<OrganisationWithDescription>>> =
+    flow {
+      emit(Result.Loading)
 
-  override fun getOrganisations(): Flow<Result<List<OrganisationWithDescription>>> = flow {
-    emit(Result.Loading)
+      val result =
+        safeCall {
+          val response = apolloClient.query(OrganisationsQuery()).execute()
+          if (response.hasErrors()) {
+            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+          }
+          response.data?.organisationCollection?.edges?.map {
+            OrganisationWithDescription(id = it.node.id, name = it.node.name!!, description = it.node.description!!)
+          } ?: emptyList()
+        }
 
-    val result = safeCall {
-      val response = apolloClient.query(OrganisationsQuery()).execute()
-      if (response.hasErrors()) {
-        throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-      }
-      response.data?.organisationCollection?.edges?.map {
-        OrganisationWithDescription(id = it.node.id, name = it.node.name!!, description = it.node.description!!)
-      } ?: emptyList()
+      emit(result)
     }
 
-    emit(result)
-  }
+  override fun getOrganisationById(id: String): Flow<Result<OrganisationDetail>> =
+    flow {
+      emit(Result.Loading)
 
-  override fun getOrganisationById(id: String): Flow<Result<OrganisationDetail>> = flow {
-    emit(Result.Loading)
-
-    val result = safeCall {
-      val response = apolloClient.query(OrganisationQuery(
-        filter = Optional.present(
-          OrganisationFilter(id = Optional.present(StringFilter(eq = Optional.present(id))) )
-        ))).execute()
-      if (response.hasErrors()) {
-        throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-      }
-      response.data?.organisationCollection?.edges?.map {
-        val node = it.node
-        OrganisationDetail(
-          id = node.id,
-          name = node.name!!,
-          description = node.description!!,
-          logo = node.logo,
-          members = it.node.organisational_memberCollection?.edges?.map {
-            val (id, post, priority, member) = it.node
-            OrganisationalMember(
-              id = id,
-              post = post!!,
-              priority = priority!!,
-              member = Member(
-                id = member.id,
-                name = member.name!!,
-                profileImage = member.profile_image ?: "",
-                phoneNumber = member.phone_number ?: ""
+      val result =
+        safeCall {
+          val response =
+            apolloClient.query(
+              OrganisationQuery(
+                filter =
+                  Optional.present(
+                    OrganisationFilter(id = Optional.present(StringFilter(eq = Optional.present(id))))
+                  )
               )
+            ).execute()
+          if (response.hasErrors()) {
+            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+          }
+          response.data?.organisationCollection?.edges?.map {
+            val node = it.node
+            OrganisationDetail(
+              id = node.id,
+              name = node.name!!,
+              description = node.description!!,
+              logo = node.logo,
+              members =
+                it.node.organisational_memberCollection?.edges?.map {
+                  val (id, post, priority, member) = it.node
+                  OrganisationalMember(
+                    id = id,
+                    post = post!!,
+                    priority = priority!!,
+                    member =
+                      Member(
+                        id = member.id,
+                        name = member.name!!,
+                        profileImage = member.profile_image ?: "",
+                        phoneNumber = member.phone_number ?: ""
+                      )
+                  )
+                }!!
             )
-          }!!
-        )
-      }[0] ?: throw Exception("Organisation not found")
-    }
+          }[0] ?: throw Exception("Organisation not found")
+        }
 
-    emit(result)
-  }
+      emit(result)
+    }
 
   override fun updateOrganisationLogo(
     orgId: String,
@@ -97,15 +109,17 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
   ): Flow<Result<Boolean>> {
     return flow {
       emit(Result.Loading)
-      val result = safeCall {
-        val response = apolloClient.mutation(
-          UpdateOrganisationLogoMutation(orgId, imageUrl)
-        ).execute()
-        if (response.hasErrors()) {
-          throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+      val result =
+        safeCall {
+          val response =
+            apolloClient.mutation(
+              UpdateOrganisationLogoMutation(orgId, imageUrl)
+            ).execute()
+          if (response.hasErrors()) {
+            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+          }
+          response.data?.updateorganisationCollection?.affectedCount!! > 0
         }
-        response.data?.updateorganisationCollection?.affectedCount!! > 0
-      }
       emit(result)
     }
   }
@@ -116,15 +130,17 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
   ): Flow<Result<Boolean>> {
     return flow {
       emit(Result.Loading)
-      val result = safeCall {
-        val response = apolloClient.mutation(
-          UpdateOrganisationDescriptionMutation(id = orgId, description = description)
-        ).execute()
-        if (response.hasErrors()) {
-          throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+      val result =
+        safeCall {
+          val response =
+            apolloClient.mutation(
+              UpdateOrganisationDescriptionMutation(id = orgId, description = description)
+            ).execute()
+          if (response.hasErrors()) {
+            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+          }
+          response.data?.updateorganisationCollection?.affectedCount!! > 0
         }
-        response.data?.updateorganisationCollection?.affectedCount!! > 0
-      }
       emit(result)
     }
   }

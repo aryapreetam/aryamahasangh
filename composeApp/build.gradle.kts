@@ -15,6 +15,7 @@ plugins {
   alias(libs.plugins.composeHotReload)
   alias(libs.plugins.kotlinx.serialization)
   alias(libs.plugins.apollo)
+  alias(libs.plugins.ktlint)
 }
 
 // Load secrets from properties file
@@ -68,13 +69,15 @@ kotlin {
       val projectDirPath = project.projectDir.path
       commonWebpackConfig {
         outputFileName = "composeApp.js"
-        devServer = (devServer ?: KotlinWebpackConfig.DevServer()).apply {
-          static = (static ?: mutableListOf()).apply {
-            // Serve sources to debug inside browser
-            add(rootDirPath)
-            add(projectDirPath)
+        devServer =
+          (devServer ?: KotlinWebpackConfig.DevServer()).apply {
+            static =
+              (static ?: mutableListOf()).apply {
+                // Serve sources to debug inside browser
+                add(rootDirPath)
+                add(projectDirPath)
+              }
           }
-        }
       }
     }
     binaries.executable()
@@ -106,7 +109,6 @@ kotlin {
 
       implementation(libs.kotlinx.datetime)
 
-
       implementation(libs.ktor.client.core)
 
       implementation(libs.compose.remember.setting)
@@ -116,7 +118,6 @@ kotlin {
       implementation("io.github.vinceglb:filekit-core:0.8.8")
       // Enables FileKit with Composable utilities
       implementation("io.github.vinceglb:filekit-compose:0.8.8")
-
 
       // supabase
       implementation(project.dependencies.platform(libs.supabase.bom)) // 👈 BOM for consistent versions
@@ -181,10 +182,11 @@ android {
   }
   packaging {
     resources {
-      excludes += setOf(
-        "META-INF/INDEX.LIST",
-        "META-INF/io.netty.versions.properties"
-      )
+      excludes +=
+        setOf(
+          "META-INF/INDEX.LIST",
+          "META-INF/io.netty.versions.properties"
+        )
     }
   }
   signingConfigs {
@@ -308,15 +310,15 @@ tasks.register("checkSecrets") {
     if (!secretsFile.exists()) {
       logger.warn(
         """
-                ⚠️  WARNING: secrets.properties file not found!
-                
-                To set up secrets for all platforms:
-                1. Copy the template: cp secrets.properties.template secrets.properties
-                2. Fill in your actual values in secrets.properties
-                3. Run: ./setup-secrets.sh
-                
-                Or the setup will run automatically when you build.
-            """.trimIndent()
+        ⚠️  WARNING: secrets.properties file not found!
+        
+        To set up secrets for all platforms:
+        1. Copy the template: cp secrets.properties.template secrets.properties
+        2. Fill in your actual values in secrets.properties
+        3. Run: ./setup-secrets.sh
+        
+        Or the setup will run automatically when you build.
+        """.trimIndent()
       )
     } else {
       println("✅ secrets.properties file found")
@@ -331,13 +333,13 @@ tasks.register("checkSecrets") {
 // Hook setupSecrets to run before compilation tasks for all platforms
 tasks.matching { task ->
   task.name.startsWith("compile") ||
-      task.name.contains("Compile") ||
-      task.name == "preBuild" ||
-      task.name.startsWith("assemble") ||
-      task.name.startsWith("bundle") ||
-      task.name == "run" ||
-      task.name == "runDebug" ||
-      task.name == "runRelease"
+    task.name.contains("Compile") ||
+    task.name == "preBuild" ||
+    task.name.startsWith("assemble") ||
+    task.name.startsWith("bundle") ||
+    task.name == "run" ||
+    task.name == "runDebug" ||
+    task.name == "runRelease"
 }.configureEach {
   dependsOn("setupSecrets")
 }
@@ -347,7 +349,7 @@ tasks.matching { it.name.startsWith("assemble") }.configureEach {
   dependsOn("setupSecrets")
 }
 
-// Desktop specific tasks  
+// Desktop specific tasks
 tasks.matching { it.name.contains("Desktop") || it.name == "run" }.configureEach {
   dependsOn("setupSecrets")
 }

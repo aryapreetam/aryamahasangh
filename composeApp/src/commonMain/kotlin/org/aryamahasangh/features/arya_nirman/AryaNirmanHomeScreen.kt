@@ -19,13 +19,13 @@ fun AryaNirmanHomeScreen(
   viewModel: AryaNirmanViewModel,
   onNavigateToRegistrationForm: (id: String) -> Unit
 ) {
-  LaunchedEffect(Unit){
+  LaunchedEffect(Unit) {
     viewModel.loadUpComingSessions()
   }
   val uiState by viewModel.uiState.collectAsState()
   val registrationCounts by viewModel.registrationCounts.collectAsState()
 
-  Column(modifier = Modifier.padding(8.dp)){
+  Column(modifier = Modifier.padding(8.dp)) {
     Text("आगामी सत्र", modifier = Modifier.padding(bottom = 8.dp))
     // Handle loading state
     if (uiState.isLoading) {
@@ -57,7 +57,7 @@ fun AryaNirmanHomeScreen(
         ) {
           Text("Failed to load activities")
           Button(onClick = {
-            //loadFilteredActivities(activityFilter)
+            // loadFilteredActivities(activityFilter)
           }) {
             Text("Retry")
           }
@@ -66,27 +66,30 @@ fun AryaNirmanHomeScreen(
       return
     }
 
-    if(uiState.data.isEmpty()){
+    if (uiState.data.isEmpty())
+      {
+        Box(
+          modifier = Modifier.fillMaxSize(),
+          contentAlignment = Alignment.Center
+        ) {
+          Text("No sessions have been planned!")
+        }
+      } else {
       Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-      ) {
-        Text("No sessions have been planned!")
-      }
-    }else {
-      Box(
-        modifier = Modifier
-          .fillMaxSize()
-          .weight(1f) // Limits height to remaining space
+        modifier =
+          Modifier
+            .fillMaxSize()
+            .weight(1f) // Limits height to remaining space
       ) {
         FlowRow(
           horizontalArrangement = Arrangement.spacedBy(8.dp),
           verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
           uiState.data.forEach { activity ->
-            val updatedActivity = activity.copy(
-              isFull = registrationCounts[activity.id] == activity.capacity
-            )
+            val updatedActivity =
+              activity.copy(
+                isFull = registrationCounts[activity.id] == activity.capacity
+              )
             EventListItem(
               event = updatedActivity,
               onRegisterClick = {

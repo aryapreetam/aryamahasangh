@@ -37,7 +37,6 @@ data class OrganisationDescriptionState(
 class OrganisationsViewModel(
   private val organisationsRepository: OrganisationsRepository
 ) : BaseViewModel<OrganisationsUiState>(OrganisationsUiState()) {
-
   // Separate state for organisation details
   private val _organisationDetailUiState = MutableStateFlow(OrganisationDetailUiState())
   val organisationDetailUiState: StateFlow<OrganisationDetailUiState> = _organisationDetailUiState.asStateFlow()
@@ -57,17 +56,21 @@ class OrganisationsViewModel(
             updateState { it.copy(isLoading = true, error = null) }
           }
           is Result.Success -> {
-            updateState { it.copy(
-              organisations = result.data,
-              isLoading = false,
-              error = null
-            )}
+            updateState {
+              it.copy(
+                organisations = result.data,
+                isLoading = false,
+                error = null
+              )
+            }
           }
           is Result.Error -> {
-            updateState { it.copy(
-              isLoading = false,
-              error = result.message
-            )}
+            updateState {
+              it.copy(
+                isLoading = false,
+                error = result.message
+              )
+            }
           }
         }
       }
@@ -87,17 +90,19 @@ class OrganisationsViewModel(
             _organisationDetailUiState.value = OrganisationDetailUiState(isLoading = true, error = null)
           }
           is Result.Success -> {
-            _organisationDetailUiState.value = OrganisationDetailUiState(
-              organisation = result.data,
-              isLoading = false,
-              error = null
-            )
+            _organisationDetailUiState.value =
+              OrganisationDetailUiState(
+                organisation = result.data,
+                isLoading = false,
+                error = null
+              )
           }
           is Result.Error -> {
-            _organisationDetailUiState.value = OrganisationDetailUiState(
-              isLoading = false,
-              error = result.message
-            )
+            _organisationDetailUiState.value =
+              OrganisationDetailUiState(
+                isLoading = false,
+                error = result.message
+              )
           }
         }
       }
@@ -128,32 +133,35 @@ class OrganisationsViewModel(
               loadOrganisationDetail(name)
             } else {
               // If update failed but didn't throw an exception
-              _organisationDetailUiState.value = _organisationDetailUiState.value.copy(
-                isLoading = false,
-                error = "Failed to update organisation logo"
-              )
+              _organisationDetailUiState.value =
+                _organisationDetailUiState.value.copy(
+                  isLoading = false,
+                  error = "Failed to update organisation logo"
+                )
             }
           }
           is Result.Error -> {
             // If there was an error, update the UI state
-            _organisationDetailUiState.value = _organisationDetailUiState.value.copy(
-              isLoading = false,
-              error = result.message
-            )
+            _organisationDetailUiState.value =
+              _organisationDetailUiState.value.copy(
+                isLoading = false,
+                error = result.message
+              )
           }
         }
       }
     }
   }
 
-  fun updateOrganisationDescription(orgId: String, description: String){
+  fun updateOrganisationDescription(orgId: String, description: String) {
     launch {
       // Set loading state
       // FIXME This is not the correct way to do this, but it works for now
       _organisationDetailUiState.value = _organisationDetailUiState.value.copy(isLoading = true, error = null)
 
       // Call the repository to update the logo
-      organisationsRepository.updateOrganisationDescription(orgId = orgId, description =  description).collect { result ->
+      organisationsRepository.updateOrganisationDescription(orgId = orgId, description = description).collect {
+          result ->
         when (result) {
           is Result.Loading -> {
             // Already set loading state above, no need to do anything here
@@ -164,18 +172,20 @@ class OrganisationsViewModel(
               loadOrganisationDetail(orgId)
             } else {
               // If update failed but didn't throw an exception
-              _organisationDetailUiState.value = _organisationDetailUiState.value.copy(
-                isLoading = false,
-                error = "Failed to update organisation logo"
-              )
+              _organisationDetailUiState.value =
+                _organisationDetailUiState.value.copy(
+                  isLoading = false,
+                  error = "Failed to update organisation logo"
+                )
             }
           }
           is Result.Error -> {
             // If there was an error, update the UI state
-            _organisationDetailUiState.value = _organisationDetailUiState.value.copy(
-              isLoading = false,
-              error = result.message
-            )
+            _organisationDetailUiState.value =
+              _organisationDetailUiState.value.copy(
+                isLoading = false,
+                error = result.message
+              )
           }
         }
       }

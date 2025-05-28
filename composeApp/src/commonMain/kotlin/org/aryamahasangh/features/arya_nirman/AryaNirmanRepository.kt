@@ -20,66 +20,73 @@ import org.aryamahasangh.util.safeCall
 
 interface AryaNirmanRepository {
   suspend fun getUpcomingActivities(): Flow<Result<List<UpcomingActivity>>>
+
   fun registerForActivity(activityId: String, data: RegistrationData): Flow<Result<Boolean>>
+
   fun getRegistrationCounts(): Flow<Map<String, Int>>
 }
 
-
 class AryaNirmanRepositoryImpl(private val apolloClient: ApolloClient) : AryaNirmanRepository {
-  override suspend fun getUpcomingActivities(): Flow<Result<List<UpcomingActivity>>> = flow {
-    emit(Result.Loading)
-    val result = safeCall {
-      val response = apolloClient.query(UpcomingSatrActivitiesQuery(currentDateTime = Clock.System.now())).execute()
-      if (response.hasErrors()) {
-        throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-      }
-      response.data?.activitiesCollection?.edges?.map { upcomingActivityData ->
-        upcomingActivityData.node.let {
-        UpcomingActivity(
-          id = it.id,
-          name = it.name!!,
-          genderAllowed = GenderAllowed.valueOf(it.allowed_gender!!.rawValue.uppercase()),
-          isFull = it.satr_registrationCollection?.edges?.size == it.capacity!!,
-          startDateTime = it.start_datetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
-          endDateTime = it.end_datetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
-          district = it.district!!,
-          state = it.state!!,
-          latitude = it.latitude!!,
-          longitude = it.longitude!!,
-          capacity = it.capacity
-        )
-      }} ?: emptyList()
+  override suspend fun getUpcomingActivities(): Flow<Result<List<UpcomingActivity>>> =
+    flow {
+      emit(Result.Loading)
+      val result =
+        safeCall {
+          val response = apolloClient.query(UpcomingSatrActivitiesQuery(currentDateTime = Clock.System.now())).execute()
+          if (response.hasErrors()) {
+            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+          }
+          response.data?.activitiesCollection?.edges?.map { upcomingActivityData ->
+            upcomingActivityData.node.let {
+              UpcomingActivity(
+                id = it.id,
+                name = it.name!!,
+                genderAllowed = GenderAllowed.valueOf(it.allowed_gender!!.rawValue.uppercase()),
+                isFull = it.satr_registrationCollection?.edges?.size == it.capacity!!,
+                startDateTime = it.start_datetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
+                endDateTime = it.end_datetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
+                district = it.district!!,
+                state = it.state!!,
+                latitude = it.latitude!!,
+                longitude = it.longitude!!,
+                capacity = it.capacity
+              )
+            } 
+          } ?: emptyList()
+        }
+      emit(result)
     }
-    emit(result)
-  }
 
-  override fun registerForActivity(activityId: String, data: RegistrationData): Flow<Result<Boolean>> = flow {
-    emit(Result.Loading)
-    val result = safeCall {
-      val response = apolloClient.mutation(
-        RegisterForSatrMutation(
-          fullName = data.fullName,
-          gender = data.gender,
-          mobile = data.phoneNumber,
-          aadharNo = data.aadharNumber,
-          educationalQualification = data.education,
-          address = data.fullAddress,
-          inspirationSource = data.inspirationSource,
-          inspirationSourceName = Optional.presentIfNotNull(data.inspirationDetailName),
-          inspirationSourceNo = Optional.presentIfNotNull(data.inspirationDetailPhone),
-          hasTrainedAryaInFamily = data.hasTrainedAryaInFamily,
-          trainedAryaName = Optional.presentIfNotNull(data.trainedAryaName),
-          trainedAryaNo = Optional.presentIfNotNull(data.trainedAryaPhone),
-          activityId = activityId,
-        )
-      ).execute()
-      if (response.hasErrors()) {
-        throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-      }
-      response.data?.insertIntosatr_registrationCollection?.affectedCount!! > 0
+  override fun registerForActivity(activityId: String, data: RegistrationData): Flow<Result<Boolean>> =
+    flow {
+      emit(Result.Loading)
+      val result =
+        safeCall {
+          val response =
+            apolloClient.mutation(
+              RegisterForSatrMutation(
+                fullName = data.fullName,
+                gender = data.gender,
+                mobile = data.phoneNumber,
+                aadharNo = data.aadharNumber,
+                educationalQualification = data.education,
+                address = data.fullAddress,
+                inspirationSource = data.inspirationSource,
+                inspirationSourceName = Optional.presentIfNotNull(data.inspirationDetailName),
+                inspirationSourceNo = Optional.presentIfNotNull(data.inspirationDetailPhone),
+                hasTrainedAryaInFamily = data.hasTrainedAryaInFamily,
+                trainedAryaName = Optional.presentIfNotNull(data.trainedAryaName),
+                trainedAryaNo = Optional.presentIfNotNull(data.trainedAryaPhone),
+                activityId = activityId,
+              )
+            ).execute()
+          if (response.hasErrors()) {
+            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+          }
+          response.data?.insertIntosatr_registrationCollection?.affectedCount!! > 0
+        }
+      emit(result)
     }
-    emit(result)
-  }
 
   @OptIn(SupabaseExperimental::class)
   override fun getRegistrationCounts(): Flow<Map<String, Int>> {
@@ -88,7 +95,7 @@ class AryaNirmanRepositoryImpl(private val apolloClient: ApolloClient) : AryaNir
       .selectAsFlow(
         primaryKeys = listOf(SatrRegistrationCount::id)
       ).map { registrations ->
-        registrations.groupingBy { it.activity_id}.eachCount()
+        registrations.groupingBy { it.activity_id }.eachCount()
       }
   }
 }

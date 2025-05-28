@@ -12,7 +12,6 @@ import kotlinx.coroutines.launch
  * Base ViewModel class that provides common functionality for all ViewModels
  */
 abstract class BaseViewModel<S>(initialState: S) : ViewModel() {
-
   // Private backing field for UI state
   private val _uiState = MutableStateFlow(initialState)
 

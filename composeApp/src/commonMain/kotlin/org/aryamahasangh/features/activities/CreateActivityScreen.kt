@@ -44,19 +44,21 @@ import org.aryamahasangh.screens.*
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
 
-val stringToActivityTypeMap = mapOf(
-  "कक्षा" to ActivityType.COURSE,
-  "कार्यक्रम" to ActivityType.EVENT,
-  "अभियान" to ActivityType.CAMPAIGN,
-  "सत्र" to ActivityType.SESSION,
-)
+val stringToActivityTypeMap =
+  mapOf(
+    "कक्षा" to ActivityType.COURSE,
+    "कार्यक्रम" to ActivityType.EVENT,
+    "अभियान" to ActivityType.CAMPAIGN,
+    "सत्र" to ActivityType.SESSION,
+  )
 
-val activityTypeToStringMap = mapOf(
-  ActivityType.COURSE to "कक्षा",
-  ActivityType.EVENT to "कार्यक्रम",
-  ActivityType.CAMPAIGN to "अभियान",
-  ActivityType.SESSION to "सत्र",
-)
+val activityTypeToStringMap =
+  mapOf(
+    ActivityType.COURSE to "कक्षा",
+    ActivityType.EVENT to "कार्यक्रम",
+    ActivityType.CAMPAIGN to "अभियान",
+    ActivityType.SESSION to "सत्र",
+  )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -116,7 +118,6 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
   var stateErrorMessage by remember { mutableStateOf("") }
   var districtErrorMessage by remember { mutableStateOf("") }
 
-
   var startDate by remember { mutableStateOf<LocalDate?>(null) }
   var startTime by remember { mutableStateOf<LocalTime?>(null) }
   var endDate by remember { mutableStateOf<LocalDate?>(null) }
@@ -136,7 +137,6 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
   var attachedDocuments by remember { mutableStateOf(emptyList<PlatformFile>()) }
   var attachedDocumentsError by remember { mutableStateOf(false) }
   var attachedDocumentsErrorMessage by remember { mutableStateOf("") }
-
 
   var contactPeople by remember { mutableStateOf(emptySet<Member>()) }
   var contactPeopleError by remember { mutableStateOf(false) }
@@ -198,8 +198,10 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
       val startDateTime = startDate?.atTime(startTime!!)!!
       val endDateTime = endDate?.atTime(endTime!!)!!
 
-      if (!(startDateTime < endDateTime
-            && startDateTime > currentDateTime && endDateTime > currentDateTime)
+      if (!(
+          startDateTime < endDateTime &&
+            startDateTime > currentDateTime && endDateTime > currentDateTime
+        )
       ) {
         if (startDateTime >= endDateTime) {
           startDateError = true
@@ -234,9 +236,11 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
       }
     }
 
-    return !(nameError || typesError || shortDescriptionError || descriptionError || associatedOrganisationsError
-        || addressError || stateError || districtError || startDateError || startTimeError
-        || endDateError || endTimeError || contactPeopleError)
+    return !(
+      nameError || typesError || shortDescriptionError || descriptionError || associatedOrganisationsError ||
+        addressError || stateError || districtError || startDateError || startTimeError ||
+        endDateError || endTimeError || contactPeopleError
+    )
   }
 
   fun submitForm() {
@@ -245,10 +249,11 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
         val attachedImages = mutableListOf<String>()
         try {
           attachedDocuments.forEach {
-            val uploadResponse = bucket.upload(
-              path = "${System.now().epochSeconds}.jpg",
-              data = it.readBytes()
-            )
+            val uploadResponse =
+              bucket.upload(
+                path = "${System.now().epochSeconds}.jpg",
+                data = it.readBytes()
+              )
             attachedImages.add(bucket.publicUrl(uploadResponse.path))
           }
         } catch (e: Exception) {
@@ -259,28 +264,30 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
           println("error uploading files: $e")
           return@launch
         }
-        val inp = ActivityInputData(
-          name = name,
-          shortDescription = shortDescription,
-          longDescription = description,
-          type = stringToActivityTypeMap[selectedType!!]!!,
-          address = address,
-          state = state,
-          district = district,
-          associatedOrganisations = associatedOrganisations.toList(),
-          startDatetime = startDate?.atTime(startTime!!)!!,
-          endDatetime = endDate?.atTime(endTime!!)!!,
-          mediaFiles = attachedImages,
-          contactPeople = contactPeople.map {
-            val (role, priority) = postMap[it.id] ?: Pair("", 0)
-            ActivityMember(it.id, role, it,priority)
-          },
-          additionalInstructions = additionalInstructions,
-          capacity = eventCapacity.toIntOrNull() ?: 0,
-          allowedGender =  eventGenderAllowed.name.toLowerCase(Locale.current),
-          latitude = eventLatitude.toDoubleOrNull() ?: 0.0,
-          longitude = eventLongitude.toDoubleOrNull() ?: 0.0,
-        )
+        val inp =
+          ActivityInputData(
+            name = name,
+            shortDescription = shortDescription,
+            longDescription = description,
+            type = stringToActivityTypeMap[selectedType!!]!!,
+            address = address,
+            state = state,
+            district = district,
+            associatedOrganisations = associatedOrganisations.toList(),
+            startDatetime = startDate?.atTime(startTime!!)!!,
+            endDatetime = endDate?.atTime(endTime!!)!!,
+            mediaFiles = attachedImages,
+            contactPeople =
+              contactPeople.map {
+                val (role, priority) = postMap[it.id] ?: Pair("", 0)
+                ActivityMember(it.id, role, it, priority)
+              },
+            additionalInstructions = additionalInstructions,
+            capacity = eventCapacity.toIntOrNull() ?: 0,
+            allowedGender = eventGenderAllowed.name.toLowerCase(Locale.current),
+            latitude = eventLatitude.toDoubleOrNull() ?: 0.0,
+            longitude = eventLongitude.toDoubleOrNull() ?: 0.0,
+          )
 
         // Submit form using ViewModel
         viewModel.createActivity(inp)
@@ -289,10 +296,11 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
   }
 
   Column(
-    modifier = Modifier
-      .fillMaxSize()
-      .padding(8.dp)
-      .verticalScroll(scrollState),
+    modifier =
+      Modifier
+        .fillMaxSize()
+        .padding(8.dp)
+        .verticalScroll(scrollState),
   ) {
     // Name
     OutlinedTextField(
@@ -316,33 +324,36 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
       Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         types.forEach { type ->
           FilterChip(
-            selected = (selectedType == type),  // Check for equality, not `in`
+            selected = (selectedType == type), // Check for equality, not `in`
             onClick = {
-              selectedType = if (selectedType == type) {
-                null // Unselect if already selected
-              } else {
-                type   // Select new type and unselect the older
-              }
+              selectedType =
+                if (selectedType == type) {
+                  null // Unselect if already selected
+                } else {
+                  type // Select new type and unselect the older
+                }
               typesError = selectedType == null // Update error status
             },
             label = { Text(type) },
-            leadingIcon = if (selectedType == type) {
-              {
-                Icon(
-                  imageVector = Icons.Filled.Done,
-                  contentDescription = "Selected",
-                  modifier = Modifier.size(FilterChipDefaults.IconSize)
-                )
-              }
-            } else {
-              null
-            },
-            border = FilterChipDefaults.filterChipBorder(
-              borderColor = MaterialTheme.colorScheme.outline,
-              selectedBorderColor = MaterialTheme.colorScheme.primary,
-              enabled = selectedType == type,
-              selected = selectedType == type
-            ),
+            leadingIcon =
+              if (selectedType == type) {
+                {
+                  Icon(
+                    imageVector = Icons.Filled.Done,
+                    contentDescription = "Selected",
+                    modifier = Modifier.size(FilterChipDefaults.IconSize)
+                  )
+                }
+              } else {
+                null
+              },
+            border =
+              FilterChipDefaults.filterChipBorder(
+                borderColor = MaterialTheme.colorScheme.outline,
+                selectedBorderColor = MaterialTheme.colorScheme.primary,
+                enabled = selectedType == type,
+                selected = selectedType == type
+              ),
           )
         }
       }
@@ -399,7 +410,7 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
       selectedOptions = associatedOrganisations,
       onSelectionChanged = {
         associatedOrganisations = it
-        associatedOrganisationsError = it.isEmpty()// Update error on selection change
+        associatedOrganisationsError = it.isEmpty() // Update error on selection change
       },
       isError = associatedOrganisationsError,
       supportingText = { if (associatedOrganisationsError) Text("Associated Organisation is required") }
@@ -467,7 +478,13 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
             readOnly = true,
             onClick = { openStartDateDialog.value = true },
             isError = startDateError,
-            supportingText = { if (startDateError) Text(if (startDateTimeErrorMessage.isEmpty()) "Start date is required" else startDateTimeErrorMessage) }
+            supportingText = {
+              if (startDateError) {
+                Text(
+                  if (startDateTimeErrorMessage.isEmpty()) "Start date is required" else startDateTimeErrorMessage
+                )
+              }
+            }
           )
 
           CustomTextField(
@@ -477,7 +494,13 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
             readOnly = true,
             onClick = { openStartTimeDialog.value = true },
             isError = startTimeError,
-            supportingText = { if (startTimeError) Text(if (startDateTimeErrorMessage.isEmpty()) "Start time is required" else startDateTimeErrorMessage) }
+            supportingText = {
+              if (startTimeError) {
+                Text(
+                  if (startDateTimeErrorMessage.isEmpty()) "Start time is required" else startDateTimeErrorMessage
+                )
+              }
+            }
           )
         }
       }
@@ -493,7 +516,13 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
             readOnly = true,
             onClick = { openEndDateDialog.value = true },
             isError = endDateError,
-            supportingText = { if (endDateError) Text(if (endDateTimeErrorMessage.isEmpty()) "End date is required" else endDateTimeErrorMessage) }
+            supportingText = {
+              if (endDateError) {
+                Text(
+                  if (endDateTimeErrorMessage.isEmpty()) "End date is required" else endDateTimeErrorMessage
+                )
+              }
+            }
           )
 
           CustomTextField(
@@ -503,7 +532,13 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
             readOnly = true,
             onClick = { openEndTimeDialog.value = true },
             isError = endTimeError,
-            supportingText = { if (endTimeError) Text(if (endDateTimeErrorMessage.isEmpty()) "End time is required" else endDateTimeErrorMessage) }
+            supportingText = {
+              if (endTimeError) {
+                Text(
+                  if (endDateTimeErrorMessage.isEmpty()) "End time is required" else endDateTimeErrorMessage
+                )
+              }
+            }
           )
         }
       }
@@ -529,7 +564,6 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
       }
     )
 
-
     Text(
       modifier = Modifier.padding(top = 8.dp),
       text = "संबधित चित्र एवं पत्रिकाएं:",
@@ -538,9 +572,10 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
     DocumentGrid(
       documents = attachedDocuments,
       onDocumentRemoved = { documentToRemove ->
-        attachedDocuments = attachedDocuments.toMutableList().apply {
-          remove(documentToRemove)
-        }.toList()
+        attachedDocuments =
+          attachedDocuments.toMutableList().apply {
+            remove(documentToRemove)
+          }.toList()
       },
       isError = attachedDocumentsError,
       errorMessage = attachedDocumentsErrorMessage
@@ -552,8 +587,6 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
         attachedDocuments = (attachedDocuments + filePath).distinct()
       }
     })
-
-
 
     // Contact People
     ContactPeopleDropdown(
@@ -590,10 +623,11 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
       modifier = Modifier.padding(vertical = 16.dp),
       onClick = { submitForm() },
       enabled = !isSubmitting,
-      colors = ButtonDefaults.buttonColors(
-        containerColor = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary
-      )
+      colors =
+        ButtonDefaults.buttonColors(
+          containerColor = MaterialTheme.colorScheme.primary,
+          contentColor = MaterialTheme.colorScheme.onPrimary
+        )
     ) {
       Row(verticalAlignment = Alignment.CenterVertically) {
         if (isSubmitting) {
@@ -708,13 +742,13 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
         onDismissRequest = { openEndTimeDialog.value = false }
       )
     }
-
   }
 }
 
-
 enum class GenderAllowed {
-  ANY, MALE, FEMALE;
+  ANY,
+  MALE,
+  FEMALE;
 
   fun toDisplayName(): String {
     return when (this) {
@@ -773,10 +807,22 @@ fun EventDetailsFields(
   fun validateCapacity(showError: Boolean = true): Boolean {
     val capInt = capacity.toIntOrNull()
     return when {
-      capacity.isBlank() -> { if (showError) capacityError = "क्षमता आवश्यक है."; false }
-      capInt == null -> { if (showError) capacityError = "कृपया मान्य संख्या दर्ज करें."; false }
-      capInt <= 0 -> { if (showError) capacityError = "क्षमता 0 से अधिक होनी चाहिए."; false }
-      else -> { capacityError = null; true }
+      capacity.isBlank() -> {
+        if (showError) capacityError = "क्षमता आवश्यक है."
+        false
+      }
+      capInt == null -> {
+        if (showError) capacityError = "कृपया मान्य संख्या दर्ज करें."
+        false
+      }
+      capInt <= 0 -> {
+        if (showError) capacityError = "क्षमता 0 से अधिक होनी चाहिए."
+        false
+      }
+      else -> {
+        capacityError = null
+        true
+      }
     }
   }
 
@@ -788,25 +834,50 @@ fun EventDetailsFields(
   fun validateLatitude(showError: Boolean = true): Boolean {
     val latDouble = latitude.toDoubleOrNull()
     return when {
-      latitude.isBlank() -> { if (showError) latitudeError = "अक्षांश आवश्यक है."; false }
-      latDouble == null -> { if (showError) latitudeError = "कृपया मान्य अक्षांश दर्ज करें (उदा. 28.6139)."; false }
-      latDouble < -90.0 || latDouble > 90.0 -> { if (showError) latitudeError = "अक्षांश -90 और 90 के बीच होना चाहिए."; false }
-      else -> { latitudeError = null; true }
+      latitude.isBlank() -> {
+        if (showError) latitudeError = "अक्षांश आवश्यक है."
+        false
+      }
+      latDouble == null -> {
+        if (showError) latitudeError = "कृपया मान्य अक्षांश दर्ज करें (उदा. 28.6139)."
+        false
+      }
+      latDouble < -90.0 || latDouble > 90.0 -> {
+        if (showError) latitudeError = "अक्षांश -90 और 90 के बीच होना चाहिए."
+        false
+      }
+      else -> {
+        latitudeError = null
+        true
+      }
     }
   }
 
   fun validateLongitude(showError: Boolean = true): Boolean {
     val lonDouble = longitude.toDoubleOrNull()
     return when {
-      longitude.isBlank() -> { if (showError) longitudeError = "देशांतर आवश्यक है."; false }
-      lonDouble == null -> { if (showError) longitudeError = "कृपया मान्य देशांतर दर्ज करें (उदा. 77.2090)."; false }
-      lonDouble < -180.0 || lonDouble > 180.0 -> { if (showError) longitudeError = "देशांतर -180 और 180 के बीच होना चाहिए."; false }
-      else -> { longitudeError = null; true }
+      longitude.isBlank() -> {
+        if (showError) longitudeError = "देशांतर आवश्यक है."
+        false
+      }
+      lonDouble == null -> {
+        if (showError) longitudeError = "कृपया मान्य देशांतर दर्ज करें (उदा. 77.2090)."
+        false
+      }
+      lonDouble < -180.0 || lonDouble > 180.0 -> {
+        if (showError) longitudeError = "देशांतर -180 और 180 के बीच होना चाहिए."
+        false
+      }
+      else -> {
+        longitudeError = null
+        true
+      }
     }
   }
 
   LaunchedEffect(capacity, selectedGenderAllowed, latitude, longitude) {
-    val isValid = validateCapacity(false) &&
+    val isValid =
+      validateCapacity(false) &&
         validateGenderAllowed(false) &&
         validateLatitude(false) &&
         validateLongitude(false)
@@ -818,14 +889,13 @@ fun EventDetailsFields(
     modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
     verticalArrangement = Arrangement.spacedBy(16.dp)
   ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)){
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
 // Gender Allowed (Using standard ExposedDropdownMenuBox)
       ExposedDropdownMenuBox(
         expanded = genderAllowedExpanded,
         onExpandedChange = { genderAllowedExpanded = !genderAllowedExpanded },
         modifier = Modifier.width(150.dp) // Or a constrained width if preferred
       ) {
-
         OutlinedTextField(
           value = selectedGenderAllowed.toDisplayName(), // Display the current selection's name
           onValueChange = {}, // Not directly changeable
@@ -860,7 +930,9 @@ fun EventDetailsFields(
       OutlinedTextField(
         value = capacity,
         onValueChange = {
-          if (it.isEmpty() || it.all { char -> char.isDigit() }) { capacity = it }
+          if (it.isEmpty() || it.all { char -> char.isDigit() }) {
+            capacity = it
+          }
           if (capacityError != null) validateCapacity()
         },
         label = { Text("क्षमता") },
@@ -880,17 +952,27 @@ fun EventDetailsFields(
       onClick = { onChooseLocationFromMapClick() },
       contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
     ) {
-      Icon(Icons.Filled.Map, contentDescription = "मानचित्र से चुनें", modifier = Modifier.size(ButtonDefaults.IconSize))
+      Icon(
+        Icons.Filled.Map,
+        contentDescription = "मानचित्र से चुनें",
+        modifier = Modifier.size(ButtonDefaults.IconSize)
+      )
       Spacer(Modifier.size(ButtonDefaults.IconSpacing))
       Text("मानचित्र से चुनें")
     }
-    Text("या मैन्युअल रूप से दर्ज करें:", style = MaterialTheme.typography.bodySmall, modifier = Modifier.padding(top = 8.dp))
+    Text(
+      "या मैन्युअल रूप से दर्ज करें:",
+      style = MaterialTheme.typography.bodySmall,
+      modifier = Modifier.padding(top = 8.dp)
+    )
 
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
       OutlinedTextField(
         value = latitude,
         onValueChange = {
-          if (it.isEmpty() || it.matches(Regex("^-?[0-9]*\\.?[0-9]*$"))) { latitude = it }
+          if (it.isEmpty() || it.matches(Regex("^-?[0-9]*\\.?[0-9]*$"))) {
+            latitude = it
+          }
           if (latitudeError != null) validateLatitude()
         },
         label = { Text("अक्षांश (Latitude)") },
@@ -905,7 +987,9 @@ fun EventDetailsFields(
       OutlinedTextField(
         value = longitude,
         onValueChange = {
-          if (it.isEmpty() || it.matches(Regex("^-?[0-9]*\\.?[0-9]*$"))) { longitude = it }
+          if (it.isEmpty() || it.matches(Regex("^-?[0-9]*\\.?[0-9]*$"))) {
+            longitude = it
+          }
           if (longitudeError != null) validateLongitude()
         },
         label = { Text("देशांतर (Longitude)") },
@@ -953,7 +1037,10 @@ fun EventDetailsFieldsPreview() {
           }
         )
         Spacer(modifier = Modifier.height(20.dp))
-        Text("Form is valid: $isFieldsValid", color = if (isFieldsValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error)
+        Text(
+          "Form is valid: $isFieldsValid",
+          color = if (isFieldsValid) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
+        )
         Text("Current Capacity: $currentCapacity")
         Text("Current Gender: ${currentGenderAllowed.toDisplayName()}")
         Text("Current Latitude: $currentLatitude")
@@ -972,22 +1059,26 @@ fun CustomDatePickerDialog(
 ) {
   val today = System.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
 
-  val datePickerState = rememberDatePickerState(
-    selectableDates = if (disablePastDates) {
-      object : SelectableDates {
-        override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-          val selectedDate = Instant.fromEpochMilliseconds(utcTimeMillis)
-            .toLocalDateTime(TimeZone.currentSystemDefault()).date
-          return selectedDate >= today // Allow only future dates
+  val datePickerState =
+    rememberDatePickerState(
+      selectableDates =
+        if (disablePastDates) {
+          object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+              val selectedDate =
+                Instant.fromEpochMilliseconds(utcTimeMillis)
+                  .toLocalDateTime(TimeZone.currentSystemDefault()).date
+              return selectedDate >= today // Allow only future dates
+            }
+          }
+        } else {
+          DatePickerDefaults.AllDates
         }
-      }
-    } else {
-      DatePickerDefaults.AllDates
+    )
+  val selectedDate =
+    datePickerState.selectedDateMillis?.let {
+      Instant.fromEpochMilliseconds(it).toLocalDateTime(TimeZone.currentSystemDefault()).date
     }
-  )
-  val selectedDate = datePickerState.selectedDateMillis?.let {
-    Instant.fromEpochMilliseconds(it).toLocalDateTime(TimeZone.currentSystemDefault()).date
-  }
 
   DatePickerDialog(
     onDismissRequest = onDismissRequest,
@@ -995,9 +1086,10 @@ fun CustomDatePickerDialog(
       TextButton(
         onClick = {
           onDismissRequest()
-          val selectedDate1 = datePickerState.selectedDateMillis?.let {
-            Instant.fromEpochMilliseconds(it).toLocalDateTime(TimeZone.currentSystemDefault()).date
-          }
+          val selectedDate1 =
+            datePickerState.selectedDateMillis?.let {
+              Instant.fromEpochMilliseconds(it).toLocalDateTime(TimeZone.currentSystemDefault()).date
+            }
           selectedDate1?.let {
             onDateSelected(it)
           }
@@ -1014,7 +1106,7 @@ fun CustomDatePickerDialog(
         Text("Cancel")
       }
     }
-  ){
+  ) {
     DatePicker(
       state = datePickerState
     )
@@ -1091,22 +1183,24 @@ fun MultiSelectDropdown(
               )
 //              expanded = false
             },
-            trailingIcon = if (option in selectedOptions) {
-              {
-                Icon(
-                  imageVector = Icons.Default.Check,
-                  contentDescription = "Selected",
-                  modifier = Modifier.size(20.dp)
-                )
+            trailingIcon =
+              if (option in selectedOptions) {
+                {
+                  Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = "Selected",
+                    modifier = Modifier.size(20.dp)
+                  )
+                }
+              } else {
+                null
               }
-            } else null
           )
         }
       }
     }
   }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -1121,7 +1215,7 @@ fun ContactPeopleDropdown(
   postMap: MutableMap<String, Pair<String, Int>>
 ) {
   var expanded by remember { mutableStateOf(false) }
-  val context = LocalPlatformContext.current  // Needed for Coil
+  val context = LocalPlatformContext.current // Needed for Coil
 
   Column(modifier = modifier) { // Wrap the InputChip area in a Column
     // Display Selected Members as Input Chips
@@ -1143,14 +1237,16 @@ fun ContactPeopleDropdown(
             ) {
               if (!member.profileImage.isNullOrEmpty()) {
                 AsyncImage(
-                  model = ImageRequest.Builder(LocalPlatformContext.current)
-                    .data(member.profileImage)
-                    .crossfade(true)
-                    .build(),
+                  model =
+                    ImageRequest.Builder(LocalPlatformContext.current)
+                      .data(member.profileImage)
+                      .crossfade(true)
+                      .build(),
                   contentDescription = "Profile Image",
-                  modifier = Modifier
-                    .size(24.dp)
-                    .clip(CircleShape),
+                  modifier =
+                    Modifier
+                      .size(24.dp)
+                      .clip(CircleShape),
                   contentScale = ContentScale.Crop
                 )
               } else {
@@ -1175,9 +1271,10 @@ fun ContactPeopleDropdown(
                 )
               }
               Box(
-                modifier = Modifier.size(36.dp).clickable {
-                  onSelectionChanged(selectedMembers - member)
-                },
+                modifier =
+                  Modifier.size(36.dp).clickable {
+                    onSelectionChanged(selectedMembers - member)
+                  },
                 contentAlignment = Alignment.Center
               ) {
                 Icon(
@@ -1188,7 +1285,7 @@ fun ContactPeopleDropdown(
               }
             }
           },
-          //onDismiss = { onSelectionChanged(selectedMembers - member.id) },
+          // onDismiss = { onSelectionChanged(selectedMembers - member.id) },
           modifier = Modifier.padding(2.dp),
         )
       }
@@ -1225,14 +1322,16 @@ fun ContactPeopleDropdown(
             leadingIcon = {
               if (!member.profileImage.isNullOrEmpty()) {
                 AsyncImage(
-                  model = ImageRequest.Builder(LocalPlatformContext.current)
-                    .data(member.profileImage)
-                    .crossfade(true)
-                    .build(),
+                  model =
+                    ImageRequest.Builder(LocalPlatformContext.current)
+                      .data(member.profileImage)
+                      .crossfade(true)
+                      .build(),
                   contentDescription = "Profile Image",
-                  modifier = Modifier
-                    .size(36.dp)
-                    .clip(CircleShape),
+                  modifier =
+                    Modifier
+                      .size(36.dp)
+                      .clip(CircleShape),
                   contentScale = ContentScale.Crop
                 )
               } else {
@@ -1244,22 +1343,24 @@ fun ContactPeopleDropdown(
                 )
               }
             },
-            trailingIcon = if (member in selectedMembers) {
-              {
-                Icon(
-                  imageVector = Icons.Default.Check,
-                  contentDescription = "Selected",
-                  modifier = Modifier.size(20.dp)
-                )
+            trailingIcon =
+              if (member in selectedMembers) {
+                {
+                  Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = "Selected",
+                    modifier = Modifier.size(20.dp)
+                  )
+                }
+              } else {
+                null
               }
-            } else null
           )
         }
       }
     }
   }
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1268,11 +1369,12 @@ fun TimePickerDialog(
   onDismissRequest: () -> Unit
 ) {
   val initialTime = LocalTime(12, 0) // Set initial time to noon
-  val timePickerState = rememberTimePickerState(
-    initialHour = initialTime.hour,
-    initialMinute = initialTime.minute,
-    is24Hour = true
-  )
+  val timePickerState =
+    rememberTimePickerState(
+      initialHour = initialTime.hour,
+      initialMinute = initialTime.minute,
+      is24Hour = true
+    )
 
   Dialog(onDismissRequest = onDismissRequest) {
     Surface(shape = MaterialTheme.shapes.extraLarge) {
@@ -1324,16 +1426,17 @@ fun CustomTextField(
         )
       }
     },
-    interactionSource = remember { MutableInteractionSource() }
-      .also { interactionSource ->
-        LaunchedEffect(interactionSource) {
-          interactionSource.interactions.collect { interaction ->
-            if (interaction is PressInteraction.Release) {
-              onClick()
+    interactionSource =
+      remember { MutableInteractionSource() }
+        .also { interactionSource ->
+          LaunchedEffect(interactionSource) {
+            interactionSource.interactions.collect { interaction ->
+              if (interaction is PressInteraction.Release) {
+                onClick()
+              }
             }
           }
-        }
-      },
+        },
     isError = isError,
     supportingText = supportingText
   )

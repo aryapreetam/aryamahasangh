@@ -9,11 +9,11 @@ data class DefaultBookOrderUiState(
   override val error: String? = null
 ) : BookOrderUiState(isLoading, error)
 
-//data class CreateBookOrderUiState(
+// data class CreateBookOrderUiState(
 //  override val isLoading: Boolean = false,
 //  val createdBookOrder: CreateBookOrderMutation.CreateBookOrder?,
 //  override val error: String? = null
-//) : BookOrderUiState(isLoading, error)
+// ) : BookOrderUiState(isLoading, error)
 //
 
 data class BookOrder(
@@ -39,11 +39,11 @@ data class BookOrdersUiState(
   override val error: String? = null
 ) : BookOrderUiState(isLoading, error)
 //
-//data class BookOrderDetailsUiState(
+// data class BookOrderDetailsUiState(
 //  override val isLoading: Boolean = false,
 //  val bookOrder: BookOrderQuery.BookOrder?,
 //  override val error: String? = null
-//) : BookOrderUiState(isLoading, error)
+// ) : BookOrderUiState(isLoading, error)
 
 class BookOrderViewModel(private val bookOrderRepository: BookOrderRepository) :
   BaseViewModel<DefaultBookOrderUiState>(DefaultBookOrderUiState()) {

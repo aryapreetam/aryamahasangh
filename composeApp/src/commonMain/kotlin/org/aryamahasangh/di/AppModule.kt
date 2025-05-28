@@ -8,10 +8,11 @@ import org.koin.dsl.module
 /**
  * Main application module for Koin dependency injection
  */
-val appModule = module {
-  // Provide Apollo Client
-  single { supabaseClient.graphql.apolloClient }
-}
+val appModule =
+  module {
+    // Provide Apollo Client
+    single { supabaseClient.graphql.apolloClient }
+  }
 
 /**
  * Function to get all modules used in the application

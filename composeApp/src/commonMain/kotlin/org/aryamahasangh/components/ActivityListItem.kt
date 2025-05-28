@@ -18,16 +18,16 @@ import androidx.compose.ui.unit.dp
 import dev.burnoo.compose.remembersetting.rememberBooleanSetting
 import org.aryamahasangh.SettingKeys
 import org.aryamahasangh.features.activities.ActivityType
-import org.aryamahasangh.features.activities.OrganisationalActivity
 import org.aryamahasangh.features.activities.OrganisationalActivityShort
 import org.aryamahasangh.utils.formatShort
 
-val activityTypeData = mapOf(
-  ActivityType.COURSE to "कक्षा",
-  ActivityType.EVENT to "कार्यक्रम",
-  ActivityType.CAMPAIGN to "अभियान",
-  ActivityType.SESSION to "सत्र"
-)
+val activityTypeData =
+  mapOf(
+    ActivityType.COURSE to "कक्षा",
+    ActivityType.EVENT to "कार्यक्रम",
+    ActivityType.CAMPAIGN to "अभियान",
+    ActivityType.SESSION to "सत्र"
+  )
 
 @Composable
 fun ActivityListItem(
@@ -35,7 +35,6 @@ fun ActivityListItem(
   handleOnClick: () -> Unit = {},
   handleDeleteActivity: () -> Unit = {}
 ) {
-
   val startDate = formatShort(activity.startDatetime)
   val endDate = formatShort(activity.endDatetime)
   var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
@@ -48,8 +47,8 @@ fun ActivityListItem(
   ) {
     Box(
       modifier = Modifier.padding(8.dp).fillMaxWidth()
-    ){
-      Column() {
+    ) {
+      Column {
         Text(
           text = activity.name,
           style = MaterialTheme.typography.titleLarge,
@@ -57,11 +56,19 @@ fun ActivityListItem(
         )
         Spacer(modifier = Modifier.height(2.dp))
         Text(
-          modifier = Modifier.background(MaterialTheme.colorScheme.outlineVariant).padding(vertical = 1.dp, horizontal = 8.dp),
-          text = "${activityTypeData[activity.type]}", style = MaterialTheme.typography.bodyLarge)
+          modifier =
+            Modifier.background(
+              MaterialTheme.colorScheme.outlineVariant
+            ).padding(vertical = 1.dp, horizontal = 8.dp),
+          text = "${activityTypeData[activity.type]}",
+          style = MaterialTheme.typography.bodyLarge
+        )
         Spacer(modifier = Modifier.height(4.dp))
-        Text(text = activity.shortDescription, style = MaterialTheme.typography.bodyMedium,
-          maxLines = 1)
+        Text(
+          text = activity.shortDescription,
+          style = MaterialTheme.typography.bodyMedium,
+          maxLines = 1
+        )
         Spacer(modifier = Modifier.height(4.dp))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -79,20 +86,22 @@ fun ActivityListItem(
           Text(text = "स्थान: ${activity.district}", style = MaterialTheme.typography.bodySmall)
         }
       }
-      if(isLoggedIn){
-        Box(
-          modifier = Modifier.size(36.dp).clickable {
-            showConfirmDialog = true
-          }.align(alignment = Alignment.TopEnd),
-          contentAlignment = Alignment.Center
-        ){
-          Icon(
-            Icons.Default.Delete,
-            contentDescription = "delete activity",
-            Modifier.size(24.dp)
-          )
+      if (isLoggedIn)
+        {
+          Box(
+            modifier =
+              Modifier.size(36.dp).clickable {
+                showConfirmDialog = true
+              }.align(alignment = Alignment.TopEnd),
+            contentAlignment = Alignment.Center
+          ) {
+            Icon(
+              Icons.Default.Delete,
+              contentDescription = "delete activity",
+              Modifier.size(24.dp)
+            )
+          }
         }
-      }
     }
     if (showConfirmDialog) {
       AlertDialog(

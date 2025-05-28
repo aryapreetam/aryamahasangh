@@ -25,7 +25,9 @@ import org.aryamahasangh.features.arya_nirman.convertDates
 
 // Enum for gender restriction
 enum class GenderRestriction {
-  MALE, FEMALE, UNISEX
+  MALE,
+  FEMALE,
+  UNISEX
 }
 
 // Data class for event information
@@ -60,15 +62,16 @@ val SeatsAvailableColor = Color(0xFF4CAF50) // A nice green
 val SeatsFullColor = Color(0xFFD32F2F) // A common error red, can also use MaterialTheme.colorScheme.error
 // val SubtleTextColor = MaterialTheme.colorScheme.onSurfaceVariant // Use this if you want theme-aware subtle text
 
-fun TextStyle.asSpanStyle() = SpanStyle(
-  color = color,
-  fontSize = fontSize,
-  fontWeight = fontWeight,
-  fontStyle = fontStyle,
-  fontFamily = fontFamily,
-  letterSpacing = letterSpacing,
-  textDecoration = textDecoration
-)
+fun TextStyle.asSpanStyle() =
+  SpanStyle(
+    color = color,
+    fontSize = fontSize,
+    fontWeight = fontWeight,
+    fontStyle = fontStyle,
+    fontFamily = fontFamily,
+    letterSpacing = letterSpacing,
+    textDecoration = textDecoration
+  )
 
 @Composable
 fun EventListItem(
@@ -80,16 +83,18 @@ fun EventListItem(
   val subtleTextColor = MaterialTheme.colorScheme.onSurfaceVariant // Get from theme
 
   ElevatedCard(
-    modifier = modifier
-      .widthIn(max = 500.dp)
-      .fillMaxWidth(),
+    modifier =
+      modifier
+        .widthIn(max = 500.dp)
+        .fillMaxWidth(),
     shape = RoundedCornerShape(4.dp),
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.inverseOnSurface)
   ) {
     Column(
-      modifier = Modifier
-        .padding(vertical = 16.dp, horizontal = 8.dp)
-        .fillMaxWidth(),
+      modifier =
+        Modifier
+          .padding(vertical = 16.dp, horizontal = 8.dp)
+          .fillMaxWidth(),
       verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
       // Event Title
@@ -103,35 +108,55 @@ fun EventListItem(
 //      )
 
       Text(
-        text = buildAnnotatedString {
-          withStyle(style = baseTextStyle.asSpanStyle().copy(fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)) {
-            append(event.name)
-          }
-          append(" ")
-          withStyle(style = MaterialTheme.typography.labelMedium.asSpanStyle().copy(color = MaterialTheme.colorScheme.secondary)) {
-            append(
-              when(event.genderAllowed){
-                GenderAllowed.ANY -> ""
-                GenderAllowed.MALE -> "(पुरुष)"
-                GenderAllowed.FEMALE ->"(महिला)"
-              }
-            )
-          }
-        },
+        text =
+          buildAnnotatedString {
+            withStyle(
+              style =
+                baseTextStyle.asSpanStyle().copy(
+                  fontWeight = FontWeight.Bold,
+                  color = MaterialTheme.colorScheme.onSurface
+                )
+            ) {
+              append(event.name)
+            }
+            append(" ")
+            withStyle(
+              style =
+                MaterialTheme.typography.labelMedium.asSpanStyle().copy(
+                  color = MaterialTheme.colorScheme.secondary
+                )
+            ) {
+              append(
+                when (event.genderAllowed) {
+                  GenderAllowed.ANY -> ""
+                  GenderAllowed.MALE -> "(पुरुष)"
+                  GenderAllowed.FEMALE -> "(महिला)"
+                }
+              )
+            }
+          },
       )
 
       // Date and Time
       Text(
-        text = buildAnnotatedString {
-          val (dateRange, timeRange) = convertDates(event.startDateTime, event.endDateTime)
-          withStyle(style = SpanStyle(fontWeight = FontWeight.SemiBold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)) {
-            append(dateRange)
-          }
-          append(" | ")
-          withStyle(style = SpanStyle(fontSize = 13.sp, color = subtleTextColor)) {
-            append(timeRange)
-          }
-        },
+        text =
+          buildAnnotatedString {
+            val (dateRange, timeRange) = convertDates(event.startDateTime, event.endDateTime)
+            withStyle(
+              style =
+                SpanStyle(
+                  fontWeight = FontWeight.SemiBold,
+                  fontSize = 16.sp,
+                  color = MaterialTheme.colorScheme.onSurface
+                )
+            ) {
+              append(dateRange)
+            }
+            append(" | ")
+            withStyle(style = SpanStyle(fontSize = 13.sp, color = subtleTextColor)) {
+              append(timeRange)
+            }
+          },
         style = MaterialTheme.typography.bodyMedium
       )
 
@@ -193,12 +218,13 @@ fun EventListItem(
           onClick = { onRegisterClick(event.id) },
           enabled = !event.isFull,
           contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),
-          colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary,
-            disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-          )
+          colors =
+            ButtonDefaults.buttonColors(
+              containerColor = MaterialTheme.colorScheme.primary,
+              contentColor = MaterialTheme.colorScheme.onPrimary,
+              disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
+              disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+            )
         ) {
           Text("पंजीकरण") // "Register"
         }
@@ -210,48 +236,56 @@ fun EventListItem(
 // --- Preview Composable ---
 
 // Dummy callback functions for preview
-fun dummyRegisterCallback(eventId: String) { println("Register clicked for $eventId") }
-fun dummyDirectionsCallback(place: String) { println("Directions clicked for $place") }
+fun dummyRegisterCallback(eventId: String) {
+  println("Register clicked for $eventId")
+}
 
-val sampleEventAvailable = EventItemData(
-  id = "1",
-  title = "आर्य प्रशिक्षण सत्र", // "Annual Tech Conference"
-  dateRange = "२४-२५ मई, २०२५", // "24-25 May, 2025"
-  timeRange = "प्रातः ९:०० - सायं ६:००", // "9:00am - 6:00pm"
-  place = "बैंगलोर", // "Bangalore"
-  genderRestriction = GenderRestriction.UNISEX,
-  totalCapacity = 100,
-  seatsFilled = 75
-)
+fun dummyDirectionsCallback(place: String) {
+  println("Directions clicked for $place")
+}
 
-val sampleEventFullFemaleOnly = EventItemData(
-  id = "2",
-  title = "आर्या प्रशिक्षण सत्र", // "Art Workshop"
-  dateRange = "१८ जून, २०२५", // "18 June, 2025"
-  timeRange = "प्रातः १०:०० - सायं ४:००", // "10:00am - 4:00pm"
-  place = "दिल्ली", // "Delhi"
-  genderRestriction = GenderRestriction.FEMALE,
-  totalCapacity = 50,
-  seatsFilled = 50
-)
+val sampleEventAvailable =
+  EventItemData(
+    id = "1",
+    title = "आर्य प्रशिक्षण सत्र", // "Annual Tech Conference"
+    dateRange = "२४-२५ मई, २०२५", // "24-25 May, 2025"
+    timeRange = "प्रातः ९:०० - सायं ६:००", // "9:00am - 6:00pm"
+    place = "बैंगलोर", // "Bangalore"
+    genderRestriction = GenderRestriction.UNISEX,
+    totalCapacity = 100,
+    seatsFilled = 75
+  )
 
-val sampleEventMaleOnly = EventItemData(
-  id = "3",
-  title = "आर्य निर्माण सत्र", // "Entrepreneurship Summit"
-  dateRange = "१२-१४ जुलाई, २०२५", // "12-14 July, 2025"
-  timeRange = "प्रातः ९:३० - सायं ५:३०", // "9:30am - 5:30pm"
-  place = "मुंबई", // "Mumbai"
-  genderRestriction = GenderRestriction.MALE,
-  totalCapacity = 200,
-  seatsFilled = 150
-)
+val sampleEventFullFemaleOnly =
+  EventItemData(
+    id = "2",
+    title = "आर्या प्रशिक्षण सत्र", // "Art Workshop"
+    dateRange = "१८ जून, २०२५", // "18 June, 2025"
+    timeRange = "प्रातः १०:०० - सायं ४:००", // "10:00am - 4:00pm"
+    place = "दिल्ली", // "Delhi"
+    genderRestriction = GenderRestriction.FEMALE,
+    totalCapacity = 50,
+    seatsFilled = 50
+  )
 
-//val activityListItemsWithActions = listOf(sampleEventAvailable, sampleEventFullFemaleOnly, sampleEventMaleOnly)
+val sampleEventMaleOnly =
+  EventItemData(
+    id = "3",
+    title = "आर्य निर्माण सत्र", // "Entrepreneurship Summit"
+    dateRange = "१२-१४ जुलाई, २०२५", // "12-14 July, 2025"
+    timeRange = "प्रातः ९:३० - सायं ५:३०", // "9:30am - 5:30pm"
+    place = "मुंबई", // "Mumbai"
+    genderRestriction = GenderRestriction.MALE,
+    totalCapacity = 200,
+    seatsFilled = 150
+  )
+
+// val activityListItemsWithActions = listOf(sampleEventAvailable, sampleEventFullFemaleOnly, sampleEventMaleOnly)
 //
-//@OptIn(ExperimentalLayoutApi::class) // For FlowRow
-//@Preview
-//@Composable
-//fun EventListItemCombinedPreview() {
+// @OptIn(ExperimentalLayoutApi::class) // For FlowRow
+// @Preview
+// @Composable
+// fun EventListItemCombinedPreview() {
 //
 //
 //  MaterialTheme { // Essential for Material 3 previews
@@ -306,4 +340,4 @@ val sampleEventMaleOnly = EventItemData(
 //      }
 //    }
 //  }
-//}
+// }

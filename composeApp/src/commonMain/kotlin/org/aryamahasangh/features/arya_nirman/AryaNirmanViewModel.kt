@@ -15,7 +15,6 @@ data class UiState(
 class AryaNirmanViewModel(
   private val aryaNirmanRepository: AryaNirmanRepository
 ) : BaseViewModel<UiState>(UiState()) {
-
   private val _registrationCounts = MutableStateFlow<Map<String, Int>>(emptyMap())
   val registrationCounts: StateFlow<Map<String, Int>> = _registrationCounts.asStateFlow()
 
@@ -27,7 +26,7 @@ class AryaNirmanViewModel(
     }
   }
 
-  fun loadUpComingSessions(){
+  fun loadUpComingSessions() {
     launch {
       aryaNirmanRepository.getUpcomingActivities().collect { result ->
         when (result) {
@@ -35,18 +34,22 @@ class AryaNirmanViewModel(
             updateState { it.copy(isLoading = true, error = null, data = emptyList()) }
           }
           is Result.Success -> {
-            updateState { it.copy(
-              isLoading = false,
-              error = null,
-              data = result.data
-            )}
+            updateState {
+              it.copy(
+                isLoading = false,
+                error = null,
+                data = result.data
+              )
+            }
           }
           is Result.Error -> {
-            updateState { it.copy(
-              isLoading = false,
-              error = result.message,
-              data = emptyList()
-            )}
+            updateState {
+              it.copy(
+                isLoading = false,
+                error = result.message,
+                data = emptyList()
+              )
+            }
           }
         }
       }

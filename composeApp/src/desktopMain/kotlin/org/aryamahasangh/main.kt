@@ -8,20 +8,22 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import org.aryamahasangh.config.ConfigInitializer
 
-fun main() = application {
+fun main() =
+  application {
     // Initialize cross-platform configuration
     ConfigInitializer.initializeBlocking()
-    
+
     Window(
-        onCloseRequest = ::exitApplication,
-        alwaysOnTop = true,
-        state = rememberWindowState(
-            width = 400.dp,
-            height = 800.dp,
-            position = WindowPosition.Aligned(Alignment.TopEnd),
+      onCloseRequest = ::exitApplication,
+      alwaysOnTop = true,
+      state =
+        rememberWindowState(
+          width = 400.dp,
+          height = 800.dp,
+          position = WindowPosition.Aligned(Alignment.TopEnd),
         ),
-        title = "Arya Mahasangh",
+      title = "Arya Mahasangh",
     ) {
-        App()
+      App()
     }
-}
+  }

@@ -23,7 +23,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 
-
 // --- Data Model for Form Submission ---
 data class RegistrationData(
   val fullName: String,
@@ -36,8 +35,8 @@ data class RegistrationData(
   val inspirationDetailName: String?, // For friend/relative name or specific source name
   val inspirationDetailPhone: String?, // For friend/relative phone
   val hasTrainedAryaInFamily: Boolean, // NEW
-  val trainedAryaName: String?,        // NEW
-  val trainedAryaPhone: String?,       // NEW
+  val trainedAryaName: String?, // NEW
+  val trainedAryaPhone: String?, // NEW
   val instructionsAcknowledged: Boolean
 )
 
@@ -55,16 +54,14 @@ enum class InspirationType(val displayName: String) {
 
 val inspirationOptions = InspirationType.values().toList()
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SatraRegistrationFormScreen(
   onRegistrationSuccess: () -> Unit = {}, // Callback for successful registration
-  onRegistrationFailed: () -> Unit = {},  // Callback for failed registration (e.g. server error, not validation)
+  onRegistrationFailed: () -> Unit = {}, // Callback for failed registration (e.g. server error, not validation)
   viewModel: SatraRegistrationViewModel,
   activityId: String,
 ) {
-
   val uiState by viewModel.uiState.collectAsState()
 
   val snackbarHostState = remember { SnackbarHostState() }
@@ -198,8 +195,6 @@ fun SatraRegistrationFormScreen(
     }
   }
 
-
-
   fun validateAadharNumber(showError: Boolean = true): Boolean {
     return when {
       aadharNumber.isBlank() -> {
@@ -244,18 +239,24 @@ fun SatraRegistrationFormScreen(
         if (friendRelativeName.isBlank()) {
           if (showError) friendRelativeNameError = "कृपया मित्र/सम्बन्धी का नाम दर्ज करें।"
           isValid = false
-        } else { friendRelativeNameError = null }
+        } else {
+          friendRelativeNameError = null
+        }
 
         if (friendRelativePhone.isBlank() || !friendRelativePhone.all { it.isDigit() } || friendRelativePhone.length != 10) {
           if (showError) friendRelativePhoneError = "कृपया 10 अंकों का मान्य दूरभाष नंबर दर्ज करें।"
           isValid = false
-        } else { friendRelativePhoneError = null }
+        } else {
+          friendRelativePhoneError = null
+        }
       }
       InspirationType.NEWSPAPER, InspirationType.NEWS_CHANNEL, InspirationType.SOCIAL_MEDIA -> {
         if (otherSourceName.isBlank()) {
           if (showError) otherSourceNameError = "कृपया स्रोत का नाम दर्ज करें।"
           isValid = false
-        } else { otherSourceNameError = null }
+        } else {
+          otherSourceNameError = null
+        }
       }
       null -> { /* Should be caught by validateInspirationSourceSelection */ }
     }
@@ -273,8 +274,40 @@ fun SatraRegistrationFormScreen(
   }
 
   // NEW Trained Arya Validation
-  fun validateTrainedAryaName(showError: Boolean = true): Boolean { if (!hasTrainedAryaInFamily) { trainedAryaNameError = null; return true }; return if (trainedAryaName.isBlank()) { if (showError) trainedAryaNameError = "कृपया प्रशिक्षित आर्य का नाम दर्ज करें."; false } else { trainedAryaNameError = null; true } }
-  fun validateTrainedAryaPhone(showError: Boolean = true): Boolean { if (!hasTrainedAryaInFamily) { trainedAryaPhoneError = null; return true }; return when { trainedAryaPhone.isBlank() -> { if (showError) trainedAryaPhoneError = "कृपया प्रशिक्षित आर्य का दूरभाष दर्ज करें."; false } !trainedAryaPhone.all { it.isDigit() } || trainedAryaPhone.length != 10 -> { if (showError) trainedAryaPhoneError = "कृपया 10 अंकों का मान्य दूरभाष नंबर दर्ज करें."; false } else -> { trainedAryaPhoneError = null; true } } }
+  fun validateTrainedAryaName(
+    showError: Boolean = true
+  ): Boolean {
+    if (!hasTrainedAryaInFamily) {
+      trainedAryaNameError = null
+      return true
+    }
+    return if (trainedAryaName.isBlank()) {
+      if (showError) trainedAryaNameError = "कृपया प्रशिक्षित आर्य का नाम दर्ज करें."
+      false
+    } else {
+      trainedAryaNameError = null
+      true
+    }
+  }
+
+  fun validateTrainedAryaPhone(showError: Boolean = true): Boolean {
+    if (!hasTrainedAryaInFamily) {
+      trainedAryaPhoneError = null
+      return true
+    }
+    return when {
+      trainedAryaPhone.isBlank() -> {
+        if (showError) trainedAryaPhoneError = "कृपया प्रशिक्षित आर्य का दूरभाष दर्ज करें."
+        false
+      } !trainedAryaPhone.all { it.isDigit() } || trainedAryaPhone.length != 10 -> {
+        if (showError) trainedAryaPhoneError = "कृपया 10 अंकों का मान्य दूरभाष नंबर दर्ज करें."
+        false
+      } else -> {
+        trainedAryaPhoneError = null
+        true
+      }
+    }
+  }
 
   fun validateAcknowledgement(showError: Boolean = true): Boolean {
     return if (!instructionsAcknowledged) {
@@ -297,20 +330,20 @@ fun SatraRegistrationFormScreen(
   // Derived state for overall form validity to enable/disable button
   val isFormCompletelyValid by derivedStateOf {
     validateFullName(false) &&
-        validatePhoneNumber(false) &&
-        validateGender(false) &&
-        validateAadharNumber(false) &&
-        validateEducation(false) &&
-        validateFullAddress(false) &&
-        validateInspirationSourceSelection(false) &&
-        (if (selectedInspirationSource != null) validateInspirationSourceDetails(false) else true) &&
-        (if (hasTrainedAryaInFamily) validateTrainedAryaName(false) && validateTrainedAryaPhone(false) else true) && // NEW
-        instructionsAcknowledged // Checkbox directly
+      validatePhoneNumber(false) &&
+      validateGender(false) &&
+      validateAadharNumber(false) &&
+      validateEducation(false) &&
+      validateFullAddress(false) &&
+      validateInspirationSourceSelection(false) &&
+      (if (selectedInspirationSource != null) validateInspirationSourceDetails(false) else true) &&
+      (if (hasTrainedAryaInFamily) validateTrainedAryaName(false) && validateTrainedAryaPhone(false) else true) && // NEW
+      instructionsAcknowledged // Checkbox directly
   }
 
-
   fun runAllValidationsAndShowErrors(): Boolean {
-    val vBase = validateFullName() && validatePhoneNumber() && validateGender() &&
+    val vBase =
+      validateFullName() && validatePhoneNumber() && validateGender() &&
         validateAadharNumber() && validateEducation() && validateFullAddress() &&
         validateInspirationSourceSelection() &&
         (if (selectedInspirationSource != null) validateInspirationSourceDetails() else true)
@@ -319,39 +352,54 @@ fun SatraRegistrationFormScreen(
   }
 
   fun resetForm() {
-    fullName = ""; fullNameError = null
-    phoneNumber = ""; phoneNumberError = null
-    selectedGender = null; genderError = null
-    aadharNumber = ""; aadharError = null
-    education = ""; educationError = null
-    fullAddress = ""; fullAddressError = null
-    selectedInspirationSource = null; inspirationSourceError = null
-    friendRelativeName = ""; friendRelativeNameError = null
-    friendRelativePhone = ""; friendRelativePhoneError = null
-    otherSourceName = ""; otherSourceNameError = null
-    hasTrainedAryaInFamily = false; trainedAryaName = ""; trainedAryaNameError = null // NEW
-    trainedAryaPhone = ""; trainedAryaPhoneError = null // NEW
-    instructionsAcknowledged = false; acknowledgeError = null
+    fullName = ""
+    fullNameError = null
+    phoneNumber = ""
+    phoneNumberError = null
+    selectedGender = null
+    genderError = null
+    aadharNumber = ""
+    aadharError = null
+    education = ""
+    educationError = null
+    fullAddress = ""
+    fullAddressError = null
+    selectedInspirationSource = null
+    inspirationSourceError = null
+    friendRelativeName = ""
+    friendRelativeNameError = null
+    friendRelativePhone = ""
+    friendRelativePhoneError = null
+    otherSourceName = ""
+    otherSourceNameError = null
+    hasTrainedAryaInFamily = false
+    trainedAryaName = ""
+    trainedAryaNameError = null // NEW
+    trainedAryaPhone = ""
+    trainedAryaPhoneError = null // NEW
+    instructionsAcknowledged = false
+    acknowledgeError = null
     coroutineScope.launch { scrollState.scrollTo(0) }
   }
 
   fun handleSubmit() {
     if (runAllValidationsAndShowErrors()) {
-      val data = RegistrationData(
-        fullName = fullName.trim(),
-        phoneNumber = phoneNumber,
-        gender = selectedGender!!,
-        aadharNumber = aadharNumber,
-        education = education.trim(),
-        fullAddress = fullAddress.trim(),
-        inspirationSource = selectedInspirationSource!!.displayName,
-        inspirationDetailName = if (selectedInspirationSource == InspirationType.FRIEND_RELATIVE) friendRelativeName.trim() else otherSourceName.trim(),
-        inspirationDetailPhone = if (selectedInspirationSource == InspirationType.FRIEND_RELATIVE) friendRelativePhone else null,
-        hasTrainedAryaInFamily = hasTrainedAryaInFamily, // NEW
-        trainedAryaName = if (hasTrainedAryaInFamily) trainedAryaName.trim() else null, // NEW
-        trainedAryaPhone = if (hasTrainedAryaInFamily) trainedAryaPhone else null, // NEW
-        instructionsAcknowledged = instructionsAcknowledged
-      )
+      val data =
+        RegistrationData(
+          fullName = fullName.trim(),
+          phoneNumber = phoneNumber,
+          gender = selectedGender!!,
+          aadharNumber = aadharNumber,
+          education = education.trim(),
+          fullAddress = fullAddress.trim(),
+          inspirationSource = selectedInspirationSource!!.displayName,
+          inspirationDetailName = if (selectedInspirationSource == InspirationType.FRIEND_RELATIVE) friendRelativeName.trim() else otherSourceName.trim(),
+          inspirationDetailPhone = if (selectedInspirationSource == InspirationType.FRIEND_RELATIVE) friendRelativePhone else null,
+          hasTrainedAryaInFamily = hasTrainedAryaInFamily, // NEW
+          trainedAryaName = if (hasTrainedAryaInFamily) trainedAryaName.trim() else null, // NEW
+          trainedAryaPhone = if (hasTrainedAryaInFamily) trainedAryaPhone else null, // NEW
+          instructionsAcknowledged = instructionsAcknowledged
+        )
       viewModel.createRegistration(activityId = activityId, data)
     } else {
       coroutineScope.launch {
@@ -368,15 +416,14 @@ fun SatraRegistrationFormScreen(
     snackbarHost = { SnackbarHost(snackbarHostState) },
   ) { paddingValues ->
     Column(
-      modifier = Modifier
-        .padding(paddingValues)
-        .verticalScroll(scrollState)
-        .padding(horizontal = 8.dp, vertical = 16.dp)
-        .widthIn(max = 700.dp) // Max width for form content
-        .imePadding() // Handles software keyboard overlap
+      modifier =
+        Modifier
+          .padding(paddingValues)
+          .verticalScroll(scrollState)
+          .padding(horizontal = 8.dp, vertical = 16.dp)
+          .widthIn(max = 700.dp) // Max width for form content
+          .imePadding() // Handles software keyboard overlap
     ) {
-
-
       Text(
         text = "पंजीकरण प्रपत्र", // Registration Form
         style = MaterialTheme.typography.headlineSmall,
@@ -389,7 +436,10 @@ fun SatraRegistrationFormScreen(
       // Full Name
       OutlinedTextField(
         value = fullName,
-        onValueChange = { fullName = it; if (fullNameError != null) validateFullName() },
+        onValueChange = {
+          fullName = it
+          if (fullNameError != null) validateFullName()
+        },
         label = { Text("सत्रार्थी का नाम") },
         modifier = Modifier.fillMaxWidth().focusRequester(fullNameFocusRequester),
         singleLine = true,
@@ -423,7 +473,8 @@ fun SatraRegistrationFormScreen(
               DropdownMenuItem(
                 text = { Text(option) },
                 onClick = {
-                  selectedGender = option; genderExpanded = false
+                  selectedGender = option
+                  genderExpanded = false
                   if (genderError != null) validateGender()
                   focusManager.moveFocus(FocusDirection.Next)
                 }
@@ -467,7 +518,10 @@ fun SatraRegistrationFormScreen(
         // Education Qualification
         OutlinedTextField(
           value = education,
-          onValueChange = { education = it; if (educationError != null) validateEducation() },
+          onValueChange = {
+            education = it
+            if (educationError != null) validateEducation()
+          },
           label = { Text("शैक्षणिक योग्यता") },
           modifier = Modifier.width(160.dp).focusRequester(educationFocusRequester),
           keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
@@ -477,23 +531,33 @@ fun SatraRegistrationFormScreen(
         )
       }
 
-
       // Full Address
       OutlinedTextField(
         value = fullAddress,
-        onValueChange = { fullAddress = it; if (fullAddressError != null) validateFullAddress() },
+        onValueChange = {
+          fullAddress = it
+          if (fullAddressError != null) validateFullAddress()
+        },
         label = { Text("सम्पूर्ण पता") },
         modifier = Modifier.width(500.dp).defaultMinSize(minHeight = 100.dp).focusRequester(addressFocusRequester),
         minLines = 3,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
-        keyboardActions = KeyboardActions(onNext = { /* Decide if next should go to dropdown or clear focus */ focusManager.moveFocus(FocusDirection.Next) }),
+        keyboardActions =
+          KeyboardActions(onNext = {
+            // Decide if next should go to dropdown or clear focus
+            focusManager.moveFocus(FocusDirection.Next)
+          }),
         isError = fullAddressError != null,
         supportingText = { fullAddressError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
       )
       Spacer(modifier = Modifier.height(8.dp))
 
       // Inspiration Source Dropdown
-      Text("सत्र में आने के लिए आपको किसने प्रेरित किया?", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(bottom=4.dp))
+      Text(
+        "सत्र में आने के लिए आपको किसने प्रेरित किया?",
+        style = MaterialTheme.typography.titleSmall,
+        modifier = Modifier.padding(bottom = 4.dp)
+      )
       ExposedDropdownMenuBox(
         expanded = inspirationSourceExpanded,
         onExpandedChange = { inspirationSourceExpanded = !inspirationSourceExpanded },
@@ -501,14 +565,23 @@ fun SatraRegistrationFormScreen(
       ) {
         OutlinedTextField(
           value = selectedInspirationSource?.displayName ?: "",
-          onValueChange = {}, readOnly = true,
+          onValueChange = {},
+          readOnly = true,
           label = { Text("प्रेरणा का स्रोत चुनें") },
           trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = inspirationSourceExpanded) },
-          modifier = Modifier.fillMaxWidth().menuAnchor().focusRequester(remember { FocusRequester() } /* Dummy focus for dropdown */),
+          modifier =
+            Modifier.fillMaxWidth().menuAnchor().focusRequester(
+              remember {
+                FocusRequester()
+              } // Dummy focus for dropdown
+            ),
           isError = inspirationSourceError != null,
           supportingText = { inspirationSourceError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
         )
-        ExposedDropdownMenu(expanded = inspirationSourceExpanded, onDismissRequest = { inspirationSourceExpanded = false }) {
+        ExposedDropdownMenu(
+          expanded = inspirationSourceExpanded,
+          onDismissRequest = { inspirationSourceExpanded = false }
+        ) {
           inspirationOptions.forEach { option ->
             DropdownMenuItem(
               text = { Text(option.displayName) },
@@ -519,9 +592,12 @@ fun SatraRegistrationFormScreen(
 
                 // Clear previous conditional fields and their errors only if source type changes
                 if (previousSource != option) { // or more specific logic if needed
-                  friendRelativeName = ""; friendRelativeNameError = null
-                  friendRelativePhone = ""; friendRelativePhoneError = null
-                  otherSourceName = ""; otherSourceNameError = null
+                  friendRelativeName = ""
+                  friendRelativeNameError = null
+                  friendRelativePhone = ""
+                  friendRelativePhoneError = null
+                  otherSourceName = ""
+                  otherSourceNameError = null
                 }
 
                 if (inspirationSourceError != null) validateInspirationSourceSelection()
@@ -537,7 +613,10 @@ fun SatraRegistrationFormScreen(
         InspirationType.FRIEND_RELATIVE -> {
           OutlinedTextField(
             value = friendRelativeName,
-            onValueChange = { friendRelativeName = it; if (friendRelativeNameError != null) validateInspirationSourceDetails() },
+            onValueChange = {
+              friendRelativeName = it
+              if (friendRelativeNameError != null) validateInspirationSourceDetails()
+            },
             label = { Text("मित्र/सम्बन्धी का नाम") },
             modifier = Modifier.width(500.dp).focusRequester(friendNameFocusRequester),
             singleLine = true,
@@ -565,7 +644,10 @@ fun SatraRegistrationFormScreen(
         InspirationType.NEWSPAPER, InspirationType.NEWS_CHANNEL, InspirationType.SOCIAL_MEDIA -> {
           OutlinedTextField(
             value = otherSourceName,
-            onValueChange = { otherSourceName = it; if (otherSourceNameError != null) validateInspirationSourceDetails() },
+            onValueChange = {
+              otherSourceName = it
+              if (otherSourceNameError != null) validateInspirationSourceDetails()
+            },
             label = { Text("${selectedInspirationSource?.displayName ?: "स्रोत"} का नाम") },
             modifier = Modifier.width(500.dp).focusRequester(otherSourceFocusRequester),
             singleLine = true,
@@ -583,24 +665,29 @@ fun SatraRegistrationFormScreen(
       Column(modifier = Modifier.widthIn(500.dp).align(Alignment.CenterHorizontally)) {
         Row(
           verticalAlignment = Alignment.CenterVertically,
-          modifier = Modifier.fillMaxWidth().clickable {
-            hasTrainedAryaInFamily = !hasTrainedAryaInFamily
-            if (!hasTrainedAryaInFamily) { // Clear if unchecking
-              trainedAryaName = ""; trainedAryaNameError = null
-              trainedAryaPhone = ""; trainedAryaPhoneError = null
-            } else { // If checking, validate if already filled from previous interaction
-              if (trainedAryaName.isNotBlank()) validateTrainedAryaName()
-              if (trainedAryaPhone.isNotBlank()) validateTrainedAryaPhone()
+          modifier =
+            Modifier.fillMaxWidth().clickable {
+              hasTrainedAryaInFamily = !hasTrainedAryaInFamily
+              if (!hasTrainedAryaInFamily) { // Clear if unchecking
+                trainedAryaName = ""
+                trainedAryaNameError = null
+                trainedAryaPhone = ""
+                trainedAryaPhoneError = null
+              } else { // If checking, validate if already filled from previous interaction
+                if (trainedAryaName.isNotBlank()) validateTrainedAryaName()
+                if (trainedAryaPhone.isNotBlank()) validateTrainedAryaPhone()
+              }
             }
-          }
         ) {
           Checkbox(
             checked = hasTrainedAryaInFamily,
             onCheckedChange = {
               hasTrainedAryaInFamily = it
               if (!it) {
-                trainedAryaName = ""; trainedAryaNameError = null
-                trainedAryaPhone = ""; trainedAryaPhoneError = null
+                trainedAryaName = ""
+                trainedAryaNameError = null
+                trainedAryaPhone = ""
+                trainedAryaPhoneError = null
               } else {
                 if (trainedAryaName.isNotBlank()) validateTrainedAryaName()
                 if (trainedAryaPhone.isNotBlank()) validateTrainedAryaPhone()
@@ -621,20 +708,47 @@ fun SatraRegistrationFormScreen(
             Spacer(modifier = Modifier.height(4.dp)) // Small space after checkbox
             OutlinedTextField(
               value = trainedAryaName,
-              onValueChange = { trainedAryaName = it; if (trainedAryaNameError != null) validateTrainedAryaName() },
+              onValueChange = {
+                trainedAryaName = it
+                if (trainedAryaNameError != null) validateTrainedAryaName()
+              },
               label = { Text("प्रशिक्षित आर्य का नाम") },
               modifier = Modifier.fillMaxWidth().focusRequester(trainedAryaNameFocusRequester),
-              singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text, imeAction = ImeAction.Next),
+              singleLine = true,
+              keyboardOptions =
+                KeyboardOptions(
+                  keyboardType = KeyboardType.Text,
+                  imeAction = ImeAction.Next
+                ),
               keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }),
               isError = trainedAryaNameError != null, supportingText = { trainedAryaNameError?.let { Text(it) } }
             )
             OutlinedTextField(
               value = trainedAryaPhone,
-              onValueChange = { if (it.length <= 10 && it.all {c->c.isDigit()}) trainedAryaPhone = it; if (trainedAryaPhoneError != null) validateTrainedAryaPhone() },
+              onValueChange = {
+                if (it.length <= 10 &&
+                  it.all {
+                      c ->
+                    c.isDigit()
+                  }
+                ) {
+                  trainedAryaPhone = it
+                }
+                if (trainedAryaPhoneError != null) validateTrainedAryaPhone()
+              },
               label = { Text("प्रशिक्षित आर्य का दूरभाष (Mobile)") },
               modifier = Modifier.fillMaxWidth().focusRequester(trainedAryaPhoneFocusRequester),
-              singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-              keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }), // Or Done if it's the last
+              singleLine = true,
+              keyboardOptions =
+                KeyboardOptions(
+                  keyboardType = KeyboardType.Number,
+                  imeAction = ImeAction.Next
+                ),
+              keyboardActions =
+                KeyboardActions(
+                  onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                ),
+              // Or Done if it's the last
               isError = trainedAryaPhoneError != null, supportingText = { trainedAryaPhoneError?.let { Text(it) } }
             )
           }
@@ -644,14 +758,20 @@ fun SatraRegistrationFormScreen(
       Spacer(modifier = Modifier.height(16.dp))
 
       // Additional Instructions
-      Text("अतिरिक्त निर्देश:", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
-      Spacer(modifier = Modifier.height(8.dp))
-      val instructions = listOf(
-        "सत्र में दोनों दिन उपस्थित रहना अनिवार्य है।",
-        "सत्र में कोई मूल्यवान वस्तु न लाएं।",
-        "सत्र में प्रश्नोत्तर शैली में विद्वान्/आचार्यों से संवाद/अध्यापन होगा।",
-        "विना परिचय पत्र (Identity card) सत्र में बैठने की अनुमति नहीं दी जाएगी।"
+      Text(
+        "अतिरिक्त निर्देश:",
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.onSurface
       )
+      Spacer(modifier = Modifier.height(8.dp))
+      val instructions =
+        listOf(
+          "सत्र में दोनों दिन उपस्थित रहना अनिवार्य है।",
+          "सत्र में कोई मूल्यवान वस्तु न लाएं।",
+          "सत्र में प्रश्नोत्तर शैली में विद्वान्/आचार्यों से संवाद/अध्यापन होगा।",
+          "विना परिचय पत्र (Identity card) सत्र में बैठने की अनुमति नहीं दी जाएगी।"
+        )
       Surface(
         shape = MaterialTheme.shapes.medium,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
@@ -660,8 +780,16 @@ fun SatraRegistrationFormScreen(
         Column(Modifier.padding(12.dp)) {
           instructions.forEach { instruction ->
             Row(modifier = Modifier.padding(bottom = 6.dp), verticalAlignment = Alignment.Top) {
-              Text("•  ", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-              Text(instruction, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+              Text(
+                "•  ",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+              )
+              Text(
+                instruction,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+              )
             }
           }
         }
@@ -671,13 +799,14 @@ fun SatraRegistrationFormScreen(
       // Acknowledgement Checkbox
       Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-          .fillMaxWidth()
-          .clickable {
-            instructionsAcknowledged = !instructionsAcknowledged
-            if (acknowledgeError != null && instructionsAcknowledged) acknowledgeError = null
-          }
-          .padding(vertical = 8.dp)
+        modifier =
+          Modifier
+            .fillMaxWidth()
+            .clickable {
+              instructionsAcknowledged = !instructionsAcknowledged
+              if (acknowledgeError != null && instructionsAcknowledged) acknowledgeError = null
+            }
+            .padding(vertical = 8.dp)
       ) {
         Checkbox(
           checked = instructionsAcknowledged,
@@ -717,7 +846,7 @@ fun SatraRegistrationFormScreen(
         ) // Register
       }
 
-      if(uiState.data == true) {
+      if (uiState.data == true) {
         coroutineScope.launch {
           snackbarHostState.showSnackbar(
             message = "आपने सफलतापूर्वक पंजीकरण करा लिया है!",
@@ -726,7 +855,7 @@ fun SatraRegistrationFormScreen(
         }
         resetForm()
         onRegistrationSuccess()
-      }else if(uiState.error != null) {
+      } else if (uiState.error != null) {
         coroutineScope.launch {
           snackbarHostState.showSnackbar(
             message = "Registration failed: ${uiState.error}",

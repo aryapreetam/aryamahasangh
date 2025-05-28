@@ -27,13 +27,13 @@ fun ActivitiesContainer(
       pagerState.animateScrollToPage(selectedTabIndex)
     }
     LaunchedEffect(pagerState.currentPage, pagerState.isScrollInProgress) {
-      if(!pagerState.isScrollInProgress) {
+      if (!pagerState.isScrollInProgress) {
         selectedTabIndex = pagerState.currentPage
       }
     }
     ScrollableTabRow(
       selectedTabIndex = selectedTabIndex
-    ){
+    ) {
       Tab(
         selected = selectedTabIndex == 0,
         onClick = { selectedTabIndex = 0 },
@@ -47,20 +47,23 @@ fun ActivitiesContainer(
     }
     HorizontalPager(
       state = pagerState,
-      modifier = Modifier
-        .fillMaxWidth()
-        .weight(1f),
+      modifier =
+        Modifier
+          .fillMaxWidth()
+          .weight(1f),
       userScrollEnabled = false
-    ){
+    ) {
       Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
       ) {
-        if(it == 0){
-          ActivitiesScreen(onNavigateToActivityDetails, viewModel)
-        }else{
-          ActivityForm(viewModel)
-        }
+        if (it == 0)
+          {
+            ActivitiesScreen(onNavigateToActivityDetails, viewModel)
+          } else
+          {
+            ActivityForm(viewModel)
+          }
       }
     }
   }

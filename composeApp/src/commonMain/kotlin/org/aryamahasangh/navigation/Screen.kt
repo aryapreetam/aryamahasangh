@@ -5,62 +5,86 @@ import kotlinx.serialization.Serializable
 @Serializable
 sealed class Screen {
   @Serializable
-  data object OrgsSection: Screen()
-  @Serializable
-  data object Orgs: Screen()
-  @Serializable
-  data object ActivitiesSection: Screen()
-  @Serializable
-  data object Activities: Screen()
-  @Serializable
-  data class ActivityDetails(val id: String): Screen()
-  @Serializable
-  data object JoinUs: Screen()
-  @Serializable
-  data object Learning: Screen()
-  @Serializable
-  data object LearningSection: Screen()
+  data object OrgsSection : Screen()
 
   @Serializable
-  data object AryaGurukulSection: Screen()
+  data object Orgs : Screen()
 
   @Serializable
-  data object AryaaGurukulSection: Screen()
-  @Serializable
-  data object AryaGurukulCollege: Screen()
-  @Serializable
-  data object AryaaGurukulCollege: Screen()
-  @Serializable
-  data object BookSection: Screen()
-  @Serializable
-  data object BookOrderForm: Screen()
-  @Serializable
-  data class BookOrderDetails(val bookOrderId: String): Screen()
-  @Serializable
-  data object AryaNirmanSection: Screen()
-  @Serializable
-  data object AryaNirmanHome: Screen()
-  @Serializable
-  data class AryaNirmanRegistrationForm(val activityId: String): Screen()
-  @Serializable
-  data object AryaPariwarSection: Screen()
+  data object ActivitiesSection : Screen()
 
   @Serializable
-  data object AryaPariwarHome: Screen()
+  data object Activities : Screen()
+
   @Serializable
-  data object AryaSamajSection: Screen()
+  data class ActivityDetails(val id: String) : Screen()
+
   @Serializable
-  data object AryaSamajHome: Screen()
+  data object JoinUs : Screen()
+
   @Serializable
-  data class VideoDetails(val learningItemId: String): Screen()
+  data object Learning : Screen()
+
   @Serializable
-  data class OrgDetails(val organisationId: String): Screen()
+  data object LearningSection : Screen()
+
   @Serializable
-  data object AboutSection: Screen()
+  data object AryaGurukulSection : Screen()
+
   @Serializable
-  data object AboutUs: Screen()
+  data object AryaaGurukulSection : Screen()
+
   @Serializable
-  data object AboutUsDetails: Screen()
+  data object AryaGurukulCollege : Screen()
+
   @Serializable
-  data object AdmissionForm: Screen()
+  data object AryaaGurukulCollege : Screen()
+
+  @Serializable
+  data object BookSection : Screen()
+
+  @Serializable
+  data object BookOrderForm : Screen()
+
+  @Serializable
+  data class BookOrderDetails(val bookOrderId: String) : Screen()
+
+  @Serializable
+  data object AryaNirmanSection : Screen()
+
+  @Serializable
+  data object AryaNirmanHome : Screen()
+
+  @Serializable
+  data class AryaNirmanRegistrationForm(val activityId: String) : Screen()
+
+  @Serializable
+  data object AryaPariwarSection : Screen()
+
+  @Serializable
+  data object AryaPariwarHome : Screen()
+
+  @Serializable
+  data object AryaSamajSection : Screen()
+
+  @Serializable
+  data object AryaSamajHome : Screen()
+
+  @Serializable
+  data class VideoDetails(val learningItemId: String) : Screen()
+
+  @Serializable
+  data class OrgDetails(val organisationId: String) : Screen()
+
+  @Serializable
+  data object AboutSection : Screen()
+
+  @Serializable
+  data object AboutUs : Screen()
+
+  @Serializable
+  data object AboutUsDetails : Screen()
+
+  @Serializable
+  data object AdmissionForm : Screen()
 }

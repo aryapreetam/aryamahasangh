@@ -1,6 +1,6 @@
 package org.aryamahasangh.repository
 
-interface BookOrderRepository{
+interface BookOrderRepository {
 //  fun getBookOrders(): Flow<Result<List<BookOrdersQuery.BookOrder>>>
 //  fun getBookOrderById(id: String): Flow<Result<BookOrderQuery.BookOrder>>
 //  fun addBookOrder(bookOrderDetails: BookOrderInput): Flow<Result<CreateBookOrderMutation.CreateBookOrder>>

@@ -31,7 +31,6 @@ data class VideoPlayerUiState(
 class LearningViewModel(
   private val learningRepository: LearningRepository
 ) : BaseViewModel<LearningUiState>(LearningUiState()) {
-
   // Separate state for video player
   private val _videoPlayerUiState = MutableStateFlow(VideoPlayerUiState())
   val videoPlayerUiState: StateFlow<VideoPlayerUiState> = _videoPlayerUiState.asStateFlow()
@@ -51,17 +50,21 @@ class LearningViewModel(
             updateState { it.copy(isLoading = true, error = null) }
           }
           is Result.Success -> {
-            updateState { it.copy(
-              learningItems = result.data,
-              isLoading = false,
-              error = null
-            )}
+            updateState {
+              it.copy(
+                learningItems = result.data,
+                isLoading = false,
+                error = null
+              )
+            }
           }
           is Result.Error -> {
-            updateState { it.copy(
-              isLoading = false,
-              error = result.message
-            )}
+            updateState {
+              it.copy(
+                isLoading = false,
+                error = result.message
+              )
+            }
           }
         }
       }
@@ -77,17 +80,19 @@ class LearningViewModel(
 
       when (val result = learningRepository.getLearningItemDetail(id)) {
         is Result.Success -> {
-          _videoPlayerUiState.value = VideoPlayerUiState(
-            learningItem = result.data,
-            isLoading = false,
-            error = null
-          )
+          _videoPlayerUiState.value =
+            VideoPlayerUiState(
+              learningItem = result.data,
+              isLoading = false,
+              error = null
+            )
         }
         is Result.Error -> {
-          _videoPlayerUiState.value = VideoPlayerUiState(
-            isLoading = false,
-            error = result.message
-          )
+          _videoPlayerUiState.value =
+            VideoPlayerUiState(
+              isLoading = false,
+              error = result.message
+            )
         }
         is Result.Loading -> {
           // This shouldn't happen with the current implementation

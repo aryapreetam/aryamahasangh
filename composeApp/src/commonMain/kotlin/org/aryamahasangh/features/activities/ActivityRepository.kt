@@ -37,7 +37,7 @@ interface ActivityRepository {
     activityInputData: ActivitiesInsertInput,
     activityMembers: List<ActivityMember>,
     associatedOrganisations: List<Organisation>
-    ): Result<Boolean>
+  ): Result<Boolean>
 
   /**
    * Get organizations and members
@@ -49,20 +49,21 @@ interface ActivityRepository {
  * Implementation of ActivityRepository that uses Apollo GraphQL client
  */
 class ActivityRepositoryImpl(private val apolloClient: ApolloClient) : ActivityRepository {
+  override fun getActivities(): Flow<Result<List<OrganisationalActivityShort>>> =
+    flow {
+      emit(Result.Loading)
 
-  override fun getActivities(): Flow<Result<List<OrganisationalActivityShort>>> = flow {
-    emit(Result.Loading)
+      val result =
+        safeCall {
+          val response = apolloClient.query(OrganisationalActivitiesQuery()).execute()
+          if (response.hasErrors()) {
+            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+          }
+          response.data?.activitiesCollection?.edges?.map { it.node.organisationalActivityShort.camelCased() } ?: emptyList()
+        }
 
-    val result = safeCall {
-      val response = apolloClient.query(OrganisationalActivitiesQuery()).execute()
-      if (response.hasErrors()) {
-        throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-      }
-      response.data?.activitiesCollection?.edges?.map { it.node.organisationalActivityShort.camelCased() } ?: emptyList()
+      emit(result)
     }
-
-    emit(result)
-  }
 
   override suspend fun getActivityDetail(id: String): Result<OrganisationalActivity> {
     return safeCall {
@@ -70,7 +71,9 @@ class ActivityRepositoryImpl(private val apolloClient: ApolloClient) : ActivityR
       if (response.hasErrors()) {
         throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
       }
-      response.data?.activitiesCollection?.edges?.map { OrganisationalActivity.camelCased(it.node) }[0] ?: throw Exception("Activity not found")
+      response.data?.activitiesCollection?.edges?.map {
+        OrganisationalActivity.camelCased(it.node)
+      }[0] ?: throw Exception("Activity not found")
     }
   }
 
@@ -94,25 +97,30 @@ class ActivityRepositoryImpl(private val apolloClient: ApolloClient) : ActivityR
       if (response.hasErrors()) {
         throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
       }
-      if(response.data?.insertIntoactivitiesCollection?.affectedCount!! > 0){
-        val activityId = response.data?.insertIntoactivitiesCollection?.records?.first()?.activityFields?.id!!
-        val organisations = associatedOrganisations.map { OrganisationalActivityInsertData(organisation_id = it.id, activity_id = activityId) }
-        try {
-          supabaseClient.from("organisational_activity").insert(organisations)
-          val members = activityMembers.map {
-            ActivityMemberInsertData(
-              activity_id = activityId,
-              member_id = it.member.id,
-              post = it.post,
-              priority = it.priority
-            )
+      if (response.data?.insertIntoactivitiesCollection?.affectedCount!! > 0)
+        {
+          val activityId = response.data?.insertIntoactivitiesCollection?.records?.first()?.activityFields?.id!!
+          val organisations =
+            associatedOrganisations.map {
+              OrganisationalActivityInsertData(organisation_id = it.id, activity_id = activityId)
+            }
+          try {
+            supabaseClient.from("organisational_activity").insert(organisations)
+            val members =
+              activityMembers.map {
+                ActivityMemberInsertData(
+                  activity_id = activityId,
+                  member_id = it.member.id,
+                  post = it.post,
+                  priority = it.priority
+                )
+              }
+            supabaseClient.from("activity_member").insert(members)
+          } catch (e: Exception) {
+            // FIXME notify about the error to the user
+            throw Exception("Unknown error occurred ${e.message}")
           }
-          supabaseClient.from("activity_member").insert(members)
-        } catch (e: Exception){
-          // FIXME notify about the error to the user
-          throw Exception("Unknown error occurred ${e.message}")
         }
-      }
       true
     }
   }
@@ -123,20 +131,24 @@ class ActivityRepositoryImpl(private val apolloClient: ApolloClient) : ActivityR
       if (response.hasErrors()) {
         throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
       }
-      response.data.let { OrganisationsAndMembers(
-        members = it?.memberCollection?.edges?.map {
-          Member(
-            id = it.node.id,
-            name = it.node.name!!,
-            profileImage = it.node.profile_image ?: ""
-          )
-        }!!,
-        organisations = it.organisationCollection?.edges?.map {
-          Organisation(
-            id = it.node.id,
-            name = it.node.name!!,
-          )
-        }!!)
+      response.data.let {
+        OrganisationsAndMembers(
+          members =
+            it?.memberCollection?.edges?.map {
+              Member(
+                id = it.node.id,
+                name = it.node.name!!,
+                profileImage = it.node.profile_image ?: ""
+              )
+            }!!,
+          organisations =
+            it.organisationCollection?.edges?.map {
+              Organisation(
+                id = it.node.id,
+                name = it.node.name!!,
+              )
+            }!!
+        )
       }
     }
   }

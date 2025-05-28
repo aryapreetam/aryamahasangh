@@ -11,17 +11,16 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 @Preview
 fun EditOrganisation() {
   Column {
-
     OutlinedTextField(
       value = "",
-      label = {"Name"},
-      placeholder = {"Name"},
+      label = { "Name" },
+      placeholder = { "Name" },
       onValueChange = { },
     )
     OutlinedTextField(
       value = "",
-      label = {"Description"},
-      placeholder = {"Description"},
+      label = { "Description" },
+      placeholder = { "Description" },
       onValueChange = { },
     )
 

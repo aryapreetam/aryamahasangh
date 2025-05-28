@@ -10,20 +10,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import io.github.vinceglb.filekit.core.FileKit
 import org.aryamahasangh.config.AndroidContextHolder
 import org.aryamahasangh.config.ConfigInitializer
-
 import android.graphics.Color as AndroidColor
-
-
 
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
     enableEdgeToEdge(
-      navigationBarStyle = SystemBarStyle.light(
-        AndroidColor.TRANSPARENT,
-        AndroidColor.TRANSPARENT
-      )
+      navigationBarStyle =
+        SystemBarStyle.light(
+          AndroidColor.TRANSPARENT,
+          AndroidColor.TRANSPARENT
+        )
     )
 
     // Initialize Android context holder

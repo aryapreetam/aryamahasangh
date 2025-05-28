@@ -15,12 +15,14 @@ actual fun YoutubeVideoPlayer(videoUrl: String) {
     modifier = Modifier.fillMaxWidth().aspectRatio(16f / 9f),
     factory = {
       YouTubePlayerView(context = it).apply {
-        addYouTubePlayerListener(object : AbstractYouTubePlayerListener() {
-          override fun onReady(youTubePlayer: YouTubePlayer) {
-            youTubePlayer.cueVideo(videoUrl, 0f)
-            super.onReady(youTubePlayer)
+        addYouTubePlayerListener(
+          object : AbstractYouTubePlayerListener() {
+            override fun onReady(youTubePlayer: YouTubePlayer) {
+              youTubePlayer.cueVideo(videoUrl, 0f)
+              super.onReady(youTubePlayer)
+            }
           }
-        })
+        )
       }
     }
   )
