@@ -35,7 +35,10 @@ fun ReceivedOrdersScreen(
 }
 
 @Composable
-fun ReceivedOrdersContainer(uiState: StateFlow<BookOrdersUiState>, onItemClick: (String) -> Unit) {
+fun ReceivedOrdersContainer(
+  uiState: StateFlow<BookOrdersUiState>,
+  onItemClick: (String) -> Unit
+) {
 //  val state by uiState.collectAsState()
 //  println("ReceivedOrdersContainer: Collected state: $state")
 //  val isLoading = state.isLoading
@@ -120,7 +123,10 @@ fun formatReadableDateTime(isoString: String): String {
 }
 
 @Composable
-private fun InfoRow(icon: ImageVector, text: String) {
+private fun InfoRow(
+  icon: ImageVector,
+  text: String
+) {
   Row(verticalAlignment = Alignment.CenterVertically) {
     Icon(
       imageVector = icon,

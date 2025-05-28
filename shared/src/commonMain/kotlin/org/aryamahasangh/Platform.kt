@@ -4,7 +4,7 @@ enum class Platform {
   ANDROID,
   IOS,
   WEB,
-  DESKTOP
+  DESKTOP,
 }
 
 fun isAndroid() = getPlatform() == Platform.ANDROID

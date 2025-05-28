@@ -57,13 +57,11 @@ fun ActivitiesContainer(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
       ) {
-        if (it == 0)
-          {
-            ActivitiesScreen(onNavigateToActivityDetails, viewModel)
-          } else
-          {
-            ActivityForm(viewModel)
-          }
+        if (it == 0) {
+          ActivitiesScreen(onNavigateToActivityDetails, viewModel)
+        } else {
+          ActivityForm(viewModel)
+        }
       }
     }
   }

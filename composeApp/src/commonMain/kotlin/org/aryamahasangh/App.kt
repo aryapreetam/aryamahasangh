@@ -161,36 +161,36 @@ fun DrawerContent(
           )
         },
       )
-      if (option.title == "हमसें जुडें")
-        {
-          HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-          Text(
-            "आर्ष विद्या",
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
-            style = MaterialTheme.typography.titleMedium
-          )
-        } else if (option.title == "आर्या गुरुकुल")
-        {
-          HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-          Text(
-            "संगठन कार्य ",
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
-            style = MaterialTheme.typography.titleMedium
-          )
-        } else if (option.title == "आर्य समाज संगठन")
-        {
-          HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-          Text(
-            "स्वाध्याय ",
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
-            style = MaterialTheme.typography.titleMedium
-          )
-        }
+      if (option.title == "हमसें जुडें") {
+        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+        Text(
+          "आर्ष विद्या",
+          modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
+          style = MaterialTheme.typography.titleMedium
+        )
+      } else if (option.title == "आर्या गुरुकुल") {
+        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+        Text(
+          "संगठन कार्य ",
+          modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
+          style = MaterialTheme.typography.titleMedium
+        )
+      } else if (option.title == "आर्य समाज संगठन") {
+        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+        Text(
+          "स्वाध्याय ",
+          modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
+          style = MaterialTheme.typography.titleMedium
+        )
+      }
     }
   }
 }
 
-private fun checkIfSelected(currentDestination: String?, currentDrawerItem: String): Boolean {
+private fun checkIfSelected(
+  currentDestination: String?,
+  currentDrawerItem: String
+): Boolean {
   return if ((currentDestination?.contains("AboutUs") == true || currentDestination?.contains("AboutUsDetails") == true) && currentDrawerItem == Screen.AboutSection.toString()) {
     true
   } else if ((currentDestination?.contains("Activities") == true || currentDestination?.contains("ActivityDetails") == true) && currentDrawerItem == Screen.ActivitiesSection.toString()) {
@@ -354,39 +354,37 @@ fun MainContent(
             }
           }
 
-          if (isLoggedIn)
-            {
-              TooltipBox(
-                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                tooltip = { PlainTooltip { Text("Logout") } },
-                state = rememberTooltipState()
+          if (isLoggedIn) {
+            TooltipBox(
+              positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+              tooltip = { PlainTooltip { Text("Logout") } },
+              state = rememberTooltipState()
+            ) {
+              IconButton(
+                onClick = { showLogoutDialog = true }
               ) {
-                IconButton(
-                  onClick = { showLogoutDialog = true }
-                ) {
-                  Icon(
-                    Icons.AutoMirrored.Filled.Logout,
-                    contentDescription = "logout"
-                  )
-                }
-              }
-            } else
-            {
-              TooltipBox(
-                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                tooltip = { PlainTooltip { Text("Login") } },
-                state = rememberTooltipState()
-              ) {
-                IconButton(
-                  onClick = { showLoginDialog = true }
-                ) {
-                  Icon(
-                    Icons.AutoMirrored.Filled.Login,
-                    contentDescription = "login"
-                  )
-                }
+                Icon(
+                  Icons.AutoMirrored.Filled.Logout,
+                  contentDescription = "logout"
+                )
               }
             }
+          } else {
+            TooltipBox(
+              positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+              tooltip = { PlainTooltip { Text("Login") } },
+              state = rememberTooltipState()
+            ) {
+              IconButton(
+                onClick = { showLoginDialog = true }
+              ) {
+                Icon(
+                  Icons.AutoMirrored.Filled.Login,
+                  contentDescription = "login"
+                )
+              }
+            }
+          }
         }
       )
     },

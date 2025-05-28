@@ -120,7 +120,9 @@ data class OrganisationalActivity(
   companion object
 }
 
-fun OrganisationalActivity.Companion.camelCased(node: OrganisationalActivityDetailByIdQuery.Node): OrganisationalActivity {
+fun OrganisationalActivity.Companion.camelCased(
+  node: OrganisationalActivityDetailByIdQuery.Node
+): OrganisationalActivity {
   val organisationalActivityShort = node.organisationalActivityShort.camelCased()
   return OrganisationalActivity(
     id = organisationalActivityShort.id,

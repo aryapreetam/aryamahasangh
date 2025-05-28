@@ -41,7 +41,10 @@ object SecretsUtils {
   /**
    * Get environment variable with fallback
    */
-  fun getEnvVar(key: String, default: String = ""): String {
+  fun getEnvVar(
+    key: String,
+    default: String = ""
+  ): String {
     return try {
       // This will be implemented platform-specifically
       getPlatformEnvVar(key) ?: default

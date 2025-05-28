@@ -264,9 +264,7 @@ fun OfflineManager.requiresOnline(): Boolean = !isOnline.value
 /**
  * Extension function to execute operation only when online
  */
-suspend fun <T> OfflineManager.executeOnlineOnly(
-  operation: suspend () -> Result<T>
-): Result<T> {
+suspend fun <T> OfflineManager.executeOnlineOnly(operation: suspend () -> Result<T>): Result<T> {
   return if (isOnline.value) {
     operation()
   } else {

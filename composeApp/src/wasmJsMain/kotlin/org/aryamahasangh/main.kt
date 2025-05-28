@@ -40,21 +40,20 @@ fun main() {
       if (fontDevanagari != null) {
         println("font devanagari is ready")
         App()
-      } else
-        {
-          // Displays the progress indicator to address a FOUT or the app being temporarily non-functional during loading
-          Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-          ) {
-            Image(
-              modifier = Modifier.width(250.dp),
-              painter = painterResource(Res.drawable.mahasangh_logo_without_background),
-              contentDescription = "Arya Mahasangh logo"
-            )
-          }
-          println("Fonts are not ready yet")
+      } else {
+        // Displays the progress indicator to address a FOUT or the app being temporarily non-functional during loading
+        Box(
+          modifier = Modifier.fillMaxSize(),
+          contentAlignment = Alignment.Center
+        ) {
+          Image(
+            modifier = Modifier.width(250.dp),
+            painter = painterResource(Res.drawable.mahasangh_logo_without_background),
+            contentDescription = "Arya Mahasangh logo"
+          )
         }
+        println("Fonts are not ready yet")
+      }
     }
   }
 }

@@ -28,9 +28,15 @@ interface OrganisationsRepository {
    */
   fun getOrganisationById(id: String): Flow<Result<OrganisationDetail>>
 
-  fun updateOrganisationLogo(orgId: String, imageUrl: String): Flow<Result<Boolean>>
+  fun updateOrganisationLogo(
+    orgId: String,
+    imageUrl: String
+  ): Flow<Result<Boolean>>
 
-  fun updateOrganisationDescription(orgId: String, description: String): Flow<Result<Boolean>>
+  fun updateOrganisationDescription(
+    orgId: String,
+    description: String
+  ): Flow<Result<Boolean>>
 }
 
 /**

@@ -13,7 +13,6 @@ permissions:
   checks: write           # Required for status checks
   pull-requests: write    # Required for PR comments
   issues: write           # Required for issue comments
-  contents: read         # Required for actions/checkout
 
 env:
   ENVIRONMENT: dev

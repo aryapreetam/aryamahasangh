@@ -12,7 +12,10 @@ import org.aryamahasangh.YoutubeVideoPlayer
 import org.aryamahasangh.viewmodel.LearningViewModel
 
 @Composable
-fun VideoDetailsScreen(learningItemId: String, viewModel: LearningViewModel) {
+fun VideoDetailsScreen(
+  learningItemId: String,
+  viewModel: LearningViewModel
+) {
   val scope = rememberCoroutineScope()
   val snackbarHostState = LocalSnackbarHostState.current
 

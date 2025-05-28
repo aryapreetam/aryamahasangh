@@ -62,13 +62,11 @@ fun BookOrdersContainer(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
       ) {
-        if (it == 0)
-          {
-            BookOrderFormScreen(viewModel)
-          } else
-          {
-            ReceivedOrdersScreen(viewModel, onNavigateToDetails)
-          }
+        if (it == 0) {
+          BookOrderFormScreen(viewModel)
+        } else {
+          ReceivedOrdersScreen(viewModel, onNavigateToDetails)
+        }
       }
     }
   }

@@ -51,7 +51,7 @@ kotlin {
   listOf(
     iosX64(),
     iosArm64(),
-    iosSimulatorArm64()
+    iosSimulatorArm64(),
   ).forEach { iosTarget ->
     iosTarget.binaries.framework {
       baseName = "ComposeApp"
@@ -185,7 +185,7 @@ android {
       excludes +=
         setOf(
           "META-INF/INDEX.LIST",
-          "META-INF/io.netty.versions.properties"
+          "META-INF/io.netty.versions.properties",
         )
     }
   }
@@ -203,7 +203,7 @@ android {
       isMinifyEnabled = true
       proguardFiles(
         getDefaultProguardFile("proguard-android-optimize.txt"),
-        file("proguard-rules.pro")
+        file("proguard-rules.pro"),
       )
       signingConfig = signingConfigs.getByName("release")
     }
@@ -318,7 +318,7 @@ tasks.register("checkSecrets") {
         3. Run: ./setup-secrets.sh
         
         Or the setup will run automatically when you build.
-        """.trimIndent()
+        """.trimIndent(),
       )
     } else {
       println("✅ secrets.properties file found")
