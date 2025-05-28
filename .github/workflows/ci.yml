@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ master, dev ]
 
+permissions:
+  security-events: write  # Required for uploading SARIF results
+  contents: read         # Required for actions/checkout
+
 env:
   ENVIRONMENT: dev
   SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://placeholder.supabase.co' }}
@@ -101,7 +105,7 @@ jobs:
       run: ./gradlew detekt --no-daemon
       
     - name: Upload code quality reports
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4  # Updated from v3 to v4
       if: always()
       with:
         name: code-quality-reports
@@ -169,7 +173,7 @@ jobs:
         output: 'trivy-results.sarif'
         
     - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v2
+      uses: github/codeql-action/upload-sarif@v3  # Updated from v2 to v3
       if: always()
       with:
         sarif_file: 'trivy-results.sarif'
