@@ -12,7 +12,10 @@ data class RegistrationUiState(
 class SatraRegistrationViewModel(
   private val aryaNirmanRepository: AryaNirmanRepository
 ) : BaseViewModel<RegistrationUiState>(RegistrationUiState()) {
-  fun createRegistration(activityId: String, data: RegistrationData) {
+  fun createRegistration(
+    activityId: String,
+    data: RegistrationData
+  ) {
     launch {
       aryaNirmanRepository.registerForActivity(activityId = activityId, data = data).collect { result ->
         when (result) {

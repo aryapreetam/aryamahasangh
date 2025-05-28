@@ -75,56 +75,32 @@ fun OrganisationDetail(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
       ) {
-        if (isLoggedIn)
-          {
-            Row(modifier = Modifier.padding()) {
-              val scope = rememberCoroutineScope()
-              val launcher =
-                rememberFilePickerLauncher(
-                  type = PickerType.Image,
-                  mode = PickerMode.Single,
-                  title = "Select logo",
-                ) { file ->
-                  if (file != null) {
-                    scope.launch {
-                      try {
-                        val uploadResponse =
-                          bucket.upload(
-                            path = "org_logo_${Clock.System.now().epochSeconds}.jpg",
-                            data = file.readBytes()
-                          )
-                        val imageUrl = bucket.publicUrl(uploadResponse.path)
-                        updateOrganisationLogo(id, name, imageUrl)
-                      } catch (e: Exception) {
-                        println("error uploading files: $e")
-                      }
+        if (isLoggedIn) {
+          Row(modifier = Modifier.padding()) {
+            val scope = rememberCoroutineScope()
+            val launcher =
+              rememberFilePickerLauncher(
+                type = PickerType.Image,
+                mode = PickerMode.Single,
+                title = "Select logo",
+              ) { file ->
+                if (file != null) {
+                  scope.launch {
+                    try {
+                      val uploadResponse =
+                        bucket.upload(
+                          path = "org_logo_${Clock.System.now().epochSeconds}.jpg",
+                          data = file.readBytes()
+                        )
+                      val imageUrl = bucket.publicUrl(uploadResponse.path)
+                      updateOrganisationLogo(id, name, imageUrl)
+                    } catch (e: Exception) {
+                      println("error uploading files: $e")
                     }
                   }
                 }
-
-              AsyncImage(
-                model = logo,
-                contentDescription = "logo for $name",
-                contentScale = ContentScale.Fit,
-                modifier = Modifier.size(150.dp),
-                placeholder =
-                  BrushPainter(
-                    Brush.linearGradient(
-                      listOf(
-                        Color(color = 0xFFFFFFFF),
-                        Color(color = 0xFFDDDDDD),
-                      )
-                    )
-                  ),
-                fallback = painterResource(Res.drawable.baseline_groups),
-                error = painterResource(Res.drawable.baseline_groups)
-              )
-              EditImageButton {
-                launcher.launch()
               }
-            }
-          } else
-          {
+
             AsyncImage(
               model = logo,
               contentDescription = "logo for $name",
@@ -142,7 +118,29 @@ fun OrganisationDetail(
               fallback = painterResource(Res.drawable.baseline_groups),
               error = painterResource(Res.drawable.baseline_groups)
             )
+            EditImageButton {
+              launcher.launch()
+            }
           }
+        } else {
+          AsyncImage(
+            model = logo,
+            contentDescription = "logo for $name",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.size(150.dp),
+            placeholder =
+              BrushPainter(
+                Brush.linearGradient(
+                  listOf(
+                    Color(color = 0xFFFFFFFF),
+                    Color(color = 0xFFDDDDDD),
+                  )
+                )
+              ),
+            fallback = painterResource(Res.drawable.baseline_groups),
+            error = painterResource(Res.drawable.baseline_groups)
+          )
+        }
         Text(name, style = MaterialTheme.typography.headlineMedium)
       }
       OrganisationDescription(
@@ -155,45 +153,44 @@ fun OrganisationDetail(
       )
     }
 
-    if (keyPeople.isNotEmpty())
-      {
-        val sortedPeople = keyPeople.sortedBy { it.priority }
-        Column {
-          Text(
-            "कार्यकारिणी/पदाधिकारी",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp),
-          )
-        }
-        FlowRow {
-          sortedPeople.forEach {
-            Row(modifier = Modifier.padding(8.dp)) {
-              AsyncImage(
-                model = it.member.profileImage ?: "",
-                contentDescription = "profile image ${it.member.name}",
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.clip(CircleShape).size(80.dp),
-                placeholder =
-                  BrushPainter(
-                    Brush.linearGradient(
-                      listOf(
-                        Color(color = 0xFFFFFFFF),
-                        Color(color = 0xFFDDDDDD),
-                      )
+    if (keyPeople.isNotEmpty()) {
+      val sortedPeople = keyPeople.sortedBy { it.priority }
+      Column {
+        Text(
+          "कार्यकारिणी/पदाधिकारी",
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = FontWeight.Bold,
+          modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp),
+        )
+      }
+      FlowRow {
+        sortedPeople.forEach {
+          Row(modifier = Modifier.padding(8.dp)) {
+            AsyncImage(
+              model = it.member.profileImage ?: "",
+              contentDescription = "profile image ${it.member.name}",
+              contentScale = ContentScale.Crop,
+              modifier = Modifier.clip(CircleShape).size(80.dp),
+              placeholder =
+                BrushPainter(
+                  Brush.linearGradient(
+                    listOf(
+                      Color(color = 0xFFFFFFFF),
+                      Color(color = 0xFFDDDDDD),
                     )
-                  ),
-                fallback = painterResource(Res.drawable.error_profile_image),
-                error = painterResource(Res.drawable.error_profile_image)
-              )
-              Column(modifier = Modifier.padding(12.dp, 8.dp)) {
-                Text(it.member.name, style = MaterialTheme.typography.bodyLarge)
-                Text(it.post)
-              }
+                  )
+                ),
+              fallback = painterResource(Res.drawable.error_profile_image),
+              error = painterResource(Res.drawable.error_profile_image)
+            )
+            Column(modifier = Modifier.padding(12.dp, 8.dp)) {
+              Text(it.member.name, style = MaterialTheme.typography.bodyLarge)
+              Text(it.post)
             }
           }
         }
       }
+    }
   }
 }
 

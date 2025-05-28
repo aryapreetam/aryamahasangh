@@ -14,7 +14,10 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 @Composable
-fun LoginDialog(onDismiss: () -> Unit, onLoginSuccess: () -> Unit) {
+fun LoginDialog(
+  onDismiss: () -> Unit,
+  onLoginSuccess: () -> Unit
+) {
   var username by remember { mutableStateOf("") }
   var password by remember { mutableStateOf("") }
   var usernameError by remember { mutableStateOf(false) }

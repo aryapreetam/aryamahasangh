@@ -26,7 +26,11 @@ fun OrgThumbnailPreview() {
 }
 
 @Composable
-fun OrgItem(name: String, description: String, navigateToOrgDetails: () -> Unit) {
+fun OrgItem(
+  name: String,
+  description: String,
+  navigateToOrgDetails: () -> Unit
+) {
   ElevatedCard(
     onClick = navigateToOrgDetails,
     modifier = Modifier.width(500.dp),

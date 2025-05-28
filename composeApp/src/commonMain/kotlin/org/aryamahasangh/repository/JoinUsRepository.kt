@@ -23,7 +23,10 @@ interface JoinUsRepository {
   /**
    * Get filtered activities
    */
-  fun getFilteredActivities(state: String, district: String = ""): Flow<Result<List<OrganisationalActivityShort>>>
+  fun getFilteredActivities(
+    state: String,
+    district: String = ""
+  ): Flow<Result<List<OrganisationalActivityShort>>>
 
   fun getJoinUsLabel(): Flow<Result<String>>
 
@@ -34,7 +37,10 @@ interface JoinUsRepository {
  * Implementation of JoinUsRepository that uses Apollo GraphQL client
  */
 class JoinUsRepositoryImpl(private val apolloClient: ApolloClient) : JoinUsRepository {
-  override fun getFilteredActivities(state: String, district: String): Flow<Result<List<OrganisationalActivityShort>>> =
+  override fun getFilteredActivities(
+    state: String,
+    district: String
+  ): Flow<Result<List<OrganisationalActivityShort>>> =
     flow {
       emit(Result.Loading)
       val startTimeFilter =

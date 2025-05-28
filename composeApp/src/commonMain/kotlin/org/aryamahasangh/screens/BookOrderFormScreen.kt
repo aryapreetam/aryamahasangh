@@ -476,18 +476,16 @@ fun ReceiptUploadSection(
         onPhotoSelected(file)
       }
     Box(modifier = Modifier.size(120.dp)) {
-      if (studentPhoto != null)
-        {
-          PhotoItem(studentPhoto, onRemoveFile = onPhotoRemoved)
-        } else
-        {
-          Icon(
-            imageVector = Icons.Filled.PhotoLibrary,
-            contentDescription = "Selected",
-            modifier = Modifier.size(96.dp).padding(16.dp),
-            tint = MaterialTheme.colorScheme.outlineVariant
-          )
-        }
+      if (studentPhoto != null) {
+        PhotoItem(studentPhoto, onRemoveFile = onPhotoRemoved)
+      } else {
+        Icon(
+          imageVector = Icons.Filled.PhotoLibrary,
+          contentDescription = "Selected",
+          modifier = Modifier.size(96.dp).padding(16.dp),
+          tint = MaterialTheme.colorScheme.outlineVariant
+        )
+      }
     }
 
     OutlinedButton(onClick = {
@@ -585,7 +583,10 @@ fun BankDetailsSection(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun BankDetailItem(label: String, value: String) {
+fun BankDetailItem(
+  label: String,
+  value: String
+) {
   Row {
     Text(
       text = label,

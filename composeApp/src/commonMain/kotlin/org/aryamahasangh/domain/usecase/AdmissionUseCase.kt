@@ -133,6 +133,5 @@ class AdmissionManagementUseCase(
 ) {
   fun getStudentApplications() = getStudentApplicationsUseCase()
 
-  suspend fun submitAdmissionForm(formData: AdmissionFormData) =
-    submitAdmissionFormUseCase(formData)
+  suspend fun submitAdmissionForm(formData: AdmissionFormData) = submitAdmissionFormUseCase(formData)
 }

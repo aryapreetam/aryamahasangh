@@ -28,7 +28,10 @@ object ErrorHandler {
   /**
    * Logs errors for debugging purposes
    */
-  fun logError(error: AppError, context: String = "") {
+  fun logError(
+    error: AppError,
+    context: String = ""
+  ) {
     val logMessage =
       buildString {
         append("Error in $context: ")
@@ -46,7 +49,10 @@ object ErrorHandler {
   /**
    * Reports errors to analytics or crash reporting service
    */
-  fun reportError(error: AppError, context: String = "") {
+  fun reportError(
+    error: AppError,
+    context: String = ""
+  ) {
     // In a real app, you would integrate with services like:
     // - Firebase Crashlytics
     // - Sentry

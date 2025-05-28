@@ -28,7 +28,7 @@ private class ComponentInfo<T : Element> {
 
 private class FocusSwitcher<T : Element>(
   private val info: ComponentInfo<T>,
-  private val focusManager: FocusManager
+  private val focusManager: FocusManager,
 ) {
   private val backwardRequester = FocusRequester()
   private val forwardRequester = FocusRequester()
@@ -70,7 +70,7 @@ private class FocusSwitcher<T : Element>(
             }
           }
         }
-        .focusTarget()
+        .focusTarget(),
     )
     Box(
       Modifier
@@ -87,7 +87,7 @@ private class FocusSwitcher<T : Element>(
             }
           }
         }
-        .focusTarget()
+        .focusTarget(),
     )
   }
 }
@@ -98,7 +98,7 @@ private fun requestFocus(element: Element): Unit =
     {
         element.focus();
     }
-"""
+""",
   )
 
 private fun initializingElement(element: Element): Unit =
@@ -108,10 +108,16 @@ private fun initializingElement(element: Element): Unit =
         element.style.position = 'absolute';
         element.style.margin = '0px';
     }
-"""
+""",
   )
 
-private fun changeCoordinates(element: Element, width: Float, height: Float, x: Float, y: Float): Unit =
+private fun changeCoordinates(
+  element: Element,
+  width: Float,
+  height: Float,
+  x: Float,
+  y: Float,
+): Unit =
   js(
     """
     {
@@ -120,14 +126,14 @@ private fun changeCoordinates(element: Element, width: Float, height: Float, x: 
         element.style.left = x + 'px';
         element.style.top = y + 'px';
     }
-"""
+""",
   )
 
 @Composable
 fun <T : Element> HtmlView(
   factory: Document.() -> T,
   modifier: Modifier = Modifier,
-  update: (T) -> Unit = NoOpUpdate
+  update: (T) -> Unit = NoOpUpdate,
 ) {
   val componentInfo = remember { ComponentInfo<T>() }
 
@@ -146,9 +152,9 @@ fun <T : Element> HtmlView(
           size.width / density,
           size.height / density,
           location.x / density,
-          location.y / density
+          location.y / density,
         )
-      }
+      },
   ) {
     focusSwitcher.Content()
   }
@@ -173,7 +179,7 @@ fun <T : Element> HtmlView(
 
 private class Updater<T : Element>(
   private val component: T,
-  update: (T) -> Unit
+  update: (T) -> Unit,
 ) {
   private var isDisposed = false
 

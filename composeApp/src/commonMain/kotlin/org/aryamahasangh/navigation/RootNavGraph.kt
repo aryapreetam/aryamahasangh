@@ -53,13 +53,11 @@ fun RootNavGraph(navController: NavHostController) {
           println("navigating to details: $id")
           navController.navigate(Screen.ActivityDetails(id))
         }
-        if (isLoggedIn)
-          {
-            ActivitiesContainer(onNavigateToDetails, viewModel)
-          } else
-          {
-            ActivitiesScreen(onNavigateToDetails, viewModel)
-          }
+        if (isLoggedIn) {
+          ActivitiesContainer(onNavigateToDetails, viewModel)
+        } else {
+          ActivitiesScreen(onNavigateToDetails, viewModel)
+        }
       }
       composable<Screen.ActivityDetails> {
         val id = it.toRoute<Screen.ActivityDetails>().id
@@ -99,15 +97,14 @@ fun RootNavGraph(navController: NavHostController) {
       composable<Screen.BookOrderForm> {
         var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
         val viewModel = koinInject<BookOrderViewModel>()
-        if (isLoggedIn)
-          {
-            BookOrdersContainer(
-              viewModel = viewModel,
-              onNavigateToDetails = {
-                navController.navigate(Screen.BookOrderDetails(it))
-              }
-            )
-          } else {
+        if (isLoggedIn) {
+          BookOrdersContainer(
+            viewModel = viewModel,
+            onNavigateToDetails = {
+              navController.navigate(Screen.BookOrderDetails(it))
+            }
+          )
+        } else {
           BookOrderFormScreen(viewModel = viewModel)
         }
       }
@@ -165,13 +162,11 @@ fun RootNavGraph(navController: NavHostController) {
       composable<Screen.AdmissionForm> {
         var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
         val viewModel = koinInject<AdmissionsViewModel>()
-        if (isLoggedIn)
-          {
-            AdmissionScreen(viewModel)
-          } else
-          {
-            RegistrationForm(viewModel)
-          }
+        if (isLoggedIn) {
+          AdmissionScreen(viewModel)
+        } else {
+          RegistrationForm(viewModel)
+        }
       }
     }
   }

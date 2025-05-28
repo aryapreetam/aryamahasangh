@@ -97,30 +97,29 @@ class ActivityRepositoryImpl(private val apolloClient: ApolloClient) : ActivityR
       if (response.hasErrors()) {
         throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
       }
-      if (response.data?.insertIntoactivitiesCollection?.affectedCount!! > 0)
-        {
-          val activityId = response.data?.insertIntoactivitiesCollection?.records?.first()?.activityFields?.id!!
-          val organisations =
-            associatedOrganisations.map {
-              OrganisationalActivityInsertData(organisation_id = it.id, activity_id = activityId)
-            }
-          try {
-            supabaseClient.from("organisational_activity").insert(organisations)
-            val members =
-              activityMembers.map {
-                ActivityMemberInsertData(
-                  activity_id = activityId,
-                  member_id = it.member.id,
-                  post = it.post,
-                  priority = it.priority
-                )
-              }
-            supabaseClient.from("activity_member").insert(members)
-          } catch (e: Exception) {
-            // FIXME notify about the error to the user
-            throw Exception("Unknown error occurred ${e.message}")
+      if (response.data?.insertIntoactivitiesCollection?.affectedCount!! > 0) {
+        val activityId = response.data?.insertIntoactivitiesCollection?.records?.first()?.activityFields?.id!!
+        val organisations =
+          associatedOrganisations.map {
+            OrganisationalActivityInsertData(organisation_id = it.id, activity_id = activityId)
           }
+        try {
+          supabaseClient.from("organisational_activity").insert(organisations)
+          val members =
+            activityMembers.map {
+              ActivityMemberInsertData(
+                activity_id = activityId,
+                member_id = it.member.id,
+                post = it.post,
+                priority = it.priority
+              )
+            }
+          supabaseClient.from("activity_member").insert(members)
+        } catch (e: Exception) {
+          // FIXME notify about the error to the user
+          throw Exception("Unknown error occurred ${e.message}")
         }
+      }
       true
     }
   }

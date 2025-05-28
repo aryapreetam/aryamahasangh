@@ -36,7 +36,10 @@ class WebSecretsLoader : SecretsLoader {
     return secrets
   }
 
-  private fun parseJsonConfig(configText: String, secrets: MutableMap<String, String>) {
+  private fun parseJsonConfig(
+    configText: String,
+    secrets: MutableMap<String, String>
+  ) {
     // Basic JSON parsing for simple key-value pairs
     // This is a simplified parser - in production you might want to use a proper JSON library
     try {

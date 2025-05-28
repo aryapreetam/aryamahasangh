@@ -55,7 +55,10 @@ fun UpcomingActivitiesFormPreview() {
 }
 
 @Composable
-fun EditImageButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
+fun EditImageButton(
+  modifier: Modifier = Modifier,
+  onClick: () -> Unit
+) {
   Box(
     modifier =
       modifier.size(36.dp).clickable {
@@ -272,15 +275,14 @@ fun UpcomingActivitiesForm(
 
     uiState.activities.let {
       if (it != null) {
-        if (it.isEmpty())
-          {
-            Box(
-              modifier = Modifier.fillMaxSize(),
-              contentAlignment = Alignment.Center
-            ) {
-              Text("No sessions have been planned in this area!")
-            }
-          } else {
+        if (it.isEmpty()) {
+          Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+          ) {
+            Text("No sessions have been planned in this area!")
+          }
+        } else {
           Box(
             modifier =
               Modifier

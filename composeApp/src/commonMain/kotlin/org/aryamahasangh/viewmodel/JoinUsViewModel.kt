@@ -87,7 +87,10 @@ class JoinUsViewModel(
   /**
    * Load filtered activities
    */
-  fun loadFilteredActivities(state: String, district: String) {
+  fun loadFilteredActivities(
+    state: String,
+    district: String
+  ) {
     launch {
       updateState { it.copy(isLoading = true, error = null) }
 

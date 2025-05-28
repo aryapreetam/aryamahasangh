@@ -21,7 +21,10 @@ import org.aryamahasangh.util.safeCall
 interface AryaNirmanRepository {
   suspend fun getUpcomingActivities(): Flow<Result<List<UpcomingActivity>>>
 
-  fun registerForActivity(activityId: String, data: RegistrationData): Flow<Result<Boolean>>
+  fun registerForActivity(
+    activityId: String,
+    data: RegistrationData
+  ): Flow<Result<Boolean>>
 
   fun getRegistrationCounts(): Flow<Map<String, Int>>
 }
@@ -51,13 +54,16 @@ class AryaNirmanRepositoryImpl(private val apolloClient: ApolloClient) : AryaNir
                 longitude = it.longitude!!,
                 capacity = it.capacity
               )
-            } 
+            }
           } ?: emptyList()
         }
       emit(result)
     }
 
-  override fun registerForActivity(activityId: String, data: RegistrationData): Flow<Result<Boolean>> =
+  override fun registerForActivity(
+    activityId: String,
+    data: RegistrationData
+  ): Flow<Result<Boolean>> =
     flow {
       emit(Result.Loading)
       val result =

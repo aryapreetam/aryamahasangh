@@ -66,15 +66,14 @@ fun AryaNirmanHomeScreen(
       return
     }
 
-    if (uiState.data.isEmpty())
-      {
-        Box(
-          modifier = Modifier.fillMaxSize(),
-          contentAlignment = Alignment.Center
-        ) {
-          Text("No sessions have been planned!")
-        }
-      } else {
+    if (uiState.data.isEmpty()) {
+      Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+      ) {
+        Text("No sessions have been planned!")
+      }
+    } else {
       Box(
         modifier =
           Modifier

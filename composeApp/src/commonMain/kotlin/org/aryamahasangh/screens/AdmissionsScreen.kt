@@ -58,13 +58,11 @@ fun AdmissionScreen(viewModel: AdmissionsViewModel) {
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
       ) {
-        if (it == 0)
-          {
-            RegistrationForm(viewModel)
-          } else
-          {
-            ReceivedApplicationsScreen(viewModel)
-          }
+        if (it == 0) {
+          RegistrationForm(viewModel)
+        } else {
+          ReceivedApplicationsScreen(viewModel)
+        }
       }
     }
   }

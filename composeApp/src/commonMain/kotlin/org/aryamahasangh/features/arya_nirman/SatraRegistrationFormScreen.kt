@@ -274,9 +274,7 @@ fun SatraRegistrationFormScreen(
   }
 
   // NEW Trained Arya Validation
-  fun validateTrainedAryaName(
-    showError: Boolean = true
-  ): Boolean {
+  fun validateTrainedAryaName(showError: Boolean = true): Boolean {
     if (!hasTrainedAryaInFamily) {
       trainedAryaNameError = null
       return true

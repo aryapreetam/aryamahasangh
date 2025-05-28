@@ -86,22 +86,21 @@ fun ActivityListItem(
           Text(text = "स्थान: ${activity.district}", style = MaterialTheme.typography.bodySmall)
         }
       }
-      if (isLoggedIn)
-        {
-          Box(
-            modifier =
-              Modifier.size(36.dp).clickable {
-                showConfirmDialog = true
-              }.align(alignment = Alignment.TopEnd),
-            contentAlignment = Alignment.Center
-          ) {
-            Icon(
-              Icons.Default.Delete,
-              contentDescription = "delete activity",
-              Modifier.size(24.dp)
-            )
-          }
+      if (isLoggedIn) {
+        Box(
+          modifier =
+            Modifier.size(36.dp).clickable {
+              showConfirmDialog = true
+            }.align(alignment = Alignment.TopEnd),
+          contentAlignment = Alignment.Center
+        ) {
+          Icon(
+            Icons.Default.Delete,
+            contentDescription = "delete activity",
+            Modifier.size(24.dp)
+          )
         }
+      }
     }
     if (showConfirmDialog) {
       AlertDialog(

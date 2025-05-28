@@ -115,7 +115,11 @@ class OrganisationsViewModel(
    * @param name The name of the organisation (used to reload the details after update)
    * @param imageUrl The URL of the new logo image
    */
-  fun updateOrganisationLogo(orgId: String, name: String, imageUrl: String) {
+  fun updateOrganisationLogo(
+    orgId: String,
+    name: String,
+    imageUrl: String
+  ) {
     launch {
       // Set loading state
       // FIXME This is not the correct way to do this, but it works for now
@@ -153,7 +157,10 @@ class OrganisationsViewModel(
     }
   }
 
-  fun updateOrganisationDescription(orgId: String, description: String) {
+  fun updateOrganisationDescription(
+    orgId: String,
+    description: String
+  ) {
     launch {
       // Set loading state
       // FIXME This is not the correct way to do this, but it works for now

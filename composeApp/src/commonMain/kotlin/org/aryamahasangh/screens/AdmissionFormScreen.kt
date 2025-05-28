@@ -387,7 +387,10 @@ fun DocumentGrid(
 }
 
 @Composable
-fun ButtonForFilePicker(label: String?, onFilesSelected: (List<PlatformFile>?) -> Unit) {
+fun ButtonForFilePicker(
+  label: String?,
+  onFilesSelected: (List<PlatformFile>?) -> Unit
+) {
   val launcher =
     rememberFilePickerLauncher(
       type = PickerType.File(extensions = listOf("png", "jpg", "jpeg", "webp", "pdf", "docx")),
@@ -422,17 +425,15 @@ fun StudentPhotoSection(
         onPhotoSelected(file)
       }
     Box(modifier = Modifier.size(120.dp)) {
-      if (studentPhoto != null)
-        {
-          PhotoItem(studentPhoto, onRemoveFile = onPhotoRemoved)
-        } else
-        {
-          Image(
-            painter = painterResource(resource = Res.drawable.error_profile_image),
-            contentDescription = "Error profile image",
-            contentScale = ContentScale.Crop,
-          )
-        }
+      if (studentPhoto != null) {
+        PhotoItem(studentPhoto, onRemoveFile = onPhotoRemoved)
+      } else {
+        Image(
+          painter = painterResource(resource = Res.drawable.error_profile_image),
+          contentDescription = "Error profile image",
+          contentScale = ContentScale.Crop,
+        )
+      }
     }
 
     OutlinedButton(onClick = {

@@ -19,7 +19,7 @@ actual fun YoutubeVideoPlayer(videoUrl: String) {
         iframe.setAttribute("height", "100%")
         iframe.setAttribute("src", "https://www.youtube.com/embed/$videoUrl")
         iframe
-      }
+      },
     )
   }
 }

@@ -24,7 +24,10 @@ data class SatrRegistrationCount(
   val activity_id: String
 )
 
-fun convertDates(fromDateTime: LocalDateTime, toDateTime: LocalDateTime): Pair<String, String> {
+fun convertDates(
+  fromDateTime: LocalDateTime,
+  toDateTime: LocalDateTime
+): Pair<String, String> {
   val devanagariDigits =
     mapOf(
       '0' to '०', '1' to '१', '2' to '२', '3' to '३', '4' to '४',

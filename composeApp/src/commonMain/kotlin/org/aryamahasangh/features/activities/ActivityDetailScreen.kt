@@ -38,7 +38,10 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
 
 @Composable
-fun ActivityDetailScreen(id: String, viewModel: ActivitiesViewModel = koinInject()) {
+fun ActivityDetailScreen(
+  id: String,
+  viewModel: ActivitiesViewModel = koinInject()
+) {
   val snackbarHostState = LocalSnackbarHostState.current
 
   // Load activity details
