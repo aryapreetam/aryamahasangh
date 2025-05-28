@@ -1,0 +1,26 @@
+# https://editorconfig.org
+root = true
+
+[*]
+end_of_line = lf
+insert_final_newline = true
+
+[*.{kt,kts}]
+indent_style = space
+indent_size = 2
+max_line_length = 120
+
+# Disable wildcard imports
+ktlint_standard_no-wildcard-imports = disabled
+
+# Disable trailing comma rule (optional)
+ktlint_standard_trailing-comma-on-call-site = disabled
+ktlint_standard_trailing-comma-on-declaration-site = disabled
+
+# Disable function signature rule (optional)
+ktlint_standard_function-signature = disabled
+
+# Compose specific rules
+ktlint_compose_allowed-composition-locals = enabled
+ktlint_compose_modifier-missing-check = enabled
+ktlint_compose_unnecessary-box-with-constraints = enabled
