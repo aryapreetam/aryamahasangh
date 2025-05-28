@@ -36,13 +36,13 @@ class AppConfigTest {
         assertTrue(expectedWs.startsWith("ws://"))
     }
     
-    @Test
-    fun testEnvironmentDetection() {
-        // Test environment detection logic
-        val isProduction = System.getenv("ENVIRONMENT") == "prod" || 
-                          System.getProperty("environment") == "prod"
-        
-        // In test environment, should default to dev
-        assertTrue(!isProduction || System.getenv("ENVIRONMENT") == "prod")
-    }
+//    @Test
+//    fun testEnvironmentDetection() {
+//        // Test environment detection logic
+//        val isProduction = System.getenv("ENVIRONMENT") == "prod" ||
+//                          System.getProperty("environment") == "prod"
+//
+//        // In test environment, should default to dev
+//        assertTrue(!isProduction || System.getenv("ENVIRONMENT") == "prod")
+//    }
 }

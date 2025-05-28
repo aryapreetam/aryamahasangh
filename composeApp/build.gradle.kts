@@ -1,9 +1,9 @@
-
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.compose.reload.ComposeHotRun
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 import java.util.*
 
@@ -21,13 +21,13 @@ plugins {
 fun loadSecrets(): Properties {
   val secretsFile = rootProject.file("secrets.properties")
   val secrets = Properties()
-  
+
   if (secretsFile.exists()) {
     secretsFile.inputStream().use { secrets.load(it) }
   } else {
     println("Warning: secrets.properties file not found. Using fallback values.")
   }
-  
+
   return secrets
 }
 
@@ -42,6 +42,9 @@ kotlin {
     compilerOptions {
       jvmTarget.set(JvmTarget.JVM_11)
     }
+    // to run instrumented (emulator) tests for Android
+    @OptIn(ExperimentalKotlinGradlePluginApi::class)
+    instrumentedTestVariant.sourceSetTree.set(KotlinSourceSetTree.test)
   }
 
   listOf(
@@ -79,6 +82,7 @@ kotlin {
 
   sourceSets {
     val desktopMain by getting
+    val desktopTest by getting
     commonMain.dependencies {
       implementation(compose.runtime)
       implementation(compose.foundation)
@@ -127,6 +131,13 @@ kotlin {
       implementation(libs.apollo.adapters.core)
       implementation(libs.apollo.adapters.kotlinx.datetime)
     }
+    commonTest.dependencies {
+      implementation(kotlin("test"))
+      implementation(libs.kotlin.test.junit)
+      implementation(libs.kotlinx.coroutines.test)
+      @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
+      implementation(compose.uiTest)
+    }
     androidMain.dependencies {
       implementation(libs.androidx.activity.compose)
       implementation(libs.compose.ui.tooling.preview)
@@ -142,9 +153,16 @@ kotlin {
       implementation(libs.kotlinx.coroutines.swing)
       implementation(libs.ktor.client.java)
     }
+    desktopTest.dependencies {
+      implementation(compose.desktop.currentOs)
+    }
     wasmJsMain.dependencies {
       implementation(libs.ktor.client.wasm)
     }
+    val iosX64Test by getting
+    val iosArm64Test by getting
+    val iosSimulatorArm64Test by getting
+    val wasmJsTest by getting
   }
 }
 
@@ -158,6 +176,8 @@ android {
     targetSdk = libs.versions.android.targetSdk.get().toInt()
     versionCode = 1
     versionName = "1.0"
+
+    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
   packaging {
     resources {
@@ -167,14 +187,24 @@ android {
       )
     }
   }
-  buildTypes {
-    getByName("release") {
-      isMinifyEnabled = false
+  signingConfigs {
+    create("release") {
+      storeFile = file("../aryamahasangh.jks")
+      storePassword = System.getenv("KEYSTORE_PASSWORD")
+      keyAlias = "keystore"
+      keyPassword = System.getenv("KEY_PASSWORD")
     }
   }
-  compileOptions {
-    sourceCompatibility = JavaVersion.VERSION_11
-    targetCompatibility = JavaVersion.VERSION_11
+
+  buildTypes {
+    release {
+      isMinifyEnabled = true
+      proguardFiles(
+        getDefaultProguardFile("proguard-android-optimize.txt"),
+        file("proguard-rules.pro")
+      )
+      signingConfig = signingConfigs.getByName("release")
+    }
   }
 }
 
@@ -182,6 +212,9 @@ dependencies {
   implementation(libs.androidx.material3.android)
   implementation(project(":server"))
   debugImplementation(compose.uiTooling)
+
+  androidTestImplementation("androidx.compose.ui:ui-test-junit4-android:1.6.8")
+  debugImplementation("androidx.compose.ui:ui-test-manifest:1.6.8")
 }
 
 compose.desktop {
@@ -199,7 +232,7 @@ compose.desktop {
   }
 }
 
-tasks.register<ComposeHotRun>("runHot"){
+tasks.register<ComposeHotRun>("runHot") {
   mainClass.set("org.aryamahasangh.MainKt")
 }
 
@@ -229,51 +262,52 @@ apollo {
  * This ensures secrets are properly configured for all platforms before compilation
  */
 tasks.register<Exec>("setupSecrets") {
-    group = "secrets"
-    description = "Setup secrets for all platforms (Desktop, Android, Web, iOS)"
-    
-    // Configuration cache compatible - capture values at configuration time
-    val rootDir = rootProject.projectDir
-    val secretsFile = File(rootDir, "secrets.properties")
-    val isWindows = System.getProperty("os.name").lowercase().contains("windows")
-    
-    workingDir = rootDir
-    
-    // Use appropriate shell based on OS
-    if (isWindows) {
-        commandLine("cmd", "/c", "bash", "setup-secrets.sh")
-    } else {
-        commandLine("bash", "setup-secrets.sh")
-    }
-    
-    // Only run if secrets.properties exists
-    onlyIf {
-        secretsFile.exists()
-    }
-    
-    doFirst {
-        println("🔧 Running automated secrets setup...")
-    }
-    
-    doLast {
-        println("✅ Automated secrets setup completed")
-    }
+  group = "secrets"
+  description = "Setup secrets for all platforms (Desktop, Android, Web, iOS)"
+
+  // Configuration cache compatible - capture values at configuration time
+  val rootDir = rootProject.projectDir
+  val secretsFile = File(rootDir, "secrets.properties")
+  val isWindows = System.getProperty("os.name").lowercase().contains("windows")
+
+  workingDir = rootDir
+
+  // Use appropriate shell based on OS
+  if (isWindows) {
+    commandLine("cmd", "/c", "bash", "setup-secrets.sh")
+  } else {
+    commandLine("bash", "setup-secrets.sh")
+  }
+
+  // Only run if secrets.properties exists
+  onlyIf {
+    secretsFile.exists()
+  }
+
+  doFirst {
+    println("🔧 Running automated secrets setup...")
+  }
+
+  doLast {
+    println("✅ Automated secrets setup completed")
+  }
 }
 
 /**
  * Task to check if secrets.properties exists and warn if not
  */
 tasks.register("checkSecrets") {
-    group = "secrets"
-    description = "Check if secrets.properties file exists"
-    
-    // Configuration cache compatible - capture values at configuration time
-    val secretsFilePath = File(rootProject.projectDir, "secrets.properties").absolutePath
-    
-    doLast {
-        val secretsFile = File(secretsFilePath)
-        if (!secretsFile.exists()) {
-            logger.warn("""
+  group = "secrets"
+  description = "Check if secrets.properties file exists"
+
+  // Configuration cache compatible - capture values at configuration time
+  val secretsFilePath = File(rootProject.projectDir, "secrets.properties").absolutePath
+
+  doLast {
+    val secretsFile = File(secretsFilePath)
+    if (!secretsFile.exists()) {
+      logger.warn(
+        """
                 ⚠️  WARNING: secrets.properties file not found!
                 
                 To set up secrets for all platforms:
@@ -282,11 +316,12 @@ tasks.register("checkSecrets") {
                 3. Run: ./setup-secrets.sh
                 
                 Or the setup will run automatically when you build.
-            """.trimIndent())
-        } else {
-            println("✅ secrets.properties file found")
-        }
+            """.trimIndent()
+      )
+    } else {
+      println("✅ secrets.properties file found")
     }
+  }
 }
 
 // ============================================================================
@@ -295,44 +330,44 @@ tasks.register("checkSecrets") {
 
 // Hook setupSecrets to run before compilation tasks for all platforms
 tasks.matching { task ->
-    task.name.startsWith("compile") || 
-    task.name.contains("Compile") ||
-    task.name == "preBuild" ||
-    task.name.startsWith("assemble") ||
-    task.name.startsWith("bundle") ||
-    task.name == "run" ||
-    task.name == "runDebug" ||
-    task.name == "runRelease"
+  task.name.startsWith("compile") ||
+      task.name.contains("Compile") ||
+      task.name == "preBuild" ||
+      task.name.startsWith("assemble") ||
+      task.name.startsWith("bundle") ||
+      task.name == "run" ||
+      task.name == "runDebug" ||
+      task.name == "runRelease"
 }.configureEach {
-    dependsOn("setupSecrets")
+  dependsOn("setupSecrets")
 }
 
 // Android specific tasks
 tasks.matching { it.name.startsWith("assemble") }.configureEach {
-    dependsOn("setupSecrets")
+  dependsOn("setupSecrets")
 }
 
 // Desktop specific tasks  
 tasks.matching { it.name.contains("Desktop") || it.name == "run" }.configureEach {
-    dependsOn("setupSecrets")
+  dependsOn("setupSecrets")
 }
 
 // Web specific tasks
 tasks.matching { it.name.contains("Js") || it.name.contains("Wasm") }.configureEach {
-    dependsOn("setupSecrets")
+  dependsOn("setupSecrets")
 }
 
 // iOS specific tasks
 tasks.matching { it.name.contains("Ios") || it.name.contains("iOS") }.configureEach {
-    dependsOn("setupSecrets")
+  dependsOn("setupSecrets")
 }
 
 // Make checkSecrets run early in the build process
 tasks.named("preBuild") {
-    dependsOn("checkSecrets")
+  dependsOn("checkSecrets")
 }
 
 // Also run checkSecrets before setupSecrets
 tasks.named("setupSecrets") {
-    dependsOn("checkSecrets")
+  dependsOn("checkSecrets")
 }
