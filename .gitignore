@@ -22,3 +22,4 @@ secrets.properties
 composeApp/src/androidMain/assets/secrets.properties
 iosApp/iosApp/secrets.properties
 composeApp/src/wasmJsMain/resources/config.json
+composeApp/src/wasmJsMain/resources/config.json
