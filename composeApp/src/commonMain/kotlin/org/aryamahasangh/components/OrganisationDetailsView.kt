@@ -27,6 +27,7 @@ import io.github.vinceglb.filekit.core.PickerMode
 import io.github.vinceglb.filekit.core.PickerType
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.SettingKeys
 import org.aryamahasangh.features.organisations.OrganisationDescriptionState
 import org.aryamahasangh.features.organisations.OrganisationDetail
@@ -80,6 +81,7 @@ fun OrganisationDetail(
         if (isLoggedIn) {
           Row(modifier = Modifier.padding()) {
             val scope = rememberCoroutineScope()
+            val snackbarHostState = LocalSnackbarHostState.current
             val launcher =
               rememberFilePickerLauncher(
                 type = PickerType.Image,
@@ -89,14 +91,33 @@ fun OrganisationDetail(
                 if (file != null) {
                   scope.launch {
                     try {
+                      // Show immediate upload feedback
+                      val snackbarJob = launch {
+                        snackbarHostState.showSnackbar(
+                          message = "🔄 Uploading new logo...",
+                          duration = SnackbarDuration.Indefinite
+                        )
+                      }
+
                       val uploadResponse =
                         bucket.upload(
                           path = "org_logo_${Clock.System.now().epochSeconds}.jpg",
                           data = file.readBytes()
                         )
                       val imageUrl = bucket.publicUrl(uploadResponse.path)
+
+                      // Cancel the upload progress snackbar
+                      snackbarJob.cancel()
+                      snackbarHostState.currentSnackbarData?.dismiss()
+
+                      // Update the logo in the ViewModel (this will show success message)
                       updateOrganisationLogo(id, name, imageUrl)
                     } catch (e: Exception) {
+                      // Show error message directly here since upload failed before reaching ViewModel
+                      snackbarHostState.showSnackbar(
+                        message = "❌ Failed to upload logo: ${e.message}",
+                        actionLabel = "Close"
+                      )
                       println("error uploading files: $e")
                     }
                   }
