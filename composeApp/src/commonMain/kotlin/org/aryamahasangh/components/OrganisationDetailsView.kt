@@ -1,15 +1,13 @@
 package org.aryamahasangh.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
@@ -32,6 +30,7 @@ import kotlinx.datetime.Clock
 import org.aryamahasangh.SettingKeys
 import org.aryamahasangh.features.organisations.OrganisationDescriptionState
 import org.aryamahasangh.features.organisations.OrganisationDetail
+import org.aryamahasangh.features.organisations.OrganisationLogoState
 import org.aryamahasangh.network.bucket
 import org.aryamahasangh.screens.EditImageButton
 import org.jetbrains.compose.resources.painterResource
@@ -60,7 +59,10 @@ fun SabhaPreview() {
 fun OrganisationDetail(
   organisation: OrganisationDetail,
   updateOrganisationLogo: (String, String, String) -> Unit,
-  updateOrganisationDescription: (String, String) -> Unit
+  updateOrganisationDescription: (String, String) -> Unit,
+  organisationDescriptionState: OrganisationDescriptionState = OrganisationDescriptionState(),
+  onDescriptionEditModeChange: (Boolean) -> Unit = {},
+  organisationLogoState: OrganisationLogoState = OrganisationLogoState()
 ) {
   val (id, name, description, logo, keyPeople) = organisation
   var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
@@ -101,26 +103,48 @@ fun OrganisationDetail(
                 }
               }
 
-            AsyncImage(
-              model = logo,
-              contentDescription = "logo for $name",
-              contentScale = ContentScale.Fit,
-              modifier = Modifier.size(150.dp),
-              placeholder =
-                BrushPainter(
-                  Brush.linearGradient(
-                    listOf(
-                      Color(color = 0xFFFFFFFF),
-                      Color(color = 0xFFDDDDDD)
+            Box(contentAlignment = Alignment.Center) {
+              AsyncImage(
+                model = logo,
+                contentDescription = "logo for $name",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(150.dp),
+                placeholder =
+                  BrushPainter(
+                    Brush.linearGradient(
+                      listOf(
+                        Color(color = 0xFFFFFFFF),
+                        Color(color = 0xFFDDDDDD)
+                      )
                     )
+                  ),
+                fallback = painterResource(Res.drawable.baseline_groups),
+                error = painterResource(Res.drawable.baseline_groups)
+              )
+
+              // Show loading indicator while logo is updating
+              if (organisationLogoState.isUpdating) {
+                Box(
+                  modifier = Modifier
+                    .size(150.dp)
+                    .background(Color.Black.copy(alpha = 0.5f)),
+                  contentAlignment = Alignment.Center
+                ) {
+                  CircularProgressIndicator(
+                    color = Color.White,
+                    strokeWidth = 3.dp
                   )
-                ),
-              fallback = painterResource(Res.drawable.baseline_groups),
-              error = painterResource(Res.drawable.baseline_groups)
-            )
-            EditImageButton {
-              launcher.launch()
+                }
+              }
             }
+
+            EditImageButton(
+              onClick = {
+                if (!organisationLogoState.isUpdating) {
+                  launcher.launch()
+                }
+              }
+            )
           }
         } else {
           AsyncImage(
@@ -147,8 +171,8 @@ fun OrganisationDetail(
         orgId = id,
         description = description!!,
         isLoggedIn = isLoggedIn,
-        organisationDescriptionState = OrganisationDescriptionState(),
-        onEditModeChange = { },
+        organisationDescriptionState = organisationDescriptionState,
+        onEditModeChange = onDescriptionEditModeChange,
         updateDescription = updateOrganisationDescription
       )
     }
@@ -203,48 +227,78 @@ fun OrganisationDescription(
   onEditModeChange: (Boolean) -> Unit = {},
   updateDescription: (String, String) -> Unit
 ) {
-//  var editMode by remember { mutableStateOf(false) }
-//  Column(modifier = Modifier.fillMaxWidth()){
-//    if(!editMode) {
-//      Row(verticalAlignment = Alignment.CenterVertically){
-//        Text(
-//          modifier = Modifier.weight(1f),
-//          text = description
-//        )
-//        if(isLoggedIn) {
-//          EditImageButton(
-//            onClick = { onEditModeChange(true) }
-//          )
-//        }
-//      }
-//    }else {
-//      var localText by remember { mutableStateOf(organisationDescriptionState.description) }
-//      OutlinedTextField(
-//        modifier = Modifier.fillMaxWidth(),
-//        minLines = 2,
-//        value = localText,
-//        onValueChange = {
-//          localText = it
-//        }
-//      )
-//      Row(
-//        modifier = Modifier.align(Alignment.End),
-//        horizontalArrangement = Arrangement.spacedBy(8.dp)
-//      ) {
-//        TextButton(
-//          enabled = !organisationDescriptionState.isUpdating,
-//          onClick = { onEditModeChange(false) }
-//        ){
-//          Text("Cancel")
-//        }
-//        ButtonWithProgressIndicator(
-//          enabled = !organisationDescriptionState.isUpdating,
-//          inProgress = organisationDescriptionState.isUpdating
-//        ) {
-//          updateDescription(orgId, localText)
-//        }
-//      }
-//    }
-//  }
-  Text(description)
+  val editMode = organisationDescriptionState.editMode
+  Column(modifier = Modifier.fillMaxWidth()) {
+    if (!editMode) {
+      Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+          modifier = Modifier.weight(1f),
+          text = description
+        )
+        if (isLoggedIn) {
+          EditImageButton(
+            onClick = { onEditModeChange(true) }
+          )
+        }
+      }
+    } else {
+      var localText by remember { mutableStateOf(organisationDescriptionState.description) }
+
+      // Update local text when description changes (e.g., on first edit)
+      LaunchedEffect(organisationDescriptionState.description) {
+        localText = organisationDescriptionState.description
+      }
+
+      OutlinedTextField(
+        modifier = Modifier.fillMaxWidth(),
+        minLines = 2,
+        value = localText,
+        onValueChange = {
+          localText = it
+        },
+        label = { Text("विवरण") }
+      )
+      Row(
+        modifier = Modifier.align(Alignment.End),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+        TextButton(
+          enabled = !organisationDescriptionState.isUpdating,
+          onClick = { onEditModeChange(false) }
+        ) {
+          Text("Cancel")
+        }
+        ButtonWithProgressIndicator(
+          enabled = !organisationDescriptionState.isUpdating,
+          inProgress = organisationDescriptionState.isUpdating
+        ) {
+          updateDescription(orgId, localText)
+        }
+      }
+    }
+  }
+}
+
+@Composable
+fun ButtonWithProgressIndicator(
+  modifier: Modifier = Modifier,
+  enabled: Boolean = true,
+  inProgress: Boolean = false,
+  onClick: () -> Unit
+) {
+  Button(
+    modifier = modifier,
+    onClick = onClick,
+    enabled = enabled
+  ) {
+    if (inProgress) {
+      CircularProgressIndicator(
+        Modifier.size(20.dp),
+        color = MaterialTheme.colorScheme.onPrimary,
+        strokeWidth = 2.dp
+      )
+      Spacer(Modifier.width(8.dp))
+    }
+    Text("Save")
+  }
 }
