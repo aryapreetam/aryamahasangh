@@ -60,7 +60,7 @@ fun ActivitiesContainer(
         if (it == 0) {
           ActivitiesScreen(onNavigateToActivityDetails, viewModel)
         } else {
-          ActivityForm(viewModel)
+          CreateActivityScreen(viewModel)
         }
       }
     }

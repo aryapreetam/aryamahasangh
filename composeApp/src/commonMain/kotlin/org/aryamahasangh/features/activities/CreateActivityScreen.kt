@@ -40,7 +40,6 @@ import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.network.bucket
 import org.aryamahasangh.screens.*
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import org.koin.compose.koinInject
 
 val stringToActivityTypeMap =
   mapOf(
@@ -58,16 +57,10 @@ val activityTypeToStringMap =
     ActivityType.SESSION to "सत्र"
   )
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CreateActivityScreen(viewModel: ActivitiesViewModel = koinInject()) {
-  ActivityForm(viewModel)
-}
-
 @OptIn(ExperimentalLayoutApi::class)
 @ExperimentalMaterial3Api
 @Composable
-fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
+fun CreateActivityScreen(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
 
   var organisations by remember { mutableStateOf(emptyList<Organisation>()) }
   var members by remember { mutableStateOf(emptyList<Member>()) }
@@ -146,6 +139,7 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
   var eventLatitude by remember { mutableStateOf("") }
   var eventLongitude by remember { mutableStateOf("") }
   var areEventDetailsValid by remember { mutableStateOf(false) } // Initially false until validated
+  var triggerEventDetailsValidation by remember { mutableStateOf(false) } // Add validation trigger
 
   // Collect form submission state from ViewModel
   val formSubmissionState by viewModel.activityFormSubmissionState.collectAsState()
@@ -190,6 +184,9 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
 
     stateErrorMessage = if (stateError) "State required" else ""
     districtErrorMessage = if (districtError) "Districts required" else ""
+
+    // Trigger validation for EventDetailsFields
+    triggerEventDetailsValidation = !triggerEventDetailsValidation
 
     if ((!startDateError && !startTimeError && !endDateError && !endTimeError)) {
       val currentDateTime = System.now().toLocalDateTime(TimeZone.currentSystemDefault())
@@ -237,7 +234,7 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
     return !(
       nameError || typesError || shortDescriptionError || descriptionError || associatedOrganisationsError ||
         addressError || stateError || districtError || startDateError || startTimeError ||
-        endDateError || endTimeError || contactPeopleError
+        endDateError || endTimeError || contactPeopleError || !areEventDetailsValid
       )
   }
 
@@ -559,7 +556,8 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
       },
       isFormValid = { isValid ->
         areEventDetailsValid = isValid
-      }
+      },
+      validationTrigger = triggerEventDetailsValidation
     )
 
     Text(
@@ -762,7 +760,8 @@ fun EventDetailsFields(
   initialLongitude: String = "",
   onDetailsChanged: (capacity: String, genderAllowed: GenderAllowed, latitude: String, longitude: String) -> Unit,
   onChooseLocationFromMapClick: () -> Unit,
-  isFormValid: (Boolean) -> Unit
+  isFormValid: (Boolean) -> Unit,
+  validationTrigger: Boolean = false
 ) {
   val focusManager = LocalFocusManager.current
 
@@ -859,6 +858,16 @@ fun EventDetailsFields(
         longitudeError = null
         true
       }
+    }
+  }
+
+  // Respond to validation trigger from parent
+  LaunchedEffect(validationTrigger) {
+    if (validationTrigger) {
+      validateCapacity(true)
+      validateGenderAllowed(true)
+      validateLatitude(true)
+      validateLongitude(true)
     }
   }
 
@@ -1021,7 +1030,8 @@ fun EventDetailsFieldsPreview() {
           },
           isFormValid = { isValid ->
             isFieldsValid = isValid
-          }
+          },
+          validationTrigger = false
         )
         Spacer(modifier = Modifier.height(20.dp))
         Text(
