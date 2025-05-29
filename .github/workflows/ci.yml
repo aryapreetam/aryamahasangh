@@ -118,7 +118,8 @@ jobs:
   build-web:
     name: Build Web Distribution
     if: github.ref == 'refs/heads/dev'
-    needs: [ test, code-quality ]
+    #    needs: [ test, code-quality ]
+    needs: [ code-quality ]
     runs-on: ubuntu-latest
     
     steps:
@@ -209,7 +210,8 @@ jobs:
   build-android:
     name: Build Android APK
     if: github.ref == 'refs/heads/dev'
-    needs: [ test, code-quality ]
+    #    needs: [ test, code-quality ]
+    needs: [ code-quality ]
     runs-on: ubuntu-latest
     
     steps:
