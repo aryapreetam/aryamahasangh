@@ -1942,11 +1942,11 @@ type book_ordersUpdateResponse {
 }
 
 enum gender_filter {
-  male
+  MALE
 
-  female
+  FEMALE
 
-  any
+  ANY
 }
 
 """

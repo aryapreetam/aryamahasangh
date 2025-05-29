@@ -1,6 +1,8 @@
 package org.aryamahasangh.features.arya_nirman
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
@@ -25,78 +27,77 @@ fun AryaNirmanHomeScreen(
   val uiState by viewModel.uiState.collectAsState()
   val registrationCounts by viewModel.registrationCounts.collectAsState()
 
-  Column(modifier = Modifier.padding(8.dp)) {
-    Text("आगामी सत्र", modifier = Modifier.padding(bottom = 8.dp))
-    // Handle loading state
-    if (uiState.isLoading) {
-      Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-      ) {
-        LinearProgressIndicator()
-      }
-      return
+  // Handle loading state
+  if (uiState.isLoading) {
+    Box(
+      modifier = Modifier.fillMaxSize(),
+      contentAlignment = Alignment.Center
+    ) {
+      LinearProgressIndicator()
     }
+    return
+  }
 
-    // Handle error state
-    uiState.error?.let { error ->
-      LaunchedEffect(error) {
+  // Handle error state
+  uiState.error?.let { error ->
+    LaunchedEffect(error) {
 //        snackbarHostState.showSnackbar(
 //          message = error,
 //          actionLabel = "Retry"
 //        )
-      }
+    }
 
-      Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
+    Box(
+      modifier = Modifier.fillMaxSize(),
+      contentAlignment = Alignment.Center
+    ) {
+      Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(8.dp)
       ) {
-        Column(
-          horizontalAlignment = Alignment.CenterHorizontally,
-          verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-          Text("Failed to load activities")
-          Button(onClick = {
-            // loadFilteredActivities(activityFilter)
-          }) {
-            Text("Retry")
-          }
+        Text("Failed to load activities")
+        Button(onClick = {
+          // loadFilteredActivities(activityFilter)
+        }) {
+          Text("Retry")
         }
       }
-      return
     }
+    return
+  }
+
+  Column(
+    modifier = Modifier
+      .padding(8.dp)
+      .fillMaxSize()
+      .verticalScroll(rememberScrollState())
+  ) {
+    Text("आगामी सत्र", modifier = Modifier.padding(bottom = 8.dp))
 
     if (uiState.data.isEmpty()) {
       Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier.fillMaxWidth().height(200.dp),
         contentAlignment = Alignment.Center
       ) {
         Text("No sessions have been planned!")
       }
     } else {
-      Box(
-        modifier =
-          Modifier
-            .fillMaxSize()
-            .weight(1f) // Limits height to remaining space
+      FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
       ) {
-        FlowRow(
-          horizontalArrangement = Arrangement.spacedBy(8.dp),
-          verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-          uiState.data.forEach { activity ->
-            val updatedActivity =
-              activity.copy(
-                isFull = (registrationCounts[activity.id] ?: 0) >= activity.capacity
-              )
-            EventListItem(
-              event = updatedActivity,
-              onRegisterClick = {
-                onNavigateToRegistrationForm(activity.id)
-              },
-              onDirectionsClick = ::dummyDirectionsCallback
+        uiState.data.forEach { activity ->
+          val updatedActivity =
+            activity.copy(
+              isFull = (registrationCounts[activity.id] ?: 0) >= activity.capacity
             )
-          }
+          EventListItem(
+            event = updatedActivity,
+            onRegisterClick = {
+              onNavigateToRegistrationForm(activity.id)
+            },
+            onDirectionsClick = ::dummyDirectionsCallback
+          )
         }
       }
     }

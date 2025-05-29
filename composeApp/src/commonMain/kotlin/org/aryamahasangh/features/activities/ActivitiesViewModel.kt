@@ -10,7 +10,6 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import org.aryamahasangh.type.ActivitiesInsertInput
-import org.aryamahasangh.type.Gender_filter
 import org.aryamahasangh.util.Result
 import org.aryamahasangh.viewmodel.AdmissionFormSubmissionState
 import org.aryamahasangh.viewmodel.BaseViewModel
@@ -193,7 +192,7 @@ class ActivitiesViewModel(
         capacity = Optional.present(input.capacity),
         latitude = Optional.present(input.latitude),
         longitude = Optional.present(input.longitude),
-        allowed_gender = Optional.present(Gender_filter.valueOf(input.allowedGender))
+        allowed_gender = Optional.present(input.allowedGender.toApollo())
       )
     launch {
       _formSubmissionState.value = AdmissionFormSubmissionState(isSubmitting = true)
