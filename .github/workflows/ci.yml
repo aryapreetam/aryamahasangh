@@ -102,92 +102,8 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-  #    - name: Run ktlint
-  #      run: ./gradlew ktlintCheck --no-daemon
-  #
-  #    - name: Run detekt
-  #      run: ./gradlew detekt --no-daemon
-  #
-  #    - name: Upload code quality reports
-  #      uses: actions/upload-artifact@v4  # Updated from v3 to v4
-  #      if: always()
-  #      with:
-  #        name: code-quality-reports
-  #        path: |
-  #          **/build/reports/ktlint/
-  #          **/build/reports/detekt/
-
-  #  build:
-  #    name: Build All Platforms
-  #    runs-on: ubuntu-latest
-  #    needs: [ test, code-quality ]
-  #
-  #    strategy:
-  #      matrix:
-  #        target: [ compileKotlinAndroid, compileKotlinDesktop, compileKotlinWasmJs ]
-  #
-  #    steps:
-  #      - name: Checkout code
-  #        uses: actions/checkout@v4
-  #
-  #      - name: Set up JDK 17
-  #        uses: actions/setup-java@v4
-  #        with:
-  #          java-version: '17'
-  #          distribution: 'temurin'
-  #
-  #      - name: Cache Gradle packages
-  #        uses: actions/cache@v3
-  #        with:
-  #          path: |
-  #            ~/.gradle/caches
-  #            ~/.gradle/wrapper
-  #          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-  #          restore-keys: |
-  #            ${{ runner.os }}-gradle-
-  #
-  #      - name: Create secrets.properties
-  #        run: |
-  #          cp secrets.properties.template secrets.properties
-  #          sed -i "s|dev.supabase.url=|dev.supabase.url=${SUPABASE_URL}|" secrets.properties
-  #          sed -i "s|dev.supabase.key=|dev.supabase.key=${SUPABASE_KEY}|" secrets.properties
-  #          sed -i 's|prod.supabase.url=|prod.supabase.url=https://placeholder.supabase.co|' secrets.properties
-  #          sed -i 's|prod.supabase.key=|prod.supabase.key=placeholder-key|' secrets.properties
-  #
-  #      - name: Make gradlew executable
-  #        run: chmod +x ./gradlew
-  #
-  #      - name: Build ${{ matrix.target }}
-  #        run: ./gradlew ${{ matrix.target }} --no-daemon
-
-  #  security:
-  #    name: Security Scan
-  #    runs-on: ubuntu-latest
-  #    permissions:
-  #      security-events: write
-  #      contents: read
-  #      actions: read
-  #
-  #    steps:
-  #      - name: Checkout code
-  #        uses: actions/checkout@v4
-  #
-  #      - name: Run Trivy vulnerability scanner
-  #        uses: aquasecurity/trivy-action@master
-  #        with:
-  #          scan-type: 'fs'
-  #          scan-ref: '.'
-  #          format: 'sarif'
-  #          output: 'trivy-results.sarif'
-  #
-  #      - name: Upload Trivy scan results to GitHub Security tab
-  #        uses: github/codeql-action/upload-sarif@v3  # Updated from v2 to v3
-  #        if: always()
-  #        with:
-  #          sarif_file: 'trivy-results.sarif'
-
-  deploy-wasm:
-    name: Deploy WasmJs to Netlify
+  build-web:
+    name: Build Web Distribution
     if: github.ref == 'refs/heads/dev'
     needs: [ test, code-quality ]
     runs-on: ubuntu-latest
@@ -195,12 +111,58 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for commit messages
+
+      - name: Generate version number
+        id: version
+        run: |
+          # Get the latest release tag
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          
+          if [ -z "$LATEST_TAG" ]; then
+            # If no previous tags, start with v0.0.1
+            NEW_VERSION="v0.0.1"
+            VERSION_CODE="1"
+          else
+            # Extract version numbers from latest tag (e.g., v0.0.1 -> 0.0.1)
+            if [[ $LATEST_TAG =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+              MAJOR=${BASH_REMATCH[1]}
+              MINOR=${BASH_REMATCH[2]}
+              PATCH=${BASH_REMATCH[3]}
+              # Increment patch version
+              NEW_PATCH=$((PATCH + 1))
+              NEW_VERSION="v${MAJOR}.${MINOR}.${NEW_PATCH}"
+              # Calculate version code (major*10000 + minor*100 + patch)
+              VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + NEW_PATCH))
+            else
+              # If tag doesn't match semantic versioning, start fresh
+              NEW_VERSION="v0.0.1"
+              VERSION_CODE="1"
+            fi
+          fi
+          
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+          echo "version_name=${NEW_VERSION#v}" >> $GITHUB_OUTPUT  # Remove 'v' prefix for version name
+          
+          echo "Generated version: $NEW_VERSION (code: $VERSION_CODE)"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
 
       - name: Create secrets.properties
         run: |
@@ -215,48 +177,67 @@ jobs:
 
       - name: Build WasmJs
         run: ./gradlew wasmJsBrowserDistribution
+        env:
+          VERSION_NAME: ${{ steps.version.outputs.version_name }}
+          VERSION_CODE: ${{ steps.version.outputs.version_code }}
 
-      - name: Create Archive
+      - name: Create Web Archive
         run: |
           cd composeApp/build/dist/wasmJs/productionExecutable
           zip -r ../../../../../Archive.zip .
 
-      - name: Generate Release Name
-        id: release-name
-        run: echo "::set-output name=name::aryamahasangh_web_$(date +'%Y%m%d_%H%M%S')"
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
+      - name: Upload Web Archive
+        uses: actions/upload-artifact@v4
         with:
-          files: Archive.zip
-          tag_name: ${{ steps.release-name.outputs.name }}
-          name: ${{ steps.release-name.outputs.name }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: web-archive
+          path: Archive.zip
+          retention-days: 7
 
-      - name: Deploy to Netlify
-        uses: nwtgck/actions-netlify@v2.0
-        with:
-          publish-dir: './composeApp/build/dist/wasmJs/productionExecutable'
-          production-branch: dev
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: 'Deploy from GitHub Actions'
-          enable-pull-request-comment: false
-          enable-commit-comment: false
-          enable-commit-status: false
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-
-  android-release:
-    name: Android Release Build
-    runs-on: ubuntu-latest
+  build-android:
+    name: Build Android APK
     if: github.ref == 'refs/heads/dev'
     needs: [ test, code-quality ]
+    runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for commit messages
+
+      - name: Generate version number
+        id: version
+        run: |
+          # Get the latest release tag
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          
+          if [ -z "$LATEST_TAG" ]; then
+            # If no previous tags, start with v0.0.1
+            NEW_VERSION="v0.0.1"
+            VERSION_CODE="1"
+          else
+            # Extract version numbers from latest tag (e.g., v0.0.1 -> 0.0.1)
+            if [[ $LATEST_TAG =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+              MAJOR=${BASH_REMATCH[1]}
+              MINOR=${BASH_REMATCH[2]}
+              PATCH=${BASH_REMATCH[3]}
+              # Increment patch version
+              NEW_PATCH=$((PATCH + 1))
+              NEW_VERSION="v${MAJOR}.${MINOR}.${NEW_PATCH}"
+              # Calculate version code (major*10000 + minor*100 + patch)
+              VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + NEW_PATCH))
+            else
+              # If tag doesn't match semantic versioning, start fresh
+              NEW_VERSION="v0.0.1"
+              VERSION_CODE="1"
+            fi
+          fi
+          
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+          echo "version_name=${NEW_VERSION#v}" >> $GITHUB_OUTPUT  # Remove 'v' prefix for version name
+          
+          echo "Generated version: $NEW_VERSION (code: $VERSION_CODE)"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -294,18 +275,175 @@ jobs:
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          VERSION_NAME: ${{ steps.version.outputs.version_name }}
+          VERSION_CODE: ${{ steps.version.outputs.version_code }}
 
-      - name: Generate release timestamp
-        id: timestamp
-        run: echo "timestamp=$(date +'%Y%m%d%H%M')" >> $GITHUB_OUTPUT
+      - name: Rename APK
+        run: |
+          mkdir -p release-artifacts
+          cp composeApp/build/outputs/apk/release/composeApp-release.apk release-artifacts/AryaMahasangh_${{ steps.version.outputs.version }}.apk
+
+      - name: Upload Android APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: release-artifacts/AryaMahasangh_${{ steps.version.outputs.version }}.apk
+          retention-days: 7
+
+  create-release:
+    name: Create Unified Release
+    if: github.ref == 'refs/heads/dev'
+    needs: [ build-web, build-android ]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for commit messages
+
+      - name: Download Web Archive
+        uses: actions/download-artifact@v4
+        with:
+          name: web-archive
+          path: ./artifacts
+
+      - name: Download Android APK
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apk
+          path: ./artifacts
+
+      - name: Generate release metadata
+        id: release-meta
+        run: |
+          # Get the latest release tag
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          
+          if [ -z "$LATEST_TAG" ]; then
+            # If no previous tags, start with v0.0.1
+            NEW_VERSION="v0.0.1"
+          else
+            # Extract version numbers from latest tag (e.g., v0.0.1 -> 0.0.1)
+            if [[ $LATEST_TAG =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+              MAJOR=${BASH_REMATCH[1]}
+              MINOR=${BASH_REMATCH[2]}
+              PATCH=${BASH_REMATCH[3]}
+              # Increment patch version
+              NEW_PATCH=$((PATCH + 1))
+              NEW_VERSION="v${MAJOR}.${MINOR}.${NEW_PATCH}"
+            else
+              # If tag doesn't match semantic versioning, start fresh
+              NEW_VERSION="v0.0.1"
+            fi
+          fi
+          
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "tag_name=$NEW_VERSION" >> $GITHUB_OUTPUT
+          
+          # Generate release name
+          RELEASE_NAME="AryaMahasangh $NEW_VERSION - $(date +'%Y-%m-%d')"
+          echo "release_name=$RELEASE_NAME" >> $GITHUB_OUTPUT
+          
+          echo "Generated version: $NEW_VERSION"
+
+      - name: Get commit messages since last release
+        id: changelog
+        run: |
+          # Get version from previous step
+          NEW_VERSION="${{ steps.release-meta.outputs.version }}"
+          
+          # Get the latest release tag
+          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          
+          if [ -z "$LATEST_TAG" ]; then
+            # If no previous tags, get all commits
+            COMMITS=$(git log --oneline --pretty=format:"- %s (%h)" HEAD~10..HEAD)
+            echo "## Changes in this release:" > changelog.md
+            echo "" >> changelog.md
+            echo "$COMMITS" >> changelog.md
+          else
+            # Get commits since last tag
+            COMMITS=$(git log --oneline --pretty=format:"- %s (%h)" ${LATEST_TAG}..HEAD)
+            echo "## Changes since ${LATEST_TAG}:" > changelog.md
+            echo "" >> changelog.md
+            if [ -z "$COMMITS" ]; then
+              echo "- No new commits since last release" >> changelog.md
+            else
+              echo "$COMMITS" >> changelog.md
+            fi
+          fi
+          
+          echo "" >> changelog.md
+          echo "## Release Contents:" >> changelog.md
+          echo "- 📱 **AryaMahasangh_$NEW_VERSION.apk** - Android application" >> changelog.md
+          echo "- 🌐 **Archive.zip** - Web application files" >> changelog.md
+          echo "" >> changelog.md
+          echo "### Installation Instructions:" >> changelog.md
+          echo "- **Android**: Download the APK file and install on your Android device" >> changelog.md
+          echo "- **Web**: Extract Archive.zip and serve the files using a web server" >> changelog.md
+          echo "" >> changelog.md
+          echo "### Version Information:" >> changelog.md
+          echo "- **Version**: $NEW_VERSION" >> changelog.md
+          echo "- **Build Date**: $(date +'%Y-%m-%d %H:%M:%S UTC')" >> changelog.md
+          echo "- **Commit**: $(git rev-parse HEAD)" >> changelog.md
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: composeApp/build/outputs/apk/release/composeApp-release.apk
-          tag_name: android_release_${{ steps.timestamp.outputs.timestamp }}
-          name: AryaMahasangh_${{ steps.timestamp.outputs.timestamp }}.apk
+          files: |
+            ./artifacts/Archive.zip
+            ./artifacts/AryaMahasangh_*.apk
+          tag_name: ${{ steps.release-meta.outputs.tag_name }}
+          name: ${{ steps.release-meta.outputs.release_name }}
+          body_path: changelog.md
           draft: false
           prerelease: false
+          generate_release_notes: false
+          make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy-web:
+    name: Deploy Web to Netlify
+    if: github.ref == 'refs/heads/dev'
+    needs: [ build-web ]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Create secrets.properties
+        run: |
+          cp secrets.properties.template secrets.properties
+          sed -i 's|dev.supabase.url=|dev.supabase.url=${{ secrets.SUPABASE_URL }}|' secrets.properties
+          sed -i 's|dev.supabase.key=|dev.supabase.key=${{ secrets.SUPABASE_KEY }}|' secrets.properties
+          sed -i 's|prod.supabase.url=|prod.supabase.url=${{ secrets.SUPABASE_URL }}|' secrets.properties
+          sed -i 's|prod.supabase.key=|prod.supabase.key=${{ secrets.SUPABASE_KEY }}|' secrets.properties
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Build WasmJs for Netlify
+        run: ./gradlew wasmJsBrowserDistribution
+
+      - name: Deploy to Netlify
+        uses: nwtgck/actions-netlify@v2.0
+        with:
+          publish-dir: './composeApp/build/dist/wasmJs/productionExecutable'
+          production-branch: dev
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: 'Deploy from GitHub Actions - ${{ github.sha }}'
+          enable-pull-request-comment: false
+          enable-commit-comment: false
+          enable-commit-status: false
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}

@@ -171,11 +171,27 @@ android {
     applicationId = "org.aryamahasangh"
     minSdk = libs.versions.android.minSdk.get().toInt()
     targetSdk = libs.versions.android.targetSdk.get().toInt()
-    versionCode = 1
-    versionName = "1.0"
+
+    // Use environment variables for version, fallback to defaults
+    // During CI builds, VERSION_NAME and VERSION_CODE are set by the workflow
+    // During local development, defaults are used (0.0.1 and 1)
+    versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 1
+    versionName = System.getenv("VERSION_NAME") ?: "0.0.1"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+    // Expose version information to the app via BuildConfig
+    buildConfigField("String", "VERSION_NAME", "\"${versionName}\"")
+    buildConfigField("int", "VERSION_CODE", "${versionCode}")
+
+    // Debug output for development
+    println("📱 Android version: ${versionName} (${versionCode})")
   }
+
+  buildFeatures {
+    buildConfig = true
+  }
+
   packaging {
     resources {
       excludes +=
