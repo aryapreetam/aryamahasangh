@@ -191,7 +191,7 @@ class OrganisationsViewModel(
               }
               _organisationLogoState.value = _organisationLogoState.value.copy(
                 isUpdating = false,
-                successMessage = "Logo updated successfully"
+                successMessage = "✅ Logo updated successfully"
               )
             } else {
               // If update failed but didn't throw an exception
