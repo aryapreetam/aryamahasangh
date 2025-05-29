@@ -19,53 +19,54 @@ env:
   SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://placeholder.supabase.co' }}
   SUPABASE_KEY: ${{ secrets.SUPABASE_KEY || 'placeholder-key' }}
 
+# disabling test tasks for now, will enable it when we'll have actual tests.
 jobs:
-  test:
-    name: Run Tests
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Cache Gradle packages
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Create secrets.properties
-        run: |
-          cp secrets.properties.template secrets.properties
-          sed -i 's|dev.supabase.url=|dev.supabase.url=https://placeholder.supabase.co|' secrets.properties
-          sed -i 's|dev.supabase.key=|dev.supabase.key=placeholder-key|' secrets.properties
-          sed -i 's|prod.supabase.url=|prod.supabase.url=https://placeholder.supabase.co|' secrets.properties
-          sed -i 's|prod.supabase.key=|prod.supabase.key=placeholder-key|' secrets.properties
-
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
-
-      - name: Run tests
-        run: ./gradlew test --no-daemon
-
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@v4  # Update to v4
-        with:
-          name: test-results
-          path: |
-            **/build/test-results/
-            **/build/reports/
+  #  test:
+  #    name: Run Tests
+  #    runs-on: ubuntu-latest
+  #
+  #    steps:
+  #      - name: Checkout code
+  #        uses: actions/checkout@v4
+  #
+  #      - name: Set up JDK 17
+  #        uses: actions/setup-java@v4
+  #        with:
+  #          java-version: '17'
+  #          distribution: 'temurin'
+  #
+  #      - name: Cache Gradle packages
+  #        uses: actions/cache@v3
+  #        with:
+  #          path: |
+  #            ~/.gradle/caches
+  #            ~/.gradle/wrapper
+  #          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+  #          restore-keys: |
+  #            ${{ runner.os }}-gradle-
+  #
+  #      - name: Create secrets.properties
+  #        run: |
+  #          cp secrets.properties.template secrets.properties
+  #          sed -i 's|dev.supabase.url=|dev.supabase.url=https://placeholder.supabase.co|' secrets.properties
+  #          sed -i 's|dev.supabase.key=|dev.supabase.key=placeholder-key|' secrets.properties
+  #          sed -i 's|prod.supabase.url=|prod.supabase.url=https://placeholder.supabase.co|' secrets.properties
+  #          sed -i 's|prod.supabase.key=|prod.supabase.key=placeholder-key|' secrets.properties
+  #
+  #      - name: Make gradlew executable
+  #        run: chmod +x ./gradlew
+  #
+  #      - name: Run tests
+  #        run: ./gradlew test --no-daemon
+  #
+  #      - name: Upload test results
+  #        if: always()
+  #        uses: actions/upload-artifact@v4  # Update to v4
+  #        with:
+  #          name: test-results
+  #          path: |
+  #            **/build/test-results/
+  #            **/build/reports/
 
   code-quality:
     name: Code Quality Checks
