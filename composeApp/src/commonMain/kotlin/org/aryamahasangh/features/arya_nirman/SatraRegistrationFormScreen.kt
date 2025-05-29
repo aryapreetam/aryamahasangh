@@ -138,14 +138,16 @@ fun SatraRegistrationFormScreen(
           friendNameFocusRequester.requestFocus()
         }
       }
+
       InspirationType.NEWSPAPER,
       InspirationType.NEWS_CHANNEL,
       InspirationType.SOCIAL_MEDIA
-      -> {
+        -> {
         if (otherSourceName.isBlank()) { // Only focus if empty, or always focus
           otherSourceFocusRequester.requestFocus()
         }
       }
+
       null -> {
         // Do nothing or clear focus from these fields if needed
       }
@@ -176,10 +178,12 @@ fun SatraRegistrationFormScreen(
         if (showError) phoneNumberError = "कृपया अपना दूरभाष नंबर दर्ज करें।"
         false
       }
+
       !phoneNumber.all { it.isDigit() } || phoneNumber.length != 10 -> {
         if (showError) phoneNumberError = "कृपया 10 अंकों का मान्य दूरभाष नंबर दर्ज करें।"
         false
       }
+
       else -> {
         phoneNumberError = null
         true
@@ -203,10 +207,12 @@ fun SatraRegistrationFormScreen(
         if (showError) aadharError = "कृपया अपना आधार कार्ड संख्या दर्ज करें।"
         false
       }
+
       !aadharNumber.all { it.isDigit() } || aadharNumber.length != 12 -> {
         if (showError) aadharError = "कृपया 12 अंकों की मान्य आधार कार्ड संख्या दर्ज करें।"
         false
       }
+
       else -> {
         aadharError = null
         true
@@ -252,6 +258,7 @@ fun SatraRegistrationFormScreen(
           friendRelativePhoneError = null
         }
       }
+
       InspirationType.NEWSPAPER, InspirationType.NEWS_CHANNEL, InspirationType.SOCIAL_MEDIA -> {
         if (otherSourceName.isBlank()) {
           if (showError) otherSourceNameError = "कृपया स्रोत का नाम दर्ज करें।"
@@ -260,7 +267,9 @@ fun SatraRegistrationFormScreen(
           otherSourceNameError = null
         }
       }
-      null -> { /* Should be caught by validateInspirationSourceSelection */ }
+
+      null -> { /* Should be caught by validateInspirationSourceSelection */
+      }
     }
     return isValid
   }
@@ -299,10 +308,14 @@ fun SatraRegistrationFormScreen(
       trainedAryaPhone.isBlank() -> {
         if (showError) trainedAryaPhoneError = "कृपया प्रशिक्षित आर्य का दूरभाष दर्ज करें."
         false
-      } !trainedAryaPhone.all { it.isDigit() } || trainedAryaPhone.length != 10 -> {
+      }
+
+      !trainedAryaPhone.all { it.isDigit() } || trainedAryaPhone.length != 10 -> {
         if (showError) trainedAryaPhoneError = "कृपया 10 अंकों का मान्य दूरभाष नंबर दर्ज करें."
         false
-      } else -> {
+      }
+
+      else -> {
         trainedAryaPhoneError = null
         true
       }
@@ -347,7 +360,8 @@ fun SatraRegistrationFormScreen(
         validateAadharNumber() && validateEducation() && validateFullAddress() &&
         validateInspirationSourceSelection() &&
         (if (selectedInspirationSource != null) validateInspirationSourceDetails() else true)
-    val vTrainedArya = if (hasTrainedAryaInFamily) validateTrainedAryaName() && validateTrainedAryaPhone() else true // NEW
+    val vTrainedArya =
+      if (hasTrainedAryaInFamily) validateTrainedAryaName() && validateTrainedAryaPhone() else true // NEW
     return vBase && vTrainedArya
   }
 
@@ -641,6 +655,7 @@ fun SatraRegistrationFormScreen(
             supportingText = { friendRelativePhoneError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
           )
         }
+
         InspirationType.NEWSPAPER, InspirationType.NEWS_CHANNEL, InspirationType.SOCIAL_MEDIA -> {
           OutlinedTextField(
             value = otherSourceName,
@@ -657,7 +672,9 @@ fun SatraRegistrationFormScreen(
             supportingText = { otherSourceNameError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
           )
         }
-        null -> { /* No fields to show, or placeholder if needed */ }
+
+        null -> { /* No fields to show, or placeholder if needed */
+        }
       }
       if (selectedInspirationSource != null) Spacer(modifier = Modifier.height(8.dp))
 
@@ -727,8 +744,7 @@ fun SatraRegistrationFormScreen(
               value = trainedAryaPhone,
               onValueChange = {
                 if (it.length <= 10 &&
-                  it.all {
-                      c ->
+                  it.all { c ->
                     c.isDigit()
                   }
                 ) {
@@ -836,33 +852,57 @@ fun SatraRegistrationFormScreen(
       Button(
         onClick = { handleSubmit() },
         modifier = Modifier.height(52.dp),
-        enabled = isFormCompletelyValid || !uiState.isLoading
+        enabled = isFormCompletelyValid && !uiState.isLoading
       ) {
-        Text(
-          "पंजीकृत करें",
-          fontSize = 18.sp,
-          fontWeight = FontWeight.SemiBold,
-          modifier = Modifier.padding(horizontal = 24.dp)
-        ) // Register
+        if (uiState.isLoading) {
+          CircularProgressIndicator(
+            modifier = Modifier.size(24.dp),
+            strokeWidth = 2.dp,
+            color = MaterialTheme.colorScheme.onPrimary
+          )
+          Spacer(Modifier.width(8.dp))
+          Text("पंजीकृत किया जा रहा है...")
+        } else {
+          Text(
+            "पंजीकृत करें",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(horizontal = 24.dp)
+          )
+        }
       }
 
-      if (uiState.data == true) {
-        coroutineScope.launch {
-          snackbarHostState.showSnackbar(
-            message = "आपने सफलतापूर्वक पंजीकरण करा लिया है!",
-            duration = SnackbarDuration.Long
-          )
+      // Effect to react to registration result
+      LaunchedEffect(uiState.registrationResult) {
+        when (uiState.registrationResult) {
+          true -> { // Success
+            coroutineScope.launch {
+              snackbarHostState.showSnackbar(
+                message = "आपने सफलतापूर्वक पंजीकरण करा लिया है!",
+                duration = SnackbarDuration.Long
+              )
+            }
+            resetForm()
+            onRegistrationSuccess()
+            viewModel.registrationEventHandled() // Consume the event
+          }
+
+          false -> { // Failure (if error is not null, it's a failure)
+            if (uiState.error != null) {
+              coroutineScope.launch {
+                snackbarHostState.showSnackbar(
+                  message = "पंजीकरण विफल: ${uiState.error}",
+                  duration = SnackbarDuration.Long
+                )
+              }
+            }
+            viewModel.registrationEventHandled() // Consume the event
+          }
+
+          null -> {
+            // Event has been consumed or is in initial state, do nothing
+          }
         }
-        resetForm()
-        onRegistrationSuccess()
-      } else if (uiState.error != null) {
-        coroutineScope.launch {
-          snackbarHostState.showSnackbar(
-            message = "Registration failed: ${uiState.error}",
-            duration = SnackbarDuration.Long
-          )
-        }
-        onRegistrationFailed()
       }
 
       Spacer(modifier = Modifier.height(24.dp)) // Space at the bottom

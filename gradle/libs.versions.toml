@@ -40,7 +40,6 @@ core = "1.5.0"
 
 apollo = "4.1.1"
 apolloAdapters = "0.0.6"
-composeWebviewMultiplatform = "1.9.40"
 androidYoutubePlayerCore = "12.1.1"
 androidx-activityCompose = "1.10.1"
 
@@ -91,7 +90,6 @@ androidx-ui-tooling-preview-android = { group = "androidx.compose.ui", name = "u
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 androidx-runner = { group = "androidx.test", name = "runner", version.ref = "runner" }
 androidx-core = { group = "androidx.test", name = "core", version.ref = "core" }
-compose-webview-multiplatform-desktop = { module = "io.github.kevinnzou:compose-webview-multiplatform-desktop", version.ref = "composeWebviewMultiplatform" }
 android-youtubeplayer-core = { module = "com.pierfrancescosoffritti.androidyoutubeplayer:core", version.ref = "androidYoutubePlayerCore" }
 material-adaptive = { module = "org.jetbrains.compose.material3.adaptive:adaptive", version.ref = "adaptive" }
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
