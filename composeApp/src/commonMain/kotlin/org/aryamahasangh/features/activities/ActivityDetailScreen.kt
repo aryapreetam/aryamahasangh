@@ -9,9 +9,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Call
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,15 +18,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.BrushPainter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.error_profile_image
 import coil3.compose.AsyncImage
+import dev.burnoo.compose.remembersetting.rememberBooleanSetting
 import kotlinx.coroutines.launch
 import org.aryamahasangh.LocalSnackbarHostState
+import org.aryamahasangh.SettingKeys
 import org.aryamahasangh.components.activityTypeData
 import org.aryamahasangh.isWeb
 import org.aryamahasangh.utils.format
@@ -44,14 +46,20 @@ fun ActivityDetailScreen(
 ) {
   val snackbarHostState = LocalSnackbarHostState.current
 
+  var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
+
   // Load activity details
-  LaunchedEffect(id) {
+  LaunchedEffect(id, isLoggedIn) {
     println("Loading activity details for ID: $id")
     viewModel.loadActivityDetail(id)
+    if(isLoggedIn){
+      viewModel.loadRegisteredUsers(id)
+    }
   }
 
   // Collect UI state from ViewModel
   val uiState by viewModel.activityDetailUiState.collectAsState()
+  val registeredUsers by viewModel.registeredUsers.collectAsState()
 
   // Handle loading state
   if (uiState.isLoading) {
@@ -101,7 +109,7 @@ fun ActivityDetailScreen(
     return
   }
 
-  ActivityDisplay(uiState.activity!!)
+  ActivityDisplay(uiState.activity!!, registeredUsers, isLoggedIn)
 }
 
 // @Preview
@@ -144,8 +152,13 @@ fun ActivityDetailScreen(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ActivityDisplay(activity: OrganisationalActivity) {
+fun ActivityDisplay(
+  activity: OrganisationalActivity,
+  registeredUsers: List<UserProfile> = emptyList(),
+  isLoggedIn: Boolean
+) {
   println(activity)
+
   // Profile Image URLS
   Column(
     modifier =
@@ -293,6 +306,10 @@ fun ActivityDisplay(activity: OrganisationalActivity) {
         }
       }
     }
+    if(isLoggedIn) {
+      HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+      RegisteredUsers(registeredUsers)
+    }
   }
 }
 
@@ -393,10 +410,133 @@ fun formatDateTime(dateTimeString: Any): String {
   return format(dateTimeString)
 }
 
-// @Preview
-// @Composable
-// fun PreviewLeadershipWorkshopScreen() {
-//  MaterialTheme { // Ensure MaterialTheme is provided in preview
-//    LeadershipWorkshopScreen(data)
-//  }
-// }
+
+@OptIn(ExperimentalMaterial3Api::class) // For ListItem
+@Composable
+fun UserProfileListItem(user: UserProfile, modifier: Modifier = Modifier) {
+
+  // Using Material 3 ListItem for standard list item appearance and structure
+  ListItem(
+    modifier = modifier.widthIn(max = 500.dp),
+    headlineContent = {
+      Text(
+        text = user.fullname,
+        style = MaterialTheme.typography.titleMedium,
+        maxLines = 1, // Ensure full name doesn't wrap excessively if very long
+        overflow = TextOverflow.Ellipsis
+      )
+    },
+    supportingContent = {
+      Text(
+        text = user.address,
+        style = MaterialTheme.typography.bodySmall,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
+      )
+    },
+    leadingContent = {
+      val genderIcon: ImageVector = if (user.gender.equals("female", ignoreCase = true)) {
+        Icons.Filled.Woman
+      } else {
+        Icons.Filled.Man
+      }
+      // Circular background for the icon
+      Box(
+        modifier = Modifier
+          .size(48.dp) // Standard M3 size for leading icon container
+          .clip(CircleShape) // Apply circular clipping
+          .background(MaterialTheme.colorScheme.primaryContainer), // Background color for the circle
+        contentAlignment = Alignment.Center // Center the icon within the Box
+      ) {
+        Icon(
+          imageVector = genderIcon,
+          contentDescription = user.gender,
+          tint = MaterialTheme.colorScheme.onPrimaryContainer, // Icon color on top of primaryContainer
+          modifier = Modifier.size(36.dp) // Standard M3 icon size
+        )
+      }
+    },
+    trailingContent = {
+      IconButton(
+        onClick = {
+          // phoneDialer.dial(user.mobile)
+        },
+        // Modifier.align(Alignment.CenterVertically) is handled by ListItem for trailingContent
+      ) {
+        Icon(
+          imageVector = Icons.Filled.Call,
+          contentDescription = "Call ${user.fullname}",
+          tint = MaterialTheme.colorScheme.primary
+        )
+      }
+    },
+    colors = ListItemDefaults.colors(
+      containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f) // Optional: slight background
+    ),
+    tonalElevation = 1.dp // Optional: adds a slight shadow
+  )
+}
+
+// Sample data
+val sampleUser = UserProfile(
+  id = "03a708a4-44d6-405e-88c1-ab5e7b097c85",
+  gender = "male",
+  mobile = "9889898989",
+  address = "A very long address that should definitely be ellipsized at the end to fit nicely.",
+  fullname = "Skdnfskjdfn Longname"
+)
+
+val sampleUserFemale = UserProfile(
+  id = "12345-female",
+  gender = "female",
+  mobile = "1231231234",
+  address = "Another interesting place in the world",
+  fullname = "Jane Doe"
+)
+
+val sampleUserShortAddress = UserProfile(
+  id = "67890-short",
+  gender = "male",
+  mobile = "5555555555",
+  address = "Short St.",
+  fullname = "John Smith"
+)
+
+val users = listOf(
+  sampleUser,
+  sampleUserFemale,
+  sampleUserShortAddress,
+  sampleUser.copy(id = "newId1", fullname = "Another Male User"),
+  sampleUserFemale.copy(id = "newId2", address = "Yet another street somewhere in this big city")
+)
+
+@Preview
+@Composable
+fun RegisteredUsersPreview() {
+  RegisteredUsers(users = users)
+}
+
+@Composable
+fun RegisteredUsers(users: List<UserProfile>) {
+  Column(
+    verticalArrangement = Arrangement.spacedBy(8.dp) // Space between items
+  ) {
+    Column {
+      val count = "${users.size}"
+      Text(
+        "कुल पंजीकरण (${count.toDevanagariNumerals()}):",
+        style = MaterialTheme.typography.labelLarge,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(vertical = 16.dp)
+      )
+    }
+    FlowRow(
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
+      verticalArrangement = Arrangement.spacedBy(8.dp)
+    ){
+      users.forEach { user ->
+        UserProfileListItem(user = user)
+      }
+    }
+  }
+}

@@ -319,3 +319,17 @@ query UpcomingSatrActivities($currentDateTime: Datetime!){
     }
   }
 }
+
+query registrationsForActivity($activityId: String!){
+  satr_registrationCollection(filter: { activity_id: { eq: $activityId } }){
+    edges{
+      node{
+        id
+        fullname
+        gender
+        address
+        mobile
+      }
+    }
+  }
+}

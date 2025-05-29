@@ -87,7 +87,7 @@ fun AryaNirmanHomeScreen(
           uiState.data.forEach { activity ->
             val updatedActivity =
               activity.copy(
-                isFull = registrationCounts[activity.id] == activity.capacity
+                isFull = (registrationCounts[activity.id] ?: 0) >= activity.capacity
               )
             EventListItem(
               event = updatedActivity,
