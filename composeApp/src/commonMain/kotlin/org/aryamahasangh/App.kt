@@ -110,79 +110,99 @@ fun DrawerContent(
     derivedStateOf { backStackEntry?.destination?.route }
   }
 
-  Column(modifier = Modifier.width(250.dp).padding(8.dp).verticalScroll(rememberScrollState())) {
-    Row(
-      modifier = Modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.spacedBy(8.dp)
+  Column(
+    modifier = Modifier.width(250.dp).padding(8.dp).fillMaxHeight()
+  ) {
+    // Main content in scrollable column
+    Column(
+      modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())
     ) {
-      Image(
-        painter = painterResource(Res.drawable.mahasangh_logo_without_background),
-        contentDescription = "arya mahasangh",
-        modifier = Modifier.width(64.dp)
-      )
-      Column(
-        modifier = Modifier.padding(top = 8.dp)
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
       ) {
-        Text(
-          "आर्य महासंघ",
-          style = MaterialTheme.typography.titleLarge,
-          fontWeight = FontWeight.Bold
+        Image(
+          painter = painterResource(Res.drawable.mahasangh_logo_without_background),
+          contentDescription = "arya mahasangh",
+          modifier = Modifier.width(64.dp)
         )
-        Text("कृण्वन्तो विश्वमार्यम", style = MaterialTheme.typography.bodyMedium)
+        Column(
+          modifier = Modifier.padding(top = 8.dp)
+        ) {
+          Text(
+            "आर्य महासंघ",
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold
+          )
+          Text("कृण्वन्तो विश्वमार्यम", style = MaterialTheme.typography.bodyMedium)
+        }
+      }
+      Spacer(modifier = Modifier.height(16.dp))
+      drawerOptions.forEach { option ->
+        NavigationDrawerItem(
+          label = {
+            Text(option.title, style = MaterialTheme.typography.bodyLarge)
+          },
+          selected =
+            checkIfSelected(
+              currentDestination,
+              option.route.toString()
+            ),
+          onClick = {
+            navController.navigate(option.route) {
+              popUpTo(navController.graph.startDestDisplayName) {
+                saveState = true
+              }
+              launchSingleTop = true
+              restoreState = true
+              scope.launch {
+                drawerState.close()
+              }
+            }
+          },
+          icon = {
+            Icon(
+              painter = painterResource(option.icon),
+              contentDescription = option.title,
+            )
+          },
+        )
+        if (option.title == "हमसें जुडें") {
+          HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+          Text(
+            "आर्ष विद्या",
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
+            style = MaterialTheme.typography.titleMedium
+          )
+        } else if (option.title == "आर्या गुरुकुल") {
+          HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+          Text(
+            "संगठन कार्य ",
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
+            style = MaterialTheme.typography.titleMedium
+          )
+        } else if (option.title == "आर्य समाज संगठन") {
+          HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+          Text(
+            "स्वाध्याय ",
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
+            style = MaterialTheme.typography.titleMedium
+          )
+        }
       }
     }
-    Spacer(modifier = Modifier.height(16.dp))
-    drawerOptions.forEach { option ->
-      NavigationDrawerItem(
-        label = {
-          Text(option.title, style = MaterialTheme.typography.bodyLarge)
-        },
-        selected =
-          checkIfSelected(
-            currentDestination,
-            option.route.toString()
-          ),
-        onClick = {
-          navController.navigate(option.route) {
-            popUpTo(navController.graph.startDestDisplayName) {
-              saveState = true
-            }
-            launchSingleTop = true
-            restoreState = true
-            scope.launch {
-              drawerState.close()
-            }
-          }
-        },
-        icon = {
-          Icon(
-            painter = painterResource(option.icon),
-            contentDescription = option.title,
-          )
-        },
+
+    // Version information at the bottom
+    Column(
+      modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+      horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+      HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+      Text(
+        text = org.aryamahasangh.util.VersionInfo.getFormattedVersion(),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.secondary
       )
-      if (option.title == "हमसें जुडें") {
-        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-        Text(
-          "आर्ष विद्या",
-          modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
-          style = MaterialTheme.typography.titleMedium
-        )
-      } else if (option.title == "आर्या गुरुकुल") {
-        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-        Text(
-          "संगठन कार्य ",
-          modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
-          style = MaterialTheme.typography.titleMedium
-        )
-      } else if (option.title == "आर्य समाज संगठन") {
-        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-        Text(
-          "स्वाध्याय ",
-          modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
-          style = MaterialTheme.typography.titleMedium
-        )
-      }
     }
   }
 }
