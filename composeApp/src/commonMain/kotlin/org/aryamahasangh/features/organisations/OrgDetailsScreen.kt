@@ -29,6 +29,8 @@ fun OrgDetailScreen(
 
   // Collect UI state from ViewModel
   val uiState by viewModel.organisationDetailUiState.collectAsState()
+  val descriptionState by viewModel.organisationDescriptionState.collectAsState()
+  val logoState by viewModel.organisationLogoState.collectAsState()
 
   // Handle loading state
   if (uiState.isLoading) {
@@ -78,9 +80,43 @@ fun OrgDetailScreen(
     return
   }
 
+  // Handle description update error
+  descriptionState.error?.let { error ->
+    LaunchedEffect(error) {
+      snackbarHostState.showSnackbar(
+        message = error,
+        actionLabel = "Close"
+      )
+    }
+  }
+
+  // Handle logo update error
+  logoState.error?.let { error ->
+    LaunchedEffect(error) {
+      snackbarHostState.showSnackbar(
+        message = error,
+        actionLabel = "Close"
+      )
+    }
+  }
+
+  // Handle logo update success
+  logoState.successMessage?.let { message ->
+    LaunchedEffect(message) {
+      snackbarHostState.showSnackbar(
+        message = message,
+        actionLabel = "Close"
+      )
+      viewModel.clearLogoSuccessMessage()
+    }
+  }
+
   OrganisationDetail(
     organisation = uiState.organisation!!,
-    viewModel::updateOrganisationLogo,
-    updateOrganisationDescription = viewModel::updateOrganisationDescription
+    updateOrganisationLogo = viewModel::updateOrganisationLogo,
+    updateOrganisationDescription = viewModel::updateOrganisationDescription,
+    organisationDescriptionState = descriptionState,
+    onDescriptionEditModeChange = viewModel::setDescriptionEditMode,
+    organisationLogoState = logoState
   )
 }
