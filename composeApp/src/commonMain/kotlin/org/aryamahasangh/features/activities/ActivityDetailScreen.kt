@@ -414,6 +414,9 @@ fun formatDateTime(dateTimeString: Any): String {
 @Composable
 fun UserProfileListItem(user: UserProfile, modifier: Modifier = Modifier) {
   // Using Material 3 ListItem for standard list item appearance and structure
+  val uriHandler = LocalUriHandler.current
+  val snackbarHostState = LocalSnackbarHostState.current
+  val scope = rememberCoroutineScope()
   ListItem(
     modifier = modifier.widthIn(max = 500.dp),
     headlineContent = {
@@ -460,7 +463,15 @@ fun UserProfileListItem(user: UserProfile, modifier: Modifier = Modifier) {
     trailingContent = {
       IconButton(
         onClick = {
-          // phoneDialer.dial(user.mobile)
+          uriHandler.openUri("tel:${user.mobile}")
+          if (isWeb()) {
+            scope.launch {
+              snackbarHostState.showSnackbar(
+                message = "If you do not have calling apps installed, you can manually call to ${user.mobile}",
+                actionLabel = "Close"
+              )
+            }
+          }
         }
         // Modifier.align(Alignment.CenterVertically) is handled by ListItem for trailingContent
       ) {
