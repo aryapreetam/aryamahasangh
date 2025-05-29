@@ -256,17 +256,10 @@ tasks.register<ComposeHotRun>("runHot") {
 apollo {
   service("service") {
     packageName.set("org.aryamahasangh")
-    mapScalar("Datetime", "kotlinx.datetime.Instant")
+    mapScalar("Datetime", "kotlinx.datetime.Instant") // Keep this for Datetime
 
-    // If you're using adapters, you can also set this
     generateKotlinModels.set(true)
-
-    introspection {
-      endpointUrl.set("$supabaseUrl/graphql/v1")
-      schemaFile.set(file("src/commonMain/graphql/schema.graphqls"))
-      headers.put("Authorization", "Bearer $supabaseKey")
-      headers.put("apikey", supabaseKey)
-    }
+    // ...
   }
 }
 

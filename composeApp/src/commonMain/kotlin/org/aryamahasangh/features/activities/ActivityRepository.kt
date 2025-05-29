@@ -167,7 +167,7 @@ class ActivityRepositoryImpl(private val apolloClient: ApolloClient) : ActivityR
           id = it.node.id as String,
           fullname = it.node.fullname!!,
           mobile = it.node.mobile ?: "",
-          gender = (it.node.gender ?: Gender_filter.any) as String,
+          gender = (it.node.gender ?: Gender_filter.ANY) as String,
           address = it.node.address ?: ""
         )
       }!!

@@ -13,7 +13,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.aryamahasangh.RegisterForSatrMutation
 import org.aryamahasangh.UpcomingSatrActivitiesQuery
-import org.aryamahasangh.features.activities.GenderAllowed
+import org.aryamahasangh.features.activities.toDomain
 import org.aryamahasangh.network.supabaseClient
 import org.aryamahasangh.util.Result
 import org.aryamahasangh.util.safeCall
@@ -44,8 +44,8 @@ class AryaNirmanRepositoryImpl(private val apolloClient: ApolloClient) : AryaNir
               UpcomingActivity(
                 id = it.id,
                 name = it.name!!,
-                genderAllowed = GenderAllowed.valueOf(it.allowed_gender!!.rawValue.uppercase()),
-                isFull = it.satr_registrationCollection?.edges?.size == it.capacity!!,
+                genderAllowed = it.allowed_gender.toDomain(),
+                isFull = (it.satr_registrationCollection?.edges?.size ?: 0) >= it.capacity!!,
                 startDateTime = it.start_datetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
                 endDateTime = it.end_datetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
                 district = it.district!!,
@@ -72,7 +72,7 @@ class AryaNirmanRepositoryImpl(private val apolloClient: ApolloClient) : AryaNir
             apolloClient.mutation(
               RegisterForSatrMutation(
                 fullName = data.fullName,
-                gender = data.gender,
+                gender = data.gender.name,
                 mobile = data.phoneNumber,
                 aadharNo = data.aadharNumber,
                 educationalQualification = data.education,

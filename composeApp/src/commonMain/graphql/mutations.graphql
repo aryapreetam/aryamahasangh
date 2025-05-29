@@ -126,7 +126,6 @@ mutation registerForSatr(
     objects: [
       {
         fullname: $fullName,
-        gender: $gender,
         mobile: $mobile,
         aadhar_no: $aadharNo,
         educational_qualification: $educationalQualification,
@@ -138,6 +137,7 @@ mutation registerForSatr(
         trained_arya_name: $trainedAryaName,
         trained_arya_no: $trainedAryaNo,
         activity_id: $activityId,
+        gender: $gender
       }
     ]
   ){

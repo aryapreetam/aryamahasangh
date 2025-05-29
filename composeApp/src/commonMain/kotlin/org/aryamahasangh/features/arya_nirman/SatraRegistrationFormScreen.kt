@@ -22,12 +22,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
+import org.aryamahasangh.features.activities.GenderAllowed
 
 // --- Data Model for Form Submission ---
 data class RegistrationData(
   val fullName: String,
   val phoneNumber: String,
-  val gender: String,
+  val gender: GenderAllowed,
   val aadharNumber: String,
   val education: String,
   val fullAddress: String,
@@ -79,10 +80,9 @@ fun SatraRegistrationFormScreen(
   var phoneNumberError by remember { mutableStateOf<String?>(null) }
   val phoneFocusRequester = remember { FocusRequester() }
 
-  var selectedGender by remember { mutableStateOf<String?>(null) }
+  var selectedGender by remember { mutableStateOf<GenderAllowed>(GenderAllowed.MALE) }
   var genderError by remember { mutableStateOf<String?>(null) }
   var genderExpanded by remember { mutableStateOf(false) }
-  val genderOptions = listOf("पुरुष", "महिला", "अन्य")
 
   var aadharNumber by remember { mutableStateOf("") }
   var aadharError by remember { mutableStateOf<String?>(null) }
@@ -192,10 +192,7 @@ fun SatraRegistrationFormScreen(
   }
 
   fun validateGender(showError: Boolean = true): Boolean {
-    return if (selectedGender == null) {
-      if (showError) genderError = "कृपया अपना लिंग चुनें।"
-      false
-    } else {
+    return run {
       genderError = null
       true
     }
@@ -370,7 +367,7 @@ fun SatraRegistrationFormScreen(
     fullNameError = null
     phoneNumber = ""
     phoneNumberError = null
-    selectedGender = null
+    selectedGender = GenderAllowed.ANY
     genderError = null
     aadharNumber = ""
     aadharError = null
@@ -402,7 +399,7 @@ fun SatraRegistrationFormScreen(
         RegistrationData(
           fullName = fullName.trim(),
           phoneNumber = phoneNumber,
-          gender = selectedGender!!,
+          gender = selectedGender,
           aadharNumber = aadharNumber,
           education = education.trim(),
           fullAddress = fullAddress.trim(),
@@ -473,7 +470,7 @@ fun SatraRegistrationFormScreen(
           modifier = Modifier.width(130.dp)
         ) {
           OutlinedTextField(
-            value = selectedGender ?: "",
+            value = selectedGender.toDisplayNameShort(),
             onValueChange = {}, readOnly = true,
             label = { Text("लिंग") },
             placeholder = { Text("लिंग चुनें") },
@@ -483,9 +480,9 @@ fun SatraRegistrationFormScreen(
             supportingText = { genderError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
           )
           ExposedDropdownMenu(expanded = genderExpanded, onDismissRequest = { genderExpanded = false }) {
-            genderOptions.forEach { option ->
+            GenderAllowed.entries.forEach { option ->
               DropdownMenuItem(
-                text = { Text(option) },
+                text = { Text(option.toDisplayNameShort()) },
                 onClick = {
                   selectedGender = option
                   genderExpanded = false

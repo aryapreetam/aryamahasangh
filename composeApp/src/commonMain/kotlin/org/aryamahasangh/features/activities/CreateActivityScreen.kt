@@ -25,9 +25,7 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.intl.Locale
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import coil3.compose.AsyncImage
@@ -201,7 +199,7 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
       if (!(
           startDateTime < endDateTime &&
             startDateTime > currentDateTime && endDateTime > currentDateTime
-        )
+          )
       ) {
         if (startDateTime >= endDateTime) {
           startDateError = true
@@ -240,7 +238,7 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
       nameError || typesError || shortDescriptionError || descriptionError || associatedOrganisationsError ||
         addressError || stateError || districtError || startDateError || startTimeError ||
         endDateError || endTimeError || contactPeopleError
-    )
+      )
   }
 
   fun submitForm() {
@@ -284,7 +282,7 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
               },
             additionalInstructions = additionalInstructions,
             capacity = eventCapacity.toIntOrNull() ?: 0,
-            allowedGender = eventGenderAllowed.name.toLowerCase(Locale.current),
+            allowedGender = eventGenderAllowed,
             latitude = eventLatitude.toDoubleOrNull() ?: 0.0,
             longitude = eventLongitude.toDoubleOrNull() ?: 0.0
           )
@@ -745,28 +743,7 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
   }
 }
 
-enum class GenderAllowed {
-  ANY,
-  MALE,
-  FEMALE
-  ;
-
-  fun toDisplayName(): String {
-    return when (this) {
-      ANY -> "सभी के लिए"
-      MALE -> "केवल पुरुष"
-      FEMALE -> "केवल महिला"
-    }
-  }
-
-  companion object {
-    fun fromDisplayName(displayName: String): GenderAllowed? {
-      return entries.find { it.toDisplayName() == displayName }
-    }
-  }
-}
-
-val genderAllowedDisplayOptions = GenderAllowed.values().map { it.toDisplayName() } // List of display names
+val genderAllowedDisplayOptions = GenderAllowed.entries.map { it.toDisplayName() } // List of display names
 
 // --- Data class for these specific fields (can be part of a larger form data class) ---
 data class EventDetailsFormData(
@@ -812,14 +789,17 @@ fun EventDetailsFields(
         if (showError) capacityError = "क्षमता आवश्यक है."
         false
       }
+
       capInt == null -> {
         if (showError) capacityError = "कृपया मान्य संख्या दर्ज करें."
         false
       }
+
       capInt <= 0 -> {
         if (showError) capacityError = "क्षमता 0 से अधिक होनी चाहिए."
         false
       }
+
       else -> {
         capacityError = null
         true
@@ -839,14 +819,17 @@ fun EventDetailsFields(
         if (showError) latitudeError = "अक्षांश आवश्यक है."
         false
       }
+
       latDouble == null -> {
         if (showError) latitudeError = "कृपया मान्य अक्षांश दर्ज करें (उदा. 28.6139)."
         false
       }
+
       latDouble < -90.0 || latDouble > 90.0 -> {
         if (showError) latitudeError = "अक्षांश -90 और 90 के बीच होना चाहिए."
         false
       }
+
       else -> {
         latitudeError = null
         true
@@ -861,14 +844,17 @@ fun EventDetailsFields(
         if (showError) longitudeError = "देशांतर आवश्यक है."
         false
       }
+
       lonDouble == null -> {
         if (showError) longitudeError = "कृपया मान्य देशांतर दर्ज करें (उदा. 77.2090)."
         false
       }
+
       lonDouble < -180.0 || lonDouble > 180.0 -> {
         if (showError) longitudeError = "देशांतर -180 और 180 के बीच होना चाहिए."
         false
       }
+
       else -> {
         longitudeError = null
         true

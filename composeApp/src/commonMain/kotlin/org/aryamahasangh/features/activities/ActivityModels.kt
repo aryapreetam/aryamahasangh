@@ -212,7 +212,7 @@ data class ActivityInputData(
   val district: String,
   val latitude: Double?,
   val longitude: Double?,
-  val allowedGender: String = "any",
+  val allowedGender: GenderAllowed = GenderAllowed.ANY,
   val mediaFiles: List<String>,
   val shortDescription: String,
   val longDescription: String,
