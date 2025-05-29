@@ -202,6 +202,17 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Create secrets.properties
+        run: |
+          cp secrets.properties.template secrets.properties
+          sed -i 's|dev.supabase.url=|dev.supabase.url=${{ secrets.SUPABASE_URL }}|' secrets.properties
+          sed -i 's|dev.supabase.key=|dev.supabase.key=${{ secrets.SUPABASE_KEY }}|' secrets.properties
+          sed -i 's|prod.supabase.url=|prod.supabase.url=${{ secrets.SUPABASE_URL }}|' secrets.properties
+          sed -i 's|prod.supabase.key=|prod.supabase.key=${{ secrets.SUPABASE_KEY }}|' secrets.properties
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
       - name: Build WasmJs
         run: ./gradlew wasmJsBrowserDistribution
 

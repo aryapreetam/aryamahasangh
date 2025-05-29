@@ -58,6 +58,9 @@ data class OrganisationsAndMembersUiState(
 class ActivitiesViewModel(
   private val activityRepository: ActivityRepository
 ) : BaseViewModel<ActivitiesUiState>(ActivitiesUiState()) {
+  private val _registeredUsers = MutableStateFlow(emptyList<UserProfile>())
+  val registeredUsers: StateFlow<List<UserProfile>> = _registeredUsers.asStateFlow()
+
   // Separate state for activity details
   private val _activityDetailUiState = MutableStateFlow(ActivityDetailUiState())
   val activityDetailUiState: StateFlow<ActivityDetailUiState> = _activityDetailUiState.asStateFlow()
@@ -68,7 +71,8 @@ class ActivitiesViewModel(
 
   // Separate state for organizations and members
   private val _organisationsAndMembersState = MutableStateFlow(OrganisationsAndMembersUiState())
-  val organisationsAndMembersState: StateFlow<OrganisationsAndMembersUiState> = _organisationsAndMembersState.asStateFlow()
+  val organisationsAndMembersState: StateFlow<OrganisationsAndMembersUiState> =
+    _organisationsAndMembersState.asStateFlow()
 
   init {
     loadActivities()
@@ -84,6 +88,7 @@ class ActivitiesViewModel(
           is Result.Loading -> {
             updateState { it.copy(isLoading = true, error = null) }
           }
+
           is Result.Success -> {
             updateState {
               it.copy(
@@ -93,6 +98,7 @@ class ActivitiesViewModel(
               )
             }
           }
+
           is Result.Error -> {
             updateState {
               it.copy(
@@ -122,9 +128,11 @@ class ActivitiesViewModel(
             )
           }
         }
+
         is Result.Error -> {
           updateState { it.copy(error = result.message) }
         }
+
         is Result.Loading -> {
           // This shouldn't happen with the current implementation
         }
@@ -149,6 +157,7 @@ class ActivitiesViewModel(
             )
           }
         }
+
         is Result.Error -> {
           _activityDetailUiState.value =
             ActivityDetailUiState(
@@ -156,6 +165,7 @@ class ActivitiesViewModel(
               error = result.message
             )
         }
+
         is Result.Loading -> {
           // This shouldn't happen with the current implementation
         }
@@ -206,6 +216,7 @@ class ActivitiesViewModel(
           // Reload activities to include the new one
           loadActivities()
         }
+
         is Result.Error -> {
           _formSubmissionState.value =
             AdmissionFormSubmissionState(
@@ -214,6 +225,7 @@ class ActivitiesViewModel(
               error = result.message
             )
         }
+
         is Result.Loading -> {
           // This shouldn't happen with the current implementation
         }
@@ -226,6 +238,24 @@ class ActivitiesViewModel(
    */
   fun resetFormSubmissionState() {
     _formSubmissionState.value = AdmissionFormSubmissionState()
+  }
+
+  fun loadRegisteredUsers(id: String) {
+    launch {
+      when (val result = activityRepository.getRegisteredUsers(id)) {
+        is Result.Success -> {
+          _registeredUsers.value = result.data
+        }
+
+        is Result.Error -> {
+          // Do nothing
+        }
+
+        is Result.Loading -> {
+          // Do nothing
+        }
+      }
+    }
   }
 
   /**
@@ -245,6 +275,7 @@ class ActivitiesViewModel(
               error = null
             )
         }
+
         is Result.Error -> {
           _organisationsAndMembersState.value =
             OrganisationsAndMembersUiState(
@@ -252,6 +283,7 @@ class ActivitiesViewModel(
               error = result.message
             )
         }
+
         is Result.Loading -> {
           // This shouldn't happen with the current implementation
         }

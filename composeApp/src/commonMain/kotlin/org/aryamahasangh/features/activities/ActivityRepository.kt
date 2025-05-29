@@ -8,6 +8,7 @@ import kotlinx.serialization.Serializable
 import org.aryamahasangh.*
 import org.aryamahasangh.network.supabaseClient
 import org.aryamahasangh.type.ActivitiesInsertInput
+import org.aryamahasangh.type.Gender_filter
 import org.aryamahasangh.util.Result
 import org.aryamahasangh.util.safeCall
 
@@ -43,6 +44,7 @@ interface ActivityRepository {
    * Get organizations and members
    */
   suspend fun getOrganisationsAndMembers(): Result<OrganisationsAndMembers>
+  suspend fun getRegisteredUsers(id: String): Result<List<UserProfile>>
 }
 
 /**
@@ -59,7 +61,8 @@ class ActivityRepositoryImpl(private val apolloClient: ApolloClient) : ActivityR
           if (response.hasErrors()) {
             throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
           }
-          response.data?.activitiesCollection?.edges?.map { it.node.organisationalActivityShort.camelCased() } ?: emptyList()
+          response.data?.activitiesCollection?.edges?.map { it.node.organisationalActivityShort.camelCased() }
+            ?: emptyList()
         }
 
       emit(result)
@@ -149,6 +152,24 @@ class ActivityRepositoryImpl(private val apolloClient: ApolloClient) : ActivityR
             }!!
         )
       }
+    }
+  }
+
+  override suspend fun getRegisteredUsers(id: String): Result<List<UserProfile>> {
+    return safeCall {
+      val response = apolloClient.query(RegistrationsForActivityQuery(id)).execute()
+      if (response.hasErrors()) {
+        throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+      }
+      response.data?.satr_registrationCollection?.edges?.map {
+        UserProfile(
+          id = it.node.id as String,
+          fullname = it.node.fullname!!,
+          mobile = it.node.mobile ?: "",
+          gender = (it.node.gender ?: Gender_filter.any) as String,
+          address = it.node.address ?: ""
+        )
+      }!!
     }
   }
 }
