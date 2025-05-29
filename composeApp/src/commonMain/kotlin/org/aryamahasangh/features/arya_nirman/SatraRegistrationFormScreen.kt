@@ -45,7 +45,8 @@ enum class InspirationType(val displayName: String) {
   FRIEND_RELATIVE("मित्र / सम्बन्धी"),
   NEWSPAPER("समाचार पत्र"),
   NEWS_CHANNEL("वृत्त वाहिनी"),
-  SOCIAL_MEDIA("सामाजिक माध्यम (Facebook/Youtube/Instagram/Whatsapp etc)");
+  SOCIAL_MEDIA("सामाजिक माध्यम (Facebook/Youtube/Instagram/Whatsapp etc)")
+  ;
 
   companion object {
     fun fromDisplayName(name: String?): InspirationType? = values().find { it.displayName == name }
@@ -60,7 +61,7 @@ fun SatraRegistrationFormScreen(
   onRegistrationSuccess: () -> Unit = {}, // Callback for successful registration
   onRegistrationFailed: () -> Unit = {}, // Callback for failed registration (e.g. server error, not validation)
   viewModel: SatraRegistrationViewModel,
-  activityId: String,
+  activityId: String
 ) {
   val uiState by viewModel.uiState.collectAsState()
 
@@ -139,7 +140,8 @@ fun SatraRegistrationFormScreen(
       }
       InspirationType.NEWSPAPER,
       InspirationType.NEWS_CHANNEL,
-      InspirationType.SOCIAL_MEDIA -> {
+      InspirationType.SOCIAL_MEDIA
+      -> {
         if (otherSourceName.isBlank()) { // Only focus if empty, or always focus
           otherSourceFocusRequester.requestFocus()
         }
@@ -411,7 +413,7 @@ fun SatraRegistrationFormScreen(
   }
 
   Scaffold(
-    snackbarHost = { SnackbarHost(snackbarHostState) },
+    snackbarHost = { SnackbarHost(snackbarHostState) }
   ) { paddingValues ->
     Column(
       modifier =
@@ -834,7 +836,7 @@ fun SatraRegistrationFormScreen(
       Button(
         onClick = { handleSubmit() },
         modifier = Modifier.height(52.dp),
-        enabled = isFormCompletelyValid || !uiState.isLoading,
+        enabled = isFormCompletelyValid || !uiState.isLoading
       ) {
         Text(
           "पंजीकृत करें",

@@ -44,6 +44,7 @@ interface ActivityRepository {
    * Get organizations and members
    */
   suspend fun getOrganisationsAndMembers(): Result<OrganisationsAndMembers>
+
   suspend fun getRegisteredUsers(id: String): Result<List<UserProfile>>
 }
 
@@ -147,7 +148,7 @@ class ActivityRepositoryImpl(private val apolloClient: ApolloClient) : ActivityR
             it.organisationCollection?.edges?.map {
               Organisation(
                 id = it.node.id,
-                name = it.node.name!!,
+                name = it.node.name!!
               )
             }!!
         )

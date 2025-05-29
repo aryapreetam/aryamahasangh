@@ -15,13 +15,13 @@ fun EditOrganisation() {
       value = "",
       label = { "Name" },
       placeholder = { "Name" },
-      onValueChange = { },
+      onValueChange = { }
     )
     OutlinedTextField(
       value = "",
       label = { "Description" },
       placeholder = { "Description" },
-      onValueChange = { },
+      onValueChange = { }
     )
 
     Button(onClick = { }) {

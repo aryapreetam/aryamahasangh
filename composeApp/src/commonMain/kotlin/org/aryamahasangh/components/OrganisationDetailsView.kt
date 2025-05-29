@@ -60,7 +60,7 @@ fun SabhaPreview() {
 fun OrganisationDetail(
   organisation: OrganisationDetail,
   updateOrganisationLogo: (String, String, String) -> Unit,
-  updateOrganisationDescription: (String, String) -> Unit,
+  updateOrganisationDescription: (String, String) -> Unit
 ) {
   val (id, name, description, logo, keyPeople) = organisation
   var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
@@ -82,7 +82,7 @@ fun OrganisationDetail(
               rememberFilePickerLauncher(
                 type = PickerType.Image,
                 mode = PickerMode.Single,
-                title = "Select logo",
+                title = "Select logo"
               ) { file ->
                 if (file != null) {
                   scope.launch {
@@ -111,7 +111,7 @@ fun OrganisationDetail(
                   Brush.linearGradient(
                     listOf(
                       Color(color = 0xFFFFFFFF),
-                      Color(color = 0xFFDDDDDD),
+                      Color(color = 0xFFDDDDDD)
                     )
                   )
                 ),
@@ -133,7 +133,7 @@ fun OrganisationDetail(
                 Brush.linearGradient(
                   listOf(
                     Color(color = 0xFFFFFFFF),
-                    Color(color = 0xFFDDDDDD),
+                    Color(color = 0xFFDDDDDD)
                   )
                 )
               ),
@@ -160,7 +160,7 @@ fun OrganisationDetail(
           "कार्यकारिणी/पदाधिकारी",
           style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.Bold,
-          modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp),
+          modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp)
         )
       }
       FlowRow {
@@ -176,7 +176,7 @@ fun OrganisationDetail(
                   Brush.linearGradient(
                     listOf(
                       Color(color = 0xFFFFFFFF),
-                      Color(color = 0xFFDDDDDD),
+                      Color(color = 0xFFDDDDDD)
                     )
                   )
                 ),
@@ -201,7 +201,7 @@ fun OrganisationDescription(
   isLoggedIn: Boolean = false,
   organisationDescriptionState: OrganisationDescriptionState,
   onEditModeChange: (Boolean) -> Unit = {},
-  updateDescription: (String, String) -> Unit,
+  updateDescription: (String, String) -> Unit
 ) {
 //  var editMode by remember { mutableStateOf(false) }
 //  Column(modifier = Modifier.fillMaxWidth()){

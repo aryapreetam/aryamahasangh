@@ -146,7 +146,8 @@ private fun isRetryableError(error: AppError): Boolean {
   return when (error) {
     is AppError.NetworkError.Timeout,
     is AppError.NetworkError.ServerError,
-    is AppError.NetworkError.UnknownNetworkError -> true
+    is AppError.NetworkError.UnknownNetworkError
+    -> true
     is AppError.NetworkError.HttpError -> error.code >= 500
     else -> false
   }

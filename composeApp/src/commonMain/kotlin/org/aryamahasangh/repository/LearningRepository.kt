@@ -57,7 +57,7 @@ class LearningRepositoryImpl(private val apolloClient: ApolloClient) : LearningR
             LearningItem(
               id = item.id,
               title = item.title!!,
-              thumbnailUrl = item.thumbnail_url!!,
+              thumbnailUrl = item.thumbnail_url!!
             )
           } ?: emptyList()
         }
@@ -92,7 +92,7 @@ class LearningRepositoryImpl(private val apolloClient: ApolloClient) : LearningR
           thumbnailUrl = item.thumbnail_url ?: "",
           description = item.description ?: "",
           url = item.url ?: "",
-          videoId = item.video_id ?: "",
+          videoId = item.video_id ?: ""
         )
       }[0] ?: throw Exception("Learning item not found")
     }

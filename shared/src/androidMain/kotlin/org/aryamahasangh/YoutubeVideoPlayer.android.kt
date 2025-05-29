@@ -21,10 +21,10 @@ actual fun YoutubeVideoPlayer(videoUrl: String) {
               youTubePlayer.cueVideo(videoUrl, 0f)
               super.onReady(youTubePlayer)
             }
-          },
+          }
         )
       }
-    },
+    }
   )
 
 //  Surface(

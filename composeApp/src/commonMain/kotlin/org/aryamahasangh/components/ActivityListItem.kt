@@ -74,7 +74,7 @@ fun ActivityListItem(
         Row(verticalAlignment = Alignment.CenterVertically) {
           Icon(imageVector = Icons.Default.DateRange, contentDescription = "Date", tint = Color.Gray)
           Spacer(modifier = Modifier.width(4.dp))
-          Text(text = "प्रारंभ: $startDate", style = MaterialTheme.typography.bodySmall,)
+          Text(text = "प्रारंभ: $startDate", style = MaterialTheme.typography.bodySmall)
           Spacer(modifier = Modifier.width(4.dp))
           Text(text = "समाप्ति: $endDate", style = MaterialTheme.typography.bodySmall)
         }

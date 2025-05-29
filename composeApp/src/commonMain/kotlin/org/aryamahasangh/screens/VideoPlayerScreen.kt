@@ -84,7 +84,7 @@ fun VideoDetailsScreen(
     Text(
       text = detail.title,
       style = MaterialTheme.typography.titleLarge,
-      fontWeight = FontWeight.Bold,
+      fontWeight = FontWeight.Bold
     )
     Text(
       "ईश्वर के नाम की व्याख्या भाग 1: " +

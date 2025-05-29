@@ -30,7 +30,7 @@ data class BookOrder(
   public val district_officer_number: String?,
   public val payment_receipt_url: String?,
   public val created_at: Any?,
-  public val is_fulfilled: Boolean?,
+  public val is_fulfilled: Boolean?
 )
 
 data class BookOrdersUiState(

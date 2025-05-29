@@ -471,7 +471,7 @@ fun ReceiptUploadSection(
       rememberFilePickerLauncher(
         type = PickerType.Image,
         mode = PickerMode.Single,
-        title = "रसीद जोड़ें",
+        title = "रसीद जोड़ें"
       ) { file ->
         onPhotoSelected(file)
       }
@@ -511,14 +511,14 @@ fun ResponsivePaymentDetails() {
 
   // The main component that handles responsiveness
   BoxWithConstraints(
-    modifier = Modifier.padding(16.dp),
+    modifier = Modifier.padding(16.dp)
   ) {
     val isWideScreen = maxWidth > 600.dp // Define your breakpoint
 
     if (isWideScreen) {
       // Horizontal layout for wider screens
       Row(
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.CenterVertically
       ) {
         QrCodeSection(modifier = Modifier.padding(end = 16.dp))
         OrDivider(isHorizontalLayout = true, modifier = Modifier.padding(horizontal = 24.dp)) // Vertical divider

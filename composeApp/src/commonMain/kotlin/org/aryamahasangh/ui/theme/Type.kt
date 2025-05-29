@@ -34,6 +34,6 @@ fun AppTypography() =
       bodySmall = bodySmall.copy(fontFamily = bodyFontFamily, letterSpacing = 0.sp),
       labelLarge = labelLarge.copy(fontFamily = bodyFontFamily, letterSpacing = 0.sp),
       labelMedium = labelMedium.copy(fontFamily = bodyFontFamily, letterSpacing = 0.sp),
-      labelSmall = labelSmall.copy(fontFamily = bodyFontFamily, letterSpacing = 0.sp),
+      labelSmall = labelSmall.copy(fontFamily = bodyFontFamily, letterSpacing = 0.sp)
     )
   }

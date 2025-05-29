@@ -95,14 +95,14 @@ val drawerOptions =
     DrawerOption("आर्य-आर्या निर्माण(सत्र)", Res.drawable.interactive_space, Screen.AryaNirmanSection),
     DrawerOption("आर्य परिवार", Res.drawable.family, Screen.AryaPariwarSection),
     DrawerOption("आर्य समाज संगठन", Res.drawable.diversity_3, Screen.AryaSamajSection),
-    DrawerOption("आओ स्वाध्याय करें", Res.drawable.menu_book, Screen.Learning),
+    DrawerOption("आओ स्वाध्याय करें", Res.drawable.menu_book, Screen.Learning)
     // DrawerOption("ग्रन्थ विभाग", Res.drawable.local_library, Screen.BookSection),
   )
 
 @Composable
 fun DrawerContent(
   drawerState: DrawerState,
-  navController: NavHostController,
+  navController: NavHostController
 ) {
   val scope = rememberCoroutineScope()
   val backStackEntry by navController.currentBackStackEntryAsState()
@@ -163,9 +163,9 @@ fun DrawerContent(
           icon = {
             Icon(
               painter = painterResource(option.icon),
-              contentDescription = option.title,
+              contentDescription = option.title
             )
-          },
+          }
         )
         if (option.title == "हमसें जुडें") {
           HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
@@ -241,7 +241,7 @@ private fun checkIfSelected(
 @Composable
 fun LargeScreens(
   drawerState: DrawerState,
-  navController: NavHostController,
+  navController: NavHostController
 ) {
   PermanentNavigationDrawer(
     drawerContent = {
@@ -263,7 +263,7 @@ fun LargeScreens(
 @Composable
 fun SmallScreens(
   drawerState: DrawerState,
-  navController: NavHostController,
+  navController: NavHostController
 ) {
   ModalNavigationDrawer(
     drawerState = drawerState,
@@ -297,7 +297,7 @@ fun getScreenTitle(route: String?): String {
 @Composable
 fun MainContent(
   drawerState: DrawerState,
-  navController: NavHostController,
+  navController: NavHostController
 ) {
   val scope = rememberCoroutineScope()
 
@@ -437,7 +437,7 @@ fun MainContent(
         scope.launch {
           snackbarHostState.showSnackbar(message = "Login successful")
         }
-      },
+      }
     )
   }
 

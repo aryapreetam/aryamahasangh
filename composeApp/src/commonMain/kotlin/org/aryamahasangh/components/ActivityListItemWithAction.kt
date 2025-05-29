@@ -134,7 +134,7 @@ fun EventListItem(
                 }
               )
             }
-          },
+          }
       )
 
       // Date and Time

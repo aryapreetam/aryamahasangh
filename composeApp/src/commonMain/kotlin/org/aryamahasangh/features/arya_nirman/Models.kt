@@ -56,24 +56,37 @@ fun convertDates(
       fromYear == toYear && fromMonth == toMonth && fromDay == toDay -> {
         "${toDevanagari("$fromDay")} ${monthNames[fromMonth - 1]}, ${toDevanagari("$fromYear")}"
       }
+
       fromYear == toYear && fromMonth == toMonth -> {
-        "${toDevanagari(
-          "$fromDay"
-        )}-${toDevanagari("$toDay")} ${monthNames[fromMonth - 1]}, ${toDevanagari("$fromYear")}"
+        "${
+          toDevanagari(
+            "$fromDay"
+          )
+        }-${toDevanagari("$toDay")} ${monthNames[fromMonth - 1]}, ${toDevanagari("$fromYear")}"
       }
+
       fromYear == toYear -> {
-        "${toDevanagari(
-          "$fromDay"
-        )} ${monthNames[fromMonth - 1]} - ${toDevanagari(
-          "$toDay"
-        )} ${monthNames[toMonth - 1]}, ${toDevanagari("$fromYear")}"
+        "${
+          toDevanagari(
+            "$fromDay"
+          )
+        } ${monthNames[fromMonth - 1]} - ${
+          toDevanagari(
+            "$toDay"
+          )
+        } ${monthNames[toMonth - 1]}, ${toDevanagari("$fromYear")}"
       }
+
       else -> {
-        "${toDevanagari(
-          "$fromDay"
-        )} ${monthNames[fromMonth - 1]}, ${toDevanagari(
-          "$fromYear"
-        )} - ${toDevanagari("$toDay")} ${monthNames[toMonth - 1]}, ${toDevanagari("$toYear")}"
+        "${
+          toDevanagari(
+            "$fromDay"
+          )
+        } ${monthNames[fromMonth - 1]}, ${
+          toDevanagari(
+            "$fromYear"
+          )
+        } - ${toDevanagari("$toDay")} ${monthNames[toMonth - 1]}, ${toDevanagari("$toYear")}"
       }
     }
 

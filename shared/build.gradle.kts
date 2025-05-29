@@ -75,3 +75,34 @@ android {
     minSdk = libs.versions.android.minSdk.get().toInt()
   }
 }
+
+// ============================================================================
+// KTLINT CONFIGURATION
+// ============================================================================
+
+ktlint {
+  // Enable verbose output
+  verbose.set(true)
+
+  // Output to console
+  outputToConsole.set(true)
+
+  // Treat all Kotlin warnings as errors
+  ignoreFailures.set(false)
+
+  // Enable experimental rules
+  enableExperimentalRules.set(false)
+
+  // Trailing comma rules are now handled by .editorconfig
+  // disabledRules.set(setOf("trailing-comma-on-call-site", "trailing-comma-on-declaration-site"))
+
+  filter {
+    exclude("**/generated/**")
+    exclude("**/build/**")
+    exclude("**/*.Generated.kt")
+    exclude("**/ResourceCollectors/**")
+    exclude("**/ActualResourceCollectors.kt")
+    exclude("**/ExpectResourceCollectors.kt")
+    exclude("**/Res.kt")
+  }
+}

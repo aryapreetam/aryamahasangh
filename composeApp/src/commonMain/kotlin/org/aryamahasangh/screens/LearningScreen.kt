@@ -112,9 +112,9 @@ fun LearningScreen(
             AsyncImage(
               modifier = Modifier.aspectRatio(16f / 9f),
               model = video.thumbnailUrl,
-              contentDescription = video.title,
+              contentDescription = video.title
             )
-            Text(video.title, modifier = Modifier.padding(top = 4.dp),)
+            Text(video.title, modifier = Modifier.padding(top = 4.dp))
           }
         }
       }

@@ -38,6 +38,9 @@ val supabaseUrl = secrets.getProperty("$environment.supabase.url", "")
 val supabaseKey = secrets.getProperty("$environment.supabase.key", "")
 
 kotlin {
+
+  jvmToolchain(11)
+
   androidTarget {
     @OptIn(ExperimentalKotlinGradlePluginApi::class)
     compilerOptions {
@@ -51,7 +54,7 @@ kotlin {
   listOf(
     iosX64(),
     iosArm64(),
-    iosSimulatorArm64(),
+    iosSimulatorArm64()
   ).forEach { iosTarget ->
     iosTarget.binaries.framework {
       baseName = "ComposeApp"
@@ -182,10 +185,10 @@ android {
 
     // Expose version information to the app via BuildConfig
     buildConfigField("String", "VERSION_NAME", "\"${versionName}\"")
-    buildConfigField("int", "VERSION_CODE", "${versionCode}")
+    buildConfigField("int", "VERSION_CODE", "$versionCode")
 
     // Debug output for development
-    println("📱 Android version: ${versionName} (${versionCode})")
+    println("📱 Android version: $versionName ($versionCode)")
   }
 
   buildFeatures {
@@ -197,7 +200,7 @@ android {
       excludes +=
         setOf(
           "META-INF/INDEX.LIST",
-          "META-INF/io.netty.versions.properties",
+          "META-INF/io.netty.versions.properties"
         )
     }
   }
@@ -215,7 +218,7 @@ android {
       isMinifyEnabled = true
       proguardFiles(
         getDefaultProguardFile("proguard-android-optimize.txt"),
-        file("proguard-rules.pro"),
+        file("proguard-rules.pro")
       )
       signingConfig = signingConfigs.getByName("release")
     }
@@ -264,6 +267,35 @@ apollo {
       headers.put("Authorization", "Bearer $supabaseKey")
       headers.put("apikey", supabaseKey)
     }
+  }
+}
+
+// ============================================================================
+// KTLINT CONFIGURATION
+// ============================================================================
+
+ktlint {
+  // Enable verbose output
+  verbose.set(true)
+
+  // Output to console
+  outputToConsole.set(true)
+
+  // Treat all Kotlin warnings as errors
+  ignoreFailures.set(false)
+
+  // Enable experimental rules
+  enableExperimentalRules.set(false)
+
+  // Trailing comma rules are now handled by .editorconfig
+  // disabledRules.set(setOf("trailing-comma-on-call-site", "trailing-comma-on-declaration-site"))
+
+  filter {
+    exclude("**/generated/**")
+    exclude("**/build/**")
+    exclude("**/*.Generated.kt")
+    exclude("**/ResourceCollectors/**")
+    exclude("**/ActualResourceCollectors.kt")
   }
 }
 
@@ -330,7 +362,7 @@ tasks.register("checkSecrets") {
         3. Run: ./setup-secrets.sh
         
         Or the setup will run automatically when you build.
-        """.trimIndent(),
+        """.trimIndent()
       )
     } else {
       println("✅ secrets.properties file found")

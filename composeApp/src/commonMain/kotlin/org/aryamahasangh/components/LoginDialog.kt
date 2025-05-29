@@ -50,7 +50,7 @@ fun LoginDialog(
           isError = usernameError,
           supportingText = { if (usernameError) Text(usernameErrorMessage) },
           modifier = Modifier.fillMaxWidth(),
-          singleLine = true,
+          singleLine = true
         )
 
         OutlinedTextField(
@@ -72,7 +72,7 @@ fun LoginDialog(
           isError = passwordError,
           supportingText = { if (passwordError) Text(passwordErrorMessage) },
           modifier = Modifier.fillMaxWidth(),
-          singleLine = true,
+          singleLine = true
         )
       }
     },
@@ -109,7 +109,7 @@ fun LoginDialog(
             }
           }
         },
-        enabled = !isLoggingIn,
+        enabled = !isLoggingIn
       ) {
         if (isLoggingIn) {
           Row(verticalAlignment = Alignment.CenterVertically) {

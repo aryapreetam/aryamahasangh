@@ -193,7 +193,7 @@ class ActivitiesViewModel(
         capacity = Optional.present(input.capacity),
         latitude = Optional.present(input.latitude),
         longitude = Optional.present(input.longitude),
-        allowed_gender = Optional.present(Gender_filter.valueOf(input.allowedGender)),
+        allowed_gender = Optional.present(Gender_filter.valueOf(input.allowedGender))
       )
     launch {
       _formSubmissionState.value = AdmissionFormSubmissionState(isSubmitting = true)
