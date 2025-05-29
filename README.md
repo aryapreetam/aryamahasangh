@@ -2,39 +2,108 @@ This is a Kotlin Multiplatform project targeting Android, iOS, Web, Desktop, Ser
 
 * `/composeApp` is for code that will be shared across your Compose Multiplatform applications.
   It contains several subfolders:
-  - `commonMain` is for code that’s common for all targets.
-  - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
-    For example, if you want to use Apple’s CoreCrypto for the iOS part of your Kotlin app,
-    `iosMain` would be the right folder for such calls.
+    - `commonMain` is for code that's common for all targets.
+    - Other folders are for Kotlin code that will be compiled for only the platform indicated in the folder name.
+      For example, if you want to use Apple's CoreCrypto for the iOS part of your Kotlin app,
+      `iosMain` would be the right folder for such calls.
 
-* `/iosApp` contains iOS applications. Even if you’re sharing your UI with Compose Multiplatform, 
+* `/iosApp` contains iOS applications. Even if you're sharing your UI with Compose Multiplatform,
   you need this entry point for your iOS app. This is also where you should add SwiftUI code for your project.
 
 * `/server` is for the Ktor server application.
 
 * `/shared` is for the code that will be shared between all targets in the project.
-  The most important subfolder is `commonMain`. If preferred, you can add code to the platform-specific folders here too.
-
+  The most important subfolder is `commonMain`. If preferred, you can add code to the platform-specific folders here
+  too.
 
 Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html),
 [Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform/#compose-multiplatform),
 [Kotlin/Wasm](https://kotl.in/wasm/)…
 
-We would appreciate your feedback on Compose/Web and Kotlin/Wasm in the public Slack channel [#compose-web](https://slack-chats.kotlinlang.org/c/compose-web).
+We would appreciate your feedback on Compose/Web and Kotlin/Wasm in the public Slack
+channel [#compose-web](https://slack-chats.kotlinlang.org/c/compose-web).
 If you face any issues, please report them on [GitHub](https://github.com/JetBrains/compose-multiplatform/issues).
 
 You can open the web application by running the `:composeApp:wasmJsBrowserDevelopmentRun` Gradle task.
 
+## Build Commands
+
+### Release Build
+
+```bash
 ./gradlew :composeApp:assembleRelease
+```
 
-## Download graphql schema
+### Download GraphQL Schema
+
+```bash
 ./gradlew downloadApolloSchema --endpoint="http://localhost:4000/graphql" --schema="composeApp/src/commonMain/graphql/schema.json"
+```
 
-## view for listening to satra registration changes
+## Release Management
+
+This project uses automated semantic versioning for releases. Every push to the `dev` branch triggers a new release with
+an incremented version number.
+
+### Creating a New Release
+
+#### Option 1: Automatic (Recommended)
+
+Simply push your changes to the `dev` branch:
+
+```bash
+git checkout dev
+git add .
+git commit -m "Your changes"
+git push origin dev
+```
+
+The GitHub Actions workflow will automatically:
+
+1. Generate a new version number (incrementing patch version)
+2. Build Android APK and Web distribution
+3. Create a GitHub release with artifacts
+4. Deploy web app to Netlify
+
+#### Option 2: Manual Version Control
+
+Use the version bump script for more control:
+
+```bash
+# Bump patch version (0.0.1 -> 0.0.2)
+./version-bump.sh patch
+
+# Bump minor version (0.0.1 -> 0.1.0)
+./version-bump.sh minor
+
+# Bump major version (0.0.1 -> 1.0.0)
+./version-bump.sh major
+```
+
+### Version Numbering
+
+- **Major**: Breaking changes or significant new features
+- **Minor**: New features that are backward compatible
+- **Patch**: Bug fixes and small improvements
+
+### Release Artifacts
+
+Each release includes:
+
+- 📱 **AryaMahasangh_vX.X.X.apk** - Android application
+- 🌐 **Archive.zip** - Web application files
+
+### Monitoring Builds
+
+Monitor build progress at: [GitHub Actions](../../actions)
+
+## Database Setup
+
+### View for listening to satr registration changes
+
 ```sql
 create or replace view satr_registration_count as
 select activity_id, count(*)::int as count
 from satr_registration
 group by activity_id
 ```
- 
