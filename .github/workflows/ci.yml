@@ -102,6 +102,18 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
+  #      - name: Run ktlint
+  #        run: ./gradlew ktlintCheck --no-daemon
+  #
+  #      - name: Upload code quality reports
+  #        uses: actions/upload-artifact@v4
+  #        if: always()
+  #        with:
+  #          name: code-quality-reports
+  #          path: |
+  #            **/build/reports/ktlint/
+  #            **/build/reports/detekt/
+
   build-web:
     name: Build Web Distribution
     if: github.ref == 'refs/heads/dev'

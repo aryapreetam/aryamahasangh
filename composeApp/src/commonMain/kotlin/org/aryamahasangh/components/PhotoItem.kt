@@ -18,7 +18,7 @@ import io.github.vinceglb.filekit.core.PlatformFile
 @Composable
 fun PhotoItem(
   file: PlatformFile,
-  onRemoveFile: (PlatformFile) -> Unit,
+  onRemoveFile: (PlatformFile) -> Unit
 ) {
   var bytes by remember(file) { mutableStateOf<ByteArray?>(null) }
   var showName by remember { mutableStateOf(false) }
@@ -37,7 +37,7 @@ fun PhotoItem(
               tmpBuffer.copyInto(
                 buffer,
                 destinationOffset = totalBytesRead,
-                endIndex = numRead,
+                endIndex = numRead
               )
               totalBytesRead += numRead
             }
@@ -77,7 +77,7 @@ fun PhotoItem(
       ) {
         IconButton(
           onClick = { onRemoveFile(file) },
-          modifier = Modifier.size(36.dp),
+          modifier = Modifier.size(36.dp)
         ) {
           Icon(
             Icons.Default.Close,
@@ -94,7 +94,7 @@ fun PhotoItem(
       ) {
         Surface(
           color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
-          shape = MaterialTheme.shapes.small,
+          shape = MaterialTheme.shapes.small
         ) {
           Text(
             file.name,

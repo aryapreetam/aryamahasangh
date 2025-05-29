@@ -183,7 +183,7 @@ data class OrganisationalActivityShort(
   val startDatetime: LocalDateTime,
   val endDatetime: LocalDateTime,
   val type: ActivityType,
-  val district: String,
+  val district: String
 )
 
 fun OrganisationalActivityShort.camelCased(): org.aryamahasangh.features.activities.OrganisationalActivityShort {

@@ -34,7 +34,7 @@ fun OrgItem(
   ElevatedCard(
     onClick = navigateToOrgDetails,
     modifier = Modifier.width(500.dp),
-    shape = RoundedCornerShape(4.dp),
+    shape = RoundedCornerShape(4.dp)
   ) {
     Column(
       verticalArrangement = Arrangement.spacedBy(4.dp),

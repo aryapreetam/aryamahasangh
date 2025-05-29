@@ -49,7 +49,7 @@ val stringToActivityTypeMap =
     "कक्षा" to ActivityType.COURSE,
     "कार्यक्रम" to ActivityType.EVENT,
     "अभियान" to ActivityType.CAMPAIGN,
-    "सत्र" to ActivityType.SESSION,
+    "सत्र" to ActivityType.SESSION
   )
 
 val activityTypeToStringMap =
@@ -57,7 +57,7 @@ val activityTypeToStringMap =
     ActivityType.COURSE to "कक्षा",
     ActivityType.EVENT to "कार्यक्रम",
     ActivityType.CAMPAIGN to "अभियान",
-    ActivityType.SESSION to "सत्र",
+    ActivityType.SESSION to "सत्र"
   )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -286,7 +286,7 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
             capacity = eventCapacity.toIntOrNull() ?: 0,
             allowedGender = eventGenderAllowed.name.toLowerCase(Locale.current),
             latitude = eventLatitude.toDoubleOrNull() ?: 0.0,
-            longitude = eventLongitude.toDoubleOrNull() ?: 0.0,
+            longitude = eventLongitude.toDoubleOrNull() ?: 0.0
           )
 
         // Submit form using ViewModel
@@ -300,7 +300,7 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
       Modifier
         .fillMaxSize()
         .padding(8.dp)
-        .verticalScroll(scrollState),
+        .verticalScroll(scrollState)
   ) {
     // Name
     OutlinedTextField(
@@ -353,7 +353,7 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
                 selectedBorderColor = MaterialTheme.colorScheme.primary,
                 enabled = selectedType == type,
                 selected = selectedType == type
-              ),
+              )
           )
         }
       }
@@ -464,7 +464,7 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
       )
     }
     FlowRow(
-      horizontalArrangement = Arrangement.spacedBy(16.dp),
+      horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
       Column {
         Text(text = "प्रारंभ:", style = MaterialTheme.typography.bodyMedium)
@@ -682,7 +682,7 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
       viewModel.resetFormSubmissionState()
       scope.launch {
         snackbarHostState.showSnackbar(
-          message = "A new activity has been created successfully.",
+          message = "A new activity has been created successfully."
         )
       }
     } else if (formSubmissionState.error != null) {
@@ -748,7 +748,8 @@ fun ActivityForm(viewModel: ActivitiesViewModel) { // Take ViewModel parameter
 enum class GenderAllowed {
   ANY,
   MALE,
-  FEMALE;
+  FEMALE
+  ;
 
   fun toDisplayName(): String {
     return when (this) {
@@ -909,7 +910,7 @@ fun EventDetailsFields(
         )
         ExposedDropdownMenu(
           expanded = genderAllowedExpanded,
-          onDismissRequest = { genderAllowedExpanded = false },
+          onDismissRequest = { genderAllowedExpanded = false }
         ) {
           genderAllowedDisplayOptions.forEach { selectionDisplayName ->
             DropdownMenuItem(
@@ -920,7 +921,7 @@ fun EventDetailsFields(
                 // No real error to validate here as one is always selected
                 focusManager.moveFocus(FocusDirection.Next)
               },
-              contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+              contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
             )
           }
         }
@@ -1158,7 +1159,7 @@ fun MultiSelectDropdown(
 
     ExposedDropdownMenuBox(
       expanded = false,
-      onExpandedChange = { expanded = !expanded },
+      onExpandedChange = { expanded = !expanded }
     ) {
       OutlinedTextField(
         readOnly = true,
@@ -1172,7 +1173,7 @@ fun MultiSelectDropdown(
       )
       ExposedDropdownMenu(
         expanded = expanded,
-        onDismissRequest = { expanded = false },
+        onDismissRequest = { expanded = false }
       ) {
         options.forEach { option ->
           DropdownMenuItem(
@@ -1221,7 +1222,7 @@ fun ContactPeopleDropdown(
     // Display Selected Members as Input Chips
     FlowRow(
       modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-      horizontalArrangement = Arrangement.spacedBy(4.dp),
+      horizontalArrangement = Arrangement.spacedBy(4.dp)
     ) {
       members.filter { it in selectedMembers }.forEachIndexed { index, member ->
         var text by remember { mutableStateOf(postMap[member.id]?.first ?: "") }
@@ -1286,7 +1287,7 @@ fun ContactPeopleDropdown(
             }
           },
           // onDismiss = { onSelectionChanged(selectedMembers - member.id) },
-          modifier = Modifier.padding(2.dp),
+          modifier = Modifier.padding(2.dp)
         )
       }
     }
@@ -1308,7 +1309,7 @@ fun ContactPeopleDropdown(
       )
       ExposedDropdownMenu(
         expanded = expanded,
-        onDismissRequest = { expanded = false },
+        onDismissRequest = { expanded = false }
       ) {
         members.forEach { member ->
           DropdownMenuItem(

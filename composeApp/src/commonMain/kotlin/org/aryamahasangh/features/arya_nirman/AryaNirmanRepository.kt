@@ -83,7 +83,7 @@ class AryaNirmanRepositoryImpl(private val apolloClient: ApolloClient) : AryaNir
                 hasTrainedAryaInFamily = data.hasTrainedAryaInFamily,
                 trainedAryaName = Optional.presentIfNotNull(data.trainedAryaName),
                 trainedAryaNo = Optional.presentIfNotNull(data.trainedAryaPhone),
-                activityId = activityId,
+                activityId = activityId
               )
             ).execute()
           if (response.hasErrors()) {

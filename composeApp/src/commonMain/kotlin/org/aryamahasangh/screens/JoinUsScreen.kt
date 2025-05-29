@@ -210,7 +210,7 @@ fun UpcomingActivitiesForm(
         states = indianStatesToDistricts.keys.toList(),
         selectedState = selectedState,
         onStateSelected = { selectedState = it },
-        modifier = Modifier.width(160.dp),
+        modifier = Modifier.width(160.dp)
       )
       // District Selection (Conditional)
       val districts = indianStatesToDistricts[selectedState] ?: emptyList()
@@ -332,7 +332,7 @@ fun StateDropdown(
   Column(modifier = modifier) {
     ExposedDropdownMenuBox(
       expanded = false,
-      onExpandedChange = { expanded = !expanded },
+      onExpandedChange = { expanded = !expanded }
     ) {
       OutlinedTextField(
         readOnly = true,
@@ -348,7 +348,7 @@ fun StateDropdown(
       )
       ExposedDropdownMenu(
         expanded = expanded,
-        onDismissRequest = { expanded = false },
+        onDismissRequest = { expanded = false }
       ) {
         states.forEach { selectionOption ->
           key(selectionOption) {
@@ -358,7 +358,7 @@ fun StateDropdown(
                 onStateSelected(selectionOption)
                 expanded = false
               },
-              contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+              contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
             )
           }
         }
@@ -382,7 +382,7 @@ fun DistrictDropdown(
   Column(modifier = modifier) {
     ExposedDropdownMenuBox(
       expanded = false,
-      onExpandedChange = { expanded = !expanded },
+      onExpandedChange = { expanded = !expanded }
     ) {
       OutlinedTextField(
         readOnly = true,
@@ -399,7 +399,7 @@ fun DistrictDropdown(
       )
       ExposedDropdownMenu(
         expanded = expanded,
-        onDismissRequest = { expanded = false },
+        onDismissRequest = { expanded = false }
       ) {
         DropdownMenuItem(
           text = { Text("None") },
@@ -416,7 +416,7 @@ fun DistrictDropdown(
                 onDistrictSelected(selectionOption)
                 expanded = false
               },
-              contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+              contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
             )
           }
         }

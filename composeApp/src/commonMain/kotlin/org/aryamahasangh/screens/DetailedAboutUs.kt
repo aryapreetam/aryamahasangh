@@ -94,7 +94,7 @@ fun DetailedAboutUs(viewModel: AboutUsViewModel) {
             Brush.linearGradient(
               listOf(
                 Color(color = 0xFFFFFFFF),
-                Color(color = 0xFFDDDDDD),
+                Color(color = 0xFFDDDDDD)
               )
             )
           ),

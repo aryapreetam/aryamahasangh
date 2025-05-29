@@ -7,18 +7,18 @@ data class OrganisationDetail(
   val name: String,
   val description: String,
   val logo: String? = null,
-  val members: List<OrganisationalMember> = emptyList(),
+  val members: List<OrganisationalMember> = emptyList()
 )
 
 data class OrganisationWithDescription(
   val id: String,
   val name: String,
-  val description: String,
+  val description: String
 )
 
 data class OrganisationalMember(
   val id: String = "",
   val member: Member,
   val post: String = "",
-  val priority: Int = 0,
+  val priority: Int = 0
 )

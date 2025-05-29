@@ -73,7 +73,7 @@ class JoinUsRepositoryImpl(private val apolloClient: ApolloClient) : JoinUsRepos
                           } else {
                             Optional.absent()
                           },
-                        start_datetime = startTimeFilter,
+                        start_datetime = startTimeFilter
                       )
                   )
               )

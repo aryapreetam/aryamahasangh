@@ -37,7 +37,7 @@ class SatraRegistrationViewModel(
               it.copy(
                 isLoading = false,
                 error = result.message,
-                data = null,
+                data = null
               )
             }
           }

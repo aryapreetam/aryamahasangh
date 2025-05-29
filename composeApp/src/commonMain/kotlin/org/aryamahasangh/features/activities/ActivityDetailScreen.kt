@@ -52,7 +52,7 @@ fun ActivityDetailScreen(
   LaunchedEffect(id, isLoggedIn) {
     println("Loading activity details for ID: $id")
     viewModel.loadActivityDetail(id)
-    if(isLoggedIn){
+    if (isLoggedIn) {
       viewModel.loadRegisteredUsers(id)
     }
   }
@@ -202,7 +202,7 @@ fun ActivityDisplay(
     Text(
       text = "संबधित संस्थाएँ:",
       style = MaterialTheme.typography.titleMedium,
-      fontWeight = FontWeight.Bold,
+      fontWeight = FontWeight.Bold
     )
     FlowRow(
       horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -218,7 +218,7 @@ fun ActivityDisplay(
 
     // Place
     Row(
-      verticalAlignment = Alignment.CenterVertically,
+      verticalAlignment = Alignment.CenterVertically
     ) {
       Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Place", tint = Color.Gray)
       Spacer(modifier = Modifier.width(4.dp))
@@ -263,7 +263,7 @@ fun ActivityDisplay(
             modifier =
               Modifier.size(150.dp).clickable(onClick = {
                 uriHandler.openUri(imageUrl)
-              }),
+              })
           )
         }
       }
@@ -280,7 +280,7 @@ fun ActivityDisplay(
 
     val sortedContactPeople = activity.contactPeople.sortedBy { it.priority }
     FlowRow(
-      horizontalArrangement = Arrangement.spacedBy(16.dp),
+      horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
       sortedContactPeople.forEach { contactPerson ->
         ContactPersonItem(contactPerson = contactPerson)
@@ -306,7 +306,7 @@ fun ActivityDisplay(
         }
       }
     }
-    if(isLoggedIn) {
+    if (isLoggedIn) {
       HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
       RegisteredUsers(registeredUsers)
     }
@@ -336,7 +336,7 @@ fun ContactPersonPreview() {
 fun ContactPersonItem(contactPerson: ActivityMember) {
   Row(
     modifier = Modifier.heightIn(48.dp, 65.dp).padding(vertical = 8.dp),
-    verticalAlignment = Alignment.CenterVertically,
+    verticalAlignment = Alignment.CenterVertically
   ) {
     // Profile Image
     AsyncImage(
@@ -352,7 +352,7 @@ fun ContactPersonItem(contactPerson: ActivityMember) {
           Brush.linearGradient(
             listOf(
               Color(color = 0xFFFFFFFF),
-              Color(color = 0xFFDDDDDD),
+              Color(color = 0xFFDDDDDD)
             )
           )
         ),
@@ -410,11 +410,9 @@ fun formatDateTime(dateTimeString: Any): String {
   return format(dateTimeString)
 }
 
-
 @OptIn(ExperimentalMaterial3Api::class) // For ListItem
 @Composable
 fun UserProfileListItem(user: UserProfile, modifier: Modifier = Modifier) {
-
   // Using Material 3 ListItem for standard list item appearance and structure
   ListItem(
     modifier = modifier.widthIn(max = 500.dp),
@@ -435,17 +433,20 @@ fun UserProfileListItem(user: UserProfile, modifier: Modifier = Modifier) {
       )
     },
     leadingContent = {
-      val genderIcon: ImageVector = if (user.gender.equals("female", ignoreCase = true)) {
-        Icons.Filled.Woman
-      } else {
-        Icons.Filled.Man
-      }
+      val genderIcon: ImageVector =
+        if (user.gender.equals("female", ignoreCase = true)) {
+          Icons.Filled.Woman
+        } else {
+          Icons.Filled.Man
+        }
       // Circular background for the icon
       Box(
-        modifier = Modifier
-          .size(48.dp) // Standard M3 size for leading icon container
-          .clip(CircleShape) // Apply circular clipping
-          .background(MaterialTheme.colorScheme.primaryContainer), // Background color for the circle
+        modifier =
+          Modifier
+            .size(48.dp) // Standard M3 size for leading icon container
+            .clip(CircleShape) // Apply circular clipping
+            .background(MaterialTheme.colorScheme.primaryContainer),
+        // Background color for the circle
         contentAlignment = Alignment.Center // Center the icon within the Box
       ) {
         Icon(
@@ -460,7 +461,7 @@ fun UserProfileListItem(user: UserProfile, modifier: Modifier = Modifier) {
       IconButton(
         onClick = {
           // phoneDialer.dial(user.mobile)
-        },
+        }
         // Modifier.align(Alignment.CenterVertically) is handled by ListItem for trailingContent
       ) {
         Icon(
@@ -470,45 +471,50 @@ fun UserProfileListItem(user: UserProfile, modifier: Modifier = Modifier) {
         )
       }
     },
-    colors = ListItemDefaults.colors(
-      containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f) // Optional: slight background
-    ),
+    colors =
+      ListItemDefaults.colors(
+        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f) // Optional: slight background
+      ),
     tonalElevation = 1.dp // Optional: adds a slight shadow
   )
 }
 
 // Sample data
-val sampleUser = UserProfile(
-  id = "03a708a4-44d6-405e-88c1-ab5e7b097c85",
-  gender = "male",
-  mobile = "9889898989",
-  address = "A very long address that should definitely be ellipsized at the end to fit nicely.",
-  fullname = "Skdnfskjdfn Longname"
-)
+val sampleUser =
+  UserProfile(
+    id = "03a708a4-44d6-405e-88c1-ab5e7b097c85",
+    gender = "male",
+    mobile = "9889898989",
+    address = "A very long address that should definitely be ellipsized at the end to fit nicely.",
+    fullname = "Skdnfskjdfn Longname"
+  )
 
-val sampleUserFemale = UserProfile(
-  id = "12345-female",
-  gender = "female",
-  mobile = "1231231234",
-  address = "Another interesting place in the world",
-  fullname = "Jane Doe"
-)
+val sampleUserFemale =
+  UserProfile(
+    id = "12345-female",
+    gender = "female",
+    mobile = "1231231234",
+    address = "Another interesting place in the world",
+    fullname = "Jane Doe"
+  )
 
-val sampleUserShortAddress = UserProfile(
-  id = "67890-short",
-  gender = "male",
-  mobile = "5555555555",
-  address = "Short St.",
-  fullname = "John Smith"
-)
+val sampleUserShortAddress =
+  UserProfile(
+    id = "67890-short",
+    gender = "male",
+    mobile = "5555555555",
+    address = "Short St.",
+    fullname = "John Smith"
+  )
 
-val users = listOf(
-  sampleUser,
-  sampleUserFemale,
-  sampleUserShortAddress,
-  sampleUser.copy(id = "newId1", fullname = "Another Male User"),
-  sampleUserFemale.copy(id = "newId2", address = "Yet another street somewhere in this big city")
-)
+val users =
+  listOf(
+    sampleUser,
+    sampleUserFemale,
+    sampleUserShortAddress,
+    sampleUser.copy(id = "newId1", fullname = "Another Male User"),
+    sampleUserFemale.copy(id = "newId2", address = "Yet another street somewhere in this big city")
+  )
 
 @Preview
 @Composable
@@ -533,7 +539,7 @@ fun RegisteredUsers(users: List<UserProfile>) {
     FlowRow(
       horizontalArrangement = Arrangement.spacedBy(8.dp),
       verticalArrangement = Arrangement.spacedBy(8.dp)
-    ){
+    ) {
       users.forEach { user ->
         UserProfileListItem(user = user)
       }

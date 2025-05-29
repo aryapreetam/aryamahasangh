@@ -217,7 +217,7 @@ fun DatePickerTextField(
   onValueChange: (String) -> Unit,
   modifier: Modifier = Modifier,
   isError: Boolean,
-  errorMessage: String,
+  errorMessage: String
 ) {
   val datePickerState = rememberDatePickerState(initialDisplayMode = DisplayMode.Input)
   val showDatePickerDialog = remember { mutableStateOf(false) }
@@ -290,7 +290,7 @@ fun BloodGroupDropdown(
   onBloodGroupSelected: (String) -> Unit,
   modifier: Modifier,
   isError: Boolean,
-  errorMessage: String,
+  errorMessage: String
 ) {
   val bloodGroups = listOf("O-", "O+", "A-", "A+", "B-", "B+", "AB-", "AB+")
   var expanded by remember { mutableStateOf(false) }
@@ -298,7 +298,7 @@ fun BloodGroupDropdown(
   Column(modifier = modifier) {
     ExposedDropdownMenuBox(
       expanded = false,
-      onExpandedChange = { expanded = !expanded },
+      onExpandedChange = { expanded = !expanded }
     ) {
       OutlinedTextField(
         value = selectedBloodGroup ?: "चुनें",
@@ -395,7 +395,7 @@ fun ButtonForFilePicker(
     rememberFilePickerLauncher(
       type = PickerType.File(extensions = listOf("png", "jpg", "jpeg", "webp", "pdf", "docx")),
       mode = PickerMode.Multiple(),
-      title = "Select documents",
+      title = "Select documents"
     ) { files ->
       println(files)
       onFilesSelected(files)
@@ -420,7 +420,7 @@ fun StudentPhotoSection(
       rememberFilePickerLauncher(
         type = PickerType.Image,
         mode = PickerMode.Single,
-        title = "Select photo",
+        title = "Select photo"
       ) { file ->
         onPhotoSelected(file)
       }
@@ -431,7 +431,7 @@ fun StudentPhotoSection(
         Image(
           painter = painterResource(resource = Res.drawable.error_profile_image),
           contentDescription = "Error profile image",
-          contentScale = ContentScale.Crop,
+          contentScale = ContentScale.Crop
         )
       }
     }
@@ -495,7 +495,7 @@ fun SignatureSection(
           rememberFilePickerLauncher(
             type = PickerType.Image,
             mode = PickerMode.Single,
-            title = "Select photo",
+            title = "Select photo"
           ) { file ->
             onSignatureSelected(file)
           }

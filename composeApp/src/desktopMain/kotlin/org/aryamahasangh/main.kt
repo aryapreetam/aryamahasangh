@@ -20,9 +20,9 @@ fun main() =
         rememberWindowState(
           width = 400.dp,
           height = 800.dp,
-          position = WindowPosition.Aligned(Alignment.TopEnd),
+          position = WindowPosition.Aligned(Alignment.TopEnd)
         ),
-      title = "Arya Mahasangh",
+      title = "Arya Mahasangh"
     ) {
       App()
     }
