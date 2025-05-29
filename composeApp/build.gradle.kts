@@ -132,13 +132,13 @@ kotlin {
       implementation(libs.apollo.adapters.core)
       implementation(libs.apollo.adapters.kotlinx.datetime)
     }
-    commonTest.dependencies {
-      implementation(kotlin("test"))
-      implementation(libs.kotlin.test.junit)
-      implementation(libs.kotlinx.coroutines.test)
-      @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
-      implementation(compose.uiTest)
-    }
+//    commonTest.dependencies {
+//      implementation(libs.kotlin.test)
+//      implementation(libs.kotlin.test.junit)
+//      implementation(libs.kotlinx.coroutines.test)
+//      @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
+//      implementation(compose.uiTest)
+//    }
     androidMain.dependencies {
       implementation(libs.androidx.activity.compose)
       implementation(libs.compose.ui.tooling.preview)
@@ -160,10 +160,6 @@ kotlin {
     wasmJsMain.dependencies {
       implementation(libs.ktor.client.wasm)
     }
-    val iosX64Test by getting
-    val iosArm64Test by getting
-    val iosSimulatorArm64Test by getting
-    val wasmJsTest by getting
   }
 }
 
