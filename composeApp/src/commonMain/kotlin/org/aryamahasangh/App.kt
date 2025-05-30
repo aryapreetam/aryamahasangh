@@ -11,6 +11,7 @@ import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -96,7 +97,6 @@ val drawerOptions =
     DrawerOption("आर्य परिवार", Res.drawable.family, Screen.AryaPariwarSection),
     DrawerOption("आर्य समाज संगठन", Res.drawable.diversity_3, Screen.AryaSamajSection),
     DrawerOption("आओ स्वाध्याय करें", Res.drawable.menu_book, Screen.Learning)
-    // DrawerOption("ग्रन्थ विभाग", Res.drawable.local_library, Screen.BookSection),
   )
 
 @Composable
@@ -192,18 +192,32 @@ fun DrawerContent(
       }
     }
 
-    // Version information at the bottom
-    Column(
-      modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-      horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-      HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-      Text(
-        text = org.aryamahasangh.util.VersionInfo.getFormattedVersion(),
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.secondary
-      )
-    }
+    // Admin option at the bottom
+    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+    NavigationDrawerItem(
+      label = {
+        Text("व्यवस्थापकीय", style = MaterialTheme.typography.bodyLarge)
+      },
+      selected = checkIfSelected(currentDestination, Screen.AdminContainer.toString()),
+      onClick = {
+        navController.navigate(Screen.AdminContainer) {
+          popUpTo(navController.graph.startDestDisplayName) {
+            saveState = true
+          }
+          launchSingleTop = true
+          restoreState = true
+          scope.launch {
+            drawerState.close()
+          }
+        }
+      },
+      icon = {
+        Icon(
+          painter = painterResource(Res.drawable.account_circle),
+          contentDescription = "व्यवस्थापकीय"
+        )
+      }
+    )
   }
 }
 
@@ -308,6 +322,7 @@ fun MainContent(
   var userEmail by rememberStringSetting(SettingKeys.userEmail, "")
   var showLoginDialog by remember { mutableStateOf(false) }
   var showLogoutDialog by remember { mutableStateOf(false) }
+  var showOverflowMenu by remember { mutableStateOf(false) }
   val snackbarHostState = remember { SnackbarHostState() }
 
   val backStackEntry by navController.currentBackStackEntryAsState()
@@ -343,7 +358,8 @@ fun MainContent(
               "VideoDetails",
               "AdmissionForm",
               "BookOrderDetails",
-              "AryaNirmanRegistrationForm"
+              "AryaNirmanRegistrationForm",
+              "MemberDetail"
             ).any {
               currentScreen?.startsWith(it) == true
             }
@@ -405,6 +421,30 @@ fun MainContent(
                   contentDescription = "login"
                 )
               }
+            }
+          }
+
+          // Overflow menu with version info
+          IconButton(
+            onClick = { showOverflowMenu = true }
+          ) {
+            Icon(Icons.Default.MoreVert, contentDescription = "More options")
+          }
+
+          if (showOverflowMenu) {
+            DropdownMenu(
+              expanded = showOverflowMenu,
+              onDismissRequest = { showOverflowMenu = false }
+            ) {
+              DropdownMenuItem(
+                text = {
+                  Text(
+                    text = org.aryamahasangh.util.VersionInfo.getFormattedVersion(),
+                    style = MaterialTheme.typography.labelSmall
+                  )
+                },
+                onClick = { showOverflowMenu = false }
+              )
             }
           }
         }

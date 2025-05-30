@@ -5,6 +5,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,9 +34,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.SettingKeys
-import org.aryamahasangh.features.organisations.OrganisationDescriptionState
-import org.aryamahasangh.features.organisations.OrganisationDetail
-import org.aryamahasangh.features.organisations.OrganisationLogoState
+import org.aryamahasangh.features.organisations.*
 import org.aryamahasangh.network.bucket
 import org.aryamahasangh.screens.EditImageButton
 import org.jetbrains.compose.resources.painterResource
@@ -55,7 +58,7 @@ fun SabhaPreview() {
   }
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun OrganisationDetail(
   organisation: OrganisationDetail,
@@ -63,10 +66,17 @@ fun OrganisationDetail(
   updateOrganisationDescription: (String, String) -> Unit,
   organisationDescriptionState: OrganisationDescriptionState = OrganisationDescriptionState(),
   onDescriptionEditModeChange: (Boolean) -> Unit = {},
-  organisationLogoState: OrganisationLogoState = OrganisationLogoState()
+  organisationLogoState: OrganisationLogoState = OrganisationLogoState(),
+  onRemoveMember: (String, String, String) -> Unit = { _, _, _ -> },
+  onUpdateMemberPost: (String, String, String) -> Unit = { _, _, _ -> },
+  memberManagementState: MemberManagementState = MemberManagementState()
 ) {
   val (id, name, description, logo, keyPeople) = organisation
   var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
+  var showDeleteDialog by remember { mutableStateOf<OrganisationalMember?>(null) }
+  var showUpdatePostDialog by remember { mutableStateOf<OrganisationalMember?>(null) }
+  var updatedPost by remember { mutableStateOf("") }
+
   Column(
     modifier =
       Modifier.fillMaxSize().padding(8.dp)
@@ -200,42 +210,107 @@ fun OrganisationDetail(
 
     if (keyPeople.isNotEmpty()) {
       val sortedPeople = keyPeople.sortedBy { it.priority }
-      Column {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+      ) {
         Text(
           "कार्यकारिणी/पदाधिकारी",
           style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.Bold,
           modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp)
         )
-      }
-      FlowRow {
-        sortedPeople.forEach {
-          Row(modifier = Modifier.padding(8.dp)) {
-            AsyncImage(
-              model = it.member.profileImage ?: "",
-              contentDescription = "profile image ${it.member.name}",
-              contentScale = ContentScale.Crop,
-              modifier = Modifier.clip(CircleShape).size(80.dp),
-              placeholder =
-                BrushPainter(
-                  Brush.linearGradient(
-                    listOf(
-                      Color(color = 0xFFFFFFFF),
-                      Color(color = 0xFFDDDDDD)
-                    )
-                  )
-                ),
-              fallback = painterResource(Res.drawable.error_profile_image),
-              error = painterResource(Res.drawable.error_profile_image)
-            )
-            Column(modifier = Modifier.padding(12.dp, 8.dp)) {
-              Text(it.member.name, style = MaterialTheme.typography.bodyLarge)
-              Text(it.post)
+        TooltipBox(
+          positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+          tooltip = {
+            PlainTooltip {
+              Text("नए पदाधिकारी जोड़ें")
             }
+          },
+          state = rememberTooltipState()
+        ) {
+          // button for adding new organisational members
+          IconButton(onClick = { /* Handle icon button click */ }) {
+            Icon(Icons.Default.PersonAdd, contentDescription = null)
           }
         }
       }
+      FlowRow {
+        sortedPeople.forEach { member ->
+          KeyPersonItem(
+            member = member,
+            isLoggedIn = isLoggedIn,
+            onUpdatePost = {
+              showUpdatePostDialog = member
+              updatedPost = member.post
+            },
+            onDelete = { showDeleteDialog = member },
+            isUpdatingPost = memberManagementState.isUpdatingPost,
+            isRemoving = memberManagementState.isRemovingMember
+          )
+        }
+      }
     }
+  }
+
+  // Delete Confirmation Dialog
+  showDeleteDialog?.let { member ->
+    AlertDialog(
+      onDismissRequest = { showDeleteDialog = null },
+      title = { Text("पदाधिकारी हटाएँ?") },
+      text = { Text("क्या निश्चितरूप से इन इस पदाधिकारी को हटाना चाहते है?") },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            onRemoveMember(member.id, member.member.name, id)
+            showDeleteDialog = null
+          }
+        ) {
+          Text("Yes")
+        }
+      },
+      dismissButton = {
+        TextButton(onClick = { showDeleteDialog = null }) {
+          Text("No")
+        }
+      }
+    )
+  }
+
+  // Update Post Dialog
+  showUpdatePostDialog?.let { member ->
+    AlertDialog(
+      onDismissRequest = { showUpdatePostDialog = null },
+      title = { Text("पद बदलें") },
+      text = {
+        Column {
+          OutlinedTextField(
+            value = updatedPost,
+            onValueChange = { updatedPost = it },
+            label = { Text("पद") },
+            modifier = Modifier.fillMaxWidth()
+          )
+        }
+      },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            if (updatedPost.isNotBlank()) {
+              onUpdateMemberPost(member.id, updatedPost, id)
+              showUpdatePostDialog = null
+            }
+          }
+        ) {
+          Text("Save")
+        }
+      },
+      dismissButton = {
+        TextButton(onClick = { showUpdatePostDialog = null }) {
+          Text("Cancel")
+        }
+      }
+    )
   }
 }
 
@@ -294,6 +369,94 @@ fun OrganisationDescription(
           inProgress = organisationDescriptionState.isUpdating
         ) {
           updateDescription(orgId, localText)
+        }
+      }
+    }
+  }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun KeyPersonItem(
+  member: OrganisationalMember,
+  isLoggedIn: Boolean,
+  onUpdatePost: () -> Unit,
+  onDelete: () -> Unit,
+  isUpdatingPost: Boolean = false,
+  isRemoving: Boolean = false
+) {
+  var showOptionsMenu by remember { mutableStateOf(false) }
+
+  Column(
+    modifier = Modifier.padding(4.dp)
+  ) {
+    Row(
+      modifier = Modifier.padding(8.dp),
+      verticalAlignment = Alignment.CenterVertically
+    ) {
+      AsyncImage(
+        model = member.member.profileImage ?: "",
+        contentDescription = "profile image ${member.member.name}",
+        contentScale = ContentScale.Crop,
+        modifier = Modifier.clip(CircleShape).size(80.dp),
+        placeholder =
+          BrushPainter(
+            Brush.linearGradient(
+              listOf(
+                Color(color = 0xFFFFFFFF),
+                Color(color = 0xFFDDDDDD)
+              )
+            )
+          ),
+        fallback = painterResource(Res.drawable.error_profile_image),
+        error = painterResource(Res.drawable.error_profile_image)
+      )
+
+      Column(
+        modifier = Modifier.padding(12.dp, 8.dp)
+      ) {
+        Text(member.member.name, style = MaterialTheme.typography.bodyLarge)
+        Text(member.post, style = MaterialTheme.typography.bodyMedium)
+      }
+
+      if (isLoggedIn) {
+        if (isUpdatingPost || isRemoving) {
+          // Show loading indicator when operations are in progress
+          CircularProgressIndicator(
+            modifier = Modifier.size(24.dp),
+            strokeWidth = 2.dp
+          )
+        } else {
+          Box {
+            IconButton(onClick = { showOptionsMenu = true }) {
+              Icon(
+                imageVector = Icons.Default.MoreVert,
+                contentDescription = "Options"
+              )
+            }
+
+            DropdownMenu(
+              expanded = showOptionsMenu,
+              onDismissRequest = { showOptionsMenu = false }
+            ) {
+              DropdownMenuItem(
+                text = { Text("पद बदलें") },
+                onClick = {
+                  showOptionsMenu = false
+                  onUpdatePost()
+                },
+                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
+              )
+              DropdownMenuItem(
+                text = { Text("पदाधिकारी को हटाएं") },
+                onClick = {
+                  showOptionsMenu = false
+                  onDelete()
+                },
+                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) }
+              )
+            }
+          }
         }
       }
     }

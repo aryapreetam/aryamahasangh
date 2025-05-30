@@ -164,10 +164,40 @@ mutation removeMemberFromOrganisation($organisationalMemberId: String!) {
   }
 }
 
+mutation updateOrganisationalMemberPost($organisationalMemberId: String!, $post: String!) {
+  updateorganisational_memberCollection(
+    set: { post: $post }
+    filter: {id: {eq: $organisationalMemberId} }
+  ){
+    affectedCount
+  }
+}
 
-mutation addMember($name: String!, $phoneNumber: String!, $educationalQualification: String!, $profileImageUrl: String!, $email: String) {
+
+mutation updateOrganisationalMemberPriority($organisationalMemberId: String!, $priority: Int!) {
+  updateorganisational_memberCollection(
+    set: { priority: $priority }
+    filter: {id: {eq: $organisationalMemberId} }
+  ){
+    affectedCount
+  }
+}
+
+
+
+mutation addMember($name: String!, $phoneNumber: String!, $educationalQualification: String!, $profileImageUrl: String!, $email: String, $address: String, $state: String, $district: String, $pincode: String) {
   insertIntomemberCollection(
-    objects: [{name: $name, phone_number: $phoneNumber, educational_qualification: $educationalQualification, profile_image: $profileImageUrl, email: $email}]
+    objects: [{
+      name: $name,
+      phone_number: $phoneNumber,
+      educational_qualification: $educationalQualification,
+      profile_image: $profileImageUrl,
+      email: $email,
+      address: $address,
+      state: $state,
+      district: $district,
+      pin: $pincode
+    }]
   ) {
     affectedCount
   }
@@ -188,10 +218,19 @@ mutation updateMemberPhoto($memberId: String!, $profileImageUrl: String!) {
   }
 }
 
-mutation updateMemberDetails($memberId: String!, $name: String!, $phoneNumber: String!, $educationalQualification: String) {
+mutation updateMemberDetails($memberId: String!, $name: String!, $phoneNumber: String!, $educationalQualification: String, $email: String, $address: String, $state: String, $district: String, $pincode: String) {
   updatememberCollection(
     filter: {id: {eq: $memberId}}
-    set: {name: $name, phone_number: $phoneNumber, educational_qualification: $educationalQualification}
+    set: {
+      name: $name,
+      phone_number: $phoneNumber,
+      educational_qualification: $educationalQualification,
+      email: $email,
+      address: $address,
+      state: $state,
+      district: $district,
+      pin: $pincode
+    }
   ) {
     affectedCount
   }

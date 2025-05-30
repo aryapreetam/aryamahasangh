@@ -12,9 +12,18 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import org.aryamahasangh.features.activities.toDevanagariNumerals
 
 @Composable
-fun AdminContainerScreen(viewModel: AdminViewModel) {
+fun AdminContainerScreen(
+  viewModel: AdminViewModel,
+  onNavigateToMemberDetail: (String) -> Unit = {},
+  onNavigateToAddMember: () -> Unit = {}
+) {
+  val membersCount by viewModel.membersCount.collectAsState()
+  LaunchedEffect(Unit){
+    viewModel.getMembersCount()
+  }
   Column(modifier = Modifier.fillMaxSize()) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val pagerState = rememberPagerState { 2 }
@@ -29,10 +38,11 @@ fun AdminContainerScreen(viewModel: AdminViewModel) {
     ScrollableTabRow(
       selectedTabIndex = selectedTabIndex
     ) {
+      val count = "$membersCount".toDevanagariNumerals()
       Tab(
         selected = selectedTabIndex == 0,
         onClick = { selectedTabIndex = 0 },
-        text = { Text("आर्यों की सूचि") }
+        text = { Text("आर्यों की सूचि ($count)") }
       )
     }
     HorizontalPager(
@@ -48,7 +58,11 @@ fun AdminContainerScreen(viewModel: AdminViewModel) {
         contentAlignment = Alignment.Center
       ) {
         if (it == 0) {
-          MembersScreen(viewModel)
+          MembersScreen(
+            viewModel = viewModel,
+            onNavigateToMemberDetail = onNavigateToMemberDetail,
+            onNavigateToAddMember = onNavigateToAddMember
+          )
         }
       }
     }
