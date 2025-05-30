@@ -17,7 +17,7 @@ import org.aryamahasangh.features.activities.ActivitiesViewModel
 import org.aryamahasangh.features.activities.ActivityDetailScreen
 import org.aryamahasangh.features.admin.AdminContainerScreen
 import org.aryamahasangh.features.admin.AdminViewModel
-import org.aryamahasangh.features.admin.MembersScreen
+import org.aryamahasangh.features.admin.MemberDetailScreen
 import org.aryamahasangh.features.arya_nirman.AryaNirmanHomeScreen
 import org.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
 import org.aryamahasangh.features.arya_nirman.SatraRegistrationFormScreen
@@ -175,11 +175,24 @@ fun RootNavGraph(navController: NavHostController) {
     navigation<Screen.AdminSection>(startDestination = Screen.AdminContainer) {
       composable<Screen.AdminContainer> {
         val viewModel = koinInject<AdminViewModel>()
-        AdminContainerScreen(viewModel)
+        AdminContainerScreen(
+          viewModel = viewModel,
+          onNavigateToMemberDetail = { memberId ->
+            navController.navigate(Screen.MemberDetail(memberId))
+          },
+          onNavigateToAddMember = {
+            navController.navigate(Screen.MemberDetail("new"))
+          }
+        )
       }
       composable<Screen.MemberDetail> {
         val viewModel = koinInject<AdminViewModel>()
-        MembersScreen(viewModel)
+        val memberId = it.toRoute<Screen.MemberDetail>().memberId
+        MemberDetailScreen(
+          memberId = memberId,
+          viewModel = viewModel,
+          isAddMode = memberId == "new"
+        )
       }
     }
   }

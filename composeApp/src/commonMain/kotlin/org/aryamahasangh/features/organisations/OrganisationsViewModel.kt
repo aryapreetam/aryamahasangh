@@ -37,6 +37,14 @@ data class OrganisationLogoState(
   val successMessage: String? = null
 )
 
+data class MemberManagementState(
+  val isRemovingMember: Boolean = false,
+  val isUpdatingPost: Boolean = false,
+  val removeError: String? = null,
+  val updatePostError: String? = null,
+  val successMessage: String? = null
+)
+
 /**
  * ViewModel for the Organisations and Organisation Details screens
  */
@@ -55,6 +63,10 @@ class OrganisationsViewModel(
   // Separate state for organisation logo update
   private val _organisationLogoState = MutableStateFlow(OrganisationLogoState())
   val organisationLogoState: StateFlow<OrganisationLogoState> = _organisationLogoState.asStateFlow()
+
+  // Separate state for member management
+  private val _memberManagementState = MutableStateFlow(MemberManagementState())
+  val memberManagementState: StateFlow<MemberManagementState> = _memberManagementState.asStateFlow()
 
   init {
     loadOrganisations()
@@ -268,5 +280,104 @@ class OrganisationsViewModel(
           }
         }
     }
+  }
+
+  /**
+   * Remove a member from the organisation
+   */
+  fun removeMemberFromOrganisation(organisationalMemberId: String, memberName: String, orgId: String) {
+    launch {
+      _memberManagementState.value = _memberManagementState.value.copy(
+        isRemovingMember = true,
+        removeError = null,
+        successMessage = null
+      )
+
+      organisationsRepository.removeMemberFromOrganisation(organisationalMemberId).collect { result ->
+        when (result) {
+          is Result.Loading -> {
+            // Already set loading state above
+          }
+
+          is Result.Success -> {
+            if (result.data) {
+              _memberManagementState.value = _memberManagementState.value.copy(
+                isRemovingMember = false,
+                successMessage = "User removed successfully"
+              )
+              // Reload organisation details to refresh the member list
+              loadOrganisationDetail(orgId)
+            } else {
+              _memberManagementState.value = _memberManagementState.value.copy(
+                isRemovingMember = false,
+                removeError = "Failed to remove member from organisation"
+              )
+            }
+          }
+
+          is Result.Error -> {
+            _memberManagementState.value = _memberManagementState.value.copy(
+              isRemovingMember = false,
+              removeError = result.message
+            )
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Update a member's post in the organisation
+   */
+  fun updateMemberPost(organisationalMemberId: String, newPost: String, orgId: String) {
+    launch {
+      _memberManagementState.value = _memberManagementState.value.copy(
+        isUpdatingPost = true,
+        updatePostError = null,
+        successMessage = null
+      )
+
+      organisationsRepository.updateMemberPost(organisationalMemberId, newPost).collect { result ->
+        when (result) {
+          is Result.Loading -> {
+            // Already set loading state above
+          }
+
+          is Result.Success -> {
+            if (result.data) {
+              _memberManagementState.value = _memberManagementState.value.copy(
+                isUpdatingPost = false,
+                successMessage = "Post updated successfully"
+              )
+              // Reload organisation details to refresh the member list
+              loadOrganisationDetail(orgId)
+            } else {
+              _memberManagementState.value = _memberManagementState.value.copy(
+                isUpdatingPost = false,
+                updatePostError = "Failed to update member post"
+              )
+            }
+          }
+
+          is Result.Error -> {
+            _memberManagementState.value = _memberManagementState.value.copy(
+              isUpdatingPost = false,
+              updatePostError = result.message
+            )
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Clear member management success message
+   */
+  fun clearMemberManagementMessage() {
+    _memberManagementState.value = _memberManagementState.value.copy(
+      successMessage = null,
+      removeError = null,
+      updatePostError = null
+    )
   }
 }

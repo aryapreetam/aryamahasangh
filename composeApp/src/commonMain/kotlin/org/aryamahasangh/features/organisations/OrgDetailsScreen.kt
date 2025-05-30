@@ -31,6 +31,7 @@ fun OrgDetailScreen(
   val uiState by viewModel.organisationDetailUiState.collectAsState()
   val descriptionState by viewModel.organisationDescriptionState.collectAsState()
   val logoState by viewModel.organisationLogoState.collectAsState()
+  val memberManagementState by viewModel.memberManagementState.collectAsState()
 
   // Handle loading state
   if (uiState.isLoading) {
@@ -111,12 +112,59 @@ fun OrgDetailScreen(
     }
   }
 
+  // Handle member management progress messages
+  LaunchedEffect(memberManagementState.isRemovingMember) {
+    if (memberManagementState.isRemovingMember) {
+      snackbarHostState.showSnackbar("Removing user from organisation...")
+    }
+  }
+
+  LaunchedEffect(memberManagementState.isUpdatingPost) {
+    if (memberManagementState.isUpdatingPost) {
+      snackbarHostState.showSnackbar("Updating post...")
+    }
+  }
+
+  // Handle member management success messages
+  memberManagementState.successMessage?.let { message ->
+    LaunchedEffect(message) {
+      snackbarHostState.showSnackbar(
+        message = message,
+        actionLabel = "Close"
+      )
+      viewModel.clearMemberManagementMessage()
+    }
+  }
+
+  // Handle member management error messages
+  memberManagementState.removeError?.let { error ->
+    LaunchedEffect(error) {
+      snackbarHostState.showSnackbar(
+        message = error,
+        actionLabel = "Close"
+      )
+      viewModel.clearMemberManagementMessage()
+    }
+  }
+
+  memberManagementState.updatePostError?.let { error ->
+    LaunchedEffect(error) {
+      snackbarHostState.showSnackbar(
+        message = error,
+        actionLabel = "Close"
+      )
+      viewModel.clearMemberManagementMessage()
+    }
+  }
+
   OrganisationDetail(
     organisation = uiState.organisation!!,
     updateOrganisationLogo = viewModel::updateOrganisationLogo,
     updateOrganisationDescription = viewModel::updateOrganisationDescription,
     organisationDescriptionState = descriptionState,
     onDescriptionEditModeChange = viewModel::setDescriptionEditMode,
-    organisationLogoState = logoState
+    organisationLogoState = logoState,
+    onRemoveMember = viewModel::removeMemberFromOrganisation,
+    onUpdateMemberPost = viewModel::updateMemberPost
   )
 }
