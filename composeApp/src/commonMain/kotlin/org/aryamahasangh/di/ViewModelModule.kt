@@ -1,6 +1,7 @@
 package org.aryamahasangh.di
 
 import org.aryamahasangh.features.activities.ActivitiesViewModel
+import org.aryamahasangh.features.admin.AdminViewModel
 import org.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
 import org.aryamahasangh.features.arya_nirman.SatraRegistrationViewModel
 import org.aryamahasangh.features.organisations.OrganisationsViewModel
@@ -33,4 +34,5 @@ val viewModelModule =
     factoryOf(::BookOrderViewModel)
     factoryOf(::AryaNirmanViewModel)
     factoryOf(::SatraRegistrationViewModel)
+    factoryOf(::AdminViewModel)
   }

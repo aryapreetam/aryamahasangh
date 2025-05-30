@@ -231,6 +231,8 @@ private fun checkIfSelected(
     true
   } else if ((currentDestination?.contains("AryaaGurukulCollege") == true || currentDestination?.contains("AdmissionForm") == true) && currentDrawerItem == Screen.AryaaGurukulSection.toString()) {
     true
+  } else if ((currentDestination?.contains("AdminContainer") == true || currentDestination?.contains("MemberDetail") == true) && currentDrawerItem == Screen.AdminSection.toString()) {
+    true
   } else if (currentDestination?.contains(currentDrawerItem) == true) {
     true
   } else {

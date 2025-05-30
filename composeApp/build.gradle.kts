@@ -1,3 +1,4 @@
+import com.apollographql.apollo.gradle.internal.ApolloGenerateSourcesTask
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.compose.reload.ComposeHotRun
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
@@ -66,7 +67,7 @@ kotlin {
 
   @OptIn(ExperimentalWasmDsl::class)
   wasmJs {
-    moduleName = "composeApp"
+    outputModuleName.set("composeApp")
     browser {
       val rootDirPath = project.rootDir.path
       val projectDirPath = project.projectDir.path
@@ -256,11 +257,29 @@ tasks.register<ComposeHotRun>("runHot") {
 apollo {
   service("service") {
     packageName.set("org.aryamahasangh")
-    mapScalar("Datetime", "kotlinx.datetime.Instant") // Keep this for Datetime
-
+    mapScalar("Datetime", "kotlinx.datetime.Instant")
+    // If you're using adapters, you can also set this
     generateKotlinModels.set(true)
-    // ...
+
+    introspection {
+      endpointUrl.set("$supabaseUrl/graphql/v1")
+      schemaFile.set(file("src/commonMain/graphql/schema.graphqls"))
+      headers.put("Authorization", "Bearer $supabaseKey")
+      headers.put("apikey", supabaseKey)
+    }
   }
+}
+
+// not generating all models properly. needs refactoring. until that time don't use
+//tasks.register<GenerateKto>("generateKtoModels") {
+//  dependsOn("generateApolloSources")
+//  doLast {
+//    println("Generating DTO models...")
+//  }
+//}
+
+tasks.withType(ApolloGenerateSourcesTask::class.java).configureEach {
+  doNotTrackState("i don't know")
 }
 
 // ============================================================================

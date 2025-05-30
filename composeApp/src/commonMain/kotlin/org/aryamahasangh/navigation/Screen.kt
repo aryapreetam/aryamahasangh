@@ -87,4 +87,16 @@ sealed class Screen {
 
   @Serializable
   data object AdmissionForm : Screen()
+
+  @Serializable
+  data object AdminSection : Screen()
+
+  @Serializable
+  data object AdminContainer : Screen()
+
+  @Serializable
+  data class MemberDetail(val memberId: String) : Screen()
+
+  @Serializable
+  data object Members : Screen()
 }
