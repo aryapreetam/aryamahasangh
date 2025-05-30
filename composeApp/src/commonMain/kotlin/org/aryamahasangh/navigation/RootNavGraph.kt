@@ -15,6 +15,9 @@ import org.aryamahasangh.features.activities.ActivitiesContainer
 import org.aryamahasangh.features.activities.ActivitiesScreen
 import org.aryamahasangh.features.activities.ActivitiesViewModel
 import org.aryamahasangh.features.activities.ActivityDetailScreen
+import org.aryamahasangh.features.admin.AdminContainerScreen
+import org.aryamahasangh.features.admin.AdminViewModel
+import org.aryamahasangh.features.admin.MembersScreen
 import org.aryamahasangh.features.arya_nirman.AryaNirmanHomeScreen
 import org.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
 import org.aryamahasangh.features.arya_nirman.SatraRegistrationFormScreen
@@ -167,6 +170,16 @@ fun RootNavGraph(navController: NavHostController) {
         } else {
           RegistrationForm(viewModel)
         }
+      }
+    }
+    navigation<Screen.AdminSection>(startDestination = Screen.AdminContainer) {
+      composable<Screen.AdminContainer> {
+        val viewModel = koinInject<AdminViewModel>()
+        AdminContainerScreen(viewModel)
+      }
+      composable<Screen.MemberDetail> {
+        val viewModel = koinInject<AdminViewModel>()
+        MembersScreen(viewModel)
       }
     }
   }

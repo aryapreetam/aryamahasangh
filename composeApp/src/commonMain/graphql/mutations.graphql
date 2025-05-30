@@ -147,3 +147,52 @@ mutation registerForSatr(
     }
   }
 }
+
+mutation addMemberToOrganisation($memberId: String!, $organisationId: String!, $post: String!, $priority: Int!) {
+  insertIntoorganisational_memberCollection(
+    objects: [{member_id: $memberId, organisation_id: $organisationId, post: $post, priority: $priority}]
+  ) {
+    affectedCount
+  }
+}
+
+mutation removeMemberFromOrganisation($organisationalMemberId: String!) {
+  deleteFromorganisational_memberCollection(
+    filter: {id: {eq: $organisationalMemberId}}
+  ) {
+    affectedCount
+  }
+}
+
+
+mutation addMember($name: String!, $phoneNumber: String!, $educationalQualification: String!, $profileImageUrl: String!, $email: String) {
+  insertIntomemberCollection(
+    objects: [{name: $name, phone_number: $phoneNumber, educational_qualification: $educationalQualification, profile_image: $profileImageUrl, email: $email}]
+  ) {
+    affectedCount
+  }
+}
+
+mutation deleteMember($memberId: String!){
+  deleteFrommemberCollection(filter: { id: {eq: $memberId} }){
+    affectedCount
+  }
+}
+
+mutation updateMemberPhoto($memberId: String!, $profileImageUrl: String!) {
+  updatememberCollection(
+    filter: {id: {eq: $memberId}}
+    set: {profile_image: $profileImageUrl}
+  ) {
+    affectedCount
+  }
+}
+
+mutation updateMemberDetails($memberId: String!, $name: String!, $phoneNumber: String!, $educationalQualification: String) {
+  updatememberCollection(
+    filter: {id: {eq: $memberId}}
+    set: {name: $name, phone_number: $phoneNumber, educational_qualification: $educationalQualification}
+  ) {
+    affectedCount
+  }
+}

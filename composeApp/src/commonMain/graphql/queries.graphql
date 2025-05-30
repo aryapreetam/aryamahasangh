@@ -333,3 +333,80 @@ query registrationsForActivity($activityId: String!){
     }
   }
 }
+
+fragment MemberShort on member {
+  id
+  name
+  profile_image
+}
+
+query members {
+  memberCollection {
+    edges {
+      node {
+        ...MemberShort
+      }
+    }
+  }
+}
+
+query memberDetail($memberId: String!) {
+  memberCollection(filter: {id: {eq: $memberId}}) {
+    edges {
+      node {
+        id
+        name
+        profile_image
+        phone_number
+        educational_qualification
+        email
+        address
+        district
+        state
+        pin
+        organisational_memberCollection {
+          edges {
+            node {
+              id
+              organisation {
+                name
+                logo
+              }
+            }
+          }
+        }
+        activity_memberCollection {
+          edges {
+            node {
+              activities {
+                id
+                name
+                district
+                state
+                start_datetime
+                end_datetime
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query searchMembers($nameOrPhoneNumber: String!) {
+  memberCollection(
+    filter: {
+      or: [
+        {name: {ilike: $nameOrPhoneNumber}},
+        {phone_number: {ilike: $nameOrPhoneNumber}}
+      ]
+    }
+  ) {
+    edges {
+      node {
+        ...MemberShort
+      }
+    }
+  }
+}

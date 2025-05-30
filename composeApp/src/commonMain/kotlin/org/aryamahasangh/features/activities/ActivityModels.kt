@@ -69,7 +69,11 @@ data class Member(
   val profileImage: String = "",
   @SerialName("phone_number")
   val phoneNumber: String = "",
-  val email: String = ""
+  val email: String = "",
+  val address: String = "",
+  val district: String = "",
+  val state: String = "",
+  val pincode: String = "",
 )
 
 data class OrganisationalActivityCollection(

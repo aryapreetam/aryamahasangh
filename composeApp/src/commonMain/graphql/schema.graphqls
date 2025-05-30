@@ -2120,6 +2120,18 @@ type member implements Node {
 
   email: String
 
+  address: String
+
+  state: String
+
+  district: String
+
+  pin: String
+
+  latitude: Float
+
+  longitude: Float
+
   organisational_memberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: organisational_memberFilter, "Sort order to apply to the collection" orderBy: [organisational_memberOrderBy!]): organisational_memberConnection
 
   activity_memberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: activity_memberFilter, "Sort order to apply to the collection" orderBy: [activity_memberOrderBy!]): activity_memberConnection
@@ -2162,6 +2174,18 @@ input memberFilter {
 
   email: StringFilter
 
+  address: StringFilter
+
+  state: StringFilter
+
+  district: StringFilter
+
+  pin: StringFilter
+
+  latitude: FloatFilter
+
+  longitude: FloatFilter
+
   nodeId: IDFilter
 
   """
@@ -2192,6 +2216,18 @@ input memberInsertInput {
   phone_number: String
 
   email: String
+
+  address: String
+
+  state: String
+
+  district: String
+
+  pin: String
+
+  latitude: Float
+
+  longitude: Float
 }
 
 type memberInsertResponse {
@@ -2218,6 +2254,18 @@ input memberOrderBy {
   phone_number: OrderByDirection
 
   email: OrderByDirection
+
+  address: OrderByDirection
+
+  state: OrderByDirection
+
+  district: OrderByDirection
+
+  pin: OrderByDirection
+
+  latitude: OrderByDirection
+
+  longitude: OrderByDirection
 }
 
 input memberUpdateInput {
@@ -2232,6 +2280,18 @@ input memberUpdateInput {
   phone_number: String
 
   email: String
+
+  address: String
+
+  state: String
+
+  district: String
+
+  pin: String
+
+  latitude: Float
+
+  longitude: Float
 }
 
 type memberUpdateResponse {
