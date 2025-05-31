@@ -215,7 +215,19 @@ fun RootNavGraph(navController: NavHostController) {
     }
     navigation<Screen.AdminSection>(startDestination = Screen.AdminContainer) {
       composable<Screen.AdminContainer> {
+        var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
         val viewModel = koinInject<AdminViewModel>()
+
+        // Navigate to AboutSection if user logs out
+        LaunchedEffect(isLoggedIn) {
+          if (!isLoggedIn) {
+            navController.navigate(Screen.AboutSection) {
+              // Clear the back stack so user can't navigate back to admin
+              popUpTo(0) { inclusive = true }
+            }
+          }
+        }
+
         AdminContainerScreen(
           viewModel = viewModel,
           onNavigateToMemberDetail = { memberId ->
@@ -227,8 +239,20 @@ fun RootNavGraph(navController: NavHostController) {
         )
       }
       composable<Screen.MemberDetail> {
+        var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
         val viewModel = koinInject<AdminViewModel>()
         val memberId = it.toRoute<Screen.MemberDetail>().memberId
+
+        // Navigate to AboutSection if user logs out
+        LaunchedEffect(isLoggedIn) {
+          if (!isLoggedIn) {
+            navController.navigate(Screen.AboutSection) {
+              // Clear the back stack so user can't navigate back to admin
+              popUpTo(0) { inclusive = true }
+            }
+          }
+        }
+
         MemberDetailScreen(
           memberId = memberId,
           viewModel = viewModel,
