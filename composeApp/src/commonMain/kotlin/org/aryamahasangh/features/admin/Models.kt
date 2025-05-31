@@ -1,5 +1,7 @@
 package org.aryamahasangh.features.admin
 
+import kotlinx.datetime.LocalDateTime
+
 data class MemberShort(
   val id: String,
   val name: String,
@@ -33,6 +35,6 @@ data class ActivityInfo(
   val name: String,
   val district: String,
   val state: String,
-  val startDatetime: String,
-  val endDatetime: String
+  val startDatetime: LocalDateTime,
+  val endDatetime: LocalDateTime
 )

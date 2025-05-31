@@ -109,6 +109,7 @@ fun DrawerContent(
   val currentDestination by remember {
     derivedStateOf { backStackEntry?.destination?.route }
   }
+  var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
 
   Column(
     modifier = Modifier.width(250.dp).padding(8.dp).fillMaxHeight()
@@ -192,32 +193,34 @@ fun DrawerContent(
       }
     }
 
-    // Admin option at the bottom
-    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-    NavigationDrawerItem(
-      label = {
-        Text("व्यवस्थापकीय", style = MaterialTheme.typography.bodyLarge)
-      },
-      selected = checkIfSelected(currentDestination, Screen.AdminContainer.toString()),
-      onClick = {
-        navController.navigate(Screen.AdminContainer) {
-          popUpTo(navController.graph.startDestDisplayName) {
-            saveState = true
+    if(isLoggedIn) {
+      // Admin option at the bottom
+      HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+      NavigationDrawerItem(
+        label = {
+          Text("व्यवस्थापकीय", style = MaterialTheme.typography.bodyLarge)
+        },
+        selected = checkIfSelected(currentDestination, Screen.AdminContainer.toString()),
+        onClick = {
+          navController.navigate(Screen.AdminContainer) {
+            popUpTo(navController.graph.startDestDisplayName) {
+              saveState = true
+            }
+            launchSingleTop = true
+            restoreState = true
+            scope.launch {
+              drawerState.close()
+            }
           }
-          launchSingleTop = true
-          restoreState = true
-          scope.launch {
-            drawerState.close()
-          }
+        },
+        icon = {
+          Icon(
+            painter = painterResource(Res.drawable.account_circle),
+            contentDescription = "व्यवस्थापकीय"
+          )
         }
-      },
-      icon = {
-        Icon(
-          painter = painterResource(Res.drawable.account_circle),
-          contentDescription = "व्यवस्थापकीय"
-        )
-      }
-    )
+      )
+    }
   }
 }
 

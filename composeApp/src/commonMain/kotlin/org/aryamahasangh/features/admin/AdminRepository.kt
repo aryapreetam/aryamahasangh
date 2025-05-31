@@ -5,6 +5,8 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Count
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.aryamahasangh.*
 import org.aryamahasangh.network.supabaseClient
 import org.aryamahasangh.util.Result
@@ -89,15 +91,33 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
       if (response.hasErrors()) {
         throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
       }
-      val memberNode = response.data?.memberCollection?.edges?.firstOrNull()?.node
+      val members = response.data?.memberCollection
+      val memberNode = members?.edges?.firstOrNull()?.node
       if (memberNode == null) {
         throw Exception("Member not found")
       }
 
       // For now, return empty lists for organisations and activities
       // These will be properly mapped once the exact GraphQL schema is known
-      val organisations = emptyList<OrganisationInfo>()
-      val activities = emptyList<ActivityInfo>()
+      val organisations = memberNode.organisational_memberCollection?.edges?.map {
+        val organisation = it.node.organisation
+        OrganisationInfo(
+          id = organisation.id,
+          name = organisation.name!!,
+          logo = organisation.logo ?: "",
+        )
+      }
+      val activities = memberNode.activity_memberCollection?.edges?.map {
+        val activity = it.node.activities!!
+        ActivityInfo(
+          id = activity.id,
+          name = activity.name!!,
+          district = activity.district!!,
+          state = activity.state!!,
+          startDatetime = activity.start_datetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
+          endDatetime = activity.end_datetime!!.toLocalDateTime(TimeZone.currentSystemDefault())
+        )
+      }
 
       MemberDetail(
         id = memberNode.id,
@@ -110,8 +130,8 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
         district = memberNode.district ?: "",
         state = memberNode.state ?: "",
         pincode = memberNode.pin ?: "",
-        organisations = organisations,
-        activities = activities
+        organisations = organisations ?: emptyList(),
+        activities = activities ?: emptyList()
       )
     }
     emit(result)

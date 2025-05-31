@@ -369,6 +369,7 @@ query memberDetail($memberId: String!) {
             node {
               id
               organisation {
+                id
                 name
                 logo
               }

@@ -1,5 +1,6 @@
 package org.aryamahasangh.features.admin
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,11 +14,25 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.BrushPainter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
+import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.core.PickerMode
+import io.github.vinceglb.filekit.core.PickerType
+import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 import org.aryamahasangh.LocalSnackbarHostState
+import org.aryamahasangh.features.arya_nirman.convertDates
+import org.aryamahasangh.network.bucket
 import org.aryamahasangh.screens.DistrictDropdown
 import org.aryamahasangh.screens.StateDropdown
 import org.aryamahasangh.screens.indianStatesToDistricts
@@ -198,6 +213,7 @@ fun MemberDetailScreen(
   }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ProfileSection(
   member: MemberDetail?,
@@ -206,6 +222,49 @@ private fun ProfileSection(
   onEditClick: () -> Unit,
   onPhotoUpdate: (String) -> Unit
 ) {
+  val scope = rememberCoroutineScope()
+  val snackbarHostState = LocalSnackbarHostState.current
+  val launcher = rememberFilePickerLauncher(
+    type = PickerType.Image,
+    mode = PickerMode.Single,
+    title = "Select profile photo"
+  ) { file ->
+    if (file != null) {
+      scope.launch {
+        try {
+          // Show immediate upload feedback
+          val snackbarJob = launch {
+            snackbarHostState.showSnackbar(
+              message = "🔄 Uploading profile photo...",
+              duration = SnackbarDuration.Indefinite
+            )
+          }
+
+          val uploadResponse = bucket.upload(
+            path = "profile_${Clock.System.now().epochSeconds}.jpg",
+            data = file.readBytes()
+          )
+          val imageUrl = bucket.publicUrl(uploadResponse.path)
+
+          // Cancel the upload progress snackbar
+          snackbarJob.cancel()
+          snackbarHostState.currentSnackbarData?.dismiss()
+
+          // Update the photo
+          onPhotoUpdate(imageUrl)
+
+          snackbarHostState.showSnackbar("✅ Profile photo updated successfully")
+        } catch (e: Exception) {
+          snackbarHostState.showSnackbar(
+            message = "❌ Failed to upload photo: ${e.message}",
+            actionLabel = "Close"
+          )
+          println("error uploading photo: $e")
+        }
+      }
+    }
+  }
+
   Card(
     modifier = Modifier.fillMaxWidth(),
     shape = RoundedCornerShape(4.dp)
@@ -214,46 +273,95 @@ private fun ProfileSection(
       modifier = Modifier.fillMaxWidth().padding(16.dp),
       verticalAlignment = Alignment.CenterVertically
     ) {
-      Box {
-        AsyncImage(
-          model = member?.profileImage?.ifEmpty { "https://via.placeholder.com/100" }
-            ?: "https://via.placeholder.com/100",
-          contentDescription = "Profile Image",
-          modifier = Modifier
-            .size(100.dp)
-            .clip(CircleShape),
-          contentScale = ContentScale.Crop
-        )
-
+      // Profile Image and Edit Button
+      Row(
+        verticalAlignment = Alignment.Top
+      ) {
+        // Profile Image
         if (isAddMode) {
           Box(
             modifier = Modifier
               .size(100.dp)
               .clip(CircleShape)
-              .clickable { /* Handle photo upload */ },
+              .clickable { launcher.launch() },
             contentAlignment = Alignment.Center
           ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-              Icon(
-                modifier = Modifier.size(64.dp),
-                imageVector =Icons.Default.AddAPhoto,
-                contentDescription = "Upload Photo")
-              Text("फोटो अपलोड करें", style = MaterialTheme.typography.labelSmall)
+            AsyncImage(
+              model = member?.profileImage?.ifEmpty { null },
+              contentDescription = "Profile Image",
+              modifier = Modifier
+                .size(100.dp)
+                .clip(CircleShape),
+              contentScale = ContentScale.Crop,
+              placeholder = BrushPainter(
+                Brush.linearGradient(
+                  listOf(
+                    Color(0xFFFFFFFF),
+                    Color(0xFFDDDDDD)
+                  )
+                )
+              ),
+              fallback = null,
+              error = null
+            )
+
+            // Overlay for add mode
+            Box(
+              modifier = Modifier
+                .size(100.dp)
+                .clip(CircleShape)
+                .background(Color.Black.copy(alpha = 0.3f)),
+              contentAlignment = Alignment.Center
+            ) {
+              Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Icon(
+                  modifier = Modifier.size(32.dp),
+                  imageVector = Icons.Default.AddAPhoto,
+                  contentDescription = "Upload Photo",
+                  tint = Color.White
+                )
+                Text(
+                  "फोटो अपलोड करें",
+                  style = MaterialTheme.typography.labelSmall,
+                  color = Color.White
+                )
+              }
             }
           }
-        } else if (!isEditing) {
-          IconButton(
-            onClick = onEditClick,
-            modifier = Modifier.align(Alignment.TopEnd)
+        } else {
+          AsyncImage(
+            model = member?.profileImage?.ifEmpty { "https://via.placeholder.com/100" }
+              ?: "https://via.placeholder.com/100",
+            contentDescription = "Profile Image",
+            modifier = Modifier
+              .size(100.dp)
+              .clip(CircleShape),
+            contentScale = ContentScale.Crop
+          )
+        }
+
+        // Edit photo button - positioned to the right of profile image
+        if (!isAddMode && !isEditing) {
+          TooltipBox(
+            positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+            tooltip = {
+              PlainTooltip {
+                Text("फोटो बदलें")
+              }
+            },
+            state = rememberTooltipState()
           ) {
-            Icon(Icons.Default.Edit, contentDescription = "Edit Photo")
+            IconButton(onClick = { launcher.launch() }) {
+              Icon(Icons.Default.Edit, contentDescription = "Edit Photo")
+            }
           }
         }
       }
 
       Spacer(modifier = Modifier.width(16.dp))
 
-      Column {
+      // Member Info
+      Column(modifier = Modifier.weight(1f)) {
         Text(
           text = member?.name ?: "नए सदस्य",
           style = MaterialTheme.typography.headlineSmall,
@@ -486,7 +594,7 @@ private fun OrganisationsSection(organisations: List<OrganisationInfo>) {
         modifier = Modifier.fillMaxWidth().padding(16.dp)
       ) {
         Text(
-          text = "Organisations",
+          text = "संबधित संस्थाएं",
           style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.Bold
         )
@@ -522,7 +630,7 @@ private fun ActivitiesSection(activities: List<ActivityInfo>) {
         modifier = Modifier.fillMaxWidth().padding(16.dp)
       ) {
         Text(
-          text = "Activities",
+          text = "संबधित गतिविधियाँ",
           style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.Bold
         )
@@ -531,17 +639,40 @@ private fun ActivitiesSection(activities: List<ActivityInfo>) {
         activities.forEach { activity ->
           Card(
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-            colors = CardDefaults.cardColors(
-              containerColor = MaterialTheme.colorScheme.surfaceVariant
-            )
+//            colors = CardDefaults.cardColors(
+//              containerColor = MaterialTheme.colorScheme.surfaceVariant
+//            ),
+            shape = RoundedCornerShape(4.dp)
           ) {
             Column(
               modifier = Modifier.fillMaxWidth().padding(12.dp)
             ) {
               Text(
                 text = activity.name,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Medium
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold
+              )
+              Text(
+                text =
+                  buildAnnotatedString {
+                    val subtleTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+                    val (dateRange, timeRange) = convertDates(activity.startDatetime, activity.endDatetime)
+                    withStyle(
+                      style =
+                        SpanStyle(
+                          fontWeight = FontWeight.SemiBold,
+                          fontSize = 16.sp,
+                          color = MaterialTheme.colorScheme.onSurface
+                        )
+                    ) {
+                      append(dateRange)
+                    }
+                    append(" | ")
+                    withStyle(style = SpanStyle(fontSize = 13.sp, color = subtleTextColor)) {
+                      append(timeRange)
+                    }
+                  },
+                style = MaterialTheme.typography.bodyMedium
               )
               Text(
                 text = "${activity.district}, ${activity.state}",
