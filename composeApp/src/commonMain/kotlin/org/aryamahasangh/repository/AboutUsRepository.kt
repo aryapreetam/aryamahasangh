@@ -5,13 +5,13 @@ import com.apollographql.apollo.api.Optional
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import org.aryamahasangh.OrganisationQuery
+import org.aryamahasangh.domain.error.ErrorHandler
 import org.aryamahasangh.features.activities.Member
 import org.aryamahasangh.features.organisations.OrganisationDetail
 import org.aryamahasangh.features.organisations.OrganisationalMember
 import org.aryamahasangh.type.OrganisationFilter
 import org.aryamahasangh.type.StringFilter
 import org.aryamahasangh.util.Result
-import org.aryamahasangh.util.safeCall
 
 /**
  * Repository for handling about us related operations
@@ -31,8 +31,8 @@ class AboutUsRepositoryImpl(private val apolloClient: ApolloClient) : AboutUsRep
     flow {
       emit(Result.Loading)
 
-      val result =
-        safeCall {
+      val result = ErrorHandler.safeCall {
+        try {
           val response =
             apolloClient.query(
               OrganisationQuery(
@@ -42,9 +42,13 @@ class AboutUsRepositoryImpl(private val apolloClient: ApolloClient) : AboutUsRep
                   )
               )
             ).execute()
+
           if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+            val errorMessage = response.errors?.firstOrNull()?.message ?: "Unknown error occurred"
+            println("DEBUG - GraphQL Error: $errorMessage")
+            throw Exception(errorMessage)
           }
+
           response.data?.organisationCollection?.edges?.map {
             OrganisationDetail(
               id = it.node.id,
@@ -69,7 +73,13 @@ class AboutUsRepositoryImpl(private val apolloClient: ApolloClient) : AboutUsRep
                 }!!
             )
           }[0] ?: throw Exception("Organisation not found")
+
+        } catch (e: Exception) {
+          println("DEBUG - Caught exception in repository: ${e::class.simpleName}, Message: ${e.message}")
+          // Re-throw to let ErrorHandler.safeCall handle it
+          throw e
         }
+      }
 
       emit(result)
     }

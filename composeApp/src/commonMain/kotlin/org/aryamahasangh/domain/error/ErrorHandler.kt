@@ -1,5 +1,6 @@
 package org.aryamahasangh.domain.error
 
+import org.aryamahasangh.util.NetworkUtils
 import org.aryamahasangh.util.Result
 
 /**
@@ -14,13 +15,29 @@ object ErrorHandler {
   }
 
   /**
-   * Executes a block of code and handles any exceptions
+   * Executes a block of code and handles any exceptions with better network detection
    */
   suspend fun <T> safeCall(block: suspend () -> T): Result<T> {
     return try {
       Result.Success(block())
     } catch (exception: Exception) {
-      val appError = handleException(exception)
+      // Enhanced network detection using NetworkUtils
+      val appError = when {
+        NetworkUtils.isNetworkException(exception) -> {
+          when {
+            exception.message?.contains("timeout", ignoreCase = true) == true ->
+              AppError.NetworkError.Timeout
+
+            else ->
+              AppError.NetworkError.NoConnection
+          }
+        }
+        NetworkUtils.isLikelyNetworkIssue(exception.message, exception) -> {
+          AppError.NetworkError.NoConnection
+        }
+        else -> exception.toAppError()
+      }
+
       Result.Error(appError.getUserMessage(), exception)
     }
   }
@@ -90,7 +107,10 @@ fun <T> Result<T>.mapError(transform: (String) -> AppError): Result<T> {
  */
 fun <T> Result<T>.onError(action: (AppError) -> Unit): Result<T> {
   if (this is Result.Error) {
-    val appError = this.exception?.toAppError() ?: AppError.UnknownError(this.message)
+    val appError = when {
+      NetworkUtils.isNetworkException(this.exception) -> AppError.NetworkError.NoConnection
+      else -> this.exception?.toAppError() ?: AppError.UnknownError(this.message)
+    }
     action(appError)
   }
   return this
@@ -121,7 +141,11 @@ suspend fun <T> retryWithBackoff(
         }
 
         // Check if error is retryable
-        val appError = result.exception?.toAppError() ?: AppError.UnknownError(result.message)
+        val appError = when {
+          NetworkUtils.isNetworkException(result.exception) -> AppError.NetworkError.NoConnection
+          else -> result.exception?.toAppError() ?: AppError.UnknownError(result.message)
+        }
+
         if (!isRetryableError(appError)) {
           return result
         }
@@ -146,8 +170,8 @@ private fun isRetryableError(error: AppError): Boolean {
   return when (error) {
     is AppError.NetworkError.Timeout,
     is AppError.NetworkError.ServerError,
-    is AppError.NetworkError.UnknownNetworkError
-    -> true
+    is AppError.NetworkError.UnknownNetworkError,
+    is AppError.NetworkError.NoConnection -> true
     is AppError.NetworkError.HttpError -> error.code >= 500
     else -> false
   }

@@ -1,23 +1,27 @@
 package org.aryamahasangh.viewmodel
 
+import org.aryamahasangh.domain.error.AppError
+import org.aryamahasangh.domain.error.ErrorHandler
+import org.aryamahasangh.domain.error.getUserMessage
 import org.aryamahasangh.features.activities.OrganisationalActivityShort
 import org.aryamahasangh.repository.JoinUsRepository
-import org.aryamahasangh.util.Result
 
 /**
  * UI state for the Join Us screen
  */
 data class JoinUsUiState(
   val activities: List<OrganisationalActivityShort>? = null,
-  val isLoading: Boolean = false,
-  val error: String? = null,
+  override val isLoading: Boolean = false,
+  override val error: String? = null,
+  override val appError: AppError? = null,
   val labelState: LabelState = LabelState()
-)
+) : ErrorState
 
 data class LabelState(
-  val label: String = "आर्य महासंघ से जुड़ें",
+  val label: String = "आर्य महासंघ से जुड़ें",
   val isUpdating: Boolean = false,
   val error: String? = null,
+  val appError: AppError? = null,
   val editMode: Boolean = false
 )
 
@@ -35,25 +39,44 @@ class JoinUsViewModel(
   fun loadJoinUsLabel() {
     launch {
       joinUsRepository.getJoinUsLabel().collect { result ->
-        when (result) {
-          is Result.Loading -> {
-            // updateState { it.copy(isLoading = true, error = null) }
-            println("loading label ")
-          }
-          is Result.Success -> {
+        result.handleResult(
+          onLoading = {
             updateState {
               it.copy(
-                labelState = LabelState(label = result.data, isUpdating = false, error = null, editMode = false),
-                isLoading = false,
-                error = null
+                labelState = it.labelState.copy(isUpdating = true, error = null, appError = null)
               )
             }
-            println("label loaded successfully: ${result.data}")
+          },
+          onSuccess = { label ->
+            updateState {
+              it.copy(
+                labelState = LabelState(
+                  label = label,
+                  isUpdating = false,
+                  error = null,
+                  appError = null,
+                  editMode = false
+                ),
+                isLoading = false,
+                error = null,
+                appError = null
+              )
+            }
+          },
+          onError = { appError ->
+            ErrorHandler.logError(appError, "JoinUsViewModel.loadJoinUsLabel")
+            updateState {
+              it.copy(
+                labelState = it.labelState.copy(
+                  isUpdating = false,
+                  error = appError.getUserMessage(),
+                  appError = appError,
+                  editMode = false
+                )
+              )
+            }
           }
-          is Result.Error -> {
-            println("error loading label")
-          }
-        }
+        )
       }
     }
   }
@@ -62,24 +85,32 @@ class JoinUsViewModel(
     launch {
       updateState { it.copy(labelState = it.labelState.copy(isUpdating = true, editMode = true)) }
       joinUsRepository.updateLabel(label).collect { result ->
-        when (result) {
-          is Result.Error -> {
+        result.handleResult(
+          onLoading = {
+            updateState {
+              it.copy(labelState = it.labelState.copy(isUpdating = true, error = null, appError = null))
+            }
+          },
+          onSuccess = { _ ->
+            updateState {
+              it.copy(labelState = it.labelState.copy(isUpdating = false, editMode = false))
+            }
+            loadJoinUsLabel()
+          },
+          onError = { appError ->
+            ErrorHandler.logError(appError, "JoinUsViewModel.updateJoinUsLabel")
             updateState {
               it.copy(
-                labelState = it.labelState.copy(isUpdating = false, error = result.message, editMode = true)
+                labelState = it.labelState.copy(
+                  isUpdating = false,
+                  error = appError.getUserMessage(),
+                  appError = appError,
+                  editMode = true
+                )
               )
             }
-            println("error updating label: ${result.message}")
           }
-          is Result.Loading -> {
-            updateState { it.copy(labelState = it.labelState.copy(isUpdating = true)) }
-          }
-          is Result.Success<*> -> {
-            updateState { it.copy(labelState = it.labelState.copy(isUpdating = false, editMode = false)) }
-            loadJoinUsLabel()
-            println("label updated successfully: ${result.data}")
-          }
-        }
+        )
       }
     }
   }
@@ -92,31 +123,34 @@ class JoinUsViewModel(
     district: String
   ) {
     launch {
-      updateState { it.copy(isLoading = true, error = null) }
+      updateState { it.copy(isLoading = true, error = null, appError = null) }
 
       joinUsRepository.getFilteredActivities(state, district).collect { result ->
-        when (result) {
-          is Result.Loading -> {
-            updateState { it.copy(isLoading = true, error = null) }
-          }
-          is Result.Success -> {
+        result.handleResult(
+          onLoading = {
+            updateState { it.copy(isLoading = true, error = null, appError = null) }
+          },
+          onSuccess = { activities ->
             updateState {
               it.copy(
-                activities = result.data,
+                activities = activities,
                 isLoading = false,
-                error = null
+                error = null,
+                appError = null
+              )
+            }
+          },
+          onError = { appError ->
+            ErrorHandler.logError(appError, "JoinUsViewModel.loadFilteredActivities")
+            updateState {
+              it.copy(
+                isLoading = false,
+                error = appError.getUserMessage(),
+                appError = appError
               )
             }
           }
-          is Result.Error -> {
-            updateState {
-              it.copy(
-                isLoading = false,
-                error = result.message
-              )
-            }
-          }
-        }
+        )
       }
     }
   }
