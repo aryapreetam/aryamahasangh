@@ -1,15 +1,14 @@
 package org.aryamahasangh.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,7 +19,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.BrushPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.baseline_groups
 import aryamahasangh.composeapp.generated.resources.error_profile_image
@@ -30,10 +31,12 @@ import dev.burnoo.compose.remembersetting.rememberBooleanSetting
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.core.PickerMode
 import io.github.vinceglb.filekit.core.PickerType
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.SettingKeys
+import org.aryamahasangh.features.activities.Member
 import org.aryamahasangh.features.organisations.*
 import org.aryamahasangh.network.bucket
 import org.aryamahasangh.screens.EditImageButton
@@ -69,13 +72,19 @@ fun OrganisationDetail(
   organisationLogoState: OrganisationLogoState = OrganisationLogoState(),
   onRemoveMember: (String, String, String) -> Unit = { _, _, _ -> },
   onUpdateMemberPost: (String, String, String) -> Unit = { _, _, _ -> },
-  memberManagementState: MemberManagementState = MemberManagementState()
+  memberManagementState: MemberManagementState = MemberManagementState(),
+  onAddMemberToOrganisation: (String, String, String, Int) -> Unit = { _, _, _, _ -> },
+  searchMembers: (String) -> List<Member> = { emptyList() },
+  allMembers: List<Member> = emptyList(),
+  onTriggerSearch: (String) -> Unit = {}
 ) {
   val (id, name, description, logo, keyPeople) = organisation
   var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
   var showDeleteDialog by remember { mutableStateOf<OrganisationalMember?>(null) }
   var showUpdatePostDialog by remember { mutableStateOf<OrganisationalMember?>(null) }
   var updatedPost by remember { mutableStateOf("") }
+  var showAddMemberDialog by remember { mutableStateOf(false) }
+  var newMembersWithPosts by remember { mutableStateOf<Map<Member, String>>(emptyMap()) }
 
   Column(
     modifier =
@@ -208,8 +217,7 @@ fun OrganisationDetail(
       )
     }
 
-    if (keyPeople.isNotEmpty()) {
-      val sortedPeople = keyPeople.sortedBy { it.priority }
+    if (keyPeople.isNotEmpty() || isLoggedIn) {
       Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -221,22 +229,25 @@ fun OrganisationDetail(
           fontWeight = FontWeight.Bold,
           modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp)
         )
-        TooltipBox(
-          positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-          tooltip = {
-            PlainTooltip {
-              Text("नए पदाधिकारी जोड़ें")
+        if (isLoggedIn) {
+          TooltipBox(
+            positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+            tooltip = {
+              PlainTooltip {
+                Text("नए पदाधिकारी जोड़ें")
+              }
+            },
+            state = rememberTooltipState()
+          ) {
+            IconButton(onClick = { showAddMemberDialog = true }) {
+              Icon(Icons.Default.PersonAdd, contentDescription = null)
             }
-          },
-          state = rememberTooltipState()
-        ) {
-          // button for adding new organisational members
-          IconButton(onClick = { /* Handle icon button click */ }) {
-            Icon(Icons.Default.PersonAdd, contentDescription = null)
           }
         }
       }
+
       FlowRow {
+        val sortedPeople = keyPeople.sortedBy { it.priority }
         sortedPeople.forEach { member ->
           KeyPersonItem(
             member = member,
@@ -250,8 +261,54 @@ fun OrganisationDetail(
             isRemoving = memberManagementState.isRemovingMember
           )
         }
+
+        // Show new members being added with post input
+        newMembersWithPosts.forEach { (member, post) ->
+          NewMemberPostInput(
+            member = member,
+            post = post,
+            onPostChange = { newPost ->
+              newMembersWithPosts = newMembersWithPosts.toMutableMap().apply {
+                this[member] = newPost
+              }
+            },
+            onConfirm = {
+              if (post.isNotBlank()) {
+                val maxPriority = keyPeople.maxOfOrNull { it.priority } ?: 0
+                val priority = maxPriority + 1
+                onAddMemberToOrganisation(member.id, post, id, priority)
+                newMembersWithPosts = newMembersWithPosts - member
+              }
+            },
+            onCancel = {
+              newMembersWithPosts = newMembersWithPosts - member
+            },
+            isLoading = memberManagementState.isAddingMember
+          )
+        }
       }
     }
+  }
+
+  // Add Member Dialog
+  if (showAddMemberDialog) {
+    AddMemberDialog(
+      onDismiss = { showAddMemberDialog = false },
+      onMembersSelected = { selectedMembers ->
+        // Filter out members that are already part of the organisation
+        val existingMemberIds = keyPeople.map { it.member.id }.toSet()
+        val newMembers = selectedMembers.filter { it.id !in existingMemberIds }
+
+        // Add new members to the post input map
+        val newMembersMap = newMembers.associateWith { "" }
+        newMembersWithPosts = newMembersWithPosts + newMembersMap
+
+        showAddMemberDialog = false
+      },
+      searchMembers = searchMembers,
+      allMembers = allMembers,
+      onTriggerSearch = onTriggerSearch
+    )
   }
 
   // Delete Confirmation Dialog
@@ -484,5 +541,313 @@ fun ButtonWithProgressIndicator(
       Spacer(Modifier.width(8.dp))
     }
     Text("Save")
+  }
+}
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
+@Composable
+fun AddMemberDialog(
+  onDismiss: () -> Unit,
+  onMembersSelected: (List<Member>) -> Unit,
+  searchMembers: (String) -> List<Member>,
+  allMembers: List<Member>,
+  onTriggerSearch: (String) -> Unit = {}
+) {
+  var query by remember { mutableStateOf("") }
+  var selectedMembers by remember { mutableStateOf<Set<Member>>(emptySet()) }
+  var filteredMembers by remember { mutableStateOf(allMembers) }
+  var isSearching by remember { mutableStateOf(false) }
+
+  // Debounced search with hybrid approach
+  LaunchedEffect(query) {
+    isSearching = true
+    delay(1000)
+
+    if (query.isBlank()) {
+      filteredMembers = allMembers
+    } else {
+      // First show local results immediately for fast UX
+      val localResults = allMembers.filter { member ->
+        member.name.contains(query, ignoreCase = true) ||
+          member.phoneNumber.contains(query, ignoreCase = true) ||
+          member.email.contains(query, ignoreCase = true)
+      }
+      filteredMembers = localResults
+
+      // Trigger server search for fresh results
+      onTriggerSearch(query)
+
+      // Small delay to allow server search to complete
+      delay(500)
+
+      // Get fresh server results
+      try {
+        val serverResults = searchMembers(query)
+        if (serverResults.isNotEmpty()) {
+          // Update with server results if we got any
+          filteredMembers = serverResults
+        }
+        // If server returns empty but we have local results, keep local results
+        // This handles cases where server might be slower or return different results
+      } catch (e: Exception) {
+        // If server search fails, keep the local results
+        // User still gets some results instead of empty list
+        println("Server search failed, using local results: ${e.message}")
+      }
+    }
+    isSearching = false
+  }
+
+  Dialog(onDismissRequest = onDismiss) {
+    Surface(
+      shape = MaterialTheme.shapes.large,
+      modifier = Modifier
+        .width(400.dp)
+        .height(600.dp)
+    ) {
+      Column(
+        modifier = Modifier
+          .fillMaxSize()
+          .padding(16.dp)
+      ) {
+        Text("नए पदाधिकारी जोड़ें", style = MaterialTheme.typography.titleMedium)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Search bar
+        OutlinedTextField(
+          value = query,
+          onValueChange = { query = it },
+          placeholder = { Text("आर्य का नाम/दूरभाष") },
+          leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+          trailingIcon = {
+            if (isSearching) {
+              CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                strokeWidth = 2.dp
+              )
+            }
+          },
+          modifier = Modifier.fillMaxWidth(),
+          singleLine = true
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // List of members
+        LazyColumn(
+          modifier = Modifier.weight(1f)
+        ) {
+          if (filteredMembers.isEmpty() && query.isNotEmpty() && !isSearching) {
+            item {
+              Box(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                contentAlignment = Alignment.Center
+              ) {
+                Text(
+                  "इस नाम/दूरभाष से संबधित कोई आर्य उपलब्ध नहीं है।",
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+              }
+            }
+          } else {
+            items(filteredMembers.size) { index ->
+              val member = filteredMembers[index]
+              MemberListItem(
+                member = member,
+                selected = selectedMembers.contains(member),
+                onClick = {
+                  selectedMembers = if (selectedMembers.contains(member)) {
+                    selectedMembers - member
+                  } else {
+                    selectedMembers + member
+                  }
+                }
+              )
+            }
+          }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Action buttons
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.End
+        ) {
+          TextButton(onClick = onDismiss) {
+            Text("बंद करें")
+          }
+          Spacer(modifier = Modifier.width(8.dp))
+          Button(
+            onClick = {
+              onMembersSelected(selectedMembers.toList())
+            },
+            enabled = selectedMembers.isNotEmpty()
+          ) {
+            Text("पदाधिकारी जोड़ें")
+          }
+        }
+      }
+    }
+  }
+}
+
+@Composable
+fun MemberListItem(
+  member: Member,
+  selected: Boolean,
+  onClick: () -> Unit
+) {
+  Row(
+    modifier = Modifier
+      .fillMaxWidth()
+      .clickable { onClick() }
+      .padding(12.dp),
+    verticalAlignment = Alignment.CenterVertically
+  ) {
+    // Profile image on the left
+    AsyncImage(
+      model = member.profileImage.ifEmpty { null },
+      contentDescription = "Profile image of ${member.name}",
+      modifier = Modifier
+        .size(48.dp)
+        .clip(CircleShape),
+      contentScale = ContentScale.Crop,
+      placeholder = BrushPainter(
+        Brush.linearGradient(
+          listOf(
+            Color(color = 0xFFFFFFFF),
+            Color(color = 0xFFDDDDDD)
+          )
+        )
+      ),
+      fallback = painterResource(Res.drawable.error_profile_image),
+      error = painterResource(Res.drawable.error_profile_image)
+    )
+
+    // Member info in the middle
+    Column(
+      modifier = Modifier
+        .weight(1f)
+        .padding(horizontal = 12.dp)
+    ) {
+      Text(
+        text = member.name,
+        style = MaterialTheme.typography.bodyMedium,
+        fontWeight = FontWeight.Medium,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
+      )
+      if (member.email.isNotEmpty()) {
+        Text(
+          text = member.email,
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis
+        )
+      }
+    }
+
+    // Checkbox on the right
+    Checkbox(
+      checked = selected,
+      onCheckedChange = { onClick() }
+    )
+  }
+}
+
+@Composable
+fun NewMemberPostInput(
+  member: Member,
+  post: String,
+  onPostChange: (String) -> Unit,
+  onConfirm: () -> Unit,
+  onCancel: () -> Unit,
+  isLoading: Boolean = false
+) {
+  Card(
+    modifier = Modifier.padding(8.dp)
+  ) {
+    Column(
+      modifier = Modifier.padding(16.dp)
+    ) {
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        AsyncImage(
+          model = member.profileImage ?: "",
+          contentDescription = "profile image ${member.name}",
+          contentScale = ContentScale.Crop,
+          modifier = Modifier
+            .clip(CircleShape)
+            .size(48.dp),
+          placeholder =
+            BrushPainter(
+              Brush.linearGradient(
+                listOf(
+                  Color(color = 0xFFFFFFFF),
+                  Color(color = 0xFFDDDDDD)
+                )
+              )
+            ),
+          fallback = painterResource(Res.drawable.error_profile_image),
+          error = painterResource(Res.drawable.error_profile_image)
+        )
+
+        Column(
+          modifier = Modifier
+            .weight(1f)
+            .padding(start = 12.dp)
+        ) {
+          Text(
+            text = member.name,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Medium
+          )
+          Spacer(modifier = Modifier.height(8.dp))
+          OutlinedTextField(
+            value = post,
+            onValueChange = onPostChange,
+            label = { Text("पद लिखें") },
+            placeholder = { Text("अध्यक्ष, सचिव, कोषाध्यक्ष") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true
+          )
+        }
+
+        // Cancel button
+        IconButton(
+          onClick = onCancel,
+          modifier = Modifier.padding(start = 8.dp)
+        ) {
+          Icon(Icons.Default.Close, contentDescription = "Cancel")
+        }
+      }
+
+      // Confirm button
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.End
+      ) {
+        Button(
+          onClick = onConfirm,
+          enabled = post.isNotBlank() && !isLoading,
+          modifier = Modifier.padding(top = 8.dp)
+        ) {
+          if (isLoading) {
+            CircularProgressIndicator(
+              modifier = Modifier.size(16.dp),
+              strokeWidth = 2.dp,
+              color = MaterialTheme.colorScheme.onPrimary
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+          }
+          Icon(Icons.Default.Check, contentDescription = null)
+          Spacer(modifier = Modifier.width(4.dp))
+          Text("जोड़ें")
+        }
+      }
+    }
   }
 }

@@ -40,8 +40,10 @@ data class OrganisationLogoState(
 data class MemberManagementState(
   val isRemovingMember: Boolean = false,
   val isUpdatingPost: Boolean = false,
+  val isAddingMember: Boolean = false,
   val removeError: String? = null,
   val updatePostError: String? = null,
+  val addMemberError: String? = null,
   val successMessage: String? = null
 )
 
@@ -377,7 +379,52 @@ class OrganisationsViewModel(
     _memberManagementState.value = _memberManagementState.value.copy(
       successMessage = null,
       removeError = null,
-      updatePostError = null
+      updatePostError = null,
+      addMemberError = null
     )
+  }
+
+  /**
+   * Add a member to the organisation
+   */
+  fun addMemberToOrganisation(memberId: String, post: String, orgId: String, priority: Int) {
+    launch {
+      _memberManagementState.value = _memberManagementState.value.copy(
+        isAddingMember = true,
+        addMemberError = null,
+        successMessage = null
+      )
+
+      organisationsRepository.addMemberToOrganisation(memberId, orgId, post, priority).collect { result ->
+        when (result) {
+          is Result.Loading -> {
+            // Already set loading state above
+          }
+
+          is Result.Success -> {
+            if (result.data) {
+              _memberManagementState.value = _memberManagementState.value.copy(
+                isAddingMember = false,
+                successMessage = "Member added successfully"
+              )
+              // Reload organisation details to refresh the member list
+              loadOrganisationDetail(orgId)
+            } else {
+              _memberManagementState.value = _memberManagementState.value.copy(
+                isAddingMember = false,
+                addMemberError = "Failed to add member to organisation"
+              )
+            }
+          }
+
+          is Result.Error -> {
+            _memberManagementState.value = _memberManagementState.value.copy(
+              isAddingMember = false,
+              addMemberError = result.message
+            )
+          }
+        }
+      }
+    }
   }
 }
