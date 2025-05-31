@@ -13,11 +13,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.components.OrganisationDetail
+import org.aryamahasangh.features.activities.Member
 
 @Composable
 fun OrgDetailScreen(
   id: String,
-  viewModel: OrganisationsViewModel
+  viewModel: OrganisationsViewModel,
+  searchMembers: (String) -> List<Member> = { emptyList() },
+  allMembers: List<Member> = emptyList(),
+  onTriggerSearch: (String) -> Unit = {}
 ) {
   val scope = rememberCoroutineScope()
   val snackbarHostState = LocalSnackbarHostState.current
@@ -125,6 +129,12 @@ fun OrgDetailScreen(
     }
   }
 
+  LaunchedEffect(memberManagementState.isAddingMember) {
+    if (memberManagementState.isAddingMember) {
+      snackbarHostState.showSnackbar("Adding member to organisation...")
+    }
+  }
+
   // Handle member management success messages
   memberManagementState.successMessage?.let { message ->
     LaunchedEffect(message) {
@@ -157,6 +167,16 @@ fun OrgDetailScreen(
     }
   }
 
+  memberManagementState.addMemberError?.let { error ->
+    LaunchedEffect(error) {
+      snackbarHostState.showSnackbar(
+        message = error,
+        actionLabel = "Close"
+      )
+      viewModel.clearMemberManagementMessage()
+    }
+  }
+
   OrganisationDetail(
     organisation = uiState.organisation!!,
     updateOrganisationLogo = viewModel::updateOrganisationLogo,
@@ -165,6 +185,11 @@ fun OrgDetailScreen(
     onDescriptionEditModeChange = viewModel::setDescriptionEditMode,
     organisationLogoState = logoState,
     onRemoveMember = viewModel::removeMemberFromOrganisation,
-    onUpdateMemberPost = viewModel::updateMemberPost
+    onUpdateMemberPost = viewModel::updateMemberPost,
+    onAddMemberToOrganisation = viewModel::addMemberToOrganisation,
+    onTriggerSearch = onTriggerSearch,
+    memberManagementState = memberManagementState,
+    searchMembers = searchMembers,
+    allMembers = allMembers
   )
 }

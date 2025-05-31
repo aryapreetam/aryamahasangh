@@ -1,9 +1,7 @@
 package org.aryamahasangh.navigation
 
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -78,7 +76,50 @@ fun RootNavGraph(navController: NavHostController) {
       composable<Screen.OrgDetails> {
         val orgId = it.toRoute<Screen.OrgDetails>().organisationId
         val viewModel = koinInject<OrganisationsViewModel>()
-        OrgDetailScreen(orgId, viewModel)
+        val adminViewModel = koinInject<AdminViewModel>()
+
+        // Load members when screen is accessed
+        LaunchedEffect(Unit) {
+          adminViewModel.loadMembers()
+        }
+
+        // Collect admin state for search results
+        val adminUiState by adminViewModel.membersUiState.collectAsState()
+
+        OrgDetailScreen(
+          id = orgId,
+          viewModel = viewModel,
+          searchMembers = { query ->
+            // Use the search results from AdminViewModel
+            // This will contain fresh results from server
+            if (query.isNotBlank()) {
+              adminUiState.searchResults.map { memberShort ->
+                org.aryamahasangh.features.activities.Member(
+                  id = memberShort.id,
+                  name = memberShort.name,
+                  profileImage = memberShort.profileImage,
+                  phoneNumber = "", // Not available in MemberShort
+                  email = "" // Not available in MemberShort
+                )
+              }
+            } else {
+              emptyList()
+            }
+          },
+          allMembers = adminUiState.members.map { memberShort ->
+            org.aryamahasangh.features.activities.Member(
+              id = memberShort.id,
+              name = memberShort.name,
+              profileImage = memberShort.profileImage,
+              phoneNumber = "", // Not available in MemberShort
+              email = "" // Not available in MemberShort
+            )
+          },
+          onTriggerSearch = { query ->
+            // Trigger the server search in AdminViewModel
+            adminViewModel.searchMembers(query)
+          }
+        )
       }
     }
     composable<Screen.JoinUs> {

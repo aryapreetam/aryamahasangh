@@ -162,6 +162,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
             )
             // Refresh members list
             loadMembers()
+            getMembersCount()
           }
 
           is Result.Error -> {
