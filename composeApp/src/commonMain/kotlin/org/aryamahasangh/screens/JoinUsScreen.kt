@@ -15,6 +15,7 @@ import dev.burnoo.compose.remembersetting.rememberBooleanSetting
 import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.SettingKeys
 import org.aryamahasangh.components.ActivityListItem
+import org.aryamahasangh.components.LoadingErrorState
 import org.aryamahasangh.features.activities.OrganisationalActivityShort
 import org.aryamahasangh.viewmodel.JoinUsUiState
 import org.aryamahasangh.viewmodel.JoinUsViewModel
@@ -122,7 +123,8 @@ fun JoinUsLabel(
   onEditModeChange: (Boolean) -> Unit = {},
   isLoggedIn: Boolean = false
 ) {
-  val (label, _, _, editMode) = labelState
+  val label = labelState.label
+  val editMode = labelState.editMode
   Column(modifier = Modifier.fillMaxWidth()) {
     if (!editMode) {
       Row(verticalAlignment = Alignment.CenterVertically) {
@@ -233,63 +235,45 @@ fun UpcomingActivitiesForm(
       Text("आगामी सत्र दिखाएं")
     }
 
-    // Handle loading state
-    if (uiState.isLoading) {
-      Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-      ) {
-        LinearProgressIndicator()
-      }
-      return
-    }
-
-    // Handle error state
-    uiState.error?.let { error ->
-      LaunchedEffect(error) {
-        println(error)
-        snackbarHostState.showSnackbar(
-          message = error,
-          actionLabel = "Retry"
-        )
-      }
-
-      Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-      ) {
+    // Use LoadingErrorState component for consistent error handling
+    LoadingErrorState(
+      isLoading = uiState.isLoading,
+      error = uiState.appError,
+      onRetry = {
+        loadFilteredActivities(selectedState, selectedDistrict)
+      },
+      loadingContent = {
         Column(
           horizontalAlignment = Alignment.CenterHorizontally,
-          verticalArrangement = Arrangement.spacedBy(8.dp)
+          verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-          Text("Failed to load activities")
-          Button(onClick = {
-            loadFilteredActivities(selectedState, selectedDistrict)
-          }) {
-            Text("Retry")
-          }
+          CircularProgressIndicator()
+          Text(
+            text = "Loading activities...",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+          )
         }
       }
-      return
-    }
-
-    uiState.activities.let {
-      if (it != null) {
-        if (it.isEmpty()) {
-          Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-          ) {
-            Text("No sessions have been planned in this area!")
-          }
-        } else {
-          Box(
-            modifier =
-              Modifier
+    ) {
+      // Activities content
+      uiState.activities.let { activities ->
+        if (activities != null) {
+          if (activities.isEmpty()) {
+            Box(
+              modifier = Modifier.fillMaxSize(),
+              contentAlignment = Alignment.Center
+            ) {
+              Text("No sessions have been planned in this area!")
+            }
+          } else {
+            Box(
+              modifier = Modifier
                 .fillMaxSize()
                 .weight(1f) // Limits height to remaining space
-          ) {
-            ActivitiesList(activities = it)
+            ) {
+              ActivitiesList(activities = activities)
+            }
           }
         }
       }

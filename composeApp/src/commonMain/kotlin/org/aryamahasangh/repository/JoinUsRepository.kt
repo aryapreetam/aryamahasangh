@@ -8,13 +8,13 @@ import kotlinx.datetime.Clock
 import org.aryamahasangh.AppLabelQuery
 import org.aryamahasangh.OrganisationalActivitiesQuery
 import org.aryamahasangh.UpdateJoinUsLabelMutation
+import org.aryamahasangh.domain.error.ErrorHandler
 import org.aryamahasangh.features.activities.OrganisationalActivityShort
 import org.aryamahasangh.features.activities.camelCased
 import org.aryamahasangh.type.ActivitiesFilter
 import org.aryamahasangh.type.DatetimeFilter
 import org.aryamahasangh.type.StringFilter
 import org.aryamahasangh.util.Result
-import org.aryamahasangh.util.safeCall
 
 /**
  * Repository for handling join us related operations
@@ -55,7 +55,7 @@ class JoinUsRepositoryImpl(private val apolloClient: ApolloClient) : JoinUsRepos
         )
       println(startTimeFilter)
       val result =
-        safeCall {
+        ErrorHandler.safeCall {
           val response =
             apolloClient.query(
               OrganisationalActivitiesQuery(
@@ -91,7 +91,7 @@ class JoinUsRepositoryImpl(private val apolloClient: ApolloClient) : JoinUsRepos
     flow {
       emit(Result.Loading)
       val res =
-        safeCall {
+        ErrorHandler.safeCall {
           val resp = apolloClient.query(AppLabelQuery(labelKey = "join_us")).execute()
           if (resp.hasErrors()) {
             throw Exception(resp.errors?.firstOrNull()?.message ?: "Unknown error occurred")
@@ -105,7 +105,7 @@ class JoinUsRepositoryImpl(private val apolloClient: ApolloClient) : JoinUsRepos
     return flow {
       emit(Result.Loading)
       val res =
-        safeCall {
+        ErrorHandler.safeCall {
           val resp =
             apolloClient.mutation(
               UpdateJoinUsLabelMutation(input = label)

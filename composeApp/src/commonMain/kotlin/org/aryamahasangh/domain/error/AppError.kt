@@ -115,18 +115,67 @@ sealed class AppError(
 }
 
 /**
- * Extension function to convert exceptions to AppError
+ * Extension function to convert exceptions to AppError with better network detection
  */
 fun Throwable.toAppError(): AppError {
+  val message = this.message?.lowercase() ?: ""
+  val className = this::class.simpleName?.lowercase() ?: ""
+
+  // Debug logging to see what exceptions we're getting
+  println("DEBUG - Exception: $className, Message: $message")
+
   return when {
-    // Network-related exceptions (multiplatform compatible)
-    this::class.simpleName == "UnknownHostException" -> AppError.NetworkError.NoConnection
-    this::class.simpleName == "SocketTimeoutException" -> AppError.NetworkError.Timeout
-    this::class.simpleName == "ConnectException" -> AppError.NetworkError.NoConnection
-    this::class.simpleName == "IOException" -> AppError.NetworkError.UnknownNetworkError(this)
-    message?.contains("timeout", ignoreCase = true) == true -> AppError.NetworkError.Timeout
-    message?.contains("connection", ignoreCase = true) == true -> AppError.NetworkError.NoConnection
-    message?.contains("network", ignoreCase = true) == true -> AppError.NetworkError.UnknownNetworkError(this)
+    // Apollo GraphQL specific exceptions (check these first)
+    className.contains("apolloexception") -> AppError.NetworkError.UnknownNetworkError(this)
+    className.contains("apollonetworkexception") -> AppError.NetworkError.NoConnection
+    className.contains("apollohttpexception") -> AppError.NetworkError.ServerError
+
+    // Network exceptions (highest priority)
+    className.contains("unknownhostexception") -> AppError.NetworkError.NoConnection
+    className.contains("socketexception") -> AppError.NetworkError.NoConnection
+    className.contains("connectexception") -> AppError.NetworkError.NoConnection
+    className.contains("networkunreachableexception") -> AppError.NetworkError.NoConnection
+    className.contains("sockettimeoutexception") -> AppError.NetworkError.Timeout
+
+    // IO exceptions - check message for network context
+    className.contains("ioexception") -> {
+      AppError.NetworkError.UnknownNetworkError(this) // Default to network error for IO exceptions
+    }
+
+    // Message-based network detection (check BEFORE "organisation not found")
+    message.contains("network is unreachable") -> AppError.NetworkError.NoConnection
+    message.contains("no network") -> AppError.NetworkError.NoConnection
+    message.contains("no internet") -> AppError.NetworkError.NoConnection
+    message.contains("connection refused") -> AppError.NetworkError.NoConnection
+    message.contains("host is unresolved") -> AppError.NetworkError.NoConnection
+    message.contains("unable to resolve host") -> AppError.NetworkError.NoConnection
+    message.contains("failed to connect") -> AppError.NetworkError.NoConnection
+    message.contains("failed to resolve") -> AppError.NetworkError.NoConnection
+    message.contains("no route to host") -> AppError.NetworkError.NoConnection
+    message.contains("connection reset") -> AppError.NetworkError.NoConnection
+    message.contains("name resolution failed") -> AppError.NetworkError.NoConnection
+    message.contains("connection timed out") -> AppError.NetworkError.Timeout
+    message.contains("read timeout") -> AppError.NetworkError.Timeout
+    message.contains("timeout") -> AppError.NetworkError.Timeout
+
+    // Check for any generic connection/network terms in the message
+    message.contains("network") -> AppError.NetworkError.NoConnection
+    message.contains("connection") -> AppError.NetworkError.NoConnection
+    message.contains("internet") -> AppError.NetworkError.NoConnection
+    message.contains("host") -> AppError.NetworkError.NoConnection
+
+    // Server errors
+    message.contains("server error") -> AppError.NetworkError.ServerError
+    message.contains("503") || message.contains("502") || message.contains("500") -> AppError.NetworkError.ServerError
+    message.contains("404") -> AppError.NetworkError.HttpError(404, "Resource not found")
+
+    // Business logic errors (only after network checks)
+    message.contains("organisation not found") -> {
+      // This could be a network issue disguised as "not found"
+      // If we reach here, it's likely a legitimate "not found" after successful network call
+      AppError.DataError.NotFound
+    }
+
     // Validation exceptions
     this is IllegalArgumentException ->
       AppError.ValidationError.Custom(
@@ -136,11 +185,20 @@ fun Throwable.toAppError(): AppError {
       AppError.BusinessError.Custom(
         this.message ?: "Invalid state"
       )
-    else ->
-      AppError.UnknownError(
-        message = this.message ?: "Unknown error occurred",
-        cause = this
-      )
+
+    // Default fallback - assume network issues for most exceptions
+    else -> {
+      // For any exception we can't specifically identify, check if it seems network-related
+      if (className.contains("exception")) {
+        // Most exceptions in mobile/network apps are network-related
+        AppError.NetworkError.UnknownNetworkError(this)
+      } else {
+        AppError.UnknownError(
+          message = this.message ?: "Unknown error occurred",
+          cause = this
+        )
+      }
+    }
   }
 }
 
