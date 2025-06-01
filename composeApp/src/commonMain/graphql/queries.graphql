@@ -1,5 +1,5 @@
 query Organisations{
-  organisationCollection{
+  organisationCollection(orderBy: {priority: AscNullsLast}){
     edges{
       node{
         id

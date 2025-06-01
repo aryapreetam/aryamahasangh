@@ -1,10 +1,6 @@
 package org.aryamahasangh.features.admin
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.ScrollableTabRow
@@ -81,7 +77,7 @@ fun AdminContainerScreen(
       Tab(
         selected = selectedTabIndex == 0,
         onClick = { selectedTabIndex = 0 },
-        text = { Text("आर्यों की सूचि ($count)") }
+        text = { Text("पदाधिकारी ($count)") }
       )
     }
 

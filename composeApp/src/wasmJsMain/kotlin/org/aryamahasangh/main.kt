@@ -16,6 +16,7 @@ import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.mahasangh_logo_without_background
 import aryamahasangh.composeapp.generated.resources.noto_sans_devanagari
 import kotlinx.browser.document
+import kotlinx.browser.window
 import org.aryamahasangh.config.ConfigInitializer
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.configureWebResources
@@ -26,6 +27,13 @@ import org.jetbrains.compose.resources.preloadFont
 fun main() {
   // Initialize cross-platform configuration
   ConfigInitializer.initializeBlocking()
+
+  // Handle browser navigation properly  
+  window.history.replaceState(null, "", window.location.href)
+  window.addEventListener("popstate") { _ ->
+    // Only handle initial popstate (back button) to prevent browser exit
+    window.history.replaceState(null, "", window.location.href)
+  }
 
   configureWebResources {
     // Overrides the resource location

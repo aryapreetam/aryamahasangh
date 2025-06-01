@@ -256,7 +256,16 @@ fun RootNavGraph(navController: NavHostController) {
         MemberDetailScreen(
           memberId = memberId,
           viewModel = viewModel,
-          isAddMode = memberId == "new"
+          isAddMode = memberId == "new",
+          onNavigateBack = {
+            if (memberId == "new") {
+              // For add mode, first check if there are unsaved changes
+              // The screen will handle this logic internally
+              navController.popBackStack()
+            } else {
+              navController.popBackStack()
+            }
+          }
         )
       }
     }

@@ -199,7 +199,7 @@ fun UpcomingActivitiesForm(
   Column(modifier = Modifier.padding(8.dp)) {
     JoinUsLabel(
       labelState = uiState.labelState,
-      updateLabel = { updateJoinUsLabel(it) },
+      updateLabel = updateJoinUsLabel,
       onEditModeChange = { setEditMode(it) },
       isLoggedIn = isLoggedIn
     )
@@ -220,7 +220,8 @@ fun UpcomingActivitiesForm(
         districts = districts,
         selectedDistrict = selectedDistrict,
         onDistrictSelected = { selectedDistrict = it ?: "" },
-        modifier = Modifier.width(200.dp)
+        modifier = Modifier.width(200.dp),
+        isMandatory = false
       )
     }
 
@@ -359,7 +360,8 @@ fun DistrictDropdown(
   onDistrictSelected: (String?) -> Unit,
   modifier: Modifier = Modifier,
   isError: Boolean = false,
-  errorMessage: String = ""
+  errorMessage: String = "",
+  isMandatory: Boolean = false
 ) {
   var expanded by remember { mutableStateOf(false) }
 
@@ -371,7 +373,7 @@ fun DistrictDropdown(
       OutlinedTextField(
         readOnly = true,
         modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
-        value = selectedDistrict ?: "जनपद चुनें (वैकल्पिक)",
+        value = selectedDistrict ?: if (isMandatory) "जनपद चुनें" else "जनपद चुनें (वैकल्पिक)",
         label = { Text("जनपद") },
         onValueChange = {
         },
@@ -385,13 +387,16 @@ fun DistrictDropdown(
         expanded = expanded,
         onDismissRequest = { expanded = false }
       ) {
-        DropdownMenuItem(
-          text = { Text("None") },
-          onClick = {
-            onDistrictSelected(null)
-            expanded = false
-          }
-        )
+        // Only show "None" option if not mandatory
+        if (!isMandatory) {
+          DropdownMenuItem(
+            text = { Text("None") },
+            onClick = {
+              onDistrictSelected(null)
+              expanded = false
+            }
+          )
+        }
         districts.forEach { selectionOption ->
           key(selectionOption) {
             DropdownMenuItem(

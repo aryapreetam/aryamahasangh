@@ -943,13 +943,13 @@ type activities implements Node {
 
   id: String!
 
-  name: String
+  name: String!
 
-  type: String
+  type: String!
 
-  short_description: String
+  short_description: String!
 
-  long_description: String
+  long_description: String!
 
   address: String
 
@@ -957,9 +957,9 @@ type activities implements Node {
 
   district: String
 
-  start_datetime: Datetime
+  start_datetime: Datetime!
 
-  end_datetime: Datetime
+  end_datetime: Datetime!
 
   media_files: [String]!
 
@@ -1187,17 +1187,17 @@ type activity_member implements Node {
 
   id: UUID!
 
-  activity_id: String
+  activity_id: String!
 
-  member_id: String
+  member_id: String!
 
   post: String
 
-  priority: Int
+  priority: Int!
 
-  member: member
+  member: member!
 
-  activities: activities
+  activities: activities!
 }
 
 type activity_memberConnection {
@@ -2110,13 +2110,13 @@ type member implements Node {
 
   id: String!
 
-  name: String
+  name: String!
 
   profile_image: String
 
   educational_qualification: String
 
-  phone_number: String
+  phone_number: String!
 
   email: String
 
@@ -2314,11 +2314,13 @@ type organisation implements Node {
 
   id: String!
 
-  name: String
+  name: String!
 
   logo: String
 
-  description: String
+  description: String!
+
+  priority: Int!
 
   organisational_memberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: organisational_memberFilter, "Sort order to apply to the collection" orderBy: [organisational_memberOrderBy!]): organisational_memberConnection
 
@@ -2358,6 +2360,8 @@ input organisationFilter {
 
   description: StringFilter
 
+  priority: IntFilter
+
   nodeId: IDFilter
 
   """
@@ -2384,6 +2388,8 @@ input organisationInsertInput {
   logo: String
 
   description: String
+
+  priority: Int
 }
 
 type organisationInsertResponse {
@@ -2406,6 +2412,8 @@ input organisationOrderBy {
   logo: OrderByDirection
 
   description: OrderByDirection
+
+  priority: OrderByDirection
 }
 
 input organisationUpdateInput {
@@ -2416,6 +2424,8 @@ input organisationUpdateInput {
   logo: String
 
   description: String
+
+  priority: Int
 }
 
 type organisationUpdateResponse {
@@ -2438,13 +2448,13 @@ type organisational_activity implements Node {
 
   id: String!
 
-  activity_id: String
+  activity_id: String!
 
-  organisation_id: String
+  organisation_id: String!
 
-  organisation: organisation
+  organisation: organisation!
 
-  activities: activities
+  activities: activities!
 }
 
 type organisational_activityConnection {
@@ -2558,7 +2568,7 @@ type organisational_member implements Node {
 
   post: String
 
-  priority: Int
+  priority: Int!
 
   organisation: organisation!
 
@@ -2688,11 +2698,11 @@ type satr_registration implements Node {
 
   created_at: Datetime!
 
-  fullname: String
+  fullname: String!
 
-  gender: String
+  gender: String!
 
-  mobile: String
+  mobile: String!
 
   aadhar_no: String
 
