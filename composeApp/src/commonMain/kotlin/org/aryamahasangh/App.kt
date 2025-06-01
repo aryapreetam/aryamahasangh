@@ -21,16 +21,17 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import aryamahasangh.composeapp.generated.resources.*
 import dev.burnoo.compose.remembersetting.rememberBooleanSetting
 import dev.burnoo.compose.remembersetting.rememberStringSetting
 import kotlinx.coroutines.launch
 import org.aryamahasangh.components.LoginDialog
 import org.aryamahasangh.navigation.RootNavGraph
 import org.aryamahasangh.navigation.Screen
+import org.aryamahasangh.util.PlatformBackHandler
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import aryamahasangh.composeapp.generated.resources.*
 
 // Initialize Koin for dependency injection
 private val initKoin by lazy {
@@ -93,7 +94,11 @@ val drawerOptions =
     DrawerOption("हमसें जुडें", Res.drawable.handshake, Screen.JoinUs),
     DrawerOption("आर्य गुरुकुल", Res.drawable.school, Screen.AryaGurukulSection),
     DrawerOption("आर्या गुरुकुल", Res.drawable.school, Screen.AryaaGurukulSection),
-    DrawerOption("आर्य-आर्या निर्माण(सत्र)", Res.drawable.interactive_space, Screen.AryaNirmanSection),
+    DrawerOption(
+      "आर्य-आर्या निर्माण(सत्र)",
+      Res.drawable.interactive_space,
+      Screen.AryaNirmanSection
+    ),
     DrawerOption("आर्य परिवार", Res.drawable.family, Screen.AryaPariwarSection),
     DrawerOption("आर्य समाज संगठन", Res.drawable.diversity_3, Screen.AryaSamajSection),
     DrawerOption("आओ स्वाध्याय करें", Res.drawable.menu_book, Screen.Learning)
@@ -151,11 +156,36 @@ fun DrawerContent(
             ),
           onClick = {
             navController.navigate(option.route) {
-              popUpTo(navController.graph.startDestDisplayName) {
-                saveState = true
+              // Clear back stack to root start destination when navigating to section start destinations
+              val isStartDestination = when (option.route) {
+                Screen.AboutSection -> true
+                Screen.ActivitiesSection -> true
+                Screen.OrgsSection -> true
+                Screen.LearningSection -> true
+                Screen.BookSection -> true
+                Screen.AryaNirmanSection -> true
+                Screen.AryaPariwarSection -> true
+                Screen.AryaSamajSection -> true
+                Screen.AryaGurukulSection -> true
+                Screen.AryaaGurukulSection -> true
+                Screen.JoinUs -> true
+                else -> false
+              }
+
+              if (isStartDestination) {
+                // For section start destinations, clear back stack completely to root
+                popUpTo(Screen.AboutSection) {
+                  inclusive = true  // Include AboutSection in the pop
+                  saveState = false // Don't save state to ensure clean back stack
+                }
+              } else {
+                // For other destinations, use current behavior
+                popUpTo(navController.graph.startDestDisplayName) {
+                  saveState = true
+                }
               }
               launchSingleTop = true
-              restoreState = true
+              restoreState = false // Don't restore state for clean navigation
               scope.launch {
                 drawerState.close()
               }
@@ -203,11 +233,13 @@ fun DrawerContent(
         selected = checkIfSelected(currentDestination, Screen.AdminContainer.toString()),
         onClick = {
           navController.navigate(Screen.AdminContainer) {
-            popUpTo(navController.graph.startDestDisplayName) {
-              saveState = true
+            // For admin section, clear back stack completely to root
+            popUpTo(Screen.AboutSection) {
+              inclusive = true
+              saveState = false
             }
             launchSingleTop = true
-            restoreState = true
+            restoreState = false
             scope.launch {
               drawerState.close()
             }
@@ -482,6 +514,13 @@ fun MainContent(
           LocalBackHandler provides customBackHandler, // Provide the mutable state for the back handler
           LocalSetBackHandler provides { setCustomBackHandler(it) } // Provide the setter for the back handler
         ) {
+          // Platform-specific back button handling
+          PlatformBackHandler(
+            customBackHandler = customBackHandler,
+            currentDestination = currentDestination,
+            navController = navController
+          )
+
           RootNavGraph(navController)
         }
       }
