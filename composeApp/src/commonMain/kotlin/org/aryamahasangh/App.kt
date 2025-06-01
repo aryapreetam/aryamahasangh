@@ -52,6 +52,12 @@ fun App() {
 val LocalSnackbarHostState =
   compositionLocalOf<SnackbarHostState> { error("SnackbarHostState is not found") }
 
+// CompositionLocal for custom back navigation handling
+val LocalBackHandler = compositionLocalOf<(() -> Unit)?> { null }
+
+// CompositionLocal for setting custom back handler
+val LocalSetBackHandler = compositionLocalOf<(((() -> Unit)?) -> Unit)?> { null }
+
 // CompositionLocal for Authentication State:
 val LocalAuthState = compositionLocalOf { mutableStateOf(false) }
 
@@ -59,12 +65,6 @@ val LocalAuthState = compositionLocalOf { mutableStateOf(false) }
 fun rememberAuthState(): MutableState<Boolean> {
   val currentLocalAuthState = LocalAuthState.current
   return remember { currentLocalAuthState }
-}
-
-// Use rememberSetting to create setting:
-object SettingKeys {
-  const val isLoggedIn = "isLoggedIn"
-  const val userEmail = "userEmail"
 }
 
 @Composable
@@ -333,8 +333,17 @@ fun MainContent(
     derivedStateOf { backStackEntry?.destination?.route }
   }
 
+  // State for custom back handler
+  var customBackHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
+
+  // Function to set the custom back handler
+  fun setCustomBackHandler(handler: (() -> Unit)?) {
+    customBackHandler = handler
+  }
+
   LaunchedEffect(currentDestination) {
     println("currentRoute: $currentDestination")
+    customBackHandler = null // Clear any custom back handler when destination changes
   }
 
   Scaffold(
@@ -367,8 +376,15 @@ fun MainContent(
               currentScreen?.startsWith(it) == true
             }
           if (shouldShowBack) {
+            val backHandler = LocalBackHandler.current
             IconButton(onClick = {
-              navController.navigateUp()
+              if (customBackHandler != null) {
+                customBackHandler!!.invoke()
+              } else if (backHandler != null) {
+                backHandler()
+              } else {
+                navController.navigateUp()
+              }
             }) {
               Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back Arrow")
             }
@@ -462,7 +478,9 @@ fun MainContent(
       ) {
         CompositionLocalProvider(
           LocalSnackbarHostState provides snackbarHostState,
-          LocalAuthState provides authState
+          LocalAuthState provides authState,
+          LocalBackHandler provides customBackHandler, // Provide the mutable state for the back handler
+          LocalSetBackHandler provides { setCustomBackHandler(it) } // Provide the setter for the back handler
         ) {
           RootNavGraph(navController)
         }
@@ -511,4 +529,9 @@ fun MainContent(
       }
     )
   }
+}
+
+object SettingKeys {
+  const val isLoggedIn = "isLoggedIn"
+  const val userEmail = "userEmail"
 }

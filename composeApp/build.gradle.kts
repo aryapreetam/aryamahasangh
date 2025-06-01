@@ -228,7 +228,7 @@ android {
 
 dependencies {
   implementation(libs.androidx.material3.android)
-  implementation(project(":server"))
+  // implementation(project(":server"))
   debugImplementation(compose.uiTooling)
 
   androidTestImplementation("androidx.compose.ui:ui-test-junit4-android:1.6.8")

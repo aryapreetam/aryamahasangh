@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,9 +29,11 @@ import coil3.compose.AsyncImage
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.core.PickerMode
 import io.github.vinceglb.filekit.core.PickerType
+import io.github.vinceglb.filekit.core.PlatformFile
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import org.aryamahasangh.LocalSnackbarHostState
+import org.aryamahasangh.LocalSetBackHandler
 import org.aryamahasangh.features.arya_nirman.convertDates
 import org.aryamahasangh.network.bucket
 import org.aryamahasangh.screens.DistrictDropdown
@@ -42,10 +45,12 @@ import org.aryamahasangh.screens.indianStatesToDistricts
 fun MemberDetailScreen(
   memberId: String,
   viewModel: AdminViewModel,
-  isAddMode: Boolean = false
+  isAddMode: Boolean = false,
+  onNavigateBack: () -> Unit = {}
 ) {
   val uiState by viewModel.memberDetailUiState.collectAsState()
   val snackbarHostState = LocalSnackbarHostState.current
+  val setBackHandler = LocalSetBackHandler.current
   val scope = rememberCoroutineScope()
 
   // Local state for editing
@@ -58,9 +63,98 @@ fun MemberDetailScreen(
   var editableDistrict by remember { mutableStateOf("") }
   var editablePincode by remember { mutableStateOf("") }
 
-  LaunchedEffect(memberId) {
-    if (!isAddMode) {
-      viewModel.loadMemberDetail(memberId)
+  // Local state for profile image in add mode
+  var selectedProfileImage by remember { mutableStateOf<PlatformFile?>(null) }
+  var uploadedImageUrl by remember { mutableStateOf<String?>(null) }
+
+  // Dialog states
+  var showUnsavedChangesDialog by remember { mutableStateOf(false) }
+  var showImageUploadFailureDialog by remember { mutableStateOf(false) }
+  var imageUploadError by remember { mutableStateOf<String?>(null) }
+
+  // Track if we're in add mode and successfully added member
+  var hasSuccessfullyAddedMember by remember { mutableStateOf(false) }
+
+  // Function to check if there are unsaved changes
+  fun hasUnsavedChanges(): Boolean {
+    if (isAddMode) {
+      return editableName.isNotBlank() ||
+        editablePhoneNumber.isNotBlank() ||
+        editableEmail.isNotBlank() ||
+        editableEducationalQualification.isNotBlank() ||
+        editableAddress.isNotBlank() ||
+        editableState.isNotBlank() ||
+        editableDistrict.isNotBlank() ||
+        editablePincode.isNotBlank() ||
+        selectedProfileImage != null
+    }
+    return false
+  }
+
+  // Function to handle cancel with unsaved changes check
+  fun handleCancel() {
+    if (hasUnsavedChanges()) {
+      showUnsavedChangesDialog = true
+    } else {
+      onNavigateBack()
+    }
+  }
+
+  // Function to handle back navigation (for both cancel button and back arrow)
+  fun handleBackNavigation() {
+    handleCancel()
+  }
+
+  // Function to handle save with image upload
+  fun handleSave() {
+    scope.launch {
+      try {
+        var finalImageUrl: String? = uploadedImageUrl
+
+        // If there's a selected image that hasn't been uploaded yet
+        if (selectedProfileImage != null && uploadedImageUrl == null) {
+          try {
+            val uploadResponse = bucket.upload(
+              path = "profile_${Clock.System.now().epochSeconds}.jpg",
+              data = selectedProfileImage!!.readBytes()
+            )
+            finalImageUrl = bucket.publicUrl(uploadResponse.path)
+            uploadedImageUrl = finalImageUrl
+          } catch (e: Exception) {
+            imageUploadError = e.message
+            showImageUploadFailureDialog = true
+            return@launch
+          }
+        }
+
+        // Proceed with adding member
+        viewModel.addMember(
+          name = editableName,
+          phoneNumber = editablePhoneNumber,
+          educationalQualification = editableEducationalQualification,
+          profileImageUrl = finalImageUrl,
+          email = editableEmail,
+          address = editableAddress,
+          state = editableState,
+          district = editableDistrict,
+          pincode = editablePincode
+        )
+      } catch (e: Exception) {
+        snackbarHostState.showSnackbar("Error: ${e.message}")
+      }
+    }
+  }
+
+  // Set back handler only for add mode
+  if (isAddMode) {
+    DisposableEffect(Unit) {
+      setBackHandler?.invoke {
+        handleBackNavigation()
+      }
+      onDispose {
+        // Clear the back handler when leaving the screen
+        setBackHandler?.invoke(null)
+      }
     }
   }
 
@@ -77,10 +171,26 @@ fun MemberDetailScreen(
     }
   }
 
+  LaunchedEffect(memberId) {
+    if (!isAddMode) {
+      viewModel.loadMemberDetail(memberId)
+    }
+  }
+
   LaunchedEffect(uiState.updateSuccess) {
     if (uiState.updateSuccess) {
-      snackbarHostState.showSnackbar("Member updated successfully")
-      viewModel.resetUpdateState()
+      if (isAddMode && !hasSuccessfullyAddedMember) {
+        hasSuccessfullyAddedMember = true
+        snackbarHostState.showSnackbar("Member added successfully")
+        // Switch to view mode by navigating back and then to the new member
+        // For now, just show success and clear the form
+        viewModel.resetUpdateState()
+        // Navigate back after successful addition
+        onNavigateBack()
+      } else if (!isAddMode) {
+        snackbarHostState.showSnackbar("Member updated successfully")
+        viewModel.resetUpdateState()
+      }
     }
   }
 
@@ -89,6 +199,75 @@ fun MemberDetailScreen(
       snackbarHostState.showSnackbar(error)
       viewModel.resetUpdateState()
     }
+  }
+
+  // Unsaved changes dialog
+  if (showUnsavedChangesDialog) {
+    AlertDialog(
+      onDismissRequest = { showUnsavedChangesDialog = false },
+      title = { Text("Unsaved Changes") },
+      text = { Text("You have unsaved changes. Are you sure you want to discard them?") },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            showUnsavedChangesDialog = false
+            onNavigateBack()
+          }
+        ) {
+          Text("Discard")
+        }
+      },
+      dismissButton = {
+        TextButton(
+          onClick = { showUnsavedChangesDialog = false }
+        ) {
+          Text("Cancel")
+        }
+      }
+    )
+  }
+
+  // Image upload failure dialog
+  if (showImageUploadFailureDialog) {
+    AlertDialog(
+      onDismissRequest = { showImageUploadFailureDialog = false },
+      title = { Text("Image Upload Failed") },
+      text = { Text("Failed to upload profile image: ${imageUploadError}. Do you want to continue without the image or retry?") },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            showImageUploadFailureDialog = false
+            // Proceed without image
+            scope.launch {
+              viewModel.addMember(
+                name = editableName,
+                phoneNumber = editablePhoneNumber,
+                educationalQualification = editableEducationalQualification,
+                profileImageUrl = null,
+                email = editableEmail,
+                address = editableAddress,
+                state = editableState,
+                district = editableDistrict,
+                pincode = editablePincode
+              )
+            }
+          }
+        ) {
+          Text("Continue without image")
+        }
+      },
+      dismissButton = {
+        TextButton(
+          onClick = {
+            showImageUploadFailureDialog = false
+            // Retry upload
+            handleSave()
+          }
+        ) {
+          Text("Retry")
+        }
+      }
+    )
   }
 
   if (uiState.isLoading && !isAddMode) {
@@ -111,10 +290,23 @@ fun MemberDetailScreen(
         member = uiState.member,
         isEditing = uiState.isEditingProfile,
         isAddMode = isAddMode,
+        selectedProfileImage = selectedProfileImage,
         onEditClick = { viewModel.setEditingProfile(true) },
         onPhotoUpdate = { photoUrl ->
           if (!isAddMode) {
             viewModel.updateMemberPhoto(memberId, photoUrl)
+          }
+        },
+        onPhotoSelected = { file ->
+          if (isAddMode) {
+            selectedProfileImage = file
+            uploadedImageUrl = null // Reset uploaded URL when new image is selected
+          }
+        },
+        onPhotoRemoved = {
+          if (isAddMode) {
+            selectedProfileImage = null
+            uploadedImageUrl = null
           }
         }
       )
@@ -146,17 +338,7 @@ fun MemberDetailScreen(
         onEditClick = { viewModel.setEditingDetails(true) },
         onSaveClick = {
           if (isAddMode) {
-            viewModel.addMember(
-              name = editableName,
-              phoneNumber = editablePhoneNumber,
-              educationalQualification = editableEducationalQualification,
-              profileImageUrl = null,
-              email = editableEmail,
-              address = editableAddress,
-              state = editableState,
-              district = editableDistrict,
-              pincode = editablePincode
-            )
+            handleSave()
           } else {
             viewModel.updateMemberDetails(
               memberId = memberId,
@@ -173,15 +355,7 @@ fun MemberDetailScreen(
         },
         onCancelClick = {
           if (isAddMode) {
-            // Reset to empty values
-            editableName = ""
-            editablePhoneNumber = ""
-            editableEmail = ""
-            editableEducationalQualification = ""
-            editableAddress = ""
-            editableState = ""
-            editableDistrict = ""
-            editablePincode = ""
+            handleCancel()
           } else {
             viewModel.setEditingDetails(false)
             // Reset to original values
@@ -215,12 +389,90 @@ fun MemberDetailScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+fun ProfilePhotoItem(
+  file: PlatformFile,
+  onRemoveFile: () -> Unit,
+  modifier: Modifier = Modifier
+) {
+  var bytes by remember(file) { mutableStateOf<ByteArray?>(null) }
+
+  LaunchedEffect(file) {
+    bytes =
+      if (file.supportsStreams()) {
+        val size = file.getSize()
+        if (size != null && size > 0L) {
+          val buffer = ByteArray(size.toInt())
+          val tmpBuffer = ByteArray(1000)
+          var totalBytesRead = 0
+          file.getStream().use {
+            while (it.hasBytesAvailable()) {
+              val numRead = it.readInto(tmpBuffer, 1000)
+              tmpBuffer.copyInto(
+                buffer,
+                destinationOffset = totalBytesRead,
+                endIndex = numRead
+              )
+              totalBytesRead += numRead
+            }
+          }
+          buffer
+        } else {
+          file.readBytes()
+        }
+      } else {
+        file.readBytes()
+      }
+  }
+
+  // Use a container that can accommodate the remove button without clipping
+  Box { // Add padding to ensure button isn't clipped
+    Column(modifier = modifier.padding(6.dp)) {
+      bytes?.let { imageBytes ->
+        AsyncImage(
+          model = imageBytes,
+          contentDescription = "Profile Image",
+          contentScale = ContentScale.Crop,
+          modifier = Modifier
+            .fillMaxSize()
+            .clip(CircleShape)
+        )
+      }
+    }
+
+    // Remove button positioned in top-right, with proper spacing
+    Surface(
+      color = MaterialTheme.colorScheme.errorContainer,
+      shape = CircleShape,
+      modifier = Modifier
+        .align(Alignment.TopEnd)
+        .size(28.dp)
+    ) {
+      IconButton(
+        onClick = onRemoveFile,
+        modifier = Modifier.size(28.dp)
+      ) {
+        Icon(
+          Icons.Filled.Close,
+          modifier = Modifier.size(16.dp),
+          contentDescription = "Remove Photo",
+          tint = MaterialTheme.colorScheme.onErrorContainer
+        )
+      }
+    }
+  }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 private fun ProfileSection(
   member: MemberDetail?,
   isEditing: Boolean,
   isAddMode: Boolean,
+  selectedProfileImage: PlatformFile?,
   onEditClick: () -> Unit,
-  onPhotoUpdate: (String) -> Unit
+  onPhotoUpdate: (String) -> Unit,
+  onPhotoSelected: (PlatformFile?) -> Unit,
+  onPhotoRemoved: () -> Unit
 ) {
   val scope = rememberCoroutineScope()
   val snackbarHostState = LocalSnackbarHostState.current
@@ -230,36 +482,40 @@ private fun ProfileSection(
     title = "Select profile photo"
   ) { file ->
     if (file != null) {
-      scope.launch {
-        try {
-          // Show immediate upload feedback
-          val snackbarJob = launch {
-            snackbarHostState.showSnackbar(
-              message = "🔄 Uploading profile photo...",
-              duration = SnackbarDuration.Indefinite
+      if (isAddMode) {
+        onPhotoSelected(file)
+      } else {
+        scope.launch {
+          try {
+            // Show immediate upload feedback
+            val snackbarJob = launch {
+              snackbarHostState.showSnackbar(
+                message = "🔄 Uploading profile photo...",
+                duration = SnackbarDuration.Indefinite
+              )
+            }
+
+            val uploadResponse = bucket.upload(
+              path = "profile_${Clock.System.now().epochSeconds}.jpg",
+              data = file.readBytes()
             )
+            val imageUrl = bucket.publicUrl(uploadResponse.path)
+
+            // Cancel the upload progress snackbar
+            snackbarJob.cancel()
+            snackbarHostState.currentSnackbarData?.dismiss()
+
+            // Update the photo
+            onPhotoUpdate(imageUrl)
+
+            snackbarHostState.showSnackbar("✅ Profile photo updated successfully")
+          } catch (e: Exception) {
+            snackbarHostState.showSnackbar(
+              message = "❌ Failed to upload photo: ${e.message}",
+              actionLabel = "Close"
+            )
+            println("error uploading photo: $e")
           }
-
-          val uploadResponse = bucket.upload(
-            path = "profile_${Clock.System.now().epochSeconds}.jpg",
-            data = file.readBytes()
-          )
-          val imageUrl = bucket.publicUrl(uploadResponse.path)
-
-          // Cancel the upload progress snackbar
-          snackbarJob.cancel()
-          snackbarHostState.currentSnackbarData?.dismiss()
-
-          // Update the photo
-          onPhotoUpdate(imageUrl)
-
-          snackbarHostState.showSnackbar("✅ Profile photo updated successfully")
-        } catch (e: Exception) {
-          snackbarHostState.showSnackbar(
-            message = "❌ Failed to upload photo: ${e.message}",
-            actionLabel = "Close"
-          )
-          println("error uploading photo: $e")
         }
       }
     }
@@ -281,50 +537,63 @@ private fun ProfileSection(
         if (isAddMode) {
           Box(
             modifier = Modifier
-              .size(100.dp)
-              .clip(CircleShape)
-              .clickable { launcher.launch() },
+              .size(110.dp) // Increased size to accommodate the remove button
+              .clickable {
+                if (selectedProfileImage == null) {
+                  launcher.launch()
+                }
+              },
             contentAlignment = Alignment.Center
           ) {
-            AsyncImage(
-              model = member?.profileImage?.ifEmpty { null },
-              contentDescription = "Profile Image",
-              modifier = Modifier
-                .size(100.dp)
-                .clip(CircleShape),
-              contentScale = ContentScale.Crop,
-              placeholder = BrushPainter(
-                Brush.linearGradient(
-                  listOf(
-                    Color(0xFFFFFFFF),
-                    Color(0xFFDDDDDD)
+            if (selectedProfileImage != null) {
+              // Use ProfilePhotoItem without additional Box wrapper
+              ProfilePhotoItem(
+                file = selectedProfileImage,
+                onRemoveFile = { onPhotoRemoved() },
+                modifier = Modifier.size(100.dp) // Keep image at 100dp
+              )
+            } else {
+              // Show placeholder with upload option
+              AsyncImage(
+                model = member?.profileImage?.ifEmpty { null },
+                contentDescription = "Profile Image",
+                modifier = Modifier
+                  .size(100.dp)
+                  .clip(CircleShape),
+                contentScale = ContentScale.Crop,
+                placeholder = BrushPainter(
+                  Brush.linearGradient(
+                    listOf(
+                      Color(0xFFFFFFFF),
+                      Color(0xFFDDDDDD)
+                    )
                   )
-                )
-              ),
-              fallback = null,
-              error = null
-            )
+                ),
+                fallback = null,
+                error = null
+              )
 
-            // Overlay for add mode
-            Box(
-              modifier = Modifier
-                .size(100.dp)
-                .clip(CircleShape)
-                .background(Color.Black.copy(alpha = 0.3f)),
-              contentAlignment = Alignment.Center
-            ) {
-              Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(
-                  modifier = Modifier.size(32.dp),
-                  imageVector = Icons.Default.AddAPhoto,
-                  contentDescription = "Upload Photo",
-                  tint = Color.White
-                )
-                Text(
-                  "फोटो अपलोड करें",
-                  style = MaterialTheme.typography.labelSmall,
-                  color = Color.White
-                )
+              // Overlay for add mode
+              Box(
+                modifier = Modifier
+                  .size(100.dp)
+                  .clip(CircleShape)
+                  .background(Color.Black.copy(alpha = 0.3f)),
+                contentAlignment = Alignment.Center
+              ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                  Icon(
+                    modifier = Modifier.size(32.dp),
+                    imageVector = Icons.Default.AddAPhoto,
+                    contentDescription = "Upload Photo",
+                    tint = Color.White
+                  )
+                  Text(
+                    "फोटो अपलोड करें",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White
+                  )
+                }
               }
             }
           }
@@ -340,8 +609,9 @@ private fun ProfileSection(
           )
         }
 
-        // Edit photo button - positioned to the right of profile image
+        // Edit/Remove/Add photo button - positioned to the right of profile image
         if (!isAddMode && !isEditing) {
+          // Regular edit button for existing members
           TooltipBox(
             positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
             tooltip = {
@@ -512,7 +782,8 @@ private fun DetailsSection(
             districts = districts,
             selectedDistrict = editableDistrict.ifEmpty { null },
             onDistrictSelected = { onDistrictChange(it ?: "") },
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
+            isMandatory = isAddMode
           )
         }
 
@@ -541,7 +812,8 @@ private fun DetailsSection(
 
           Button(
             onClick = onSaveClick,
-            enabled = !isUpdating && editableName.isNotBlank() && editablePhoneNumber.isNotBlank()
+            enabled = !isUpdating && editableName.isNotBlank() && editablePhoneNumber.isNotBlank() &&
+              (!isAddMode || (editableState.isNotBlank() && editableDistrict.isNotBlank()))
           ) {
             if (isUpdating) {
               CircularProgressIndicator(
