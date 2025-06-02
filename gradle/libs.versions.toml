@@ -10,7 +10,7 @@ androidx-lifecycle = "2.9.0-beta01"
 androidx-material = "1.12.0"
 androidx-test-junit = "1.2.1"
 coilCompose = "3.2.0"
-compose-multiplatform = "1.8.0"
+compose-multiplatform = "1.8.1"
 # for ui tooling
 compose-android = "1.8.2"
 composeRememberSetting = "1.0.3"
@@ -31,7 +31,7 @@ koin = "4.0.4"
 
 # Do not not modify this, OR it will break android build
 logback = "1.2.11"
-navigationCompose = "2.9.0-beta01"
+navigationCompose = "2.9.0-beta02"
 adaptive = "1.1.0"
 uiToolingPreviewDesktop = "1.8.0"
 uiToolingPreviewAndroid = "1.8.2"
@@ -146,4 +146,3 @@ kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", vers
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
 apollo = { id = "com.apollographql.apollo", version.ref = "apollo" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
-
