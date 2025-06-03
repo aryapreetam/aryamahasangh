@@ -1,3 +1,4 @@
+
 import com.apollographql.apollo.gradle.internal.ApolloGenerateSourcesTask
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.compose.reload.ComposeHotRun
@@ -435,4 +436,71 @@ tasks.named("preBuild") {
 // Also run checkSecrets before setupSecrets
 tasks.named("setupSecrets") {
   dependsOn("checkSecrets")
+}
+
+abstract class AddWasmPreloadLinksTask : DefaultTask() {
+    @get:Internal
+    abstract val buildDirectory: DirectoryProperty
+    
+    init {
+        description = "Adds preload links for WASM files to index.html"
+        group = "wasm"
+    }
+
+    @TaskAction
+    fun execute() {
+        val distDir = buildDirectory.get().dir("dist/wasmJs/productionExecutable").asFile
+        println("Checking for WASM files in: ${distDir.absolutePath}")
+        
+        if (!distDir.exists()) {
+            throw GradleException("Distribution directory not found at ${distDir.absolutePath}")
+        }
+        
+        val indexFile = File(distDir, "index.html")
+        if (!indexFile.exists()) {
+            throw GradleException("index.html not found in ${distDir.absolutePath}")
+        }
+        
+        // Find all .wasm files in the directory
+        val wasmFiles = distDir.listFiles { file -> file.name.endsWith(".wasm") }
+            ?: throw GradleException("No .wasm files found in ${distDir.absolutePath}")
+            
+        if (wasmFiles.isEmpty()) {
+            throw GradleException("No .wasm files found in ${distDir.absolutePath}")
+        }
+            
+        // Read the current content of index.html
+        var content = indexFile.readText()
+        
+        // Check if preload links already exist to avoid duplicates
+        if (content.contains("""rel="preload" href="/.+\.wasm"""".toRegex())) {
+            println("WASM preload links already exist in index.html, skipping...")
+            return
+        }
+        
+        // Create preload links for each .wasm file
+        val preloadLinks = wasmFiles.joinToString("\n") { wasmFile ->
+            """    <link rel="preload" href="/${wasmFile.name}" as="fetch" type="application/wasm" crossorigin="anonymous" />"""
+        }
+        
+        // Insert the preload links after the opening <head> tag
+        content = content.replace("<head>", "<head>\n$preloadLinks")
+        
+        // Write the modified content back to the file
+        indexFile.writeText(content)
+        
+        println("✅ Successfully added preload links for ${wasmFiles.size} WASM files to index.html:")
+        wasmFiles.forEach { file ->
+            println("  - ${file.name}")
+        }
+    }
+}
+
+tasks.register<AddWasmPreloadLinksTask>("addWasmPreloadLinks") {
+    buildDirectory.set(layout.buildDirectory)
+}
+
+// Hook the task to run after wasmJsBrowserDistribution
+tasks.named("wasmJsBrowserDistribution") {
+    finalizedBy("addWasmPreloadLinks")
 }
