@@ -11,9 +11,7 @@ import org.aryamahasangh.UpdateJoinUsLabelMutation
 import org.aryamahasangh.domain.error.ErrorHandler
 import org.aryamahasangh.features.activities.OrganisationalActivityShort
 import org.aryamahasangh.features.activities.camelCased
-import org.aryamahasangh.type.ActivitiesFilter
-import org.aryamahasangh.type.DatetimeFilter
-import org.aryamahasangh.type.StringFilter
+import org.aryamahasangh.type.*
 import org.aryamahasangh.util.Result
 
 /**
@@ -63,7 +61,7 @@ class JoinUsRepositoryImpl(private val apolloClient: ApolloClient) : JoinUsRepos
                   Optional.present(
                     value =
                       ActivitiesFilter(
-                        type = Optional.present(StringFilter(eq = Optional.present("SESSION"))),
+                        type = Optional.present(Activity_typeFilter(eq = Optional.present(Activity_type.SESSION))),
                         state = Optional.present(StringFilter(eq = Optional.present(state))),
                         district =
                           if (district.isNotEmpty()) {

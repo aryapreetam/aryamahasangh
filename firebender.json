@@ -1,0 +1,15 @@
+{
+  "rules": [
+    "This project is an organisation management platform, built with Compose Multiplatform that targets Android, Web, iOS, web(wasmJs)",
+    "Follow latest Material Design 3 guidelines and components",
+    "use kotlin api's that are supported across all platforms of compose multiplatform(android, ios, web, desktop)",
+    "Use Kotlin coroutines and Flow for asynchronous operations",
+    "Never use runBlocking",
+    {
+      "filePathMatches": "*Test.kt",
+      "rules": [
+        "only use test api's that are supported across all(android, ios, web, desktop) platforms"
+      ]
+    }
+  ]
+}

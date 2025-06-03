@@ -7,6 +7,7 @@ import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.SerialName
 import org.aryamahasangh.OrganisationalActivityDetailByIdQuery
 import org.aryamahasangh.fragment.OrganisationalActivityShort
+import org.aryamahasangh.type.Activity_type as ApolloActivityType
 
 data class ActivityResponse(
   val data: ActivityData?
@@ -95,10 +96,42 @@ data class Organisation(
 )
 
 enum class ActivityType {
+  SESSION,
+  CAMP,
   COURSE,
   EVENT,
-  CAMPAIGN,
-  SESSION
+  CAMPAIGN;
+
+  fun toDisplayName(): String {
+    return when (this) {
+      SESSION -> "सत्र"
+      CAMP -> "शिविर"
+      COURSE -> "कक्षा"
+      EVENT -> "कार्यक्रम"
+      CAMPAIGN -> "अभियान"
+    }
+  }
+}
+
+fun ApolloActivityType?.toDomain(): ActivityType {
+  return when(this){
+    ApolloActivityType.SESSION -> ActivityType.SESSION
+    ApolloActivityType.CAMP -> ActivityType.CAMP
+    ApolloActivityType.COURSE -> ActivityType.COURSE
+    ApolloActivityType.EVENT -> ActivityType.EVENT
+    ApolloActivityType.CAMPAIGN -> ActivityType.CAMPAIGN
+    else -> ActivityType.EVENT
+  }
+}
+
+fun ActivityType.toApollo(): ApolloActivityType {
+  return when(this){
+    ActivityType.SESSION -> ApolloActivityType.SESSION
+    ActivityType.CAMP -> ApolloActivityType.CAMP
+    ActivityType.COURSE -> ApolloActivityType.COURSE
+    ActivityType.EVENT -> ApolloActivityType.EVENT
+    ActivityType.CAMPAIGN -> ApolloActivityType.CAMPAIGN
+  }
 }
 
 data class OrganisationalActivity(
@@ -193,12 +226,12 @@ data class OrganisationalActivityShort(
 fun OrganisationalActivityShort.camelCased(): org.aryamahasangh.features.activities.OrganisationalActivityShort {
   return OrganisationalActivityShort(
     id = this.id,
-    name = this.name!!,
-    shortDescription = this.short_description!!,
-    startDatetime = this.start_datetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
-    endDatetime = this.end_datetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
-    type = ActivityType.valueOf(this.type!!),
-    district = this.district!!
+    name = this.name,
+    shortDescription = this.short_description,
+    startDatetime = this.start_datetime.toLocalDateTime(TimeZone.currentSystemDefault()),
+    endDatetime = this.end_datetime.toLocalDateTime(TimeZone.currentSystemDefault()),
+    type = this.type.toDomain(),
+    district = this.district ?: ""
   )
 }
 

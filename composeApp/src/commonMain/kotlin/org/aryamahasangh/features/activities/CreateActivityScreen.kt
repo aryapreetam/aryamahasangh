@@ -40,23 +40,6 @@ import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.network.bucket
 import org.aryamahasangh.screens.*
 import org.jetbrains.compose.ui.tooling.preview.Preview
-
-val stringToActivityTypeMap =
-  mapOf(
-    "कक्षा" to ActivityType.COURSE,
-    "कार्यक्रम" to ActivityType.EVENT,
-    "अभियान" to ActivityType.CAMPAIGN,
-    "सत्र" to ActivityType.SESSION
-  )
-
-val activityTypeToStringMap =
-  mapOf(
-    ActivityType.COURSE to "कक्षा",
-    ActivityType.EVENT to "कार्यक्रम",
-    ActivityType.CAMPAIGN to "अभियान",
-    ActivityType.SESSION to "सत्र"
-  )
-
 @OptIn(ExperimentalLayoutApi::class)
 @ExperimentalMaterial3Api
 @Composable
@@ -83,8 +66,7 @@ fun CreateActivityScreen(viewModel: ActivitiesViewModel) { // Take ViewModel par
   var name by remember { mutableStateOf("") }
   var nameError by remember { mutableStateOf(false) }
 
-  val types = remember { listOf("कक्षा", "कार्यक्रम", "अभियान", "सत्र") }
-  var selectedType by remember { mutableStateOf<String?>(null) } // Only one can be selected
+  var selectedType by remember { mutableStateOf<ActivityType?>(null) } // Only one can be selected
 
   var typesError by remember { mutableStateOf(false) }
 
@@ -264,7 +246,7 @@ fun CreateActivityScreen(viewModel: ActivitiesViewModel) { // Take ViewModel par
             name = name,
             shortDescription = shortDescription,
             longDescription = description,
-            type = stringToActivityTypeMap[selectedType!!]!!,
+            type = selectedType!!,
             address = address,
             state = state,
             district = district,
@@ -317,7 +299,7 @@ fun CreateActivityScreen(viewModel: ActivitiesViewModel) { // Take ViewModel par
       // Type (Filter Chips)
       Text(text = "प्रकार :", style = MaterialTheme.typography.bodyMedium)
       Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        types.forEach { type ->
+        ActivityType.entries.forEach { type ->
           FilterChip(
             selected = (selectedType == type), // Check for equality, not `in`
             onClick = {
@@ -329,7 +311,7 @@ fun CreateActivityScreen(viewModel: ActivitiesViewModel) { // Take ViewModel par
                 }
               typesError = selectedType == null // Update error status
             },
-            label = { Text(type) },
+            label = { Text(type.toDisplayName()) },
             leadingIcon =
               if (selectedType == type) {
                 {
