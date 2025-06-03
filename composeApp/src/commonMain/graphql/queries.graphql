@@ -132,7 +132,7 @@ query UpcomingSatrByRegion($state: String!, $district: String, $currentDateTime:
       state: {eq: $state},
       district: {eq: $district},
       start_datetime: {gt: $currentDateTime},
-      type: {eq: "SESSION"}
+      type: {eq: SESSION}
     }
   ){
     edges{

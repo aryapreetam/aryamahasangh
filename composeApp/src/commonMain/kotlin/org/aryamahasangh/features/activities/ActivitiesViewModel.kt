@@ -179,7 +179,7 @@ class ActivitiesViewModel(
     val activity =
       ActivitiesInsertInput(
         name = Optional.present(input.name),
-        type = Optional.present(input.type.name),
+        type = Optional.present(input.type.toApollo()),
         short_description = Optional.present(input.shortDescription),
         long_description = Optional.present(input.longDescription),
         address = Optional.present(input.address),

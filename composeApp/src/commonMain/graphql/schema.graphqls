@@ -945,7 +945,7 @@ type activities implements Node {
 
   name: String!
 
-  type: String!
+  type: activity_type!
 
   short_description: String!
 
@@ -1009,7 +1009,7 @@ input activitiesFilter {
 
   name: StringFilter
 
-  type: StringFilter
+  type: activity_typeFilter
 
   short_description: StringFilter
 
@@ -1060,7 +1060,7 @@ input activitiesInsertInput {
 
   name: String
 
-  type: String
+  type: activity_type
 
   short_description: String
 
@@ -1138,7 +1138,7 @@ input activitiesUpdateInput {
 
   name: String
 
-  type: String
+  type: activity_type
 
   short_description: String
 
@@ -1311,6 +1311,31 @@ type activity_memberUpdateResponse {
   Array of records impacted by the mutation
   """
   records: [activity_member!]!
+}
+
+enum activity_type {
+  SESSION
+
+  CAMP
+
+  COURSE
+
+  EVENT
+
+  CAMPAIGN
+}
+
+"""
+Boolean expression comparing fields on type "activity_type"
+"""
+input activity_typeFilter {
+  eq: activity_type
+
+  in: [activity_type!]
+
+  is: FilterIs
+
+  neq: activity_type
 }
 
 type admission implements Node {
