@@ -269,5 +269,20 @@ fun RootNavGraph(navController: NavHostController) {
         )
       }
     }
+    navigation<Screen.KshatraTrainingSection>(startDestination = Screen.KshatraTrainingHome) {
+      composable<Screen.KshatraTrainingHome> {
+        PhysicalTrainingForm(Gender.BOY, {})
+      }
+    }
+    navigation<Screen.ChatraTrainingSection>(startDestination = Screen.ChatraTrainingHome) {
+      composable<Screen.ChatraTrainingHome> {
+        PhysicalTrainingFormGirl(Gender.GIRL, {})
+      }
+    }
   }
+}
+
+@Composable
+fun PhysicalTrainingFormGirl(gender: Gender, onBack: () -> Unit) {
+  PhysicalTrainingForm(Gender.GIRL, {})
 }

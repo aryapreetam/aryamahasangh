@@ -19,6 +19,7 @@ import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
 import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.navigation.Screen
+import org.aryamahasangh.utils.TBD
 import org.aryamahasangh.viewmodel.LearningViewModel
 import org.koin.compose.koinInject
 
@@ -28,6 +29,13 @@ fun LearningScreen(
   onNavigateToActivityDetails: (String) -> Unit,
   viewModel: LearningViewModel = koinInject()
 ) {
+
+  // FIXME
+  if(true){
+    TBD()
+    return
+  }
+
   val scope = rememberCoroutineScope()
   val snackbarHostState = LocalSnackbarHostState.current
 
