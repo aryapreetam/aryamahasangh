@@ -1,9 +1,19 @@
 package org.aryamahasangh.utils
 
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+
+@Composable
+fun TBD(){
+  Text("निर्माणाधीन", modifier = Modifier.padding(16.dp))
+}
 
 fun LocalDateTime.toHumanReadable(): String {
   val daysOfWeek = listOf("रविवार", "सोमवार", "मंगलवार", "बुधवार", "गुरुवार", "शुक्रवार", "शनिवार")

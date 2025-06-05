@@ -21,21 +21,22 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import aryamahasangh.composeapp.generated.resources.*
 import dev.burnoo.compose.remembersetting.rememberBooleanSetting
 import dev.burnoo.compose.remembersetting.rememberStringSetting
 import kotlinx.coroutines.launch
 import org.aryamahasangh.components.LoginDialog
+import org.aryamahasangh.di.KoinInitializer
 import org.aryamahasangh.navigation.RootNavGraph
 import org.aryamahasangh.navigation.Screen
 import org.aryamahasangh.util.PlatformBackHandler
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import aryamahasangh.composeapp.generated.resources.*
 
 // Initialize Koin for dependency injection
 private val initKoin by lazy {
-  org.aryamahasangh.di.KoinInitializer.init()
+  KoinInitializer.init()
   true // Return a value to satisfy the lazy property
 }
 
@@ -101,6 +102,16 @@ val drawerOptions =
     ),
     DrawerOption("आर्य परिवार", Res.drawable.family, Screen.AryaPariwarSection),
     DrawerOption("आर्य समाज संगठन", Res.drawable.diversity_3, Screen.AryaSamajSection),
+    DrawerOption(
+      "आर्य क्षात्र शिविर पंजीकरण",
+      Res.drawable.swords,
+      Screen.KshatraTrainingSection
+    ),
+    DrawerOption(
+      "आर्य छात्रा शिविर पंजीकरण",
+      Res.drawable.swords,
+      Screen.ChatraTrainingSection
+    ),
     DrawerOption("आओ स्वाध्याय करें", Res.drawable.menu_book, Screen.Learning)
   )
 
@@ -212,7 +223,7 @@ fun DrawerContent(
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
             style = MaterialTheme.typography.titleMedium
           )
-        } else if (option.title == "आर्य समाज संगठन") {
+        } else if (option.title == "आर्य छात्रा शिविर पंजीकरण") {
           HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
           Text(
             "स्वाध्याय ",
@@ -275,6 +286,10 @@ private fun checkIfSelected(
   } else if ((currentDestination?.contains("AryaPariwarHome") == true) && currentDrawerItem == Screen.AryaPariwarSection.toString()) {
     true
   } else if ((currentDestination?.contains("AryaSamajHome") == true) && currentDrawerItem == Screen.AryaSamajSection.toString()) {
+    true
+  } else if ((currentDestination?.contains("KshatraTrainingHome") == true) && currentDrawerItem == Screen.KshatraTrainingSection.toString()) {
+    true
+  } else if ((currentDestination?.contains("ChatraTrainingHome") == true) && currentDrawerItem == Screen.ChatraTrainingSection.toString()) {
     true
   } else if ((currentDestination?.contains("AryaGurukulCollege") == true) && currentDrawerItem == Screen.AryaGurukulSection.toString()) {
     true

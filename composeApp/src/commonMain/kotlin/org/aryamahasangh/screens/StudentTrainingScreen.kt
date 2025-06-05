@@ -16,6 +16,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.aryamahasangh.utils.TBD
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 enum class Gender(
@@ -85,6 +86,13 @@ fun PhysicalTrainingForm(
   initialGender: Gender?, // Gender is now an input parameter
   onSubmit: (formData: Map<String, String>) -> Unit
 ) {
+
+  // FIXME
+  if(true){
+    TBD()
+    return
+  }
+  
   // The selectedGender is now directly derived from initialGender and not user-selectable on this screen.
   // We'll use initialGender directly for logic.
   var genderForForm by remember { mutableStateOf(initialGender) } // Store it in a state if needed for recomposition triggers

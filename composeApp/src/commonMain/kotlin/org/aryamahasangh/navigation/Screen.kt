@@ -99,4 +99,14 @@ sealed class Screen {
 
   @Serializable
   data object Members : Screen()
+
+  @Serializable
+  data object KshatraTrainingSection : Screen()
+  @Serializable
+  data object KshatraTrainingHome : Screen()
+  @Serializable
+  data object ChatraTrainingSection : Screen()
+
+  @Serializable
+  data object ChatraTrainingHome : Screen()
 }

@@ -269,10 +269,10 @@ fun AppTheme(
 ) {
   val systemIsDark = isSystemInDarkTheme()
   val isDarkState = remember { mutableStateOf(systemIsDark) }
-  // only focus on light theme right now
+  // TODO only focus on light theme right now
   val colorScheme =
     when {
-      darkTheme -> darkScheme
+      //darkTheme -> darkScheme
       else -> lightScheme
     }
 
@@ -281,7 +281,7 @@ fun AppTheme(
   ) {
     val isDark by isDarkState
     MaterialTheme(
-      colorScheme = if (isDark) darkScheme else lightScheme,
+      colorScheme = colorScheme, //if (isDark) darkScheme else lightScheme,
       typography = AppTypography(),
       content = content
     )

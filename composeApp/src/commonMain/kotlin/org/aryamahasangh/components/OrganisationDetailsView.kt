@@ -103,7 +103,7 @@ fun OrganisationDetail(
             val snackbarHostState = LocalSnackbarHostState.current
             val launcher =
               rememberFilePickerLauncher(
-                type = PickerType.Image,
+                type = PickerType.File(extensions = listOf("png", "jpg", "jpeg", "webp")),
                 mode = PickerMode.Single,
                 title = "Select logo"
               ) { file ->

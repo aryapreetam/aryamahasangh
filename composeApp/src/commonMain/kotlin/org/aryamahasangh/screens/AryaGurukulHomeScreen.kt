@@ -25,7 +25,7 @@ fun GurukulCollegeHomeScreen(navigateToAdmissionForm: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.padding(bottom = 16.dp)
       ) {
-        listOf("वर्तमान कार्य", "गुरुकुल प्रवेश", "शिविर पंजीकरण", "आगामी बैठक", "कक्षाएं").forEach {
+        listOf("वर्तमान कार्य", "गुरुकुल प्रवेश", "आगामी बैठक", "कक्षाएं").forEach {
           OutlinedCard(
             onClick = {
               if (it == "गुरुकुल प्रवेश") {
