@@ -1,14 +1,61 @@
 {
   "rules": [
     "This project is an organisation management platform, built with Compose Multiplatform that targets Android, Web, iOS, web(wasmJs)",
-    "Follow latest Material Design 3 guidelines and components",
-    "use kotlin api's that are supported across all platforms of compose multiplatform(android, ios, web, desktop)",
+    "Follow latest Material Design 3 guidelines for UI components & best practices",
+    "use kotlin & Jetpack compose api's that are supported across all platforms of compose multiplatform(android, ios, web, desktop)",
     "Use Kotlin coroutines and Flow for asynchronous operations",
-    "Never use runBlocking",
+    "Do not use runBlocking(except for in very rare cases like secrets loading); prefer suspend functions and structured concurrency.",
+    "Always design and build on mobile + tablet + desktop + browser. Use adaptive layout.",
+    "Supabase is the backend and is accessed using GraphQL. All GraphQL operations should be defined in `.graphql` files, generated using Apollo Kotlin.",
+    "Organize code by feature module using the structure: `feature/<featureName>/{ui, viewmodel, domain, data}`.",
+    "Compose screens should not perform Supabase queries directly. Data must be exposed via repository interfaces and consumed in ViewModels.",
+    "Expose all GraphQL queries and mutations through a repository interface implemented using Apollo Kotlin client.",
+    "All business logic, data transformations, and caching must reside in the domain or data layer. UI layer should only render data.",
+    "Prefer using `StateFlow` or `SnapshotStateList` in ViewModels for state propagation to UI.",
+    "All navigation logic must be centralized using a sealed class `Screen` or `NavGraph`. Avoid inline navigation calls within Composables.",
+    "Every ViewModel should be tested in `commonTest` using coroutine test utilities and mock repositories.",
+    "Never store secrets in the app; use Supabase Auth securely",
+    "All form input should be wrapped with `rememberSaveable()` for config-change resilience.",
+    "Real-time subscriptions should be initialized in ViewModel and exposed as StateFlow.",
+    "Never start/stop subscriptions in Composable directly. Lifecycle-aware logic should live in ViewModel.",
+    "Use a `SubscriptionManager` abstraction to manage Supabase channel lifecycles.",
+    "Errors from real-time streams must be surfaced via a `UiEffect` like `ShowErrorSnackbar`.",
+    "Compose should update only from immutable state flows. Do not mutate lists directly.",
+    "Avoid memory leaks by ensuring subscriptions are disposed in onCleared or appropriate callback.",
+    "Pagination should be handled through a ViewModel with explicit loadNextPage() function.",
+    "Use a sealed class `LoadState` to represent loading, success, error, and end-of-list.",
+    "Avoid calling loadNextPage() multiple times concurrently — throttle or debounce scroll events.",
+    "Track current page, total items, and whether more data exists in UI state.",
+    "Display loading indicators separately for initial and paginated loads.",
+    "Use lazy lists (LazyColumn, LazyVerticalGrid) and detect scroll to end via derived state.",
+    "Never paginate inside UI layer directly — delegate scroll end detection to a ViewModel call.",
+    "All user facing communication display like alerts, snackbar, messages should happen using hindi language and with devnagari script",
     {
       "filePathMatches": "*Test.kt",
       "rules": [
         "only use test api's that are supported across all(android, ios, web, desktop) platforms"
+      ]
+    },
+    {
+      "filePathMatches": ["**/viewmodel/**"],
+      "rules": [
+        "Expose screen state as `StateFlow<UiState>`.",
+        "Trigger side-effects (e.g., navigation, snackbar) via a separate `SharedFlow<UiEffect>`.",
+        "Avoid holding Supabase client instances in ViewModels; inject via constructor."
+      ]
+    },
+    {
+      "filePathMatches": ["**/repository/**"],
+      "rules": [
+        "Each repository should map GraphQL response models to domain models.",
+        "Handle Supabase GraphQL errors gracefully and expose a sealed result (Success/Error)."
+      ]
+    },
+    {
+      "filePathMatches": ["**/*.graphql"],
+      "rules": [
+        "GraphQL queries and mutations must be colocated with the feature they're used in.",
+        "Use fragments for reusable pieces of queries (e.g., `UserFragment`, `EventFragment`)."
       ]
     }
   ]

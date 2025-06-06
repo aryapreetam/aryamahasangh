@@ -104,12 +104,12 @@ val drawerOptions =
     DrawerOption("आर्य समाज संगठन", Res.drawable.diversity_3, Screen.AryaSamajSection),
     DrawerOption(
       "आर्य क्षात्र शिविर पंजीकरण",
-      Res.drawable.swords,
+      Res.drawable.person,
       Screen.KshatraTrainingSection
     ),
     DrawerOption(
       "आर्य छात्रा शिविर पंजीकरण",
-      Res.drawable.swords,
+      Res.drawable.face_4,
       Screen.ChatraTrainingSection
     ),
     DrawerOption("आओ स्वाध्याय करें", Res.drawable.menu_book, Screen.Learning)
