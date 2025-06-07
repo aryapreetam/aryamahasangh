@@ -31,7 +31,9 @@ import dev.burnoo.compose.remembersetting.rememberBooleanSetting
 import kotlinx.coroutines.launch
 import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.SettingKeys
+import org.aryamahasangh.components.ActivityStatus
 import org.aryamahasangh.components.activityTypeData
+import org.aryamahasangh.components.getActivityStatus
 import org.aryamahasangh.isWeb
 import org.aryamahasangh.utils.format
 import org.aryamahasangh.utils.toHumanReadable
@@ -42,6 +44,7 @@ import org.koin.compose.koinInject
 @Composable
 fun ActivityDetailScreen(
   id: String,
+  onNavigateToEdit: (String) -> Unit = {},
   viewModel: ActivitiesViewModel = koinInject()
 ) {
   val snackbarHostState = LocalSnackbarHostState.current
@@ -109,7 +112,27 @@ fun ActivityDetailScreen(
     return
   }
 
-  ActivityDisplay(uiState.activity!!, registeredUsers, isLoggedIn)
+  Box(modifier = Modifier.fillMaxSize()) {
+    ActivityDisplay(uiState.activity!!, registeredUsers, isLoggedIn)
+
+    // Edit button in top-right corner
+    if (isLoggedIn) {
+      if(getActivityStatus(uiState.activity!!.startDatetime, uiState.activity!!.endDatetime) != ActivityStatus.PAST) {
+        IconButton(
+          onClick = { onNavigateToEdit(id) },
+          modifier = Modifier
+            .align(Alignment.TopEnd)
+            .padding(8.dp)
+        ) {
+          Icon(
+            imageVector = Icons.Default.Edit,
+            contentDescription = "गतिविधि संपादित करें",
+            tint = MaterialTheme.colorScheme.primary
+          )
+        }
+      }
+    }
+  }
 }
 
 // @Preview
@@ -438,9 +461,9 @@ fun UserProfileListItem(user: UserProfile, modifier: Modifier = Modifier) {
     leadingContent = {
       val genderIcon: ImageVector =
         if (user.gender.equals("female", ignoreCase = true)) {
-          Icons.Filled.Woman
+          Icons.Filled.Face4
         } else {
-          Icons.Filled.Man
+          Icons.Filled.Person
         }
       // Circular background for the icon
       Box(

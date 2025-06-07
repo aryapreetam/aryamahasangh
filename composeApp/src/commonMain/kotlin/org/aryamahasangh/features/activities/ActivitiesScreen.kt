@@ -10,6 +10,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.components.ActivityListItem
 
@@ -17,6 +20,7 @@ import org.aryamahasangh.components.ActivityListItem
 @Composable
 fun ActivitiesScreen(
   onNavigateToActivityDetails: (String) -> Unit,
+  onNavigateToEditActivity: (String) -> Unit,
   viewModel: ActivitiesViewModel
 ) {
   val scope = rememberCoroutineScope()
@@ -69,20 +73,33 @@ fun ActivitiesScreen(
       verticalArrangement = Arrangement.spacedBy(8.dp),
       horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-      uiState.activities.forEach { activity ->
+      // Sort activities by status: ONGOING -> UPCOMING -> PAST
+      val currentTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+      val sortedActivities = uiState.activities.sortedWith(compareBy { activity ->
+        when {
+          currentTime >= activity.startDatetime && currentTime <= activity.endDatetime -> 0 // ONGOING
+          currentTime < activity.startDatetime -> 1 // UPCOMING
+          else -> 2 // PAST
+        }
+      })
 
+      sortedActivities.forEach { activity ->
         ActivityListItem(
           activity = activity,
           handleOnClick = {
             onNavigateToActivityDetails(activity.id)
+          },
+          handleDeleteActivity = {
+            // Delete activity
+            viewModel.deleteActivity(activity.id)
+            scope.launch {
+              snackbarHostState.showSnackbar("गतिविधि सफलतापूर्वक हटा दी गई")
+            }
+          },
+          handleEditActivity = {
+            onNavigateToEditActivity(activity.id)
           }
-        ) {
-          // Delete activity
-          viewModel.deleteActivity(activity.id)
-          scope.launch {
-            snackbarHostState.showSnackbar("Activity deleted successfully")
-          }
-        }
+        )
       }
     }
   }

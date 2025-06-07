@@ -9,10 +9,7 @@ import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import dev.burnoo.compose.remembersetting.rememberBooleanSetting
 import org.aryamahasangh.SettingKeys
-import org.aryamahasangh.features.activities.ActivitiesContainer
-import org.aryamahasangh.features.activities.ActivitiesScreen
-import org.aryamahasangh.features.activities.ActivitiesViewModel
-import org.aryamahasangh.features.activities.ActivityDetailScreen
+import org.aryamahasangh.features.activities.*
 import org.aryamahasangh.features.admin.AdminContainerScreen
 import org.aryamahasangh.features.admin.AdminViewModel
 import org.aryamahasangh.features.admin.MemberDetailScreen
@@ -55,15 +52,51 @@ fun RootNavGraph(navController: NavHostController) {
           navController.navigate(Screen.ActivityDetails(id))
         }
         if (isLoggedIn) {
-          ActivitiesContainer(onNavigateToDetails, viewModel)
+          ActivitiesContainer(
+            onNavigateToActivityDetails = onNavigateToDetails,
+            viewModel = viewModel,
+            onNavigateToEditActivity = { id ->
+              navController.navigate(Screen.EditActivity(id))
+            }
+          )
         } else {
-          ActivitiesScreen(onNavigateToDetails, viewModel)
+          ActivitiesScreen(
+            onNavigateToActivityDetails = onNavigateToDetails,
+            onNavigateToEditActivity = { id ->
+              // This won't be used for non-logged in users, but we need to provide it
+            },
+            viewModel = viewModel
+          )
         }
+      }
+      composable<Screen.EditActivity> {
+        val id = it.toRoute<Screen.EditActivity>().id
+        val viewModel = koinInject<ActivitiesViewModel>()
+        CreateActivityScreen(
+          viewModel = viewModel,
+          editingActivityId = id,
+          onActivitySaved = { activityId ->
+            // Navigate to activity details after save
+            navController.navigate(Screen.ActivityDetails(activityId)) {
+              popUpTo(Screen.Activities)
+            }
+          },
+          onCancel = {
+            navController.popBackStack()
+          }
+        )
       }
       composable<Screen.ActivityDetails> {
         val id = it.toRoute<Screen.ActivityDetails>().id
         val viewModel = koinInject<ActivitiesViewModel>()
-        ActivityDetailScreen(id, viewModel)
+        ActivityDetailScreen(
+          id = id,
+          onNavigateToEdit = { activityId ->
+            // Navigate to edit screen
+            navController.navigate(Screen.EditActivity(activityId))
+          },
+          viewModel = viewModel
+        )
       }
     }
     navigation<Screen.OrgsSection>(startDestination = Screen.Orgs) {

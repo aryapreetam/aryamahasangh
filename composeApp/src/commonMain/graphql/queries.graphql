@@ -124,6 +124,7 @@ fragment OrganisationalActivityShort on activities {
   end_datetime
   type
   district
+    state
 }
 
 query UpcomingSatrByRegion($state: String!, $district: String, $currentDateTime: Datetime){
