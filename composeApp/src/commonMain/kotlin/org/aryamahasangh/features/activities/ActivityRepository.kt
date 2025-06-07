@@ -8,6 +8,7 @@ import kotlinx.serialization.Serializable
 import org.aryamahasangh.*
 import org.aryamahasangh.network.supabaseClient
 import org.aryamahasangh.type.ActivitiesInsertInput
+import org.aryamahasangh.type.ActivitiesUpdateInput
 import org.aryamahasangh.type.Gender_filter
 import org.aryamahasangh.util.Result
 import org.aryamahasangh.util.safeCall
@@ -38,6 +39,16 @@ interface ActivityRepository {
     activityInputData: ActivitiesInsertInput,
     activityMembers: List<ActivityMember>,
     associatedOrganisations: List<Organisation>
+  ): Result<String>
+
+  /**
+   * Update an activity
+   */
+  suspend fun updateActivity(
+    id: String,
+    input: ActivitiesInsertInput,
+    contactMembers: List<ActivityMember>,
+    organisations: List<Organisation>
   ): Result<Boolean>
 
   /**
@@ -51,7 +62,9 @@ interface ActivityRepository {
 /**
  * Implementation of ActivityRepository that uses Apollo GraphQL client
  */
-class ActivityRepositoryImpl(private val apolloClient: ApolloClient) : ActivityRepository {
+class ActivityRepositoryImpl(
+  private val apolloClient: ApolloClient
+) : ActivityRepository {
   override fun getActivities(): Flow<Result<List<OrganisationalActivityShort>>> =
     flow {
       emit(Result.Loading)
@@ -95,7 +108,7 @@ class ActivityRepositoryImpl(private val apolloClient: ApolloClient) : ActivityR
     activityInputData: ActivitiesInsertInput,
     activityMembers: List<ActivityMember>,
     associatedOrganisations: List<Organisation>
-  ): Result<Boolean> {
+  ): Result<String> {
     return safeCall {
       val response = apolloClient.mutation(AddOrganisationActivityMutation(activityInputData)).execute()
       if (response.hasErrors()) {
@@ -123,8 +136,94 @@ class ActivityRepositoryImpl(private val apolloClient: ApolloClient) : ActivityR
           // FIXME notify about the error to the user
           throw Exception("Unknown error occurred ${e.message}")
         }
+        return@safeCall activityId
       }
-      true
+      throw Exception("Failed to create activity")
+    }
+  }
+
+  override suspend fun updateActivity(
+    id: String,
+    input: ActivitiesInsertInput,
+    contactMembers: List<ActivityMember>,
+    organisations: List<Organisation>
+  ): Result<Boolean> {
+    return try {
+      // Create update input using Optional fields
+      val updateInput = ActivitiesUpdateInput(
+        name = input.name,
+        type = input.type,
+        short_description = input.short_description,
+        long_description = input.long_description,
+        address = input.address,
+        state = input.state,
+        district = input.district,
+        start_datetime = input.start_datetime,
+        end_datetime = input.end_datetime,
+        media_files = input.media_files,
+        additional_instructions = input.additional_instructions,
+        capacity = input.capacity,
+        latitude = input.latitude,
+        longitude = input.longitude,
+        allowed_gender = input.allowed_gender
+      )
+
+      // Update the activity
+      val updateMutation = UpdateActivityMutation(
+        id = id,
+        input = updateInput
+      )
+
+      val updateResponse = apolloClient.mutation(updateMutation).execute()
+      if (updateResponse.hasErrors()) {
+        return Result.Error(updateResponse.errors?.first()?.message ?: "Failed to update activity")
+      }
+
+      // Delete existing associations
+      supabaseClient.from("organisational_activity")
+        .delete {
+          filter {
+            eq("activity_id", id)
+          }
+        }
+
+      supabaseClient.from("activity_member")
+        .delete {
+          filter {
+            eq("activity_id", id)
+          }
+        }
+
+      // Add new associations
+      val organisationData = organisations.map {
+        OrganisationalActivityInsertData(
+          activity_id = id,
+          organisation_id = it.id
+        )
+      }
+
+      if (organisationData.isNotEmpty()) {
+        supabaseClient.from("organisational_activity")
+          .insert(organisationData)
+      }
+
+      val contactData = contactMembers.map {
+        ActivityMemberInsertData(
+          activity_id = id,
+          member_id = it.member.id,
+          post = it.post,
+          priority = it.priority
+        )
+      }
+
+      if (contactData.isNotEmpty()) {
+        supabaseClient.from("activity_member")
+          .insert(contactData)
+      }
+
+      Result.Success(true)
+    } catch (e: Exception) {
+      Result.Error(e.message ?: "Failed to update activity")
     }
   }
 

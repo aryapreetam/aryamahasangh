@@ -220,7 +220,8 @@ data class OrganisationalActivityShort(
   val startDatetime: LocalDateTime,
   val endDatetime: LocalDateTime,
   val type: ActivityType,
-  val district: String
+  val district: String,
+  val state: String
 )
 
 fun OrganisationalActivityShort.camelCased(): org.aryamahasangh.features.activities.OrganisationalActivityShort {
@@ -231,7 +232,8 @@ fun OrganisationalActivityShort.camelCased(): org.aryamahasangh.features.activit
     startDatetime = this.start_datetime.toLocalDateTime(TimeZone.currentSystemDefault()),
     endDatetime = this.end_datetime.toLocalDateTime(TimeZone.currentSystemDefault()),
     type = this.type.toDomain(),
-    district = this.district ?: ""
+    district = this.district ?: "",
+    state = this.state ?: ""
   )
 }
 

@@ -20,6 +20,9 @@ sealed class Screen {
   data class ActivityDetails(val id: String) : Screen()
 
   @Serializable
+  data class EditActivity(val id: String) : Screen()
+
+  @Serializable
   data object JoinUs : Screen()
 
   @Serializable

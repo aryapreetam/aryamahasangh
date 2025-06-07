@@ -273,7 +273,11 @@ private fun checkIfSelected(
 ): Boolean {
   return if ((currentDestination?.contains("AboutUs") == true || currentDestination?.contains("AboutUsDetails") == true) && currentDrawerItem == Screen.AboutSection.toString()) {
     true
-  } else if ((currentDestination?.contains("Activities") == true || currentDestination?.contains("ActivityDetails") == true) && currentDrawerItem == Screen.ActivitiesSection.toString()) {
+  } else if ((
+      currentDestination?.contains("Activities") == true ||
+        currentDestination?.contains("ActivityDetails") == true ||
+        currentDestination?.contains("EditActivity") == true
+    ) && currentDrawerItem == Screen.ActivitiesSection.toString()) {
     true
   } else if ((currentDestination?.contains("Orgs") == true || currentDestination?.contains("OrgDetails") == true) && currentDrawerItem == Screen.OrgsSection.toString()) {
     true
@@ -413,6 +417,7 @@ fun MainContent(
             listOf(
               "AboutUsDetails",
               "ActivityDetails",
+              "EditActivity",
               "OrgDetails",
               "VideoDetails",
               "AdmissionForm",

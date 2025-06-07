@@ -110,12 +110,13 @@ kotlin {
       implementation(libs.androidx.lifecycle.viewmodel)
       implementation(libs.androidx.lifecycle.runtime.compose)
       implementation(projects.shared)
+      implementation(compose.animation)
       implementation(libs.coil.compose)
       implementation(libs.coil.network.ktor3)
       implementation(libs.navigation.compose)
       implementation(libs.kotlinx.serialization.json)
       implementation(libs.material.adaptive)
-
+      runtimeOnly("org.jetbrains.compose.material:material:1.9.0-alpha01")
       // Koin for Dependency Injection
       implementation(libs.koin.core)
       implementation(libs.koin.compose)

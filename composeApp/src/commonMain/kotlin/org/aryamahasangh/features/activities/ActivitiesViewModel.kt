@@ -68,6 +68,10 @@ class ActivitiesViewModel(
   private val _formSubmissionState = MutableStateFlow(AdmissionFormSubmissionState())
   val activityFormSubmissionState: StateFlow<AdmissionFormSubmissionState> = _formSubmissionState.asStateFlow()
 
+  // Store the newly created activity ID
+  private val _createdActivityId = MutableStateFlow<String?>(null)
+  val createdActivityId: StateFlow<String?> = _createdActivityId.asStateFlow()
+
   // Separate state for organizations and members
   private val _organisationsAndMembersState = MutableStateFlow(OrganisationsAndMembersUiState())
   val organisationsAndMembersState: StateFlow<OrganisationsAndMembersUiState> =
@@ -196,10 +200,73 @@ class ActivitiesViewModel(
       )
     launch {
       _formSubmissionState.value = AdmissionFormSubmissionState(isSubmitting = true)
+      _createdActivityId.value = null
 
       when (
         val result =
           activityRepository.createActivity(
+            activity,
+            input.contactPeople,
+            input.associatedOrganisations
+          )
+      ) {
+        is Result.Success -> {
+          _createdActivityId.value = result.data
+          _formSubmissionState.value =
+            AdmissionFormSubmissionState(
+              isSubmitting = false,
+              isSuccess = true,
+              error = null
+            )
+          // Reload activities to include the new one
+          loadActivities()
+        }
+
+        is Result.Error -> {
+          _formSubmissionState.value =
+            AdmissionFormSubmissionState(
+              isSubmitting = false,
+              isSuccess = false,
+              error = result.message
+            )
+        }
+
+        is Result.Loading -> {
+          // This shouldn't happen with the current implementation
+        }
+      }
+    }
+  }
+
+  /**
+   * Update an existing activity
+   */
+  fun updateActivity(id: String, input: ActivityInputData) {
+    val activity =
+      ActivitiesInsertInput(
+        name = Optional.present(input.name),
+        type = Optional.present(input.type.toApollo()),
+        short_description = Optional.present(input.shortDescription),
+        long_description = Optional.present(input.longDescription),
+        address = Optional.present(input.address),
+        state = Optional.present(input.state),
+        district = Optional.present(input.district),
+        start_datetime = Optional.present(input.startDatetime.convertToInstant()),
+        end_datetime = Optional.present(input.endDatetime.convertToInstant()),
+        media_files = Optional.present(input.mediaFiles),
+        additional_instructions = Optional.present(input.additionalInstructions),
+        capacity = Optional.present(input.capacity),
+        latitude = Optional.present(input.latitude),
+        longitude = Optional.present(input.longitude),
+        allowed_gender = Optional.present(input.allowedGender.toApollo())
+      )
+    launch {
+      _formSubmissionState.value = AdmissionFormSubmissionState(isSubmitting = true)
+
+      when (
+        val result =
+          activityRepository.updateActivity(
+            id,
             activity,
             input.contactPeople,
             input.associatedOrganisations
@@ -212,7 +279,7 @@ class ActivitiesViewModel(
               isSuccess = result.data,
               error = null
             )
-          // Reload activities to include the new one
+          // Reload activities to reflect the update
           loadActivities()
         }
 

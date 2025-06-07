@@ -18,11 +18,13 @@ import androidx.compose.ui.Modifier
 @Composable
 fun ActivitiesContainer(
   onNavigateToActivityDetails: (String) -> Unit,
-  viewModel: ActivitiesViewModel
+  viewModel: ActivitiesViewModel,
+  onNavigateToEditActivity: (String) -> Unit = {}
 ) {
   Column(modifier = Modifier.fillMaxSize()) {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
     val pagerState = rememberPagerState { 2 }
+
     LaunchedEffect(selectedTabIndex) {
       pagerState.animateScrollToPage(selectedTabIndex)
     }
@@ -31,6 +33,7 @@ fun ActivitiesContainer(
         selectedTabIndex = pagerState.currentPage
       }
     }
+
     ScrollableTabRow(
       selectedTabIndex = selectedTabIndex
     ) {
@@ -58,9 +61,22 @@ fun ActivitiesContainer(
         contentAlignment = Alignment.Center
       ) {
         if (it == 0) {
-          ActivitiesScreen(onNavigateToActivityDetails, viewModel)
+          ActivitiesScreen(
+            onNavigateToActivityDetails = onNavigateToActivityDetails,
+            onNavigateToEditActivity = onNavigateToEditActivity,
+            viewModel = viewModel
+          )
         } else {
-          CreateActivityScreen(viewModel)
+          CreateActivityScreen(
+            viewModel = viewModel,
+            editingActivityId = null,
+            onActivitySaved = { activityId ->
+              onNavigateToActivityDetails(activityId)
+            },
+            onCancel = {
+              selectedTabIndex = 0
+            }
+          )
         }
       }
     }

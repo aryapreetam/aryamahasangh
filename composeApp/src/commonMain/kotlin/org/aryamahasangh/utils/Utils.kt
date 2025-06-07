@@ -1,7 +1,7 @@
 package org.aryamahasangh.utils
 
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -13,6 +13,18 @@ import kotlinx.datetime.toLocalDateTime
 @Composable
 fun TBD(){
   Text("निर्माणाधीन", modifier = Modifier.padding(16.dp))
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun WithTooltip(tooltip: String, content: @Composable () -> Unit) {
+  TooltipBox(
+    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+    tooltip = { PlainTooltip { Text(tooltip) } },
+    state = rememberTooltipState()
+  ) {
+    content()
+  }
 }
 
 fun LocalDateTime.toHumanReadable(): String {

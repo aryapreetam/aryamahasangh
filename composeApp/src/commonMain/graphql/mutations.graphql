@@ -62,7 +62,8 @@ mutation DeleteActivity($id: String!) {
 mutation updateJoinUsLabel($input: String!){
   updateapp_labelsCollection(
     set: { label_value: $input },
-    filter: { label_key: { eq: "join_us" } }){
+      filter: { label_key: { eq: "join_us" } }
+  ){
     affectedCount
   }
 }
@@ -174,6 +175,7 @@ mutation updateOrganisationalMemberPost($organisationalMemberId: String!, $post:
 }
 
 
+
 mutation updateOrganisationalMemberPriority($organisationalMemberId: String!, $priority: Int!) {
   updateorganisational_memberCollection(
     set: { priority: $priority }
@@ -233,5 +235,20 @@ mutation updateMemberDetails($memberId: String!, $name: String!, $phoneNumber: S
     }
   ) {
     affectedCount
+  }
+}
+
+mutation UpdateActivity(
+    $id: String!,
+    $input: activitiesUpdateInput!
+) {
+    updateactivitiesCollection(
+        filter: {id: {eq: $id}}
+        set: $input
+    ) {
+        affectedCount
+        records {
+            ...ActivityFields
+    }
   }
 }
