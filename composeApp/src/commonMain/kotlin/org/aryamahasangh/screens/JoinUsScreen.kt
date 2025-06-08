@@ -12,11 +12,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.burnoo.compose.remembersetting.rememberBooleanSetting
-import org.aryamahasangh.LocalSnackbarHostState
-import org.aryamahasangh.SettingKeys
 import org.aryamahasangh.components.ActivityListItem
 import org.aryamahasangh.components.LoadingErrorState
 import org.aryamahasangh.features.activities.OrganisationalActivityShort
+import org.aryamahasangh.navigation.LocalSnackbarHostState
+import org.aryamahasangh.navigation.SettingKeys
 import org.aryamahasangh.viewmodel.JoinUsUiState
 import org.aryamahasangh.viewmodel.JoinUsViewModel
 import org.aryamahasangh.viewmodel.LabelState

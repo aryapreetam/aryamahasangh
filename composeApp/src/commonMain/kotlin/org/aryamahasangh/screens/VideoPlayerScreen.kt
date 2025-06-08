@@ -1,14 +1,17 @@
 package org.aryamahasangh.screens
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.YoutubeVideoPlayer
+import org.aryamahasangh.navigation.LocalSnackbarHostState
 import org.aryamahasangh.viewmodel.LearningViewModel
 
 @Composable

@@ -10,10 +10,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.components.ErrorSnackbar
 import org.aryamahasangh.components.InlineErrorMessage
 import org.aryamahasangh.features.activities.toDevanagariNumerals
+import org.aryamahasangh.navigation.LocalSnackbarHostState
 
 @Composable
 fun AdminContainerScreen(

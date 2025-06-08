@@ -17,8 +17,8 @@ import platform.WebKit.*
 import platform.darwin.NSObject
 
 @Composable
-actual fun WebView() {
-  KmpWebView(modifier = Modifier.fillMaxSize(), url = "https://www.openstreetmap.org/#map=11/16.6405/74.4557", null, enableJavaScript = true, isLoading = { }, onUrlClicked = null)
+actual fun WebView(url: String) {
+  KmpWebView(modifier = Modifier.fillMaxSize(), url = url, null, enableJavaScript = true, isLoading = { }, onUrlClicked = null)
 }
 @OptIn(ExperimentalForeignApi::class)
 @Composable

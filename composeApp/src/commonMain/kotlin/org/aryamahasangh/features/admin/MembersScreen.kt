@@ -20,7 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowWidthSizeClass
 import coil3.compose.AsyncImage
-import org.aryamahasangh.LocalSnackbarHostState
+import org.aryamahasangh.navigation.LocalSnackbarHostState
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
