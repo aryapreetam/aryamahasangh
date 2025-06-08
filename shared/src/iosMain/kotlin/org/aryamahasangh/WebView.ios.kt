@@ -1,0 +1,109 @@
+package org.aryamahasangh
+
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.viewinterop.UIKitInteropProperties
+import androidx.compose.ui.viewinterop.UIKitView
+import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.readValue
+import platform.CoreGraphics.CGRectZero
+import platform.Foundation.NSURL
+import platform.Foundation.NSURLRequest
+import platform.UIKit.NSLayoutConstraint
+import platform.UIKit.UIView
+import platform.WebKit.*
+import platform.darwin.NSObject
+
+@Composable
+actual fun WebView() {
+  KmpWebView(modifier = Modifier.fillMaxSize(), url = "https://www.openstreetmap.org/#map=11/16.6405/74.4557", null, enableJavaScript = true, isLoading = { }, onUrlClicked = null)
+}
+@OptIn(ExperimentalForeignApi::class)
+@Composable
+internal fun KmpWebView(
+  modifier: Modifier?,
+  url: Url?,
+  htmlContent: HtmlContent?,
+  enableJavaScript: Boolean,
+  isLoading: (isLoading: Boolean) -> Unit,
+  onUrlClicked: ((url: String) -> Unit)?
+) {
+  val config = WKWebViewConfiguration().apply {
+    allowsInlineMediaPlayback = true
+    allowsAirPlayForMediaPlayback = true
+    allowsPictureInPictureMediaPlayback = true
+  }
+
+  val webView = remember { WKWebView(CGRectZero.readValue(), config) }
+
+  // Enable java script content
+  webView.configuration.defaultWebpagePreferences.allowsContentJavaScript = enableJavaScript
+
+  // Define the WKNavigationDelegate
+  if (onUrlClicked != null) {
+    val navigationDelegate = rememberWebViewDelegate(onUrlClicked)
+    webView.navigationDelegate = navigationDelegate
+  }
+
+  UIKitView(
+    factory = {
+      val container = UIView()
+
+      webView.translatesAutoresizingMaskIntoConstraints = false
+      container.addSubview(webView)
+
+      NSLayoutConstraint.activateConstraints(
+        listOf(
+          webView.topAnchor.constraintEqualToAnchor(container.topAnchor),
+          webView.bottomAnchor.constraintEqualToAnchor(container.bottomAnchor),
+          webView.leadingAnchor.constraintEqualToAnchor(container.leadingAnchor),
+          webView.trailingAnchor.constraintEqualToAnchor(container.trailingAnchor)
+        )
+      )
+
+      when {
+        htmlContent != null -> webView.loadHTMLString(htmlContent, baseURL = null)
+        url != null -> webView.loadRequest(NSURLRequest(NSURL(string = url)))
+        else -> println("⚠️ No URL or HTML content provided")
+      }
+
+      container
+    },
+    modifier = modifier ?: Modifier.fillMaxSize(),
+    properties = UIKitInteropProperties(
+      isInteractive = true,
+      isNativeAccessibilityEnabled = true
+    )
+  )
+}
+
+@Composable
+private fun rememberWebViewDelegate(onUrlClicked: (String) -> Unit): WKNavigationDelegateProtocol {
+  return object : NSObject(), WKNavigationDelegateProtocol {
+    override fun webView(
+      webView: WKWebView,
+      decidePolicyForNavigationAction: WKNavigationAction,
+      decisionHandler: (WKNavigationActionPolicy) -> Unit
+    ) {
+      val navigationType = decidePolicyForNavigationAction.navigationType
+      val request = decidePolicyForNavigationAction.request
+
+      when (navigationType) {
+        WKNavigationTypeLinkActivated -> {
+          // Handle link clicks
+          if (decidePolicyForNavigationAction.targetFrame == null) {
+            // Load the link in the same WKWebView
+            webView.loadRequest(request)
+          }
+          onUrlClicked(request.URL?.absoluteString ?: "")
+          println(request.URL?.absoluteString ?: "")
+          decisionHandler(WKNavigationActionPolicy.WKNavigationActionPolicyAllow)
+        }
+
+        else -> decisionHandler(WKNavigationActionPolicy.WKNavigationActionPolicyAllow)
+      }
+    }
+  }
+}

@@ -9,6 +9,7 @@ plugins {
   alias(libs.plugins.composeCompiler)
   alias(libs.plugins.composeMultiplatform)
   alias(libs.plugins.ktlint)
+  id("com.google.osdetector") version "1.7.3"
 }
 
 kotlin {
@@ -54,8 +55,24 @@ kotlin {
     androidMain.dependencies {
       implementation(libs.androidx.activity.compose)
       implementation(libs.android.youtubeplayer.core)
+      implementation("io.github.kevinnzou:compose-webview:0.33.6")
     }
     jvmMain.dependencies {
+      val fxSuffix = when (osdetector.classifier) {
+        "linux-x86_64" -> "linux"
+        "linux-aarch_64" -> "linux-aarch64"
+        "windows-x86_64" -> "win"
+        "osx-x86_64" -> "mac"
+        "osx-aarch_64" -> "mac-aarch64"
+        else -> throw IllegalStateException("Unknown OS: ${osdetector.classifier}")
+      }
+      implementation("org.openjfx:javafx-base:19:${fxSuffix}")
+      implementation("org.openjfx:javafx-graphics:19:${fxSuffix}")
+      implementation("org.openjfx:javafx-controls:19:${fxSuffix}")
+      implementation("org.openjfx:javafx-swing:19:${fxSuffix}")
+      implementation("org.openjfx:javafx-web:19:${fxSuffix}")
+      implementation("org.openjfx:javafx-media:19:${fxSuffix}")
+      implementation(libs.kotlinx.coroutines.swing)
     }
     wasmJsMain.dependencies {
       implementation("org.jetbrains.kotlinx:kotlinx-browser:0.3")

@@ -252,6 +252,10 @@ compose.desktop {
       targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
       packageName = "org.aryamahasangh"
       packageVersion = "1.0.0"
+
+      // Add JavaFX modules
+      modules("javafx.controls", "javafx.swing", "javafx.web", "javafx.graphics", "javafx.media", "javafx.base")
+
       linux {
         modules("jdk.security.auth")
       }
@@ -259,7 +263,11 @@ compose.desktop {
   }
 }
 
-tasks.register<ComposeHotRun>("runHot") {
+//tasks.register<ComposeHotRun>("runHot") {
+//  mainClass.set("org.aryamahasangh.MainKt")
+//}
+
+tasks.withType<ComposeHotRun>().configureEach {
   mainClass.set("org.aryamahasangh.MainKt")
 }
 
@@ -376,12 +384,12 @@ tasks.register("checkSecrets") {
       logger.warn(
         """
         ⚠️  WARNING: secrets.properties file not found!
-        
+
         To set up secrets for all platforms:
         1. Copy the template: cp secrets.properties.template secrets.properties
         2. Fill in your actual values in secrets.properties
         3. Run: ./setup-secrets.sh
-        
+
         Or the setup will run automatically when you build.
         """.trimIndent()
       )
