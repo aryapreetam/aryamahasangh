@@ -29,10 +29,10 @@ import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import org.aryamahasangh.SettingKeys
 import org.aryamahasangh.features.activities.ActivityType
 import org.aryamahasangh.features.activities.OrganisationalActivityShort
 import org.aryamahasangh.features.arya_nirman.convertDates
+import org.aryamahasangh.navigation.SettingKeys
 import org.aryamahasangh.utils.WithTooltip
 import org.aryamahasangh.utils.formatShort
 import org.jetbrains.compose.resources.painterResource

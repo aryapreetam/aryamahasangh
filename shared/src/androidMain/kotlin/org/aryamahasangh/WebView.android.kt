@@ -7,10 +7,10 @@ import com.kevinnzou.web.WebView
 import com.kevinnzou.web.rememberWebViewState
 
 @Composable
-actual fun WebView() {
+actual fun WebView(url: String) {
   WebView(
     modifier = Modifier.fillMaxSize(),
-    state = rememberWebViewState("https://www.youtube.com/embed/cy6K36_OIUM"),
+    state = rememberWebViewState(url),
     onCreated = { it.settings.javaScriptEnabled = true }
   )
 }

@@ -13,8 +13,8 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.components.ActivityListItem
+import org.aryamahasangh.navigation.LocalSnackbarHostState
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable

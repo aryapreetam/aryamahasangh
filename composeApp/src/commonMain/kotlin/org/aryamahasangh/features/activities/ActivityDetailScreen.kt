@@ -29,12 +29,12 @@ import aryamahasangh.composeapp.generated.resources.error_profile_image
 import coil3.compose.AsyncImage
 import dev.burnoo.compose.remembersetting.rememberBooleanSetting
 import kotlinx.coroutines.launch
-import org.aryamahasangh.LocalSnackbarHostState
-import org.aryamahasangh.SettingKeys
 import org.aryamahasangh.components.ActivityStatus
 import org.aryamahasangh.components.activityTypeData
 import org.aryamahasangh.components.getActivityStatus
 import org.aryamahasangh.isWeb
+import org.aryamahasangh.navigation.LocalSnackbarHostState
+import org.aryamahasangh.navigation.SettingKeys
 import org.aryamahasangh.utils.format
 import org.aryamahasangh.utils.toHumanReadable
 import org.jetbrains.compose.resources.painterResource

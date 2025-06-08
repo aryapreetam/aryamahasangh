@@ -3,7 +3,10 @@ package org.aryamahasangh.screens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,7 +20,7 @@ import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.error_profile_image
 import aryamahasangh.composeapp.generated.resources.mahasangh_logo_without_background
 import coil3.compose.AsyncImage
-import org.aryamahasangh.LocalSnackbarHostState
+import org.aryamahasangh.navigation.LocalSnackbarHostState
 import org.aryamahasangh.viewmodel.AboutUsViewModel
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview

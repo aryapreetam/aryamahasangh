@@ -116,7 +116,7 @@ kotlin {
       implementation(libs.navigation.compose)
       implementation(libs.kotlinx.serialization.json)
       implementation(libs.material.adaptive)
-      runtimeOnly("org.jetbrains.compose.material:material:1.9.0-alpha01")
+      // runtimeOnly("org.jetbrains.compose.material:material:1.9.0-alpha01")
       // Koin for Dependency Injection
       implementation(libs.koin.core)
       implementation(libs.koin.compose)
@@ -252,9 +252,6 @@ compose.desktop {
       targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
       packageName = "org.aryamahasangh"
       packageVersion = "1.0.0"
-
-      // Add JavaFX modules
-      modules("javafx.controls", "javafx.swing", "javafx.web", "javafx.graphics", "javafx.media", "javafx.base")
 
       linux {
         modules("jdk.security.auth")

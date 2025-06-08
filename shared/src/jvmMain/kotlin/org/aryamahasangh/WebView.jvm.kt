@@ -3,74 +3,56 @@ package org.aryamahasangh
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.SwingPanel
-import javafx.concurrent.Worker
 import javafx.embed.swing.JFXPanel
 import javafx.scene.Scene
 import javafx.scene.web.WebView
+import java.util.*
 import javax.swing.JPanel
+import javax.swing.SwingUtilities
 import javafx.application.Platform as JavaFXPlatform
 
+private var javaFXInitialized = false
+
 private fun initJavaFX() {
-  System.setProperty("prism.order", "sw")
-  System.setProperty("prism.verbose", "true")
+  if (!javaFXInitialized) {
+    javaFXInitialized = true
+    // Initialize JavaFX toolkit
+    SwingUtilities.invokeLater {
+      JFXPanel() // This initializes JavaFX
+    }
+  }
 }
 
 @Composable
-actual fun WebView() {
-  val url = "https://www.youtube.com/embed/cy6K36_OIUM"
+actual fun WebView(url: String) {
+  initJavaFX()
 
-  val jPanel: JPanel = remember { JPanel() }
-  val jfxPanel = JFXPanel()
+  // Force new WebView instance every time by using a fresh key
+  val uniqueKey = remember(url, System.currentTimeMillis()) { UUID.randomUUID().toString() }
 
   Box(modifier = Modifier.fillMaxSize()) {
-    SwingPanel(
-      factory = {
-        jfxPanel.apply { buildWebView(url, ) }
-        jPanel.add(jfxPanel)
-      },
-      modifier = Modifier.fillMaxSize()
-    )
-  }
-  DisposableEffect(url) { onDispose { jPanel.remove(jfxPanel) } }
-}
+    key(uniqueKey) {
+      SwingPanel(
+        factory = {
+          val jfxPanel = JFXPanel()
+          val panel = JPanel(java.awt.BorderLayout()).apply {
+            add(jfxPanel, java.awt.BorderLayout.CENTER)
+          }
 
-private fun JFXPanel.buildWebView(url: String){
-  initJavaFX()
-  JavaFXPlatform.runLater {
-    val webView = WebView()
-    val webEngine = webView.engine
+          JavaFXPlatform.runLater {
+            val webView = WebView()
+            webView.engine.load(url)
+            jfxPanel.scene = Scene(webView)
+          }
 
-    webEngine.userAgent =
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
-
-    webEngine.isJavaScriptEnabled = true
-    webEngine.load(url)
-
-    val scene = Scene(webView)
-    setScene(scene)
-
-    webEngine.loadWorker.stateProperty().addListener { _, _, newState ->
-      when (newState) {
-        Worker.State.SUCCEEDED -> {
-          //isLoading.value = false
-          println("Page loaded successfully")
-        }
-        Worker.State.RUNNING -> {
-          //isLoading.value = true
-          println("Page loaded running")
-        }
-        Worker.State.FAILED -> {
-          //isLoading.value = false
-          println("Page loaded failed")
-        }
-        Worker.State.READY -> println("Page loaded ready")
-        Worker.State.SCHEDULED -> println("Page loaded scheduled")
-        Worker.State.CANCELLED -> println("Page loaded cancelled")
-      }
+          panel
+        },
+        modifier = Modifier.fillMaxSize()
+      )
     }
   }
 }

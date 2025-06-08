@@ -17,7 +17,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import coil3.compose.AsyncImage
-import org.aryamahasangh.LocalSnackbarHostState
+import org.aryamahasangh.navigation.LocalSnackbarHostState
 import org.aryamahasangh.navigation.Screen
 import org.aryamahasangh.utils.TBD
 import org.aryamahasangh.viewmodel.LearningViewModel

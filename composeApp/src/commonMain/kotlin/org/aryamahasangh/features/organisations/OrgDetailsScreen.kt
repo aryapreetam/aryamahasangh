@@ -11,9 +11,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.components.OrganisationDetail
 import org.aryamahasangh.features.activities.Member
+import org.aryamahasangh.navigation.LocalSnackbarHostState
 
 @Composable
 fun OrgDetailScreen(

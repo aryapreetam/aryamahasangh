@@ -19,9 +19,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
@@ -34,11 +38,12 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import io.github.vinceglb.filekit.core.PlatformFile
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import kotlinx.datetime.*
 import kotlinx.datetime.Clock.System
-import org.aryamahasangh.LocalSetBackHandler
-import org.aryamahasangh.LocalSnackbarHostState
 import org.aryamahasangh.components.PhotoItem
+import org.aryamahasangh.navigation.LocalSetBackHandler
+import org.aryamahasangh.navigation.LocalSnackbarHostState
 import org.aryamahasangh.network.bucket
 import org.aryamahasangh.screens.ButtonForFilePicker
 import org.aryamahasangh.screens.DistrictDropdown
@@ -253,7 +258,8 @@ fun ContactPeopleDropdown(
   onSelectionChanged: (Set<Member>) -> Unit,
   isError: Boolean = false,
   supportingText: @Composable () -> Unit = {},
-  postMap: MutableMap<String, Pair<String, Int>>
+  postMap: MutableMap<String, Pair<String, Int>>,
+  onFieldFocused: ((Float) -> Unit)? = null
 ) {
   var expanded by remember { mutableStateOf(false) }
   val context = LocalPlatformContext.current // Needed for Coil
@@ -300,8 +306,19 @@ fun ContactPeopleDropdown(
               }
               Column {
                 Text(member.name)
+                var fieldCoordinates by remember { mutableStateOf(0f) }
                 OutlinedTextField(
-                  modifier = Modifier.width(200.dp),
+                  modifier = Modifier
+                    .width(200.dp)
+                    .onGloballyPositioned { coordinates ->
+                      fieldCoordinates = coordinates.positionInRoot().y
+                    }
+                    .onFocusChanged { focusState ->
+                      if (focusState.isFocused && onFieldFocused != null) {
+                        // Use stored coordinates
+                        onFieldFocused(fieldCoordinates)
+                      }
+                    },
                   value = text,
                   onValueChange = {
                     text = it
@@ -557,6 +574,9 @@ fun CreateActivityScreen(
   var eventLatitude by remember { mutableStateOf("") }
   var eventLongitude by remember { mutableStateOf("") }
 
+  // Map dialog state
+  var showMapDialog by remember { mutableStateOf(false) }
+
   // Add error states for event details
   var capacityError by remember { mutableStateOf<String?>(null) }
   var genderAllowedError by remember { mutableStateOf<String?>(null) }
@@ -639,6 +659,35 @@ fun CreateActivityScreen(
   val snackbarHostState = LocalSnackbarHostState.current
   var postMap by remember { mutableStateOf<MutableMap<String, Pair<String, Int>>>(mutableMapOf()) }
 
+  // Add keyboard-aware scrolling
+  val keyboardController = LocalSoftwareKeyboardController.current
+  var lastFocusedFieldOffset by remember { mutableStateOf(0f) }
+
+  // Helper function to scroll to focused field
+  fun scrollToFocusedField(offset: Float) {
+    scope.launch {
+      // Small delay to ensure keyboard is shown
+      kotlinx.coroutines.delay(300)
+      // Calculate target scroll position to show field above keyboard
+      // Add extra padding (300dp) to ensure field is well above keyboard
+      val keyboardPadding = 300.dp.value
+      val viewportHeight = scrollState.viewportSize
+      val currentScroll = scrollState.value
+
+      // Calculate where the field should be positioned (above keyboard)
+      val targetFieldPosition = viewportHeight - keyboardPadding
+
+      // Calculate how much we need to scroll
+      val fieldBottomPosition = offset + 100 // Add some height for the field itself
+      val scrollNeeded = fieldBottomPosition - targetFieldPosition - currentScroll
+
+      if (scrollNeeded > 0) {
+        scrollState.animateScrollTo((currentScroll + scrollNeeded).toInt())
+      }
+    }
+  }
+
+  // Date format
   // Date format
   val dateFormatter: (LocalDate) -> String = { date ->
     "${date.dayOfMonth.toString().padStart(2, '0')}/${date.monthNumber.toString().padStart(2, '0')}/${date.year}"
@@ -964,6 +1013,7 @@ fun CreateActivityScreen(
           .fillMaxSize()
           .padding(8.dp)
           .verticalScroll(scrollState)
+          .imePadding() // Add IME padding to push content above keyboard
     ) {
       // Header with Cancel button
       Row(
@@ -992,7 +1042,16 @@ fun CreateActivityScreen(
         value = name,
         onValueChange = { name = it },
         label = { Text("नाम") },
-        modifier = Modifier.width(500.dp),
+        modifier = Modifier
+          .width(500.dp)
+          .onGloballyPositioned { coordinates ->
+            lastFocusedFieldOffset = coordinates.positionInRoot().y
+          }
+          .onFocusChanged { focusState ->
+            if (focusState.isFocused) {
+              scrollToFocusedField(lastFocusedFieldOffset)
+            }
+          },
         isError = nameError,
         supportingText = {
           if (nameError) {
@@ -1062,7 +1121,16 @@ fun CreateActivityScreen(
           }
         },
         label = { Text("संक्षिप्त विवरण") },
-        modifier = Modifier.width(500.dp),
+        modifier = Modifier
+          .width(500.dp)
+          .onGloballyPositioned { coordinates ->
+            lastFocusedFieldOffset = coordinates.positionInRoot().y
+          }
+          .onFocusChanged { focusState ->
+            if (focusState.isFocused) {
+              scrollToFocusedField(lastFocusedFieldOffset)
+            }
+          },
         isError = shortDescriptionError,
         supportingText = { if (shortDescriptionError) Text("Short Description is required") },
         maxLines = 1,
@@ -1079,7 +1147,16 @@ fun CreateActivityScreen(
           }
         },
         label = { Text("विस्तृत विवरण") },
-        modifier = Modifier.width(500.dp),
+        modifier = Modifier
+          .width(500.dp)
+          .onGloballyPositioned { coordinates ->
+            lastFocusedFieldOffset = coordinates.positionInRoot().y
+          }
+          .onFocusChanged { focusState ->
+            if (focusState.isFocused) {
+              scrollToFocusedField(lastFocusedFieldOffset)
+            }
+          },
         minLines = 3,
         maxLines = 30,
         isError = descriptionError,
@@ -1111,7 +1188,16 @@ fun CreateActivityScreen(
           }
         },
         label = { Text("पूर्ण पता") },
-        modifier = Modifier.width(500.dp),
+        modifier = Modifier
+          .width(500.dp)
+          .onGloballyPositioned { coordinates ->
+            lastFocusedFieldOffset = coordinates.positionInRoot().y
+          }
+          .onFocusChanged { focusState ->
+            if (focusState.isFocused) {
+              scrollToFocusedField(lastFocusedFieldOffset)
+            }
+          },
         minLines = 2,
         maxLines = 3,
         isError = addressError,
@@ -1293,8 +1379,7 @@ fun CreateActivityScreen(
         // button for choosing location
         OutlinedButton(
           onClick = {
-            // TODO: Handle map picker
-            println("Parent: Time to launch map picker!")
+            showMapDialog = true
           },
           contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
         ) {
@@ -1458,7 +1543,11 @@ fun CreateActivityScreen(
 
       // Contact People
       ContactPeopleDropdown(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+          .fillMaxWidth()
+          .onGloballyPositioned { coordinates ->
+            lastFocusedFieldOffset = coordinates.positionInRoot().y
+          },
         label = "संपर्क सूत्र",
         members = members,
         selectedMembers = contactPeople,
@@ -1468,7 +1557,8 @@ fun CreateActivityScreen(
         },
         postMap = postMap,
         isError = contactPeopleError,
-        supportingText = { if (contactPeopleError) Text("At least one contact person is required") }
+        supportingText = { if (contactPeopleError) Text("At least one contact person is required") },
+        onFieldFocused = { offset -> scrollToFocusedField(offset) }
       )
 
       // Additional Instructions
@@ -1480,11 +1570,23 @@ fun CreateActivityScreen(
           }
         },
         label = { Text("अतिरिक्त निर्देश") },
-        modifier = Modifier.width(500.dp),
+        modifier = Modifier
+          .width(500.dp)
+          .onGloballyPositioned { coordinates ->
+            lastFocusedFieldOffset = coordinates.positionInRoot().y
+          }
+          .onFocusChanged { focusState ->
+            if (focusState.isFocused) {
+              scrollToFocusedField(lastFocusedFieldOffset)
+            }
+          },
         minLines = 3,
         maxLines = 10,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
       )
+
+      // Add extra bottom padding for keyboard
+      Spacer(modifier = Modifier.height(16.dp))
 
       // Create Activity Button
       Button(
@@ -1616,6 +1718,21 @@ fun CreateActivityScreen(
             openEndTimeDialog.value = false
           },
           onDismissRequest = { openEndTimeDialog.value = false }
+        )
+      }
+
+      // Map Location Picker Dialog
+      if (showMapDialog) {
+        MapLocationPickerDialog(
+          initialLatitude = eventLatitude.toDoubleOrNull(),
+          initialLongitude = eventLongitude.toDoubleOrNull(),
+          onLocationSelected = { lat, lng ->
+            eventLatitude = lat.toString()
+            eventLongitude = lng.toString()
+            latitudeError = null
+            longitudeError = null
+          },
+          onDismiss = { showMapDialog = false }
         )
       }
     }

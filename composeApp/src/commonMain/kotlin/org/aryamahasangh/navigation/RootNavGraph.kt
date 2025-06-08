@@ -8,7 +8,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
 import dev.burnoo.compose.remembersetting.rememberBooleanSetting
-import org.aryamahasangh.SettingKeys
 import org.aryamahasangh.features.activities.*
 import org.aryamahasangh.features.admin.AdminContainerScreen
 import org.aryamahasangh.features.admin.AdminViewModel
