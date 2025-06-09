@@ -262,7 +262,8 @@ fun generate(lat: Double, lng: Double): String{
                 lng: position.lng
             };
             // Notify location change through alert
-            alert(JSON.stringify(selectedLocation));
+            console.log(selectedLocation);
+            // alert(JSON.stringify(selectedLocation));
         }
 
         // Initialize map when page loads
