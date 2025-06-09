@@ -127,7 +127,7 @@ suspend fun getCurrentLocation(): LatLng? {
   )
 }
 
-
+// FIXME migrate leaflet to 2.0 once stable
 fun generate(lat: Double, lng: Double): String{
   return """
 <!DOCTYPE html>
@@ -151,6 +151,7 @@ fun generate(lat: Double, lng: Double): String{
         #map {
             height: 100vh;
             width: 100%;
+            background: #f0f0f0;
         }
         .leaflet-control-geocoder {
             position: fixed !important;
@@ -187,10 +188,72 @@ fun generate(lat: Double, lng: Double): String{
         .leaflet-control-geocoder-alternatives li:hover {
             background: #f0f0f0;
         }
+        #loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Center marker styles */
+        .center-marker {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 25px;
+            height: 41px;
+            margin-left: -12px;
+            margin-top: -41px;
+            z-index: 1000;
+            pointer-events: none;
+            background-image: url('https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
+        .center-marker::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 25px;
+            height: 10px;
+            background-image: url('https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png');
+            background-size: contain;
+            background-repeat: no-repeat;
+        }
     </style>
+    <script>
+        // Set platform based on environment
+        if (navigator.userAgent.includes('JavaFX')) {
+            window.isDesktop = true;
+        }
+    </script>
 </head>
 <body>
+    <div id="loading"><div class="spinner"></div></div>
     <div id="map"></div>
+    <div class="center-marker"></div>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -199,32 +262,158 @@ fun generate(lat: Double, lng: Double): String{
 
     <script>
         let map;
-        let marker;
         let selectedLocation = null;
+        let tileLayer;
+        let platform = 'web'; // Default to web platform
+        let searchControl;
         
-        function initMap() {
-            map = L.map('map').setView([0, 0], 2);
+        // India bounds
+        const INDIA_BOUNDS = [
+            [6.2325274, 68.1766451], // Southwest
+            [35.6745457, 97.395561]  // Northeast
+        ];
+        
+        function showLoading() {
+            document.getElementById('loading').style.display = 'flex';
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // Function to set platform
+        function setPlatform(platformName) {
+            platform = platformName;
+        }
+
+        function notifyLocationUpdate(location) {
+            const locationJson = JSON.stringify(location);
             
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors'
+            switch(platform) {
+                case 'android':
+                    if (window.AndroidLocationBridge) {
+                        window.AndroidLocationBridge.onLocationUpdate(locationJson);
+                    }
+                    break;
+                    
+                case 'ios':
+                    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.iosLocationHandler) {
+                        window.webkit.messageHandlers.iosLocationHandler.postMessage(locationJson);
+                    }
+                    break;
+                    
+                case 'desktop':
+                    if (typeof alert !== 'undefined') {
+                        alert(locationJson);
+                    }
+                    break;
+                    
+                case 'web':
+                default:
+                    window.parent.postMessage(locationJson, '*');
+                    break;
+            }
+        }
+
+        function updateLocation() {
+            const center = map.getCenter();
+            selectedLocation = {
+                lat: center.lat,
+                lng: center.lng
+            };
+            
+            // Notify all platforms about location update
+            notifyLocationUpdate(selectedLocation);
+        }
+        
+        async function initMap() {
+            // Auto-detect platform if not set
+            if (window.AndroidLocationBridge) {
+                setPlatform('android');
+            } else if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.iosLocationHandler) {
+                setPlatform('ios');
+            } else if (window.isDesktop) {
+                setPlatform('desktop');
+            }
+            
+            // Initialize map with specific options for better performance
+            map = L.map('map', {
+                zoomControl: true,
+                maxBounds: INDIA_BOUNDS,
+                maxBoundsViscosity: 1.0,
+                minZoom: 4,
+                maxZoom: 18,
+                zoomSnap: 0.5,
+                zoomDelta: 0.5,
+                wheelDebounceTime: 150
+            });
+            
+            // Add tile layer with optimizations
+            tileLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 18,
+                minZoom: 4,
+                bounds: INDIA_BOUNDS,
+                noWrap: true,
+                tileSize: 256,
+                updateWhenIdle: false,
+                updateWhenZooming: true,
+                keepBuffer: 2
             }).addTo(map);
 
-            // Add marker at map center
-            marker = L.marker(map.getCenter(), { draggable: false }).addTo(map);
+            // Geocoder cache
+            const geocoderCache = new Map();
+            const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
 
-            // Add search control
-            const searchControl = L.Control.geocoder({
+            // Custom geocoder with caching
+            const customGeocoder = {
+                geocode: async function(query, cb, context) {
+                    const cacheKey = query.toLowerCase().trim();
+                    const now = Date.now();
+                    
+                    // Check cache first
+                    if (geocoderCache.has(cacheKey)) {
+                        const cached = geocoderCache.get(cacheKey);
+                        if (now - cached.timestamp < CACHE_DURATION) {
+                            cb.call(context, cached.results);
+                            return;
+                        }
+                        geocoderCache.delete(cacheKey);
+                    }
+                    
+                    try {
+                        const nominatim = new L.Control.Geocoder.Nominatim({
+                            geocodingQueryParams: {
+                                countrycodes: 'in',
+                                limit: 5,
+                                format: 'jsonv2',
+                                addressdetails: 1,
+                                bounded: 1
+                            }
+                        });
+                        
+                        nominatim.geocode(query, function(results) {
+                            // Cache results
+                            geocoderCache.set(cacheKey, {
+                                results: results,
+                                timestamp: now
+                            });
+                            
+                            cb.call(context, results);
+                        }, context);
+                    } catch (e) {
+                        console.error('Geocoding error:', e);
+                        cb.call(context, []);
+                    }
+                }
+            };
+
+            // Add search control with optimized settings
+            searchControl = L.Control.geocoder({
                 defaultMarkGeocode: false,
                 position: 'topleft',
                 placeholder: 'Search location...',
-                geocoder: L.Control.Geocoder.nominatim({
-                    geocodingQueryParams: {
-                        countrycodes: 'in',
-                        limit: 5,
-                        format: 'json',
-                        addressdetails: 1
-                    }
-                }),
+                geocoder: customGeocoder,
                 suggestMinLength: 3,
                 suggestTimeout: 250,
                 queryMinLength: 3
@@ -232,49 +421,78 @@ fun generate(lat: Double, lng: Double): String{
 
             // Handle search results
             searchControl.on('markgeocode', function(e) {
+                console.log('Full search result:', JSON.stringify(e.geocode, null, 2));
                 const center = e.geocode.center;
-                map.setView(center, 16);
-                updateMarker(center);
+                
+                // Check for bounding box in properties
+                if (e.geocode.properties && e.geocode.properties.boundingbox) {
+                    const bb = e.geocode.properties.boundingbox;
+                    console.log('Bounding box found:', bb);
+                    
+                    // Create bounds from the boundingbox array [south, north, west, east]
+                    const bounds = L.latLngBounds(
+                        [parseFloat(bb[0]), parseFloat(bb[2])], // southwest
+                        [parseFloat(bb[1]), parseFloat(bb[3])]  // northeast
+                    );
+                    
+                    // Let Leaflet determine the appropriate zoom level
+                    map.fitBounds(bounds, {
+                        padding: [50, 50],
+                        maxZoom: 17 // Just as a safety limit
+                    });
+                } else {
+                    console.log('No bounding box available');
+                    map.setView(center, 13);
+                }
+                updateLocation();
             });
 
-            // Update marker position when map is moved
-            map.on('move', function() {
-                updateMarker(map.getCenter());
-            });
+            // Throttle location updates to reduce notifications
+            let updateTimeout;
+            function throttledLocationUpdate() {
+                if (updateTimeout) {
+                    clearTimeout(updateTimeout);
+                }
+                updateTimeout = setTimeout(updateLocation, 100); // Wait for 100ms after last event
+            }
+            
+            // Update location after movement ends
+            map.on('moveend', throttledLocationUpdate);
+            map.on('zoomend', throttledLocationUpdate);
 
-            // Log location when panning ends
-            map.on('moveend', function() {
-                console.log('Location after panning:', selectedLocation);
+            // Set initial view with smooth animation
+            map.setView([$lat, $lng], 13, {
+                animate: true,
+                duration: 1
             });
-
-            // Try to get user's location
-            map.setView([$lat, $lng], 13);
 
             // Move geocoder control to center top
             const geocoderContainer = document.querySelector('.leaflet-control-geocoder');
             if (geocoderContainer) {
                 map.getContainer().appendChild(geocoderContainer);
             }
-        }
+            
+            // Hide loading when map and tiles are ready
+            map.whenReady(() => {
+                hideLoading();
+                // Initial location update
+                updateLocation();
+            });
 
-        function updateMarker(position) {
-            marker.setLatLng(position);
-            selectedLocation = {
-                lat: position.lat,
-                lng: position.lng
-            };
-            // Send location update
-            if (window.AndroidLocationBridge) {
-                // For Android
-                window.AndroidLocationBridge.onLocationUpdate(JSON.stringify(selectedLocation));
-            } else {
-                // For other platforms
-                window.parent.postMessage(JSON.stringify(selectedLocation), '*');
-            }
+            // Handle tile loading errors
+            tileLayer.on('tileerror', function(event) {
+                console.error('Tile loading error:', event);
+                // Retry loading the tile
+                event.tile.src = event.tile.src;
+            });
         }
 
         // Initialize map when page loads
-        initMap();
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initMap);
+        } else {
+            initMap();
+        }
     </script>
 </body>
 </html>
