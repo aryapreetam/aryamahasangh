@@ -110,7 +110,7 @@ fun MapLocationPickerDialog(onDismiss: () -> Unit, onLocationPicked: (LatLng) ->
 
 data class LatLng(val latitude: Double, val longitude: Double)
 
-
+// FIXME use https://compass.jordond.dev/ to get the current location
 suspend fun getCurrentLocation(): LatLng? {
   val client = HttpClient()
   val response = client.get("http://ip-api.com/json/")
