@@ -153,25 +153,27 @@ fun generate(lat: Double, lng: Double): String{
             width: 100%;
             background: #f0f0f0;
         }
-        .leaflet-control-geocoder {
+        #search-container {
             position: fixed !important;
             top: 10px !important;
-            left: 60% !important;
-            transform: translateX(-55%) !important;
-            z-index: 1000;
-            width: 80%;
-            max-width: 800px;
+            left: 50px !important;  /* Position to the right of zoom controls */
+            width: 300px !important; /* Fixed width */
+            max-width: min(300px, calc(100% - 70px)) !important; /* Responsive but capped */
+            transform: none !important;
+            z-index: 1001; /* Increase z-index to ensure it's above other elements */
         }
-        .leaflet-control-geocoder-form input {
+        #search-input {
             width: 100%;
-            padding: 12px 16px;
-            font-size: 16px;
+            padding: 8px 12px;
+            font-size: 14px;
             border: 1px solid #ccc;
             border-radius: 4px;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             background: white;
+            box-sizing: border-box;
+            font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans", sans-serif;
         }
-        .leaflet-control-geocoder-alternatives {
+        #search-results {
             width: 100%;
             background: white;
             border-radius: 4px;
@@ -179,14 +181,25 @@ fun generate(lat: Double, lng: Double): String{
             max-height: 300px;
             overflow-y: auto;
             margin-top: 4px;
+            display: none;
+            z-index: 1002;
+            font-family: system-ui, -apple-system, "Segoe UI", "Noto Sans", sans-serif;
         }
-        .leaflet-control-geocoder-alternatives li {
+        .search-result {
             padding: 8px 12px;
             cursor: pointer;
             border-bottom: 1px solid #eee;
         }
-        .leaflet-control-geocoder-alternatives li:hover {
+        .search-result:hover {
             background: #f0f0f0;
+        }
+        .search-result .main-text {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .search-result .sub-text {
+            font-size: 12px;
+            color: #666;
         }
         #loading {
             position: fixed;
@@ -254,18 +267,20 @@ fun generate(lat: Double, lng: Double): String{
     <div id="loading"><div class="spinner"></div></div>
     <div id="map"></div>
     <div class="center-marker"></div>
-
+    <div id="search-container">
+        <input type="text" id="search-input" placeholder="स्थान खोजें..." />
+        <div id="search-results"></div>
+    </div>
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Leaflet Geocoder JS -->
-    <script src="https://unpkg.com/leaflet-control-geocoder@2.4.0/dist/Control.Geocoder.js"></script>
-
+    
     <script>
         let map;
         let selectedLocation = null;
         let tileLayer;
         let platform = 'web'; // Default to web platform
         let searchControl;
+        let searchTimeout;
         
         // India bounds
         const INDIA_BOUNDS = [
@@ -326,6 +341,100 @@ fun generate(lat: Double, lng: Double): String{
             notifyLocationUpdate(selectedLocation);
         }
         
+        async function searchLocation(query) {
+            try {
+                const searchResults = document.getElementById('search-results');
+                const searchInput = document.getElementById('search-input');
+                
+                // Show loading state
+                searchResults.innerHTML = '<div class="search-result"><div class="main-text">...</div></div>';
+                searchResults.style.display = 'block';
+                
+                const url = 'https://nominatim.openstreetmap.org/search?format=json&q=' + 
+                           encodeURIComponent(query) + 
+                           '&countrycodes=in&limit=5&addressdetails=1&accept-language=hi';
+                           
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                
+                const results = await response.json();
+                searchResults.innerHTML = '';
+                
+                if (results.length > 0) {
+                    results.forEach(result => {
+                        const div = document.createElement('div');
+                        div.className = 'search-result';
+                        
+                        // Format the address components
+                        const address = result.address || {};
+                        const components = [];
+                        
+                        // Build address components
+                        if (address.road) components.push(address.road);
+                        if (address.suburb) components.push(address.suburb);
+                        if (address.city || address.town || address.village) 
+                            components.push(address.city || address.town || address.village);
+                        if (address.state) components.push(address.state);
+                        
+                        // Get the main text (most specific name first)
+                        const mainText = address.amenity || 
+                                       address.building || 
+                                       address.shop || 
+                                       address.leisure || 
+                                       address.tourism || 
+                                       address.historic || 
+                                       result.display_name.split(',')[0];
+                        
+                        // Get the sub text (either from components or fallback to display_name)
+                        const subText = components.length > 0 ? 
+                                      components.join(', ') : 
+                                      result.display_name.split(',').slice(1).join(',').trim();
+                        
+                        // Create the result HTML
+                        div.innerHTML = '<div class="main-text">' + mainText + '</div>' +
+                            '<div class="sub-text">' + subText + '</div>';
+                        
+                        div.addEventListener('click', () => {
+                            const bounds = [
+                                [result.boundingbox[0], result.boundingbox[2]], // southwest
+                                [result.boundingbox[1], result.boundingbox[3]]  // northeast
+                            ];
+                            
+                            // If bounds are too small, just center on the point
+                            const latDiff = Math.abs(bounds[0][0] - bounds[1][0]);
+                            const lngDiff = Math.abs(bounds[0][1] - bounds[1][1]);
+                            
+                            if (latDiff < 0.001 || lngDiff < 0.001) {
+                                map.setView([result.lat, result.lon], 17);
+                            } else {
+                                map.fitBounds(bounds, { 
+                                    padding: [50, 50],
+                                    maxZoom: 17
+                                });
+                            }
+                            
+                            searchResults.style.display = 'none';
+                            searchInput.value = ''; // Clear search input
+                            updateLocation();
+                        });
+                        
+                        searchResults.appendChild(div);
+                    });
+                    searchResults.style.display = 'block';
+                } else {
+                    searchResults.innerHTML = '<div class="search-result"><div class="main-text">कोई परिणाम नहीं मिला</div></div>';
+                    searchResults.style.display = 'block';
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                const searchResults = document.getElementById('search-results');
+                searchResults.innerHTML = '<div class="search-result"><div class="main-text">खोज में त्रुटि</div></div>';
+                searchResults.style.display = 'block';
+            }
+        }
+        
         async function initMap() {
             // Auto-detect platform if not set
             if (window.AndroidLocationBridge) {
@@ -361,91 +470,28 @@ fun generate(lat: Double, lng: Double): String{
                 keepBuffer: 2
             }).addTo(map);
 
-            // Geocoder cache
-            const geocoderCache = new Map();
-            const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-
-            // Custom geocoder with caching
-            const customGeocoder = {
-                geocode: async function(query, cb, context) {
-                    const cacheKey = query.toLowerCase().trim();
-                    const now = Date.now();
-                    
-                    // Check cache first
-                    if (geocoderCache.has(cacheKey)) {
-                        const cached = geocoderCache.get(cacheKey);
-                        if (now - cached.timestamp < CACHE_DURATION) {
-                            cb.call(context, cached.results);
-                            return;
-                        }
-                        geocoderCache.delete(cacheKey);
-                    }
-                    
-                    try {
-                        const nominatim = new L.Control.Geocoder.Nominatim({
-                            geocodingQueryParams: {
-                                countrycodes: 'in',
-                                limit: 5,
-                                format: 'jsonv2',
-                                addressdetails: 1,
-                                bounded: 1
-                            }
-                        });
-                        
-                        nominatim.geocode(query, function(results) {
-                            // Cache results
-                            geocoderCache.set(cacheKey, {
-                                results: results,
-                                timestamp: now
-                            });
-                            
-                            cb.call(context, results);
-                        }, context);
-                    } catch (e) {
-                        console.error('Geocoding error:', e);
-                        cb.call(context, []);
-                    }
+            // Set up search input
+            const searchInput = document.getElementById('search-input');
+            searchInput.addEventListener('input', (e) => {
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
                 }
-            };
-
-            // Add search control with optimized settings
-            searchControl = L.Control.geocoder({
-                defaultMarkGeocode: false,
-                position: 'topleft',
-                placeholder: 'Search location...',
-                geocoder: customGeocoder,
-                suggestMinLength: 3,
-                suggestTimeout: 250,
-                queryMinLength: 3
-            }).addTo(map);
-
-            // Handle search results
-            searchControl.on('markgeocode', function(e) {
-                console.log('Full search result:', JSON.stringify(e.geocode, null, 2));
-                const center = e.geocode.center;
-                
-                // Check for bounding box in properties
-                if (e.geocode.properties && e.geocode.properties.boundingbox) {
-                    const bb = e.geocode.properties.boundingbox;
-                    console.log('Bounding box found:', bb);
-                    
-                    // Create bounds from the boundingbox array [south, north, west, east]
-                    const bounds = L.latLngBounds(
-                        [parseFloat(bb[0]), parseFloat(bb[2])], // southwest
-                        [parseFloat(bb[1]), parseFloat(bb[3])]  // northeast
-                    );
-                    
-                    // Let Leaflet determine the appropriate zoom level
-                    map.fitBounds(bounds, {
-                        padding: [50, 50],
-                        maxZoom: 17 // Just as a safety limit
-                    });
+                if (e.target.value.length >= 3) {
+                    searchTimeout = setTimeout(() => {
+                        searchLocation(e.target.value);
+                    }, 300);
                 } else {
-                    console.log('No bounding box available');
-                    map.setView(center, 13);
+                    document.getElementById('search-results').style.display = 'none';
                 }
-                updateLocation();
             });
+            
+            // Hide search results when clicking outside
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#search-container')) {
+                    document.getElementById('search-results').style.display = 'none';
+                }
+            });
+
 
             // Throttle location updates to reduce notifications
             let updateTimeout;
@@ -465,12 +511,6 @@ fun generate(lat: Double, lng: Double): String{
                 animate: true,
                 duration: 1
             });
-
-            // Move geocoder control to center top
-            const geocoderContainer = document.querySelector('.leaflet-control-geocoder');
-            if (geocoderContainer) {
-                map.getContainer().appendChild(geocoderContainer);
-            }
             
             // Hide loading when map and tiles are ready
             map.whenReady(() => {
