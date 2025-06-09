@@ -24,6 +24,7 @@ import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.aryamahasangh.WebView
+import org.aryamahasangh.utils.logger
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,9 +88,10 @@ fun MapLocationPickerDialog(onDismiss: () -> Unit, onLocationPicked: (LatLng) ->
                   val lng = json["lng"]?.jsonPrimitive?.doubleOrNull
                   if (lat != null && lng != null) {
                     selectedLocation = LatLng(lat, lng)
-                    println(selectedLocation)
+                    logger.info {"selected location: ${selectedLocation!!.latitude}, ${selectedLocation!!.longitude} "}
                   }
                 } catch (e: Exception) {
+                  logger.error{ e.message ?: "Error parsing location" }
                   println("Error parsing location: ${e.message}")
                 }
               }
@@ -261,9 +263,14 @@ fun generate(lat: Double, lng: Double): String{
                 lat: position.lat,
                 lng: position.lng
             };
-            // Notify location change through alert
-            console.log(selectedLocation);
-            // alert(JSON.stringify(selectedLocation));
+            // Send location update
+            if (window.AndroidLocationBridge) {
+                // For Android
+                window.AndroidLocationBridge.onLocationUpdate(JSON.stringify(selectedLocation));
+            } else {
+                // For other platforms
+                window.parent.postMessage(JSON.stringify(selectedLocation), '*');
+            }
         }
 
         // Initialize map when page loads

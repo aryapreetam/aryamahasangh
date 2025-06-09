@@ -145,6 +145,9 @@ kotlin {
       // apollo adapters
       implementation(libs.apollo.adapters.core)
       implementation(libs.apollo.adapters.kotlinx.datetime)
+
+      // logging
+      api("com.diamondedge:logging:2.0.3")
     }
     commonTest.dependencies {
       implementation(libs.kotlin.test)
