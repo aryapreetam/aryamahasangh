@@ -111,12 +111,13 @@ actual fun WebView(url: String, onScriptResult: ((String) -> Unit)?) {
       iframe.id = "map-iframe"
 
       // Modify the HTML content to include postMessage communication
-      val modifiedHtml = url.replace(
-        "console.log(selectedLocation);",
-        "window.parent.postMessage(JSON.stringify(selectedLocation), '*');"
-      )
+      // no longer necessary since we are handling that in html string
+//      val modifiedHtml = url.replace(
+//        "console.log(selectedLocation);",
+//        "window.parent.postMessage(JSON.stringify(selectedLocation), '*');"
+//      )
 
-      iframe.srcdoc = modifiedHtml
+      iframe.srcdoc = url
       iframe.style.width = "100vw"
       iframe.style.height = "100vh"
       iframe.style.zIndex = "9999"

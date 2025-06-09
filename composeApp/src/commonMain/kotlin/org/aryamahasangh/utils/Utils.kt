@@ -5,11 +5,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.diamondedge.logging.logging
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
+val logger = logging()
 @Composable
 fun TBD(){
   Text("निर्माणाधीन", modifier = Modifier.padding(16.dp))

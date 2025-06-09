@@ -18,7 +18,7 @@ junit = "4.13.2"
 ktlint = "12.3.0"
 
 kotlin = "2.1.21"
-kermit = "2.0.5"
+
 # kotlin = "2.1.0-firework.32" # custom version for experimental hot reload support
 compose-hot-reload = "1.0.0-alpha10"
 
@@ -55,7 +55,6 @@ compose-test = "1.5.4"
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
 coil-network-ktor3 = { module = "io.coil-kt.coil3:coil-network-ktor3", version.ref = "coilCompose" }
 compose-remember-setting = { module = "dev.burnoo:compose-remember-setting", version.ref = "composeRememberSetting" }
-kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
 kotlin-test-junit = { module = "org.jetbrains.kotlin:kotlin-test-junit", version.ref = "kotlin" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
