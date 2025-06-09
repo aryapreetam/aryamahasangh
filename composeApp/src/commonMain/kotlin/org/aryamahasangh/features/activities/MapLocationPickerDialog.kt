@@ -63,7 +63,9 @@ fun MapLocationPickerDialog(onDismiss: () -> Unit, onLocationPicked: (LatLng) ->
           actions = {
             TextButton(
               onClick = {
-                selectedLocation?.let { onLocationPicked(it) }
+                selectedLocation?.let {
+                  onLocationPicked(it)
+                }
                 onDismiss()
               }
             ) {
@@ -83,7 +85,6 @@ fun MapLocationPickerDialog(onDismiss: () -> Unit, onLocationPicked: (LatLng) ->
                 if (lat != null && lng != null) {
                   selectedLocation = LatLng(lat, lng)
                   println(selectedLocation)
-                  onLocationPicked(LatLng(lat, lng))
                 }
               } catch (e: Exception) {
                 println("Error parsing location: ${e.message}")
