@@ -18,41 +18,55 @@ import javafx.application.Platform as JavaFXPlatform
 private var javaFXInitialized = false
 
 private fun initJavaFX() {
-  if (!javaFXInitialized) {
-    javaFXInitialized = true
-    // Initialize JavaFX toolkit
-    SwingUtilities.invokeLater {
-      JFXPanel() // This initializes JavaFX
+    if (!javaFXInitialized) {
+        javaFXInitialized = true
+        // Initialize JavaFX toolkit
+        SwingUtilities.invokeLater {
+            JFXPanel() // This initializes JavaFX
+        }
     }
-  }
 }
 
 @Composable
-actual fun WebView(url: String) {
-  initJavaFX()
+actual fun WebView(
+    url: String,
+    onScriptResult: ((String) -> Unit)?
+) {
+    initJavaFX()
 
-  // Force new WebView instance every time by using a fresh key
-  val uniqueKey = remember(url, System.currentTimeMillis()) { UUID.randomUUID().toString() }
+    // Force new WebView instance every time by using a fresh key
+    val uniqueKey = remember(url, System.currentTimeMillis()) { UUID.randomUUID().toString() }
+    val jfxPanel = remember { JFXPanel() }
 
-  Box(modifier = Modifier.fillMaxSize()) {
-    key(uniqueKey) {
-      SwingPanel(
-        factory = {
-          val jfxPanel = JFXPanel()
-          val panel = JPanel(java.awt.BorderLayout()).apply {
-            add(jfxPanel, java.awt.BorderLayout.CENTER)
-          }
+    Box(modifier = Modifier.fillMaxSize()) {
+        key(uniqueKey) {
+            SwingPanel(
+                factory = {
+                    val panel = JPanel(java.awt.BorderLayout()).apply {
+                        add(jfxPanel, java.awt.BorderLayout.CENTER)
+                    }
 
-          JavaFXPlatform.runLater {
-            val webView = WebView()
-            webView.engine.loadContent(url, "text/html")
-            jfxPanel.scene = Scene(webView)
-          }
+                    JavaFXPlatform.runLater {
+                        val webView = WebView()
+                        if (onScriptResult != null) {
+                            webView.engine.setOnAlert { event ->
+                                onScriptResult(event.data)
+                            }
+                        }
+                        webView.engine.loadContent(url, "text/html")
+                        jfxPanel.scene = Scene(webView)
+                    }
 
-          panel
-        },
-        modifier = Modifier.fillMaxSize()
-      )
+                    panel
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
     }
-  }
 }
+
+// Function to get selected location script
+fun getSelectedLocationScript(defaultLat: Double, defaultLng: Double): String = """
+    const location = selectedLocation || { lat: $defaultLat, lng: $defaultLng };
+    alert(JSON.stringify(location));
+""".trimIndent()

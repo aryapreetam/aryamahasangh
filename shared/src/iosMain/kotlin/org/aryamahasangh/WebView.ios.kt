@@ -17,7 +17,7 @@ import platform.WebKit.*
 import platform.darwin.NSObject
 
 @Composable
-actual fun WebView(url: String) {
+actual fun WebView(url: String, onScriptResult: ((String) -> Unit)?) {
   KmpWebView(modifier = Modifier.fillMaxSize(), url = url, null, enableJavaScript = true, isLoading = { }, onUrlClicked = null)
 }
 @OptIn(ExperimentalForeignApi::class)
