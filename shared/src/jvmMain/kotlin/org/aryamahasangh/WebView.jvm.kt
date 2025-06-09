@@ -2,17 +2,14 @@ package org.aryamahasangh
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.key
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.awt.SwingPanel
 import javafx.embed.swing.JFXPanel
 import javafx.scene.Scene
-import javafx.scene.web.WebView
-import java.util.*
 import javax.swing.JPanel
 import javax.swing.SwingUtilities
+import kotlin.concurrent.thread
 import javafx.application.Platform as JavaFXPlatform
 
 private var javaFXInitialized = false
@@ -32,36 +29,67 @@ actual fun WebView(
     url: String,
     onScriptResult: ((String) -> Unit)?
 ) {
-    initJavaFX()
-
-    // Force new WebView instance every time by using a fresh key
-    val uniqueKey = remember(url, System.currentTimeMillis()) { UUID.randomUUID().toString() }
+    var isJavaFXReady by remember { mutableStateOf(false) }
     val jfxPanel = remember { JFXPanel() }
+    val webViewRef = remember { mutableStateOf<javafx.scene.web.WebView?>(null) }
+
+    // Initialize JavaFX in a controlled manner
+    LaunchedEffect(Unit) {
+        if (!isJavaFXReady) {
+            thread(start = true) {
+                try {
+                    // Initialize on EDT
+                    SwingUtilities.invokeAndWait {
+                        try {
+                            JavaFXPlatform.runLater {
+                                try {
+                                    val webView = javafx.scene.web.WebView()
+                                    webViewRef.value = webView
+                                    if (onScriptResult != null) {
+                                        webView.engine.setOnAlert { event ->
+                                            onScriptResult(event.data)
+                                        }
+                                    }
+                                    webView.engine.loadContent(url, "text/html")
+                                    jfxPanel.scene = Scene(webView)
+                                    isJavaFXReady = true
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                }
+                            }
+                        } catch (e: Exception) {
+                            e.printStackTrace()
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
+
+    // Update content when URL changes
+    LaunchedEffect(url) {
+        webViewRef.value?.let { webView ->
+            JavaFXPlatform.runLater {
+                try {
+                    webView.engine.loadContent(url, "text/html")
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
+    }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        key(uniqueKey) {
-            SwingPanel(
-                factory = {
-                    val panel = JPanel(java.awt.BorderLayout()).apply {
-                        add(jfxPanel, java.awt.BorderLayout.CENTER)
-                    }
-
-                    JavaFXPlatform.runLater {
-                        val webView = WebView()
-                        if (onScriptResult != null) {
-                            webView.engine.setOnAlert { event ->
-                                onScriptResult(event.data)
-                            }
-                        }
-                        webView.engine.loadContent(url, "text/html")
-                        jfxPanel.scene = Scene(webView)
-                    }
-
-                    panel
-                },
-                modifier = Modifier.fillMaxSize()
-            )
-        }
+        SwingPanel(
+            factory = {
+                JPanel(java.awt.BorderLayout()).apply {
+                    add(jfxPanel, java.awt.BorderLayout.CENTER)
+                }
+            },
+            modifier = Modifier.fillMaxSize()
+        )
     }
 }
 
