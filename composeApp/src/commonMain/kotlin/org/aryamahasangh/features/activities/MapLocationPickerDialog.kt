@@ -29,6 +29,8 @@ import org.aryamahasangh.WebView
 fun MapLocationPickerDialog(onDismiss: () -> Unit, onLocationPicked: (LatLng) -> Unit){
   val scope = rememberCoroutineScope()
   var location by remember { mutableStateOf<LatLng?>(null) }
+  var selectedLocation by remember { mutableStateOf<LatLng?>(null) }
+
   // Trigger location fetch only once when dialog appears
   LaunchedEffect(Unit) {
     scope.launch {
@@ -61,6 +63,7 @@ fun MapLocationPickerDialog(onDismiss: () -> Unit, onLocationPicked: (LatLng) ->
           actions = {
             TextButton(
               onClick = {
+                selectedLocation?.let { onLocationPicked(it) }
                 onDismiss()
               }
             ) {
@@ -70,7 +73,23 @@ fun MapLocationPickerDialog(onDismiss: () -> Unit, onLocationPicked: (LatLng) ->
         )
         Box(modifier = Modifier.fillMaxWidth().fillMaxHeight()){
           val html = generate(location?.latitude ?: 0.0, location?.longitude ?: 0.0)
-          WebView(html)
+          WebView(
+            url = html,
+            onScriptResult = { result ->
+              try {
+                val json = Json.parseToJsonElement(result).jsonObject
+                val lat = json["lat"]?.jsonPrimitive?.doubleOrNull
+                val lng = json["lng"]?.jsonPrimitive?.doubleOrNull
+                if (lat != null && lng != null) {
+                  selectedLocation = LatLng(lat, lng)
+                  println(selectedLocation)
+                  onLocationPicked(LatLng(lat, lng))
+                }
+              } catch (e: Exception) {
+                println("Error parsing location: ${e.message}")
+              }
+            }
+          )
         }
       }
     }
@@ -232,6 +251,8 @@ fun generate(lat: Double, lng: Double): String{
                 lat: position.lat,
                 lng: position.lng
             };
+            // Notify location change through alert
+            alert(JSON.stringify(selectedLocation));
         }
 
         // Initialize map when page loads

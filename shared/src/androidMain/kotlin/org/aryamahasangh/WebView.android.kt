@@ -7,7 +7,7 @@ import com.kevinnzou.web.WebView
 import com.kevinnzou.web.rememberWebViewState
 
 @Composable
-actual fun WebView(url: String) {
+actual fun WebView(url: String, onScriptResult: ((String) -> Unit)?) {
   WebView(
     modifier = Modifier.fillMaxSize(),
     state = rememberWebViewState(url),

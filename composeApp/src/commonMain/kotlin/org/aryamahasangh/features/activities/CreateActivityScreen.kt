@@ -1728,6 +1728,11 @@ fun CreateActivityScreen(
           }
         ){ it ->
           println("Location picked: $it")
+
+          eventLatitude = it.latitude.toString()
+          eventLongitude = it.longitude.toString()
+
+          showMapDialog = false
         }
       }
     }
