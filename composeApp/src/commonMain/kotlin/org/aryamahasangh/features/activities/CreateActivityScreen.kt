@@ -38,7 +38,6 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import io.github.vinceglb.filekit.core.PlatformFile
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 import kotlinx.datetime.*
 import kotlinx.datetime.Clock.System
 import org.aryamahasangh.components.PhotoItem
@@ -1724,16 +1723,12 @@ fun CreateActivityScreen(
       // Map Location Picker Dialog
       if (showMapDialog) {
         MapLocationPickerDialog(
-          initialLatitude = eventLatitude.toDoubleOrNull(),
-          initialLongitude = eventLongitude.toDoubleOrNull(),
-          onLocationSelected = { lat, lng ->
-            eventLatitude = lat.toString()
-            eventLongitude = lng.toString()
-            latitudeError = null
-            longitudeError = null
-          },
-          onDismiss = { showMapDialog = false }
-        )
+          onDismiss = {
+            showMapDialog = false // Reset state to false to hide the dialog
+          }
+        ){ it ->
+          println("Location picked: $it")
+        }
       }
     }
   }

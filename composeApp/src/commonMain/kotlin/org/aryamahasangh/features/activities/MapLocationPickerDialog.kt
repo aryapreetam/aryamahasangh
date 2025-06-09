@@ -1,378 +1,245 @@
 package org.aryamahasangh.features.activities
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
-import io.ktor.serialization.kotlinx.json.*
-import kotlinx.coroutines.delay
+import io.ktor.http.*
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-
-@Serializable
-data class NominatimResult(
-  val lat: String,
-  val lon: String,
-  val display_name: String,
-  val place_id: Long? = null,
-  val osm_type: String? = null,
-  val osm_id: Long? = null,
-  val boundingbox: List<String>? = null,
-  val address: Map<String, String>? = null
-)
-
-data class LatLng(
-  val latitude: Double,
-  val longitude: Double
-)
-
-data class SearchResult(
-  val name: String,
-  val address: String,
-  val latLng: LatLng
-)
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import org.aryamahasangh.WebView
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MapLocationPickerDialog(
-  initialLatitude: Double? = null,
-  initialLongitude: Double? = null,
-  onLocationSelected: (latitude: Double, longitude: Double) -> Unit,
-  onDismiss: () -> Unit
-) {
-  // Force complete recreation by using a unique key
-  val dialogKey = remember { Clock.System.now().toEpochMilliseconds() }
-
-  var searchQuery by remember { mutableStateOf("") }
-  var selectedLocation by remember {
-    mutableStateOf(
-      if (initialLatitude != null && initialLongitude != null) {
-        LatLng(initialLatitude, initialLongitude)
-      } else {
-        // Default to New Delhi coordinates
-        LatLng(28.6139, 77.2090)
-      }
-    )
-  }
-  var searchResults by remember { mutableStateOf(emptyList<SearchResult>()) }
-  var isSearching by remember { mutableStateOf(false) }
+fun MapLocationPickerDialog(onDismiss: () -> Unit, onLocationPicked: (LatLng) -> Unit){
   val scope = rememberCoroutineScope()
-
-  key(dialogKey) {
-    Dialog(
-      onDismissRequest = onDismiss,
-      properties = DialogProperties(
-        dismissOnBackPress = true,
-        dismissOnClickOutside = false,
-        usePlatformDefaultWidth = false
-      )
+  var location by remember { mutableStateOf<LatLng?>(null) }
+  // Trigger location fetch only once when dialog appears
+  LaunchedEffect(Unit) {
+    scope.launch {
+      location = getCurrentLocation()
+    }
+  }
+  Dialog(
+    onDismissRequest = onDismiss,
+    properties = DialogProperties(
+      dismissOnBackPress = true,
+      dismissOnClickOutside = false,
+      usePlatformDefaultWidth = false
+    )
+  ) {
+    Surface(
+      modifier = Modifier.fillMaxWidth(0.95f)
+        .fillMaxHeight(0.9f),
+      shape = RoundedCornerShape(16.dp),
+      color = MaterialTheme.colorScheme.surface,
+      tonalElevation = 8.dp
     ) {
-      Surface(
-        modifier = Modifier
-          .fillMaxWidth(0.95f)
-          .fillMaxHeight(0.9f)
-          .wideScreenOptional(),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 8.dp
-      ) {
-        Column(
-          modifier = Modifier.fillMaxSize()
-        ) {
-          // Header
-          TopAppBar(
-            title = { Text("स्थान चुनें") },
-            navigationIcon = {
-              IconButton(onClick = onDismiss) {
-                Icon(Icons.Default.Close, contentDescription = "बंद करें")
-              }
-            },
-            actions = {
-              TextButton(
-                onClick = {
-                  onLocationSelected(selectedLocation.latitude, selectedLocation.longitude)
-                  onDismiss()
-                }
-              ) {
-                Text("चुनें")
-              }
+      Column(modifier = Modifier.fillMaxWidth().fillMaxHeight()){
+        TopAppBar(
+          title = { Text("स्थान चुनें") },
+          navigationIcon = {
+            IconButton(onClick = onDismiss) {
+              Icon(Icons.Default.Close, contentDescription = "बंद करें")
             }
-          )
-
-          // Search Bar
-          OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            modifier = Modifier
-              .fillMaxWidth()
-              .padding(horizontal = 16.dp, vertical = 8.dp),
-            placeholder = { Text("स्थान खोजें...") },
-            leadingIcon = {
-              Icon(Icons.Default.Search, contentDescription = "खोजें")
-            },
-            trailingIcon = {
-              if (isSearching) {
-                CircularProgressIndicator(
-                  modifier = Modifier.size(24.dp),
-                  strokeWidth = 2.dp
-                )
-              } else if (searchQuery.isNotEmpty()) {
-                IconButton(
-                  onClick = {
-                    scope.launch {
-                      isSearching = true
-                      // Simulate search - replace with actual search implementation
-                      searchLocation(searchQuery) { results ->
-                        searchResults = results
-                        isSearching = false
-                      }
-                    }
-                  }
-                ) {
-                  Icon(Icons.Default.Search, contentDescription = "खोजें")
-                }
-              }
-            },
-            singleLine = true
-          )
-
-          // Search Results (if any)
-          if (searchResults.isNotEmpty()) {
-            LazyColumn(
-              modifier = Modifier
-                .fillMaxWidth()
-                .weight(0.3f)
-                .padding(horizontal = 16.dp)
-            ) {
-              items(searchResults.size) { index ->
-                val result = searchResults[index]
-                Card(
-                  onClick = {
-                    selectedLocation = result.latLng
-                    searchResults = emptyList()
-                    searchQuery = ""
-                  },
-                  modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp)
-                ) {
-                  Column(
-                    modifier = Modifier
-                      .fillMaxWidth()
-                      .padding(12.dp)
-                  ) {
-                    Text(
-                      text = result.name,
-                      style = MaterialTheme.typography.titleSmall
-                    )
-                    Text(
-                      text = result.address,
-                      style = MaterialTheme.typography.bodySmall,
-                      color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                  }
-                }
-              }
-            }
-          }
-
-          // Map Container
-          Box(
-            modifier = Modifier
-              .fillMaxSize()
-              .background(MaterialTheme.colorScheme.surfaceVariant)
-          ) {
-            // Force WebViewMap recreation with unique key
-            key("${dialogKey}_map_${selectedLocation.latitude}_${selectedLocation.longitude}") {
-              WebViewMap(
-                latitude = selectedLocation.latitude,
-                longitude = selectedLocation.longitude,
-                onLocationChanged = { lat, lng ->
-                  selectedLocation = LatLng(lat, lng)
-                },
-              )
-            }
-
-            // Current location button
-            FloatingActionButton(
+          },
+          actions = {
+            TextButton(
               onClick = {
-                // Get current location - platform specific implementation
-                getCurrentLocation { lat, lng ->
-                  selectedLocation = LatLng(lat, lng)
-                }
-              },
-              modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-                .size(48.dp),
-              containerColor = MaterialTheme.colorScheme.secondaryContainer
+                onDismiss()
+              }
             ) {
-              Icon(
-                Icons.Default.MyLocation,
-                contentDescription = "वर्तमान स्थान",
-                tint = MaterialTheme.colorScheme.onSecondaryContainer
-              )
+              Text("चुनें")
             }
           }
+        )
+        Box(modifier = Modifier.fillMaxWidth().fillMaxHeight()){
+          val html = generate(location?.latitude ?: 0.0, location?.longitude ?: 0.0)
+          WebView(html)
         }
       }
     }
   }
 }
 
-// Extension function for wide screen adaptation
-@Composable
-private fun Modifier.wideScreenOptional(): Modifier {
-  return this.then(
-    Modifier.widthIn(max = 800.dp)
+data class LatLng(val latitude: Double, val longitude: Double)
+
+
+suspend fun getCurrentLocation(): LatLng? {
+  val client = HttpClient()
+  val response = client.get("http://ip-api.com/json/")
+  var s = ""
+  if(response.status == HttpStatusCode.OK) {
+    s = response.bodyAsText()
+  }
+  println(s)
+  val json = Json.parseToJsonElement(s).jsonObject
+
+  return LatLng(
+    json["lat"]?.jsonPrimitive?.doubleOrNull ?: return null,
+    json["lon"]?.jsonPrimitive?.doubleOrNull ?: return null
   )
 }
 
-suspend fun searchLocation(query: String, onResults: (List<SearchResult>) -> Unit) {
-  // Rate limiting - Nominatim requires max 1 request per second
-  delay(OpenStreetMapConfig.MIN_SEARCH_DELAY_MS)
 
-  try {
-    val client = HttpClient {
-      install(ContentNegotiation) {
-        json(Json {
-          ignoreUnknownKeys = true
-          isLenient = true
-        })
-      }
-    }
+fun generate(lat: Double, lng: Double): String{
+  return """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Picker</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <!-- Leaflet Geocoder CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder@2.4.0/dist/Control.Geocoder.css" />
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+        .leaflet-control-geocoder {
+            position: fixed !important;
+            top: 10px !important;
+            left: 60% !important;
+            transform: translateX(-55%) !important;
+            z-index: 1000;
+            width: 80%;
+            max-width: 800px;
+        }
+        .leaflet-control-geocoder-form input {
+            width: 100%;
+            padding: 12px 16px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            background: white;
+        }
+        .leaflet-control-geocoder-alternatives {
+            width: 100%;
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 4px;
+        }
+        .leaflet-control-geocoder-alternatives li {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        .leaflet-control-geocoder-alternatives li:hover {
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
 
-    val response: HttpResponse = client.get("${OpenStreetMapConfig.NOMINATIM_API_BASE_URL}/search") {
-      parameter("q", query)
-      parameter("format", "json")
-      parameter("countrycodes", "in") // Restrict to India
-      parameter("limit", 10)
-      parameter("addressdetails", 1)
-      parameter("extratags", 1)
-      parameter("accept-language", "hi,en") // Hindi first, then English
-      headers {
-        append("User-Agent", OpenStreetMapConfig.USER_AGENT)
-      }
-    }
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Leaflet Geocoder JS -->
+    <script src="https://unpkg.com/leaflet-control-geocoder@2.4.0/dist/Control.Geocoder.js"></script>
 
-    val nominatimResults = response.body<List<NominatimResult>>()
+    <script>
+        let map;
+        let marker;
+        let selectedLocation = null;
+        
+        function initMap() {
+            map = L.map('map').setView([0, 0], 2);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
 
-    val results = nominatimResults.map { result ->
-      SearchResult(
-        name = extractPlaceName(result),
-        address = formatAddress(result),
-        latLng = LatLng(result.lat.toDouble(), result.lon.toDouble())
-      )
-    }
+            // Add marker at map center
+            marker = L.marker(map.getCenter(), { draggable: false }).addTo(map);
 
-    onResults(results)
-    client.close()
-  } catch (e: Exception) {
-    println("Error searching location: ${e.message}")
-    // Fallback to mock results if API fails
-    onResults(getMockResults(query))
-  }
+            // Add search control
+            const searchControl = L.Control.geocoder({
+                defaultMarkGeocode: false,
+                position: 'topleft',
+                placeholder: 'Search location...',
+                geocoder: L.Control.Geocoder.nominatim({
+                    geocodingQueryParams: {
+                        countrycodes: 'in',
+                        limit: 5,
+                        format: 'json',
+                        addressdetails: 1
+                    }
+                }),
+                suggestMinLength: 3,
+                suggestTimeout: 250,
+                queryMinLength: 3
+            }).addTo(map);
+
+            // Handle search results
+            searchControl.on('markgeocode', function(e) {
+                const center = e.geocode.center;
+                map.setView(center, 16);
+                updateMarker(center);
+            });
+
+            // Update marker position when map is moved
+            map.on('move', function() {
+                updateMarker(map.getCenter());
+            });
+
+            // Log location when panning ends
+            map.on('moveend', function() {
+                console.log('Location after panning:', selectedLocation);
+            });
+
+            // Try to get user's location
+            map.setView([$lat, $lng], 13);
+
+            // Move geocoder control to center top
+            const geocoderContainer = document.querySelector('.leaflet-control-geocoder');
+            if (geocoderContainer) {
+                map.getContainer().appendChild(geocoderContainer);
+            }
+        }
+
+        function updateMarker(position) {
+            marker.setLatLng(position);
+            selectedLocation = {
+                lat: position.lat,
+                lng: position.lng
+            };
+        }
+
+        // Initialize map when page loads
+        initMap();
+    </script>
+</body>
+</html>
+  """.trimIndent()
 }
 
-// Helper function to extract a user-friendly place name
-private fun extractPlaceName(result: NominatimResult): String {
-  val address = result.address
-  return when {
-    address?.get("road") != null -> address["road"]!!
-    address?.get("neighbourhood") != null -> address["neighbourhood"]!!
-    address?.get("suburb") != null -> address["suburb"]!!
-    address?.get("city") != null -> address["city"]!!
-    address?.get("state_district") != null -> address["state_district"]!!
-    else -> result.display_name.split(",").firstOrNull() ?: "Unknown Place"
-  }
-}
 
-// Helper function to format address
-private fun formatAddress(result: NominatimResult): String {
-  val parts = mutableListOf<String>()
-  val address = result.address
-
-  address?.let {
-    it["road"]?.let { road -> parts.add(road) }
-    it["neighbourhood"]?.let { neighbourhood -> if (neighbourhood != it["road"]) parts.add(neighbourhood) }
-    it["suburb"]?.let { suburb -> if (suburb != it["neighbourhood"]) parts.add(suburb) }
-    it["city"]?.let { city -> parts.add(city) }
-    it["state_district"]?.let { district -> parts.add(district) }
-    it["state"]?.let { state -> parts.add(state) }
-  }
-
-  return if (parts.isNotEmpty()) {
-    parts.joinToString(", ")
-  } else {
-    result.display_name
-  }
-}
-
-// Mock results for fallback
-private fun getMockResults(query: String): List<SearchResult> {
-  return when {
-    query.contains("delhi", ignoreCase = true) -> listOf(
-      SearchResult(
-        name = "नई दिल्ली",
-        address = "राष्ट्रीय राजधानी क्षेत्र, भारत",
-        latLng = LatLng(28.6139, 77.2090)
-      ),
-      SearchResult(
-        name = "दिल्ली कैंट",
-        address = "दिल्ली कैंटोनमेंट, नई दिल्ली",
-        latLng = LatLng(28.5969, 77.1585)
-      )
-    )
-
-    query.contains("mumbai", ignoreCase = true) -> listOf(
-      SearchResult(
-        name = "मुंबई",
-        address = "महाराष्ट्र, भारत",
-        latLng = LatLng(19.0760, 72.8777)
-      )
-    )
-
-    query.contains("bangalore", ignoreCase = true) || query.contains("bengaluru", ignoreCase = true) -> listOf(
-      SearchResult(
-        name = "बेंगलुरु",
-        address = "कर्नाटक, भारत",
-        latLng = LatLng(12.9716, 77.5946)
-      )
-    )
-
-    else -> emptyList()
-  }
-}
-
-// Placeholder for getting current location
-fun getCurrentLocation(onLocation: (Double, Double) -> Unit) {
-  // Mock current location - replace with actual location service
-  // For now, return a default location (New Delhi)
-  onLocation(28.6139, 77.2090)
-
-  /*
-  // Example for platform-specific implementation:
-  // Android: Use FusedLocationProviderClient
-  // iOS: Use CLLocationManager
-  // Web: Use navigator.geolocation
-  // Desktop: May need to use IP-based geolocation or ask user to enter manually
-  */
-}

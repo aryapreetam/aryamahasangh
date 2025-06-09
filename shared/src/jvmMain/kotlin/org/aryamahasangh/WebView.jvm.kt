@@ -45,7 +45,7 @@ actual fun WebView(url: String) {
 
           JavaFXPlatform.runLater {
             val webView = WebView()
-            webView.engine.load(url)
+            webView.engine.loadContent(url, "text/html")
             jfxPanel.scene = Scene(webView)
           }
 
