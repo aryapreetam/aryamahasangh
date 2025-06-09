@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -74,23 +75,31 @@ fun MapLocationPickerDialog(onDismiss: () -> Unit, onLocationPicked: (LatLng) ->
           }
         )
         Box(modifier = Modifier.fillMaxWidth().fillMaxHeight()){
-          val html = generate(location?.latitude ?: 0.0, location?.longitude ?: 0.0)
-          WebView(
-            url = html,
-            onScriptResult = { result ->
-              try {
-                val json = Json.parseToJsonElement(result).jsonObject
-                val lat = json["lat"]?.jsonPrimitive?.doubleOrNull
-                val lng = json["lng"]?.jsonPrimitive?.doubleOrNull
-                if (lat != null && lng != null) {
-                  selectedLocation = LatLng(lat, lng)
-                  println(selectedLocation)
+          println("current location: $location")
+          if(location != null) {
+            val html = generate(location?.latitude ?: 0.0, location?.longitude ?: 0.0)
+            WebView(
+              url = html,
+              onScriptResult = { result ->
+                try {
+                  val json = Json.parseToJsonElement(result).jsonObject
+                  val lat = json["lat"]?.jsonPrimitive?.doubleOrNull
+                  val lng = json["lng"]?.jsonPrimitive?.doubleOrNull
+                  if (lat != null && lng != null) {
+                    selectedLocation = LatLng(lat, lng)
+                    println(selectedLocation)
+                  }
+                } catch (e: Exception) {
+                  println("Error parsing location: ${e.message}")
                 }
-              } catch (e: Exception) {
-                println("Error parsing location: ${e.message}")
               }
-            }
-          )
+            )
+          }else{
+            Text(
+              text = "Loading map...",
+              modifier = Modifier.align(Alignment.Center)
+            )
+          }
         }
       }
     }
