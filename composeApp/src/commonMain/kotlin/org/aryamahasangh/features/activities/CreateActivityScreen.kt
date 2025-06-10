@@ -1033,7 +1033,7 @@ fun CreateActivityScreen(
             }
           }
         ) {
-          Text("रद्द करें")
+          Text("निरस्त करें")
         }
       }
       // Name
@@ -1391,7 +1391,7 @@ fun CreateActivityScreen(
           Text("मानचित्र से चुनें")
         }
         Text(
-          "या मैन्युअल रूप से दर्ज करें:",
+          "या स्वयं से लिखें:",
           style = MaterialTheme.typography.bodySmall,
           modifier = Modifier.padding(top = 8.dp)
         )
@@ -1603,7 +1603,7 @@ fun CreateActivityScreen(
             CircularProgressIndicator(modifier = Modifier.size(20.dp))
             Spacer(modifier = Modifier.width(8.dp))
           }
-          Text(if (editingActivityId != null) "सहेजें" else "गतिविधि बनाएं")
+          Text(if (editingActivityId != null) "अद्यतन करें" else "गतिविधि बनाएं")
         }
       }
 
@@ -1614,7 +1614,7 @@ fun CreateActivityScreen(
             if (editingActivityId != null) {
               // Navigate to activity details after successful update
               snackbarHostState.showSnackbar(
-                message = "गतिविधि सफलतापूर्वक अपडेट की गई"
+                message = "गतिविधि सफलतापूर्वक अद्यतन की गई"
               )
               onActivitySaved(editingActivityId)
             } else {
@@ -1635,7 +1635,7 @@ fun CreateActivityScreen(
                 "नेटवर्क त्रुटि। कृपया अपना इंटरनेट कनेक्शन जांचें"
 
               formSubmissionState.error!!.contains("duplicate", ignoreCase = true) ->
-                "इस नाम की गतिविधि पहले से मौजूद है"
+                "इस नाम की गतिविधि पहले से उपस्थित है"
 
               else -> "त्रुटि: ${formSubmissionState.error}"
             }
@@ -1652,8 +1652,8 @@ fun CreateActivityScreen(
       if (showUnsavedChangesDialog) {
         AlertDialog(
           onDismissRequest = { showUnsavedChangesDialog = false },
-          title = { Text("असहेजे परिवर्तन") },
-          text = { Text("आपके पास असहेजे परिवर्तन हैं। क्या आप वाकई छोड़ना चाहते हैं?") },
+          title = { Text("असंचयिक परिवर्तन") },
+          text = { Text("आपके परिवर्तन संचयित नहीं है। क्या आप इसे त्यागना चाहते हैं?") },
           confirmButton = {
             TextButton(
               onClick = {
@@ -1661,12 +1661,12 @@ fun CreateActivityScreen(
                 onCancel()
               }
             ) {
-              Text("हाँ, छोड़ें")
+              Text("जी हाँ")
             }
           },
           dismissButton = {
             TextButton(onClick = { showUnsavedChangesDialog = false }) {
-              Text("रद्द करें")
+              Text("नहीं")
             }
           }
         )
