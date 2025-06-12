@@ -1,9 +1,6 @@
 package org.aryamahasangh.features.activities
 
-import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.*
 import kotlinx.serialization.SerialName
 import org.aryamahasangh.OrganisationalActivityDetailByIdQuery
 import org.aryamahasangh.fragment.OrganisationalActivityShort
@@ -155,6 +152,40 @@ data class OrganisationalActivity(
   val associatedOrganisations: List<AssociatedOrganisation>
 ) {
   companion object
+}
+
+enum class ActivityStatus {
+  PAST,
+  ONGOING,
+  UPCOMING;
+
+  fun toDisplayName(): String {
+    return when(this){
+      PAST -> "समाप्त"
+      ONGOING -> "चल रही है"
+      UPCOMING -> "आगामी"
+    }
+  }
+}
+
+fun OrganisationalActivity.getStatus(): ActivityStatus {
+  val currentTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+  return when {
+    currentTime < startDatetime -> ActivityStatus.UPCOMING
+    currentTime > endDatetime -> ActivityStatus.PAST
+    else -> ActivityStatus.ONGOING
+  }
+}
+fun OrganisationalActivity.isFromPast() = getStatus() == ActivityStatus.PAST
+fun OrganisationalActivity.isUpcoming() = getStatus() == ActivityStatus.UPCOMING
+
+fun org.aryamahasangh.features.activities.OrganisationalActivityShort.getStatus(): ActivityStatus {
+  val currentTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+  return when {
+    currentTime < startDatetime -> ActivityStatus.UPCOMING
+    currentTime > endDatetime -> ActivityStatus.PAST
+    else -> ActivityStatus.ONGOING
+  }
 }
 
 fun OrganisationalActivity.Companion.camelCased(

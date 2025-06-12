@@ -1,9 +1,14 @@
 package org.aryamahasangh.features.activities
 
 import com.apollographql.apollo.ApolloClient
+import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.filter.FilterOperation
+import io.github.jan.supabase.postgrest.query.filter.FilterOperator
+import io.github.jan.supabase.realtime.selectAsFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.serialization.Serializable
 import org.aryamahasangh.*
 import org.aryamahasangh.network.supabaseClient
@@ -57,6 +62,11 @@ interface ActivityRepository {
   suspend fun getOrganisationsAndMembers(): Result<OrganisationsAndMembers>
 
   suspend fun getRegisteredUsers(id: String): Result<List<UserProfile>>
+
+  /**
+   * Listen to real-time registration updates for an activity
+   */
+  fun listenToRegistrations(activityId: String): Flow<List<UserProfile>>
 }
 
 /**
@@ -272,12 +282,37 @@ class ActivityRepositoryImpl(
       }!!
     }
   }
+
+  @OptIn(SupabaseExperimental::class)
+  override fun listenToRegistrations(activityId: String): Flow<List<UserProfile>> {
+    return supabaseClient
+      .from("satr_registration")
+      .selectAsFlow(
+        primaryKeys = listOf(SatrRegistration::id),
+        filter = FilterOperation("activity_id", FilterOperator.EQ, activityId)
+      ).map { registrations ->
+        // Convert to UserProfile - no need to filter since it's already filtered at DB level
+        registrations.map { registration ->
+          UserProfile(
+            id = registration.id,
+            fullname = registration.fullname,
+            mobile = registration.mobile,
+            gender = registration.gender,
+            address = registration.address
+          )
+        }
+      }
+  }
 }
 
 @Serializable
-data class OrganisationalActivityInsertData(
-  val organisation_id: String,
-  val activity_id: String
+data class SatrRegistration(
+  val id: String,
+  val activity_id: String,
+  val fullname: String,
+  val mobile: String,
+  val gender: String,
+  val address: String
 )
 
 @Serializable
@@ -286,4 +321,10 @@ data class ActivityMemberInsertData(
   val member_id: String,
   val post: String = "",
   val priority: Int = 1
+)
+
+@Serializable
+data class OrganisationalActivityInsertData(
+  val organisation_id: String,
+  val activity_id: String
 )

@@ -1,10 +1,13 @@
 package org.aryamahasangh.features.activities
 
+import androidx.lifecycle.viewModelScope
 import com.apollographql.apollo.api.Optional
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -76,6 +79,10 @@ class ActivitiesViewModel(
   private val _organisationsAndMembersState = MutableStateFlow(OrganisationsAndMembersUiState())
   val organisationsAndMembersState: StateFlow<OrganisationsAndMembersUiState> =
     _organisationsAndMembersState.asStateFlow()
+
+  // Track the current activity being viewed for real-time updates
+  private var currentActivityId: String? = null
+  private var registrationListenerJob: Job? = null
 
   init {
     loadActivities()
@@ -149,6 +156,22 @@ class ActivitiesViewModel(
   fun loadActivityDetail(id: String) {
     launch {
       _activityDetailUiState.value = ActivityDetailUiState(isLoading = true)
+
+      // Clear previous registered users to avoid showing stale data
+      _registeredUsers.value = emptyList()
+
+      // Update current activity ID and start listening for real-time updates
+      currentActivityId = id
+
+      // Load registered users initially
+      try {
+        loadRegisteredUsers(id)
+      } catch (e: Exception) {
+        println("Error loading initial registered users: ${e.message}")
+      }
+
+      // Start listening for real-time updates
+      startListeningForRegistrations(id)
 
       when (val result = activityRepository.getActivityDetail(id)) {
         is Result.Success -> {
@@ -306,20 +329,21 @@ class ActivitiesViewModel(
     _formSubmissionState.value = AdmissionFormSubmissionState()
   }
 
-  fun loadRegisteredUsers(id: String) {
-    launch {
-      when (val result = activityRepository.getRegisteredUsers(id)) {
-        is Result.Success -> {
-          _registeredUsers.value = result.data
-        }
+  suspend fun loadRegisteredUsers(id: String) {
+    println("Loading registered users for activity: $id")
+    when (val result = activityRepository.getRegisteredUsers(id)) {
+      is Result.Success -> {
+        println("Loaded ${result.data.size} registered users")
+        _registeredUsers.value = result.data
+      }
 
-        is Result.Error -> {
-          // Do nothing
-        }
+      is Result.Error -> {
+        println("Error loading registered users: ${result.message}")
+        // Do nothing
+      }
 
-        is Result.Loading -> {
-          // Do nothing
-        }
+      is Result.Loading -> {
+        // Do nothing
       }
     }
   }
@@ -355,6 +379,45 @@ class ActivitiesViewModel(
         }
       }
     }
+  }
+
+  /**
+   * Start listening for real-time registration updates
+   */
+  private fun startListeningForRegistrations(activityId: String) {
+    // Cancel previous listener if exists
+    stopListeningForRegistrations()
+
+    println("Starting real-time listening for activity: $activityId")
+
+    registrationListenerJob = viewModelScope.launch {
+      try {
+        activityRepository.listenToRegistrations(activityId)
+          .collect { users ->
+            println("Real-time update: ${users.size} registered users")
+            _registeredUsers.value = users
+          }
+      } catch (e: Exception) {
+        println("Error in real-time listener: ${e.message}")
+      }
+    }
+
+    println("Real-time listener job created: ${registrationListenerJob != null}")
+  }
+
+  /**
+   * Stop listening for real-time registration updates
+   */
+  fun stopListeningForRegistrations() {
+    println("Stopping real-time listener for activity: $currentActivityId")
+    registrationListenerJob?.cancel()
+    registrationListenerJob = null
+    currentActivityId = null
+  }
+
+  override fun onCleared() {
+    stopListeningForRegistrations()
+    super.onCleared()
   }
 }
 

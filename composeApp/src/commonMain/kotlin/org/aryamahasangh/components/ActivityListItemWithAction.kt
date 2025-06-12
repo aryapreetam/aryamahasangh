@@ -10,6 +10,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -20,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import org.aryamahasangh.features.activities.GenderAllowed
 import org.aryamahasangh.features.arya_nirman.UpcomingActivity
 import org.aryamahasangh.features.arya_nirman.convertDates
+import org.aryamahasangh.utils.openDirections
 
 // --- Data Structures ---
 
@@ -77,10 +79,11 @@ fun TextStyle.asSpanStyle() =
 fun EventListItem(
   event: UpcomingActivity,
   onRegisterClick: (eventId: String) -> Unit,
-  onDirectionsClick: (place: String) -> Unit,
+  onDirectionsClick: ((latitude: Double, longitude: Double, placeName: String) -> Unit)? = null,
   modifier: Modifier = Modifier
 ) {
   val subtleTextColor = MaterialTheme.colorScheme.onSurfaceVariant // Get from theme
+  val uriHandler = LocalUriHandler.current
 
   ElevatedCard(
     modifier =
@@ -99,13 +102,6 @@ fun EventListItem(
     ) {
       // Event Title
       val baseTextStyle = MaterialTheme.typography.titleLarge
-
-//      Text(
-//        text = event.title,
-//        style = MaterialTheme.typography.titleLarge,
-//        fontWeight = FontWeight.Bold,
-//        color = MaterialTheme.colorScheme.onSurface
-//      )
 
       Text(
         text =
@@ -181,7 +177,14 @@ fun EventListItem(
           )
         }
         IconButton(
-          onClick = { onDirectionsClick("") },
+          onClick = {
+            if (onDirectionsClick != null) {
+              onDirectionsClick(event.latitude, event.longitude, event.district)
+            } else {
+              // Handle directions internally
+              openDirections(uriHandler, event.latitude, event.longitude, event.district)
+            }
+          },
           modifier = Modifier.size(48.dp)
         ) {
           Icon(
@@ -240,8 +243,8 @@ fun dummyRegisterCallback(eventId: String) {
   println("Register clicked for $eventId")
 }
 
-fun dummyDirectionsCallback(place: String) {
-  println("Directions clicked for $place")
+fun dummyDirectionsCallback(latitude: Double, longitude: Double, placeName: String) {
+  println("Directions clicked for $placeName at $latitude, $longitude")
 }
 
 val sampleEventAvailable =
