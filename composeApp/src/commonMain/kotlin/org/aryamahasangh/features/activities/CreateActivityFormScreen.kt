@@ -41,6 +41,7 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 import kotlinx.datetime.Clock.System
 import org.aryamahasangh.components.PhotoItem
+import org.aryamahasangh.isDesktop
 import org.aryamahasangh.navigation.LocalSetBackHandler
 import org.aryamahasangh.navigation.LocalSnackbarHostState
 import org.aryamahasangh.network.bucket
@@ -258,7 +259,8 @@ fun ContactPeopleDropdown(
   isError: Boolean = false,
   supportingText: @Composable () -> Unit = {},
   postMap: MutableMap<String, Pair<String, Int>>,
-  onFieldFocused: ((Float) -> Unit)? = null
+  onFieldFocused: ((Float) -> Unit)? = null,
+  isSmallScreen: Boolean = false
 ) {
   var expanded by remember { mutableStateOf(false) }
   val context = LocalPlatformContext.current // Needed for Coil
@@ -313,7 +315,7 @@ fun ContactPeopleDropdown(
                       fieldCoordinates = coordinates.positionInRoot().y
                     }
                     .onFocusChanged { focusState ->
-                      if (focusState.isFocused && onFieldFocused != null) {
+                      if (isSmallScreen && focusState.isFocused && onFieldFocused != null) {
                         // Use stored coordinates
                         onFieldFocused(fieldCoordinates)
                       }
@@ -469,6 +471,30 @@ fun CreateActivityScreen(
   editingActivityId: String? = null,
   onActivitySaved: (String) -> Unit = {},
   onCancel: () -> Unit = {}
+) {
+  BoxWithConstraints {
+    // Consider screens smaller than 600dp as mobile-sized, but exclude desktop
+    val isSmallScreen = maxWidth < 600.dp && !isDesktop()
+
+    CreateActivityScreenContent(
+      viewModel = viewModel,
+      editingActivityId = editingActivityId,
+      onActivitySaved = onActivitySaved,
+      onCancel = onCancel,
+      isSmallScreen = isSmallScreen
+    )
+  }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@ExperimentalMaterial3Api
+@Composable
+private fun CreateActivityScreenContent(
+  viewModel: ActivitiesViewModel,
+  editingActivityId: String? = null,
+  onActivitySaved: (String) -> Unit = {},
+  onCancel: () -> Unit = {},
+  isSmallScreen: Boolean
 ) {
 
 
@@ -1012,7 +1038,7 @@ fun CreateActivityScreen(
           .fillMaxSize()
           .padding(8.dp)
           .verticalScroll(scrollState)
-          .imePadding() // Add IME padding to push content above keyboard
+          .let { if (isSmallScreen) it.imePadding() else it } // Add IME padding only on mobile
     ) {
       // Header with Cancel button
       Row(
@@ -1042,15 +1068,7 @@ fun CreateActivityScreen(
         onValueChange = { name = it },
         label = { Text("नाम") },
         modifier = Modifier
-          .width(500.dp)
-          .onGloballyPositioned { coordinates ->
-            lastFocusedFieldOffset = coordinates.positionInRoot().y
-          }
-          .onFocusChanged { focusState ->
-            if (focusState.isFocused) {
-              scrollToFocusedField(lastFocusedFieldOffset)
-            }
-          },
+          .width(500.dp),
         isError = nameError,
         supportingText = {
           if (nameError) {
@@ -1121,15 +1139,7 @@ fun CreateActivityScreen(
         },
         label = { Text("संक्षिप्त विवरण") },
         modifier = Modifier
-          .width(500.dp)
-          .onGloballyPositioned { coordinates ->
-            lastFocusedFieldOffset = coordinates.positionInRoot().y
-          }
-          .onFocusChanged { focusState ->
-            if (focusState.isFocused) {
-              scrollToFocusedField(lastFocusedFieldOffset)
-            }
-          },
+          .width(500.dp),
         isError = shortDescriptionError,
         supportingText = { if (shortDescriptionError) Text("Short Description is required") },
         maxLines = 1,
@@ -1147,15 +1157,7 @@ fun CreateActivityScreen(
         },
         label = { Text("विस्तृत विवरण") },
         modifier = Modifier
-          .width(500.dp)
-          .onGloballyPositioned { coordinates ->
-            lastFocusedFieldOffset = coordinates.positionInRoot().y
-          }
-          .onFocusChanged { focusState ->
-            if (focusState.isFocused) {
-              scrollToFocusedField(lastFocusedFieldOffset)
-            }
-          },
+          .width(500.dp),
         minLines = 3,
         maxLines = 30,
         isError = descriptionError,
@@ -1188,15 +1190,7 @@ fun CreateActivityScreen(
         },
         label = { Text("पूर्ण पता") },
         modifier = Modifier
-          .width(500.dp)
-          .onGloballyPositioned { coordinates ->
-            lastFocusedFieldOffset = coordinates.positionInRoot().y
-          }
-          .onFocusChanged { focusState ->
-            if (focusState.isFocused) {
-              scrollToFocusedField(lastFocusedFieldOffset)
-            }
-          },
+          .width(500.dp),
         minLines = 2,
         maxLines = 3,
         isError = addressError,
@@ -1406,7 +1400,17 @@ fun CreateActivityScreen(
               }
             },
             label = { Text("अक्षांश (Latitude)") },
-            modifier = Modifier.width(170.dp).focusRequester(latitudeFocusRequester),
+            modifier = Modifier
+              .width(170.dp)
+              .focusRequester(latitudeFocusRequester)
+              .onGloballyPositioned { coordinates ->
+                lastFocusedFieldOffset = coordinates.positionInRoot().y
+              }
+              .onFocusChanged { focusState ->
+                if (isSmallScreen && focusState.isFocused) {
+                  scrollToFocusedField(lastFocusedFieldOffset)
+                }
+              },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }),
@@ -1423,7 +1427,17 @@ fun CreateActivityScreen(
               }
             },
             label = { Text("देशांतर (Longitude)") },
-            modifier = Modifier.width(170.dp).focusRequester(longitudeFocusRequester),
+            modifier = Modifier
+              .width(170.dp)
+              .focusRequester(longitudeFocusRequester)
+              .onGloballyPositioned { coordinates ->
+                lastFocusedFieldOffset = coordinates.positionInRoot().y
+              }
+              .onFocusChanged { focusState ->
+                if (isSmallScreen && focusState.isFocused) {
+                  scrollToFocusedField(lastFocusedFieldOffset)
+                }
+              },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
@@ -1557,7 +1571,8 @@ fun CreateActivityScreen(
         postMap = postMap,
         isError = contactPeopleError,
         supportingText = { if (contactPeopleError) Text("At least one contact person is required") },
-        onFieldFocused = { offset -> scrollToFocusedField(offset) }
+        onFieldFocused = if (isSmallScreen) { offset -> scrollToFocusedField(offset) } else null,
+        isSmallScreen = isSmallScreen
       )
 
       // Additional Instructions
@@ -1575,7 +1590,7 @@ fun CreateActivityScreen(
             lastFocusedFieldOffset = coordinates.positionInRoot().y
           }
           .onFocusChanged { focusState ->
-            if (focusState.isFocused) {
+            if (isSmallScreen && focusState.isFocused) {
               scrollToFocusedField(lastFocusedFieldOffset)
             }
           },
@@ -1584,8 +1599,7 @@ fun CreateActivityScreen(
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
       )
 
-      // Add extra bottom padding for keyboard
-      Spacer(modifier = Modifier.height(16.dp))
+      // Removed 300dp spacer since we now handle keyboard scrolling for individual fields
 
       // Create Activity Button
       Button(

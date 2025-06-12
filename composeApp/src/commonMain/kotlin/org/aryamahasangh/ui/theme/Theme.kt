@@ -1,9 +1,7 @@
 
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.Color
 import org.aryamahasangh.ui.theme.AppTypography
@@ -260,6 +258,7 @@ val unspecified_scheme =
     Color.Unspecified
   )
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AppTheme(
   darkTheme: Boolean = isSystemInDarkTheme(),
@@ -280,8 +279,9 @@ fun AppTheme(
     LocalThemeIsDark provides isDarkState
   ) {
     val isDark by isDarkState
-    MaterialTheme(
+    MaterialExpressiveTheme(
       colorScheme = colorScheme, //if (isDark) darkScheme else lightScheme,
+      motionScheme = MotionScheme.expressive(),
       typography = AppTypography(),
       content = content
     )

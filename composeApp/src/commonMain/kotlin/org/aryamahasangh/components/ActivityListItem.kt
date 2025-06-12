@@ -25,12 +25,10 @@ import androidx.compose.ui.unit.sp
 import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.event_upcoming
 import dev.burnoo.compose.remembersetting.rememberBooleanSetting
-import kotlinx.datetime.Clock
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+import org.aryamahasangh.features.activities.ActivityStatus
 import org.aryamahasangh.features.activities.ActivityType
 import org.aryamahasangh.features.activities.OrganisationalActivityShort
+import org.aryamahasangh.features.activities.getStatus
 import org.aryamahasangh.features.arya_nirman.convertDates
 import org.aryamahasangh.navigation.SettingKeys
 import org.aryamahasangh.utils.WithTooltip
@@ -54,7 +52,7 @@ fun ActivityListItem(
   var showMenu by remember { mutableStateOf(false) }
 
   // Determine activity status
-  val activityStatus = getActivityStatus(activity.startDatetime, activity.endDatetime)
+  val activityStatus = activity.getStatus()
 
   ElevatedCard(
     modifier = Modifier.width(500.dp),
@@ -218,32 +216,6 @@ fun ActivityListItem(
           }
         }
       )
-    }
-  }
-}
-
-fun getActivityStatus(
-  startDatetime: LocalDateTime,
-  endDatetime: LocalDateTime,
-): ActivityStatus {
-  val currentTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-  return when {
-    currentTime < startDatetime -> ActivityStatus.UPCOMING
-    currentTime > endDatetime -> ActivityStatus.PAST
-    else -> ActivityStatus.ONGOING
-  }
-}
-
-enum class ActivityStatus {
-  PAST,
-  ONGOING,
-  UPCOMING;
-
-  fun toDisplayName(): String {
-    return when(this){
-      ActivityStatus.PAST -> "समाप्त"
-      ActivityStatus.ONGOING -> "चल रही है"
-      ActivityStatus.UPCOMING -> "आगामी"
     }
   }
 }

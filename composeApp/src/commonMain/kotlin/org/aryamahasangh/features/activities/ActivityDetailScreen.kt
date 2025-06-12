@@ -29,13 +29,12 @@ import aryamahasangh.composeapp.generated.resources.error_profile_image
 import coil3.compose.AsyncImage
 import dev.burnoo.compose.remembersetting.rememberBooleanSetting
 import kotlinx.coroutines.launch
-import org.aryamahasangh.components.ActivityStatus
 import org.aryamahasangh.components.activityTypeData
-import org.aryamahasangh.components.getActivityStatus
 import org.aryamahasangh.isWeb
 import org.aryamahasangh.navigation.LocalSnackbarHostState
 import org.aryamahasangh.navigation.SettingKeys
 import org.aryamahasangh.utils.format
+import org.aryamahasangh.utils.openDirections
 import org.aryamahasangh.utils.toHumanReadable
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -45,6 +44,7 @@ import org.koin.compose.koinInject
 fun ActivityDetailScreen(
   id: String,
   onNavigateToEdit: (String) -> Unit = {},
+  onNavigateToRegistration: (String) -> Unit = {},
   viewModel: ActivitiesViewModel = koinInject()
 ) {
   val snackbarHostState = LocalSnackbarHostState.current
@@ -55,8 +55,15 @@ fun ActivityDetailScreen(
   LaunchedEffect(id, isLoggedIn) {
     println("Loading activity details for ID: $id")
     viewModel.loadActivityDetail(id)
-    if (isLoggedIn) {
-      viewModel.loadRegisteredUsers(id)
+    // Don't call loadRegisteredUsers here - it's already handled in loadActivityDetail with polling
+  }
+
+  // Stop listening when navigating away
+  DisposableEffect(id) {
+    println("DisposableEffect created for activity: $id")
+    onDispose {
+      println("DisposableEffect disposing for activity: $id")
+      viewModel.stopListeningForRegistrations()
     }
   }
 
@@ -113,11 +120,11 @@ fun ActivityDetailScreen(
   }
 
   Box(modifier = Modifier.fillMaxSize()) {
-    ActivityDisplay(uiState.activity!!, registeredUsers, isLoggedIn)
+    ActivityDisplay(uiState.activity!!, registeredUsers, isLoggedIn, onNavigateToRegistration)
 
     // Edit button in top-right corner
     if (isLoggedIn) {
-      if(getActivityStatus(uiState.activity!!.startDatetime, uiState.activity!!.endDatetime) != ActivityStatus.PAST) {
+      if(uiState.activity!!.isUpcoming()) {
         IconButton(
           onClick = { onNavigateToEdit(id) },
           modifier = Modifier
@@ -178,7 +185,8 @@ fun ActivityDetailScreen(
 fun ActivityDisplay(
   activity: OrganisationalActivity,
   registeredUsers: List<UserProfile> = emptyList(),
-  isLoggedIn: Boolean
+  isLoggedIn: Boolean,
+  onNavigateToRegistration: (String) -> Unit = {}
 ) {
   println(activity)
 
@@ -241,14 +249,35 @@ fun ActivityDisplay(
 
     // Place
     Row(
-      verticalAlignment = Alignment.CenterVertically
+      verticalAlignment = Alignment.CenterVertically,
+      modifier = Modifier.fillMaxWidth()
     ) {
       Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Place", tint = Color.Gray)
       Spacer(modifier = Modifier.width(4.dp))
       Text(
         text = "स्थान: ${activity.address}, ${activity.district}, ${activity.state}.",
-        style = MaterialTheme.typography.bodyMedium
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier.weight(1f)
       )
+      if (activity.latitude != null && activity.longitude != null) {
+        val uriHandler = LocalUriHandler.current
+        IconButton(
+          onClick = {
+            openDirections(
+              uriHandler,
+              activity.latitude!!,
+              activity.longitude!!,
+              "${activity.address}, ${activity.district}"
+            )
+          }
+        ) {
+          Icon(
+            imageVector = Icons.Default.Navigation,
+            contentDescription = "दिशा-निर्देश",
+            tint = MaterialTheme.colorScheme.primary
+          )
+        }
+      }
     }
 
     // Start and End Date/Time
@@ -329,9 +358,31 @@ fun ActivityDisplay(
         }
       }
     }
+
+    // Registration Button for upcoming activities
+    if (activity.isUpcoming()) {
+      Spacer(modifier = Modifier.height(16.dp))
+      val registrationCount = registeredUsers.size
+      val hasCapacityLimit = activity.capacity > 0
+      val isFull = hasCapacityLimit && registrationCount >= activity.capacity
+
+      println("Activity ${activity.id}: registrations=$registrationCount, capacity=${activity.capacity}, isFull=$isFull")
+
+      Button(
+        onClick = { onNavigateToRegistration(activity.id) },
+        enabled = !isFull
+      ) {
+        Text(
+          text = if (isFull) "पंजीकरण बंद" else "पंजीकरण",
+          style = MaterialTheme.typography.labelLarge,
+          modifier = Modifier.padding(horizontal = 24.dp)
+        )
+      }
+    }
+
     if (isLoggedIn) {
       HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-      RegisteredUsers(registeredUsers)
+      RegisteredUsers(registeredUsers, activity.capacity)
     }
   }
 }
@@ -557,14 +608,15 @@ fun RegisteredUsersPreview() {
 }
 
 @Composable
-fun RegisteredUsers(users: List<UserProfile>) {
+fun RegisteredUsers(users: List<UserProfile>, capacity: Int = 0) {
   Column(
     verticalArrangement = Arrangement.spacedBy(8.dp) // Space between items
   ) {
     Column {
       val count = "${users.size}"
+      val capacityText = if (capacity > 0) " / ${capacity.toString()}" else ""
       Text(
-        "कुल पंजीकरण (${count.toDevanagariNumerals()}):",
+        "कुल पंजीकरण (${count.toDevanagariNumerals()}${capacityText.toDevanagariNumerals()}):",
         style = MaterialTheme.typography.labelLarge,
         fontWeight = FontWeight.Bold,
         modifier = Modifier.padding(vertical = 16.dp)

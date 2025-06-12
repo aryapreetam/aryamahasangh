@@ -14,7 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.aryamahasangh.components.EventListItem
-import org.aryamahasangh.components.dummyDirectionsCallback
 
 @Composable
 fun AryaNirmanHomeScreen(
@@ -95,8 +94,7 @@ fun AryaNirmanHomeScreen(
             event = updatedActivity,
             onRegisterClick = {
               onNavigateToRegistrationForm(activity.id)
-            },
-            onDirectionsClick = ::dummyDirectionsCallback
+            }
           )
         }
       }
