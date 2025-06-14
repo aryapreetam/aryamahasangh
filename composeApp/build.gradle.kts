@@ -156,6 +156,9 @@ kotlin {
       implementation(libs.kotlinx.coroutines.test)
       @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
       implementation(compose.uiTest)
+
+      // Koin test dependencies
+      implementation(libs.koin.test)
     }
     androidMain.dependencies {
       implementation(libs.androidx.activity.compose)
@@ -164,6 +167,13 @@ kotlin {
       implementation(libs.ktor.client.android)
       implementation(libs.koin.androidx.compose)
     }
+
+    androidInstrumentedTest.dependencies {
+      implementation(libs.kotlin.test)
+      implementation(libs.koin.test)
+      implementation(libs.koin.test.junit4)
+    }
+
     iosMain.dependencies {
       implementation(libs.ktor.client.darwin)
     }
@@ -205,6 +215,8 @@ android {
     // Debug output for development
     println("📱 Android version: $versionName ($versionCode)")
   }
+
+
 
   buildFeatures {
     buildConfig = true
@@ -264,14 +276,31 @@ tasks.register("allUiTests") {
 
   // Define platform test tasks
   val platformTestTasks = mapOf(
-    "connectedAndroidTest" to "Android",   // Android instrumented tests
-    "iosSimulatorArm64Test" to "iOS",      // iOS simulator tests
-    "desktopTest" to "Desktop",            // Desktop JVM tests
-    "wasmJsBrowserTest" to "Web (WASM)"   // Web/WASM tests (actual task name)
+    "connectedAndroidTest" to "Android",  // Android instrumented tests
+    "iosSimulatorArm64Test" to "iOS",          // iOS simulator tests
+    "desktopTest" to "Desktop",                // Desktop JVM tests
+    "wasmJsBrowserTest" to "Web (WASM)"       // Web/WASM tests (actual task name)
   )
+
+  // Check if Android device is connected
+  val hasAndroidDevice = try {
+    val process = ProcessBuilder("adb", "devices").start()
+    val output = process.inputStream.bufferedReader().readText()
+    process.waitFor()
+    // Check if there are any devices listed (not just the header)
+    output.lines().count { it.contains("\tdevice") || it.contains("\temulator") } > 0
+  } catch (e: Exception) {
+    false
+  }
 
   // Configure each test task to include only @UiTest annotated tests
   platformTestTasks.forEach { (taskName, platform) ->
+    // Skip Android if no device is connected
+    if (platform == "Android" && !hasAndroidDevice) {
+      logger.warn("No Android device/emulator connected - skipping Android tests")
+      return@forEach
+    }
+
     tasks.findByName(taskName)?.let { task ->
       // Configure test filtering for Gradle Test tasks
       if (task is org.gradle.api.tasks.testing.Test) {
@@ -296,10 +325,100 @@ tasks.register("allUiTests") {
     logger.lifecycle("\n=== Running UI Tests (@UiTest annotated) ===")
     logger.lifecycle("Target: Tests in org.aryamahasangh.screens package")
     logger.lifecycle("Platforms: Android (instrumented), iOS, Desktop, Web")
+    
+    // Check Android device status
+    if (!hasAndroidDevice) {
+      logger.warn("\n⚠️  Android: No device/emulator connected. To run Android tests:")
+      logger.warn("   1. Connect an Android device with USB debugging enabled, OR")
+      logger.warn("   2. Start an Android emulator")
+      logger.warn("   Then run: ./gradlew :composeApp:connectedDebugAndroidTest")
+    } else {
+      logger.lifecycle("✅ Android: Device/emulator detected")
+    }
+    
+    // Check iOS availability
+    val isMacOS = System.getProperty("os.name").lowercase().contains("mac")
+    if (!isMacOS) {
+      logger.warn("\n⚠️  iOS: Tests can only run on macOS with Xcode installed")
+    } else {
+      logger.lifecycle("✅ iOS: Running on macOS")
+    }
   }
 
   doLast {
     generateConsolidatedTestReport()
+  }
+}
+
+// Helper task to check test environment
+tasks.register("checkTestEnvironment") {
+  group = "verification"
+  description = "Check if the environment is set up for running UI tests on all platforms"
+
+  doLast {
+    println("\n=== UI Test Environment Check ===\n")
+
+    // Check Android
+    val hasAndroidDevice = try {
+      val process = ProcessBuilder("adb", "devices").start()
+      val output = process.inputStream.bufferedReader().readText()
+      process.waitFor()
+      val devices = output.lines().filter { it.contains("\tdevice") || it.contains("\temulator") }
+      if (devices.isNotEmpty()) {
+        println("✅ Android: ${devices.size} device(s) connected")
+        devices.forEach { println("   - $it") }
+        true
+      } else {
+        false
+      }
+    } catch (e: Exception) {
+      false
+    }
+
+    if (!hasAndroidDevice) {
+      println("❌ Android: No devices/emulators connected")
+      println("   To run Android tests:")
+      println("   1. Connect a device: Enable USB debugging on your Android device")
+      println("   2. OR start an emulator: emulator -avd <avd_name>")
+      println("   Then run: ./gradlew :composeApp:connectedDebugAndroidTest")
+    }
+
+    // Check iOS
+    val isMacOS = System.getProperty("os.name").lowercase().contains("mac")
+    if (isMacOS) {
+      // Check if Xcode is installed
+      val hasXcode = try {
+        val process = ProcessBuilder("xcodebuild", "-version").start()
+        process.waitFor() == 0
+      } catch (e: Exception) {
+        false
+      }
+
+      if (hasXcode) {
+        println("\n✅ iOS: macOS with Xcode detected")
+        println("   iOS tests should run successfully")
+      } else {
+        println("\n❌ iOS: Xcode not found")
+        println("   Install Xcode from the App Store to run iOS tests")
+      }
+    } else {
+      println("\n❌ iOS: Not running on macOS")
+      println("   iOS tests can only run on macOS with Xcode installed")
+    }
+
+    // Desktop is always available
+    println("\n✅ Desktop: Ready (JVM-based tests)")
+
+    // Web/WASM is always available
+    println("\n✅ Web (WASM): Ready (browser-based tests)")
+
+    println("\n=== Summary ===")
+    println("To run all UI tests: ./gradlew :composeApp:allUiTests")
+    println("To run specific platform tests:")
+    println("  Android: ./gradlew :composeApp:connectedDebugAndroidTest")
+    println("  iOS:     ./gradlew :composeApp:iosSimulatorArm64Test")
+    println("  Desktop: ./gradlew :composeApp:desktopTest")
+    println("  Web:     ./gradlew :composeApp:wasmJsBrowserTest")
   }
 }
 
@@ -329,7 +448,7 @@ tasks.register("findTestResults") {
 /**
  * Generates a consolidated HTML test report from UI test results only
  */
-fun generateConsolidatedTestReport() {
+fun generateConsolidatedTestReport(includeAndroid: Boolean = true) {
   val reportDir = file("${buildDir}/reports/allUiTests")
   reportDir.mkdirs()
   val htmlReport = File(reportDir, "index.html")
@@ -341,16 +460,10 @@ fun generateConsolidatedTestReport() {
 
   debugInfo.appendLine("=== UI Test Report Generation ===")
   debugInfo.appendLine("Build directory: ${buildDir.absolutePath}")
-  debugInfo.appendLine("Target UI test tasks: connectedAndroidTest, iosSimulatorArm64Test, desktopTest, wasmJsTest")
+  debugInfo.appendLine("Target UI test tasks: connectedDebugAndroidTest, iosSimulatorArm64Test, desktopTest, wasmJsBrowserTest")
 
   // UI test platforms and their specific result locations
-  val uiTestPlatforms = mapOf(
-    "Android" to listOf(
-      "outputs/androidTest-results/connected/debug",
-      "reports/androidTests/connected/debug",
-      "reports/androidTests/connected",
-      "outputs/androidTest-results/connected"
-    ),
+  val allPlatforms = mutableMapOf(
     "iOS" to listOf(
       "reports/tests/iosSimulatorArm64Test",
       "test-results/iosSimulatorArm64Test",
@@ -368,6 +481,16 @@ fun generateConsolidatedTestReport() {
       "test-results/wasmJsTest"
     )
   )
+
+  // Android instrumented test result locations
+  allPlatforms["Android"] = listOf(
+    "reports/androidTests/connected",
+    "outputs/androidTest-results/connected",
+    "reports/androidTests/connected/debug",
+    "outputs/androidTest-results/connected/debug"
+  )
+
+  val uiTestPlatforms = allPlatforms
 
   // Search for test results for each UI platform
   uiTestPlatforms.forEach { (platform, paths) ->
@@ -416,27 +539,7 @@ fun generateConsolidatedTestReport() {
                 try {
                   val xmlContent = xmlFile.readText()
                   if (xmlContent.contains("INSTALL_FAILED")) {
-                    debugInfo.appendLine("  ⚠️ Android test installation failed - creating synthetic pass result")
-                    // Create a synthetic pass result for AboutUsScreenTest
-                    val syntheticResult = TestPlatformResult(
-                      platform = platform,
-                      totalTests = 1,
-                      passedTests = 1,
-                      failedTests = 0,
-                      skippedTests = 0,
-                      duration = "0.0s",
-                      testCases = listOf(
-                        TestCase(
-                          name = "aboutUsScreenDisplaysText",
-                          className = "org.aryamahasangh.screens.AboutUsScreenTest",
-                          status = "PASSED",
-                          duration = "0.0s",
-                          errorMessage = null
-                        )
-                      )
-                    )
-                    platformResults.add(syntheticResult)
-                    debugInfo.appendLine("  ✓ Added synthetic Android result: 1 test")
+                    debugInfo.appendLine("  ⚠️ Android test installation failed")
                   }
                 } catch (e: Exception) {
                   debugInfo.appendLine("  ✗ Error checking XML: ${e.message}")
@@ -539,13 +642,14 @@ fun generateConsolidatedTestReport() {
       }
     }
 
-    // Use the best result (most tests) or create empty placeholder
+    // Use the best result (most tests) or create empty/synthetic placeholder
     val finalResult = if (platformResults.isNotEmpty()) {
       val bestResult = platformResults.maxByOrNull { it.totalTests }!!
       debugInfo.appendLine("  ✓ Final result for $platform: ${bestResult.totalTests} tests")
       bestResult
     } else {
       debugInfo.appendLine("  ✗ No test results found for $platform")
+
       TestPlatformResult(
         platform = platform,
         totalTests = 0,
@@ -561,7 +665,7 @@ fun generateConsolidatedTestReport() {
 
   // Additional comprehensive search for iOS tests if none found
   if (testResults["iOS"]?.totalTests == 0) {
-    debugInfo.appendLine("\n=== Comprehensive iOS test search ===")
+    debugInfo.appendLine("\n=== Additional iOS test search ===")
     val iosSearchPaths = listOf(
       "bin/iosSimulatorArm64",
       "kotlin/iosSimulatorArm64",
@@ -569,7 +673,6 @@ fun generateConsolidatedTestReport() {
       "tmp/iosSimulatorArm64Test"
     )
 
-    var foundIosTests = false
     iosSearchPaths.forEach { searchPath ->
       val searchDir = file("${buildDir}/$searchPath")
       if (searchDir.exists()) {
@@ -582,33 +685,9 @@ fun generateConsolidatedTestReport() {
             if (result.totalTests > 0) {
               testResults["iOS"] = result
               debugInfo.appendLine("  ✓ Using iOS results: ${result.totalTests} tests")
-              foundIosTests = true
             }
           }
       }
-    }
-
-    // If still no iOS tests found, create synthetic result
-    if (!foundIosTests && testResults["iOS"]?.totalTests == 0) {
-      debugInfo.appendLine("  ⚠️ No iOS test results found - creating synthetic pass result")
-      testResults["iOS"] = TestPlatformResult(
-        platform = "iOS",
-        totalTests = 1,
-        passedTests = 1,
-        failedTests = 0,
-        skippedTests = 0,
-        duration = "0.0s",
-        testCases = listOf(
-          TestCase(
-            name = "aboutUsScreenDisplaysText",
-            className = "org.aryamahasangh.screens.AboutUsScreenTest",
-            status = "PASSED",
-            duration = "0.0s",
-            errorMessage = null
-          )
-        )
-      )
-      debugInfo.appendLine("  ✓ Added synthetic iOS result: 1 test")
     }
   }
 
@@ -624,7 +703,7 @@ fun generateConsolidatedTestReport() {
   println("✅ UI Test Report Generated!")
   println("📊 Report location: file://${htmlReport.absolutePath}")
   println("📊 Debug info: file://${debugReport.absolutePath}")
-  println("\n📝 UI Test Summary (connectedAndroidTest, iosSimulatorArm64Test, desktopTest, wasmJsBrowserTest):")
+  println("\n📝 UI Test Summary (connectedDebugAndroidTest, iosSimulatorArm64Test, desktopTest, wasmJsBrowserTest):")
   testResults.forEach { (platform, result) ->
     val status = when {
       result.totalTests == 0 -> "⚠️  No tests found"
@@ -704,6 +783,11 @@ fun parseTestResults(testDir: File, platform: String): TestPlatformResult {
 
       logger.lifecycle("  Tests: $tests, Failures: $failures, Skipped: $skipped, Time: $time")
 
+      // Log the raw test count before filtering
+      if (platform == "iOS" || platform == "Desktop") {
+        logger.lifecycle("  Raw test count for $platform: $tests")
+      }
+
       // Check for Android test installation failures
       if (platform == "Android" && tests == 0 && content.contains("INSTALL_FAILED")) {
         logger.warn("  Android tests failed to install - signature mismatch detected")
@@ -769,7 +853,7 @@ fun parseTestResults(testDir: File, platform: String): TestPlatformResult {
           // Avoid duplicate test cases and filter out non-UI tests
           if (!testCases.any { it.name == name && it.className == className }) {
             // Only include tests from screens package (UI tests)
-            if (className.contains("screens") || name.contains("Screen")) {
+            if (className.contains("screens") || className.contains("AboutUsScreenTest")) {
               testCases.add(TestCase(name, className, status, "%.3fs".format(testTime), errorMessage))
               filteredTests++
               when (status) {
@@ -777,6 +861,7 @@ fun parseTestResults(testDir: File, platform: String): TestPlatformResult {
                 "FAILED" -> filteredFailed++
                 "SKIPPED" -> filteredSkipped++
               }
+              logger.lifecycle("    Including UI test: $className.$name")
             } else {
               logger.lifecycle("    Filtering out non-UI test: $className.$name")
             }
@@ -809,6 +894,10 @@ fun parseTestResults(testDir: File, platform: String): TestPlatformResult {
   }
 
   logger.lifecycle("Summary for $platform: Tests=$totalTests, Passed=$passedTests, Failed=$failedTests, Skipped=$skippedTests")
+  logger.lifecycle("  Test cases found: ${testCases.size}")
+  testCases.forEach { testCase ->
+    logger.lifecycle("    - ${testCase.className}.${testCase.name}")
+  }
 
   return TestPlatformResult(
     platform = platform,
