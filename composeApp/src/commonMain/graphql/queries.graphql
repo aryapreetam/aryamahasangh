@@ -293,7 +293,12 @@ query BookOrders($filter: book_ordersFilter) {
 }
 
 query UpcomingSatrActivities($currentDateTime: Datetime!){
-  activitiesCollection(filter: { start_datetime: {gt: $currentDateTime} }){
+  activitiesCollection(
+      filter: {
+          start_datetime: {gt: $currentDateTime},
+          type: {eq: SESSION}
+      }
+  ){
     edges{
       node{
         id

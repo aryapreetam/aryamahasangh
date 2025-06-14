@@ -12,24 +12,26 @@ import kotlin.test.Test
 /**
  * Common UI test for verifying the About Us screen across all platforms
  */
+@OptIn(ExperimentalTestApi::class)
 @UiTest
 class AboutUsScreenTest {
 
-  @OptIn(ExperimentalTestApi::class)
   @Test
-  fun aboutUsScreenDisplaysText() = runComposeUiTest {
+  fun aboutUsScreenDisplaysText() = runUiTest {
     // Create a fake repository that returns a predefined organization
     val fakeRepository = FakeAboutUsRepository()
 
     // Create the view model with the fake repository
     val viewModel = AboutUsViewModel(fakeRepository)
 
-    // Set up the content with the AboutUs composable
+    // Set up the content with the AboutUs composable wrapped in TestWrapper
     setContent {
-      AboutUs(
-        showDetailedAboutUs = {},
-        viewModel = viewModel
-      )
+      TestWrapper {
+        AboutUs(
+          showDetailedAboutUs = {},
+          viewModel = viewModel
+        )
+      }
     }
 
     // Wait for the content to load
@@ -40,6 +42,50 @@ class AboutUsScreenTest {
 
     // Verify that the text is displayed
     onNodeWithText("सनातन धर्म का साक्षात् प्रतिनिधि", substring = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun clickingTextNavigatesToDetailedAboutUs() = runUiTest {
+    // Create a fake repository that returns a predefined organization
+    val fakeRepository = FakeAboutUsRepository()
+
+    // Create the view model with the fake repository
+    val viewModel = AboutUsViewModel(fakeRepository)
+
+    // Track if navigation was triggered
+    var navigationTriggered = false
+
+    // Set up the content with the AboutUs composable wrapped in TestWrapper
+    setContent {
+      TestWrapper {
+        AboutUs(
+          showDetailedAboutUs = { navigationTriggered = true },
+          viewModel = viewModel
+        )
+      }
+    }
+
+    // Wait for the content to load
+    waitForIdle()
+
+    // Click on the text
+    onNodeWithText("सनातन धर्म का साक्षात् प्रतिनिधि", substring = true).performClick()
+
+    // Verify navigation was triggered
+    kotlin.test.assertTrue(navigationTriggered, "Navigation to DetailedAboutUs was not triggered")
+
+    // Now set up the DetailedAboutUs screen to verify it displays correctly
+    setContent {
+      TestWrapper {
+        DetailedAboutUs(viewModel = viewModel)
+      }
+    }
+
+    // Wait for the content to load
+    waitForIdle()
+
+    // Verify that "आचार्य हनुमत प्रसाद" is displayed
+    onNodeWithText("आचार्य हनुमत प्रसाद").assertIsDisplayed()
   }
 }
 
