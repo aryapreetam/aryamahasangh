@@ -246,35 +246,48 @@ fun ActivityDisplay(
       }
     }
 
-    // Place
-    Row(
-      verticalAlignment = Alignment.CenterVertically,
-      modifier = Modifier.fillMaxWidth()
-    ) {
-      Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Place", tint = Color.Gray)
-      Spacer(modifier = Modifier.width(4.dp))
-      Text(
-        text = "स्थान: ${activity.address}, ${activity.district}, ${activity.state}.",
-        style = MaterialTheme.typography.bodyMedium,
-        modifier = Modifier.weight(1f)
-      )
-      if (activity.latitude != null && activity.longitude != null) {
-        val uriHandler = LocalUriHandler.current
-        IconButton(
-          onClick = {
-            openDirections(
-              uriHandler,
-              activity.latitude!!,
-              activity.longitude!!,
-              "${activity.address}, ${activity.district}"
+    // Place - only show if address data is present
+    val hasAddressData = activity.address.isNotEmpty() || activity.state.isNotEmpty() ||
+      activity.district.isNotEmpty() || activity.latitude != null || activity.longitude != null
+
+    if (hasAddressData) {
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Place", tint = Color.Gray)
+        Spacer(modifier = Modifier.width(4.dp))
+
+        val addressParts = listOfNotNull(
+          activity.address.takeIf { it.isNotEmpty() },
+          activity.district.takeIf { it.isNotEmpty() },
+          activity.state.takeIf { it.isNotEmpty() }
+        )
+
+        Text(
+          text = "स्थान: ${addressParts.joinToString(", ")}${if (addressParts.isNotEmpty()) "." else ""}",
+          style = MaterialTheme.typography.bodyMedium,
+          modifier = Modifier.weight(1f)
+        )
+
+        if (activity.latitude != null && activity.longitude != null) {
+          val uriHandler = LocalUriHandler.current
+          IconButton(
+            onClick = {
+              openDirections(
+                uriHandler,
+                activity.latitude!!,
+                activity.longitude!!,
+                "${activity.address}, ${activity.district}"
+              )
+            }
+          ) {
+            Icon(
+              imageVector = Icons.Default.Navigation,
+              contentDescription = "दिशा-निर्देश",
+              tint = MaterialTheme.colorScheme.primary
             )
           }
-        ) {
-          Icon(
-            imageVector = Icons.Default.Navigation,
-            contentDescription = "दिशा-निर्देश",
-            tint = MaterialTheme.colorScheme.primary
-          )
         }
       }
     }
