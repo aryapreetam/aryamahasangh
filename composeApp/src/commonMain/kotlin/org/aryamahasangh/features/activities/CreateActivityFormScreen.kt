@@ -519,23 +519,6 @@ private fun CreateActivityScreenContent(
     viewModel.loadOrganisationsAndMembers()
   }
 
-  // Load activity details if editing
-  LaunchedEffect(editingActivityId) {
-    if (editingActivityId != null) {
-      isLoadingActivity = true
-      viewModel.loadActivityDetail(editingActivityId)
-    }
-  }
-
-  // Watch for activity details when editing
-  val activityDetailState by viewModel.activityDetailUiState.collectAsState()
-  LaunchedEffect(activityDetailState) {
-    if (editingActivityId != null && activityDetailState.activity != null) {
-      editingActivity = activityDetailState.activity
-      isLoadingActivity = false
-    }
-  }
-
   // State variables for form fields
   var name by remember { mutableStateOf("") }
   var nameError by remember { mutableStateOf(false) }
@@ -553,6 +536,8 @@ private fun CreateActivityScreenContent(
   var associatedOrganisations by remember { mutableStateOf(emptySet<Organisation>()) }
   var associatedOrganisationsError by remember { mutableStateOf(false) }
 
+  // Address-related states
+  var includeAddress by remember { mutableStateOf(true) } // Default to true for non-CAMPAIGN types
   var address by remember { mutableStateOf("") }
   var addressError by remember { mutableStateOf(false) }
 
@@ -564,6 +549,49 @@ private fun CreateActivityScreenContent(
 
   var stateErrorMessage by remember { mutableStateOf("") }
   var districtErrorMessage by remember { mutableStateOf("") }
+
+  var eventLatitude by remember { mutableStateOf("") }
+  var eventLongitude by remember { mutableStateOf("") }
+  var latitudeError by remember { mutableStateOf<String?>(null) }
+  var longitudeError by remember { mutableStateOf<String?>(null) }
+
+  // Load activity details if editing
+  LaunchedEffect(editingActivityId) {
+    if (editingActivityId != null) {
+      isLoadingActivity = true
+      viewModel.loadActivityDetail(editingActivityId)
+    }
+  }
+
+  // Watch for activity details when editing
+  val activityDetailState by viewModel.activityDetailUiState.collectAsState()
+  LaunchedEffect(activityDetailState) {
+    if (editingActivityId != null && activityDetailState.activity != null) {
+      editingActivity = activityDetailState.activity
+      isLoadingActivity = false
+    }
+  }
+
+  // Update includeAddress when activity type changes
+  LaunchedEffect(selectedType) {
+    if (selectedType == ActivityType.CAMPAIGN) {
+      includeAddress = false
+      // Clear address fields when switching to CAMPAIGN
+      address = ""
+      state = ""
+      district = ""
+      eventLatitude = ""
+      eventLongitude = ""
+      // Clear errors
+      addressError = false
+      stateError = false
+      districtError = false
+      latitudeError = null
+      longitudeError = null
+    } else if (selectedType != null) {
+      includeAddress = true
+    }
+  }
 
   var startDate by remember { mutableStateOf<LocalDate?>(null) }
   var startTime by remember { mutableStateOf<LocalTime?>(null) }
@@ -596,8 +624,6 @@ private fun CreateActivityScreenContent(
 
   var eventCapacity by remember { mutableStateOf("100") }
   var eventGenderAllowed by remember { mutableStateOf(GenderAllowed.ANY) }
-  var eventLatitude by remember { mutableStateOf("") }
-  var eventLongitude by remember { mutableStateOf("") }
 
   // Map dialog state
   var showMapDialog by remember { mutableStateOf(false) }
@@ -606,9 +632,6 @@ private fun CreateActivityScreenContent(
   var capacityError by remember { mutableStateOf<String?>(null) }
   var genderAllowedError by remember { mutableStateOf<String?>(null) }
   var genderAllowedExpanded by remember { mutableStateOf(false) }
-  var latitudeError by remember { mutableStateOf<String?>(null) }
-  var longitudeError by remember { mutableStateOf<String?>(null) }
-
   // Focus requesters
   val capacityFocusRequester = remember { FocusRequester() }
   val latitudeFocusRequester = remember { FocusRequester() }
@@ -729,6 +752,17 @@ private fun CreateActivityScreenContent(
       val activity = editingActivity!!
       name = activity.name
       selectedType = activity.type
+
+      // Determine if address was included based on whether address fields have values
+      includeAddress = if (activity.type == ActivityType.CAMPAIGN) {
+        // For CAMPAIGN type, check if any address field has content
+        activity.address.isNotEmpty() || activity.state.isNotEmpty() ||
+          activity.district.isNotEmpty() || activity.latitude != null || activity.longitude != null
+      } else {
+        // For other types, address is always included
+        true
+      }
+
       shortDescription = activity.shortDescription
       description = activity.longDescription
       associatedOrganisations = activity.associatedOrganisations.map { it.organisation }.toSet()
@@ -803,9 +837,13 @@ private fun CreateActivityScreenContent(
     shortDescriptionError = shortDescription.isEmpty()
     descriptionError = description.isEmpty()
     associatedOrganisationsError = associatedOrganisations.isEmpty()
-    addressError = address.isEmpty()
-    stateError = state.isEmpty()
-    districtError = district.isEmpty()
+
+    // Address validation - only validate if includeAddress is true or not a CAMPAIGN
+    val shouldValidateAddress = includeAddress || selectedType != ActivityType.CAMPAIGN
+    addressError = shouldValidateAddress && address.isEmpty()
+    stateError = shouldValidateAddress && state.isEmpty()
+    districtError = shouldValidateAddress && district.isEmpty()
+
     startDateError = startDate == null
     startTimeError = startTime == null
     endDateError = endDate == null
@@ -841,50 +879,56 @@ private fun CreateActivityScreenContent(
       }
     }
 
-    // Validate latitude
-    val latDouble = eventLatitude.toDoubleOrNull()
-    when {
-      eventLatitude.isBlank() -> {
-        latitudeError = "अक्षांश आवश्यक है."
-        eventDetailsValid = false
+    // Validate latitude - only if address is included
+    if (shouldValidateAddress) {
+      val latDouble = eventLatitude.toDoubleOrNull()
+      when {
+        eventLatitude.isBlank() -> {
+          latitudeError = "अक्षांश आवश्यक है."
+          eventDetailsValid = false
+        }
+
+        latDouble == null -> {
+          latitudeError = "कृपया मान्य अक्षांश दर्ज करें (उदा. 28.6139)."
+          eventDetailsValid = false
+        }
+
+        latDouble < -90.0 || latDouble > 90.0 -> {
+          latitudeError = "अक्षांश -90 और 90 के बीच होना चाहिए."
+          eventDetailsValid = false
+        }
+
+        else -> {
+          latitudeError = null
+        }
       }
 
-      latDouble == null -> {
-        latitudeError = "कृपया मान्य अक्षांश दर्ज करें (उदा. 28.6139)."
-        eventDetailsValid = false
-      }
+      // Validate longitude - only if address is included
+      val lonDouble = eventLongitude.toDoubleOrNull()
+      when {
+        eventLongitude.isBlank() -> {
+          longitudeError = "देशांतर आवश्यक है."
+          eventDetailsValid = false
+        }
 
-      latDouble < -90.0 || latDouble > 90.0 -> {
-        latitudeError = "अक्षांश -90 और 90 के बीच होना चाहिए."
-        eventDetailsValid = false
-      }
+        lonDouble == null -> {
+          longitudeError = "कृपया मान्य देशांतर दर्ज करें (उदा. 77.2090)."
+          eventDetailsValid = false
+        }
 
-      else -> {
-        latitudeError = null
-      }
-    }
+        lonDouble < -180.0 || lonDouble > 180.0 -> {
+          longitudeError = "देशांतर -180 और 180 के बीच होना चाहिए."
+          eventDetailsValid = false
+        }
 
-    // Validate longitude
-    val lonDouble = eventLongitude.toDoubleOrNull()
-    when {
-      eventLongitude.isBlank() -> {
-        longitudeError = "देशांतर आवश्यक है."
-        eventDetailsValid = false
+        else -> {
+          longitudeError = null
+        }
       }
-
-      lonDouble == null -> {
-        longitudeError = "कृपया मान्य देशांतर दर्ज करें (उदा. 77.2090)."
-        eventDetailsValid = false
-      }
-
-      lonDouble < -180.0 || lonDouble > 180.0 -> {
-        longitudeError = "देशांतर -180 और 180 के बीच होना चाहिए."
-        eventDetailsValid = false
-      }
-
-      else -> {
-        longitudeError = null
-      }
+    } else {
+      // Clear errors if address is not included
+      latitudeError = null
+      longitudeError = null
     }
 
     if ((!startDateError && !startTimeError && !endDateError && !endTimeError)) {
@@ -985,9 +1029,9 @@ private fun CreateActivityScreenContent(
             shortDescription = shortDescription,
             longDescription = description,
             type = selectedType!!,
-            address = address,
-            state = state,
-            district = district,
+            address = if (includeAddress || selectedType != ActivityType.CAMPAIGN) address else "",
+            state = if (includeAddress || selectedType != ActivityType.CAMPAIGN) state else "",
+            district = if (includeAddress || selectedType != ActivityType.CAMPAIGN) district else "",
             associatedOrganisations = associatedOrganisations.toList(),
             startDatetime = startDate?.atTime(startTime!!)!!,
             endDatetime = endDate?.atTime(endTime!!)!!,
@@ -1000,8 +1044,8 @@ private fun CreateActivityScreenContent(
             additionalInstructions = additionalInstructions,
             capacity = eventCapacity.toIntOrNull() ?: 0,
             allowedGender = eventGenderAllowed,
-            latitude = eventLatitude.toDoubleOrNull() ?: 0.0,
-            longitude = eventLongitude.toDoubleOrNull() ?: 0.0
+            latitude = if (includeAddress || selectedType != ActivityType.CAMPAIGN) eventLatitude.toDoubleOrNull() else null,
+            longitude = if (includeAddress || selectedType != ActivityType.CAMPAIGN) eventLongitude.toDoubleOrNull() else null
           )
 
         // Submit form using ViewModel
@@ -1080,7 +1124,7 @@ private fun CreateActivityScreenContent(
       )
 
       Column {
-        // Type (Filter Chips)
+        // ActivityType (Filter Chips)
         Text(text = "प्रकार :", style = MaterialTheme.typography.bodyMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
           ActivityType.entries.forEach { type ->
@@ -1179,53 +1223,153 @@ private fun CreateActivityScreenContent(
         supportingText = { if (associatedOrganisationsError) Text("Associated Organisation is required") }
       )
 
-      // Address
-      OutlinedTextField(
-        value = address,
-        onValueChange = {
-          if (it.length <= 100) {
-            address = it
-            addressError = false
-          }
-        },
-        label = { Text("पूर्ण पता") },
-        modifier = Modifier
-          .width(500.dp),
-        minLines = 2,
-        maxLines = 3,
-        isError = addressError,
-        supportingText = { if (addressError) Text("Address is required") },
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
-      )
+      // Address Section
+      if (selectedType == ActivityType.CAMPAIGN) {
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          modifier = Modifier.padding(bottom = 8.dp)
+        ) {
+          Checkbox(
+            checked = includeAddress,
+            onCheckedChange = { includeAddress = it }
+          )
+          Text("स्थान जोड़ें")
+        }
+      }
 
-      FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-      ) {
-        StateDropdown(
-          states = indianStatesToDistricts.keys.toList(),
-          selectedState = state,
-          onStateSelected = {
-            state = it
-            stateError = false
+      if (includeAddress || selectedType != ActivityType.CAMPAIGN) {
+        // Address field
+        OutlinedTextField(
+          value = address,
+          onValueChange = {
+            if (it.length <= 100) {
+              address = it
+              addressError = false
+            }
           },
-          modifier = Modifier.width(160.dp),
-          isError = stateError,
-          errorMessage = if (stateError) stateErrorMessage else ""
+          label = { Text("पूर्ण पता") },
+          modifier = Modifier
+            .width(500.dp),
+          minLines = 2,
+          maxLines = 3,
+          isError = addressError,
+          supportingText = { if (addressError) Text("Address is required") },
+          keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
         )
-        // District Selection (Conditional)
-        val districts = indianStatesToDistricts[state] ?: emptyList()
-        DistrictDropdown(
-          districts = districts,
-          selectedDistrict = district,
-          onDistrictSelected = {
-            district = it ?: ""
-            districtError = false
+
+        // State and District
+        FlowRow(
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+          verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+          StateDropdown(
+            states = indianStatesToDistricts.keys.toList(),
+            selectedState = state,
+            onStateSelected = {
+              state = it
+              stateError = false
+            },
+            modifier = Modifier.width(160.dp),
+            isError = stateError,
+            errorMessage = if (stateError) stateErrorMessage else ""
+          )
+          // District Selection (Conditional)
+          val districts = indianStatesToDistricts[state] ?: emptyList()
+          DistrictDropdown(
+            districts = districts,
+            selectedDistrict = district,
+            onDistrictSelected = {
+              district = it ?: ""
+              districtError = false
+            },
+            modifier = Modifier.width(200.dp),
+            isError = districtError,
+            errorMessage = if (districtError) districtErrorMessage else ""
+          )
+        }
+
+        // Location Section
+        Text(
+          "स्थान चुनें (Location)",
+          style = MaterialTheme.typography.titleMedium,
+          modifier = Modifier.padding(top = 8.dp)
+        )
+        // button for choosing location
+        OutlinedButton(
+          onClick = {
+            showMapDialog = true
           },
-          modifier = Modifier.width(200.dp),
-          isError = districtError,
-          errorMessage = if (districtError) districtErrorMessage else ""
+          contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+        ) {
+          Icon(
+            Icons.Filled.Map,
+            contentDescription = "मानचित्र से चुनें",
+            modifier = Modifier.size(ButtonDefaults.IconSize)
+          )
+          Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+          Text("मानचित्र से चुनें")
+        }
+        Text(
+          "या स्वयं से लिखें:",
+          style = MaterialTheme.typography.bodySmall,
+          modifier = Modifier.padding(top = 8.dp)
         )
+
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+          OutlinedTextField(
+            value = eventLatitude,
+            onValueChange = {
+              if (it.isEmpty() || it.matches(Regex("^-?[0-9]*\\.?[0-9]*$"))) {
+                eventLatitude = it
+                latitudeError = null
+              }
+            },
+            label = { Text("अक्षांश (Latitude)") },
+            modifier = Modifier
+              .width(170.dp)
+              .focusRequester(latitudeFocusRequester)
+              .onGloballyPositioned { coordinates ->
+                lastFocusedFieldOffset = coordinates.positionInRoot().y
+              }
+              .onFocusChanged { focusState ->
+                if (isSmallScreen && focusState.isFocused) {
+                  scrollToFocusedField(lastFocusedFieldOffset)
+                }
+              },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
+            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }),
+            isError = latitudeError != null,
+            supportingText = { latitudeError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
+          )
+
+          OutlinedTextField(
+            value = eventLongitude,
+            onValueChange = {
+              if (it.isEmpty() || it.matches(Regex("^-?[0-9]*\\.?[0-9]*$"))) {
+                eventLongitude = it
+                longitudeError = null
+              }
+            },
+            label = { Text("देशांतर (Longitude)") },
+            modifier = Modifier
+              .width(170.dp)
+              .focusRequester(longitudeFocusRequester)
+              .onGloballyPositioned { coordinates ->
+                lastFocusedFieldOffset = coordinates.positionInRoot().y
+              }
+              .onFocusChanged { focusState ->
+                if (isSmallScreen && focusState.isFocused) {
+                  scrollToFocusedField(lastFocusedFieldOffset)
+                }
+              },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
+            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
+            isError = longitudeError != null,
+            supportingText = { longitudeError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
+          )
+        }
       }
       FlowRow(
         horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -1364,85 +1508,6 @@ private fun CreateActivityScreenContent(
             keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }),
             isError = capacityError != null,
             supportingText = { capacityError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
-          )
-        }
-
-        // Location Section
-        Text("स्थान चुनें (Location)", style = MaterialTheme.typography.titleMedium)
-        // button for choosing location
-        OutlinedButton(
-          onClick = {
-            showMapDialog = true
-          },
-          contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
-        ) {
-          Icon(
-            Icons.Filled.Map,
-            contentDescription = "मानचित्र से चुनें",
-            modifier = Modifier.size(ButtonDefaults.IconSize)
-          )
-          Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-          Text("मानचित्र से चुनें")
-        }
-        Text(
-          "या स्वयं से लिखें:",
-          style = MaterialTheme.typography.bodySmall,
-          modifier = Modifier.padding(top = 8.dp)
-        )
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-          OutlinedTextField(
-            value = eventLatitude,
-            onValueChange = {
-              if (it.isEmpty() || it.matches(Regex("^-?[0-9]*\\.?[0-9]*$"))) {
-                eventLatitude = it
-                latitudeError = null
-              }
-            },
-            label = { Text("अक्षांश (Latitude)") },
-            modifier = Modifier
-              .width(170.dp)
-              .focusRequester(latitudeFocusRequester)
-              .onGloballyPositioned { coordinates ->
-                lastFocusedFieldOffset = coordinates.positionInRoot().y
-              }
-              .onFocusChanged { focusState ->
-                if (isSmallScreen && focusState.isFocused) {
-                  scrollToFocusedField(lastFocusedFieldOffset)
-                }
-              },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }),
-            isError = latitudeError != null,
-            supportingText = { latitudeError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
-          )
-
-          OutlinedTextField(
-            value = eventLongitude,
-            onValueChange = {
-              if (it.isEmpty() || it.matches(Regex("^-?[0-9]*\\.?[0-9]*$"))) {
-                eventLongitude = it
-                longitudeError = null
-              }
-            },
-            label = { Text("देशांतर (Longitude)") },
-            modifier = Modifier
-              .width(170.dp)
-              .focusRequester(longitudeFocusRequester)
-              .onGloballyPositioned { coordinates ->
-                lastFocusedFieldOffset = coordinates.positionInRoot().y
-              }
-              .onFocusChanged { focusState ->
-                if (isSmallScreen && focusState.isFocused) {
-                  scrollToFocusedField(lastFocusedFieldOffset)
-                }
-              },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-            isError = longitudeError != null,
-            supportingText = { longitudeError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
           )
         }
       }
