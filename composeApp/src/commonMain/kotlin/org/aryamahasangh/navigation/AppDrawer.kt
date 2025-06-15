@@ -21,9 +21,9 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import aryamahasangh.composeapp.generated.resources.*
-import dev.burnoo.compose.remembersetting.rememberBooleanSetting
-import dev.burnoo.compose.remembersetting.rememberStringSetting
 import kotlinx.coroutines.launch
+import org.aryamahasangh.LocalIsAuthenticated
+import org.aryamahasangh.auth.SessionManager
 import org.aryamahasangh.components.LoginDialog
 import org.aryamahasangh.util.PlatformBackHandler
 import org.jetbrains.compose.resources.DrawableResource
@@ -37,15 +37,6 @@ val LocalBackHandler = compositionLocalOf<(() -> Unit)?> { null }
 
 // CompositionLocal for setting custom back handler
 val LocalSetBackHandler = compositionLocalOf<(((() -> Unit)?) -> Unit)?> { null }
-
-// CompositionLocal for Authentication State:
-val LocalAuthState = compositionLocalOf { mutableStateOf(false) }
-
-@Composable
-fun rememberAuthState(): MutableState<Boolean> {
-  val currentLocalAuthState = LocalAuthState.current
-  return remember { currentLocalAuthState }
-}
 
 @Composable
 fun AppDrawer() {
@@ -103,7 +94,7 @@ fun DrawerContent(
   val currentDestination by remember {
     derivedStateOf { backStackEntry?.destination?.route }
   }
-  var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
+  val isLoggedIn = LocalIsAuthenticated.current
 
   Column(
     modifier = Modifier.width(250.dp).padding(8.dp).fillMaxHeight()
@@ -349,9 +340,7 @@ fun MainContent(
 ) {
   val scope = rememberCoroutineScope()
 
-  val authState = rememberAuthState() // Get auth state from CompositionLocal
-  var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
-  var userEmail by rememberStringSetting(SettingKeys.userEmail, "")
+  val isLoggedIn = LocalIsAuthenticated.current
   var showLoginDialog by remember { mutableStateOf(false) }
   var showLogoutDialog by remember { mutableStateOf(false) }
   var showOverflowMenu by remember { mutableStateOf(false) }
@@ -508,7 +497,6 @@ fun MainContent(
       ) {
         CompositionLocalProvider(
           LocalSnackbarHostState provides snackbarHostState,
-          LocalAuthState provides authState,
           LocalBackHandler provides customBackHandler, // Provide the mutable state for the back handler
           LocalSetBackHandler provides { setCustomBackHandler(it) } // Provide the setter for the back handler
         ) {
@@ -531,8 +519,7 @@ fun MainContent(
     LoginDialog(
       onDismiss = { showLoginDialog = false },
       onLoginSuccess = {
-        isLoggedIn = true
-        authState.value = true // Update auth state
+        // Authentication state is automatically updated by SessionManager
         showLoginDialog = false
         scope.launch {
           snackbarHostState.showSnackbar(message = "Login successful")
@@ -543,32 +530,104 @@ fun MainContent(
 
   // Logout Dialog
   if (showLogoutDialog) {
+    var logoutAttempts by remember { mutableStateOf(0) }
+    var showRetryOption by remember { mutableStateOf(false) }
+
     AlertDialog(
-      onDismissRequest = { showLogoutDialog = false },
+      onDismissRequest = {
+        showLogoutDialog = false
+        logoutAttempts = 0
+        showRetryOption = false
+      },
       title = { Text("Logout") },
-      text = { Text("Are you sure you want to logout?") },
-      confirmButton = {
-        TextButton(onClick = {
-          isLoggedIn = false
-          authState.value = false
-          showLogoutDialog = false
-          scope.launch {
-            snackbarHostState.showSnackbar("Logout successful")
+      text = {
+        Column {
+          Text("Are you sure you want to logout?")
+          if (showRetryOption) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+              "कनेक्शन की समस्या के कारण लॉगआउट पूरा नहीं हो सका। पुनः प्रयत्न करें?",
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.error
+            )
           }
-        }) {
-          Text("Yes")
+        }
+      },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            scope.launch {
+              logoutAttempts++
+
+              // Use SessionManager to sign out
+              val result = SessionManager.signOut()
+
+              result.fold(
+                onSuccess = {
+                  showLogoutDialog = false
+                  logoutAttempts = 0
+                  showRetryOption = false
+                  snackbarHostState.showSnackbar("सफलतापूर्वक लॉगआउट हो गया")
+                },
+                onFailure = { error ->
+                  println("Logout attempt $logoutAttempts failed: ${error.message}")
+
+                  if (logoutAttempts >= 2) {
+                    // After 2 attempts, do local logout and close dialog
+                    showLogoutDialog = false
+                    logoutAttempts = 0
+                    showRetryOption = false
+                    // Local session was already cleared in signOut fallback
+                    snackbarHostState.showSnackbar(
+                      "लॉगआउट हो गया (ऑफलाइन मोड)",
+                      duration = SnackbarDuration.Long
+                    )
+                  } else {
+                    // Show retry option after first failure
+                    showRetryOption = true
+                  }
+                }
+              )
+            }
+          }
+        ) {
+          Text(
+            if (showRetryOption) "पुनः प्रयत्न करें" else "Yes"
+          )
         }
       },
       dismissButton = {
-        TextButton(onClick = { showLogoutDialog = false }) {
-          Text("No")
+        Row {
+          if (showRetryOption) {
+            TextButton(
+              onClick = {
+                // User chooses to logout locally only
+                showLogoutDialog = false
+                logoutAttempts = 0
+                showRetryOption = false
+                scope.launch {
+                  snackbarHostState.showSnackbar(
+                    "लॉगआउट हो गया (ऑफलाइन मोड)",
+                    duration = SnackbarDuration.Long
+                  )
+                }
+              }
+            ) {
+              Text("ऑफलाइन लॉगआउट")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+          }
+          TextButton(
+            onClick = {
+              showLogoutDialog = false
+              logoutAttempts = 0
+              showRetryOption = false
+            }
+          ) {
+            Text(if (showRetryOption) "Cancel" else "No")
+          }
         }
       }
     )
   }
-}
-
-object SettingKeys {
-  const val isLoggedIn = "isLoggedIn"
-  const val userEmail = "userEmail"
 }

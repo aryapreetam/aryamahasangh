@@ -11,16 +11,16 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import dev.burnoo.compose.remembersetting.rememberBooleanSetting
+import dev.burnoo.compose.remembersetting.rememberStringSetting
 import org.aryamahasangh.components.ActivityListItem
 import org.aryamahasangh.components.LoadingErrorState
 import org.aryamahasangh.features.activities.OrganisationalActivityShort
 import org.aryamahasangh.navigation.LocalSnackbarHostState
-import org.aryamahasangh.navigation.SettingKeys
 import org.aryamahasangh.viewmodel.JoinUsUiState
 import org.aryamahasangh.viewmodel.JoinUsViewModel
 import org.aryamahasangh.viewmodel.LabelState
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.aryamahasangh.LocalIsAuthenticated
 
 @ExperimentalMaterial3Api
 @Composable
@@ -181,7 +181,7 @@ fun UpcomingActivitiesForm(
 ) {
   val scope = rememberCoroutineScope()
   val snackbarHostState = LocalSnackbarHostState.current
-  var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
+  val isLoggedIn = LocalIsAuthenticated.current
   var selectedState by remember { mutableStateOf<String>("") }
   var selectedDistrict by remember { mutableStateOf<String>("") }
 

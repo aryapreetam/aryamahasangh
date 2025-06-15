@@ -27,18 +27,17 @@ import androidx.compose.ui.unit.dp
 import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.error_profile_image
 import coil3.compose.AsyncImage
-import dev.burnoo.compose.remembersetting.rememberBooleanSetting
 import kotlinx.coroutines.launch
 import org.aryamahasangh.components.activityTypeData
 import org.aryamahasangh.isWeb
 import org.aryamahasangh.navigation.LocalSnackbarHostState
-import org.aryamahasangh.navigation.SettingKeys
 import org.aryamahasangh.utils.format
 import org.aryamahasangh.utils.openDirections
 import org.aryamahasangh.utils.toHumanReadable
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
+import org.aryamahasangh.LocalIsAuthenticated
 
 @Composable
 fun ActivityDetailScreen(
@@ -49,7 +48,7 @@ fun ActivityDetailScreen(
 ) {
   val snackbarHostState = LocalSnackbarHostState.current
 
-  var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
+  val isLoggedIn = LocalIsAuthenticated.current
 
   // Load activity details
   LaunchedEffect(id, isLoggedIn) {

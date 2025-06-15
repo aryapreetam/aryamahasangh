@@ -85,6 +85,7 @@ fun OrgsScreen(
       horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
       uiState.organisations.forEach { org ->
+        if(org.name == "आर्य महासंघ") return@forEach
         OrgItem(org.name, org.description) {
           onNavigateToOrgDetails(org.id)
         }
