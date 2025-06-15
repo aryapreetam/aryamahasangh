@@ -74,10 +74,24 @@ fun AdminContainerScreen(
         "?" // Show question mark if count couldn't be loaded
       }
 
+      val aryaSamajCount = 0
+      val aryaPariwarCount = 0
+      val ekalAryaCount = 0
+
       Tab(
         selected = selectedTabIndex == 0,
         onClick = { selectedTabIndex = 0 },
         text = { Text("पदाधिकारी ($count)") }
+      )
+      Tab(
+        selected = selectedTabIndex == 0,
+        onClick = { selectedTabIndex = 0 },
+        text = { Text("आर्य परिवार ($aryaPariwarCount)") }
+      )
+      Tab(
+        selected = selectedTabIndex == 0,
+        onClick = { selectedTabIndex = 0 },
+        text = { Text("एकल आर्य ($ekalAryaCount)") }
       )
     }
 

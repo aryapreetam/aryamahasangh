@@ -11,6 +11,7 @@ import com.apollographql.apollo.interceptor.ApolloInterceptorChain
 import com.apollographql.apollo.network.http.HttpInterceptor
 import com.apollographql.apollo.network.http.HttpInterceptorChain
 import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.FlowType
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.graphql.GraphQL
 import io.github.jan.supabase.postgrest.Postgrest
@@ -41,7 +42,20 @@ val supabaseClient =
     }
     install(Postgrest)
     install(Realtime)
-    install(Auth)
+    install(Auth) {
+      // Use PKCE flow for better security (especially important for mobile/web)
+      flowType = FlowType.PKCE
+
+      // Enable automatic session refresh
+      autoLoadFromStorage = true
+      alwaysAutoRefresh = true
+
+      // Platform-specific secure storage is automatically handled by the SDK:
+      // - Android: Uses EncryptedSharedPreferences
+      // - iOS: Uses Keychain
+      // - Web: Uses memory storage (no localStorage for security)
+      // - Desktop: Uses platform-specific secure storage
+    }
     install(GraphQL) {
       apolloConfiguration {
         addHttpInterceptor(httpInterceptor = ApolloHttpInterceptor())
@@ -61,6 +75,7 @@ val supabaseClient =
         }
       )
   }
+
 
 class ApolloHttpInterceptor : HttpInterceptor {
   override suspend fun intercept(

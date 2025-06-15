@@ -1,13 +1,16 @@
 package org.aryamahasangh.navigation
 
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navigation
 import androidx.navigation.toRoute
-import dev.burnoo.compose.remembersetting.rememberBooleanSetting
+import org.aryamahasangh.LocalIsAuthenticated
 import org.aryamahasangh.features.activities.*
 import org.aryamahasangh.features.admin.AdminContainerScreen
 import org.aryamahasangh.features.admin.AdminViewModel
@@ -26,25 +29,70 @@ import org.koin.compose.koinInject
 @ExperimentalMaterial3Api
 @Composable
 fun RootNavGraph(navController: NavHostController) {
+  val isLoggedIn = LocalIsAuthenticated.current
   NavHost(navController = navController, startDestination = Screen.AboutSection) {
     navigation<Screen.AboutSection>(startDestination = Screen.AboutUs) {
       composable<Screen.AboutUs> {
         val viewModel = koinInject<AboutUsViewModel>()
         AboutUs(
-          showDetailedAboutUs = {
-            navController.navigate(Screen.AboutUsDetails)
+          showDetailedAboutUs = { organisationId ->
+            navController.navigate(Screen.AboutUsDetails(organisationId))
           },
           viewModel = viewModel
         )
       }
       composable<Screen.AboutUsDetails> {
-        val viewModel = koinInject<AboutUsViewModel>()
-        DetailedAboutUs(viewModel = viewModel)
+        val orgViewModel = koinInject<OrganisationsViewModel>()
+        val adminViewModel = koinInject<AdminViewModel>()
+
+        val organisationId = it.toRoute<Screen.AboutUsDetails>().organisationId
+
+        // Load members when screen is accessed
+        LaunchedEffect(Unit) {
+          adminViewModel.loadMembers()
+        }
+
+        // Collect admin state for search results
+        val adminUiState by adminViewModel.membersUiState.collectAsState()
+
+        OrgDetailScreen(
+          id = organisationId,
+          viewModel = orgViewModel,
+          searchMembers = { query ->
+            // Use the search results from AdminViewModel
+            // This will contain fresh results from server
+            if (query.isNotBlank()) {
+              adminUiState.searchResults.map { memberShort ->
+                org.aryamahasangh.features.activities.Member(
+                  id = memberShort.id,
+                  name = memberShort.name,
+                  profileImage = memberShort.profileImage,
+                  phoneNumber = "", // Not available in MemberShort
+                  email = "" // Not available in MemberShort
+                )
+              }
+            } else {
+              emptyList()
+            }
+          },
+          allMembers = adminUiState.members.map { memberShort ->
+            org.aryamahasangh.features.activities.Member(
+              id = memberShort.id,
+              name = memberShort.name,
+              profileImage = memberShort.profileImage,
+              phoneNumber = "", // Not available in MemberShort
+              email = "" // Not available in MemberShort
+            )
+          },
+          onTriggerSearch = { query ->
+            // Trigger the server search in AdminViewModel
+            adminViewModel.searchMembers(query)
+          }
+        )
       }
     }
     navigation<Screen.ActivitiesSection>(startDestination = Screen.Activities) {
       composable<Screen.Activities> {
-        var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
         val viewModel = koinInject<ActivitiesViewModel>()
         val onNavigateToDetails = { id: String ->
           println("navigating to details: $id")
@@ -175,7 +223,6 @@ fun RootNavGraph(navController: NavHostController) {
     }
     navigation<Screen.BookSection>(startDestination = Screen.BookOrderForm) {
       composable<Screen.BookOrderForm> {
-        var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
         val viewModel = koinInject<BookOrderViewModel>()
         if (isLoggedIn) {
           BookOrdersContainer(
@@ -240,7 +287,6 @@ fun RootNavGraph(navController: NavHostController) {
         )
       }
       composable<Screen.AdmissionForm> {
-        var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
         val viewModel = koinInject<AdmissionsViewModel>()
         if (isLoggedIn) {
           AdmissionScreen(viewModel)
@@ -251,7 +297,6 @@ fun RootNavGraph(navController: NavHostController) {
     }
     navigation<Screen.AdminSection>(startDestination = Screen.AdminContainer) {
       composable<Screen.AdminContainer> {
-        var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
         val viewModel = koinInject<AdminViewModel>()
 
         // Navigate to AboutSection if user logs out
@@ -275,7 +320,6 @@ fun RootNavGraph(navController: NavHostController) {
         )
       }
       composable<Screen.MemberDetail> {
-        var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
         val viewModel = koinInject<AdminViewModel>()
         val memberId = it.toRoute<Screen.MemberDetail>().memberId
 

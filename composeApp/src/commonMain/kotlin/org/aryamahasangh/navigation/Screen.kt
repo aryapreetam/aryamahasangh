@@ -86,7 +86,7 @@ sealed class Screen {
   data object AboutUs : Screen()
 
   @Serializable
-  data object AboutUsDetails : Screen()
+  data class AboutUsDetails(val organisationId: String) : Screen()
 
   @Serializable
   data object AdmissionForm : Screen()

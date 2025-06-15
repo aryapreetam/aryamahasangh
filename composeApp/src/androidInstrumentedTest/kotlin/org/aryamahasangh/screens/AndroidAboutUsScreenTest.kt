@@ -103,21 +103,6 @@ class AndroidAboutUsScreenTest {
     composeTestRule.onNodeWithText("सनातन धर्म का साक्षात् प्रतिनिधि", substring = true).performClick()
     assert(navigationTriggered) { "Navigation callback was not triggered" }
   }
-
-  @Test
-  fun detailedAboutUsDisplaysContent() {
-    val fakeRepository = AndroidFakeAboutUsRepository()
-    val viewModel = AboutUsViewModel(fakeRepository)
-
-    composeTestRule.setContent {
-      TestWrapper {
-        DetailedAboutUs(viewModel = viewModel)
-      }
-    }
-
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("आचार्य हनुमत प्रसाद").assertIsDisplayed()
-  }
 }
 
 /**

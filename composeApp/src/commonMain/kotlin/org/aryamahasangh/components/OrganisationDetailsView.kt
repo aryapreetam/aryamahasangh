@@ -34,14 +34,16 @@ import io.github.vinceglb.filekit.core.PickerType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import org.aryamahasangh.auth.SessionManager
+import org.aryamahasangh.components.LoginDialog
 import org.aryamahasangh.features.activities.Member
 import org.aryamahasangh.features.organisations.*
 import org.aryamahasangh.navigation.LocalSnackbarHostState
-import org.aryamahasangh.navigation.SettingKeys
 import org.aryamahasangh.network.bucket
 import org.aryamahasangh.screens.EditImageButton
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import org.aryamahasangh.LocalIsAuthenticated
 
 fun drawableFromImageName(imageName: String) =
   when (imageName) {
@@ -79,7 +81,7 @@ fun OrganisationDetail(
   onTriggerSearch: (String) -> Unit = {}
 ) {
   val (id, name, description, logo, keyPeople) = organisation
-  var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
+  val isLoggedIn = LocalIsAuthenticated.current
   var showDeleteDialog by remember { mutableStateOf<OrganisationalMember?>(null) }
   var showUpdatePostDialog by remember { mutableStateOf<OrganisationalMember?>(null) }
   var updatedPost by remember { mutableStateOf("") }

@@ -24,16 +24,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.event_upcoming
-import dev.burnoo.compose.remembersetting.rememberBooleanSetting
+import org.aryamahasangh.LocalIsAuthenticated
 import org.aryamahasangh.features.activities.ActivityStatus
 import org.aryamahasangh.features.activities.ActivityType
 import org.aryamahasangh.features.activities.OrganisationalActivityShort
 import org.aryamahasangh.features.activities.getStatus
 import org.aryamahasangh.features.arya_nirman.convertDates
-import org.aryamahasangh.navigation.SettingKeys
 import org.aryamahasangh.utils.WithTooltip
 import org.aryamahasangh.utils.formatShort
 import org.jetbrains.compose.resources.painterResource
+
 
 val activityTypeData = ActivityType.entries.associateWith { it.toDisplayName() }
 
@@ -47,7 +47,7 @@ fun ActivityListItem(
 ) {
   val startDate = formatShort(activity.startDatetime)
   val endDate = formatShort(activity.endDatetime)
-  var isLoggedIn by rememberBooleanSetting(SettingKeys.isLoggedIn, false)
+  val isLoggedIn = LocalIsAuthenticated.current
   var showConfirmDialog by remember { mutableStateOf(false) }
   var showMenu by remember { mutableStateOf(false) }
 

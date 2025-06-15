@@ -2,7 +2,11 @@ package org.aryamahasangh.screens
 
 import androidx.compose.ui.test.*
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import org.aryamahasangh.features.activities.Member
 import org.aryamahasangh.features.organisations.OrganisationDetail
+import org.aryamahasangh.features.organisations.OrganisationalMember
 import org.aryamahasangh.repository.AboutUsRepository
 import org.aryamahasangh.test.UiTest
 import org.aryamahasangh.util.Result
@@ -46,16 +50,11 @@ class AboutUsScreenTest {
 
   @Test
   fun clickingTextNavigatesToDetailedAboutUs() = runUiTest {
-    // Create a fake repository that returns a predefined organization
     val fakeRepository = FakeAboutUsRepository()
-
-    // Create the view model with the fake repository
     val viewModel = AboutUsViewModel(fakeRepository)
 
-    // Track if navigation was triggered
     var navigationTriggered = false
 
-    // Set up the content with the AboutUs composable wrapped in TestWrapper
     setContent {
       TestWrapper {
         AboutUs(
@@ -65,27 +64,14 @@ class AboutUsScreenTest {
       }
     }
 
-    // Wait for the content to load
+    // Wait for content to load
     waitForIdle()
 
-    // Click on the text
-    onNodeWithText("सनातन धर्म का साक्षात् प्रतिनिधि", substring = true).performClick()
+    // Click on the description text (using the content description of the parent column)
+    onNode(hasClickAction() and hasAnyDescendant(hasText("सनातन धर्म का साक्षात् प्रतिनिधि", substring = true)))
+      .performClick()
 
-    // Verify navigation was triggered
-    kotlin.test.assertTrue(navigationTriggered, "Navigation to DetailedAboutUs was not triggered")
-
-    // Now set up the DetailedAboutUs screen to verify it displays correctly
-    setContent {
-      TestWrapper {
-        DetailedAboutUs(viewModel = viewModel)
-      }
-    }
-
-    // Wait for the content to load
-    waitForIdle()
-
-    // Verify that "आचार्य हनुमत प्रसाद" is displayed
-    onNodeWithText("आचार्य हनुमत प्रसाद").assertIsDisplayed()
+    kotlin.test.assertTrue(navigationTriggered, "Navigation to organisation details was not triggered")
   }
 }
 

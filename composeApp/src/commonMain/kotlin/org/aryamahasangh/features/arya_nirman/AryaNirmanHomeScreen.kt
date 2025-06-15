@@ -7,6 +7,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -23,6 +24,14 @@ fun AryaNirmanHomeScreen(
   LaunchedEffect(Unit) {
     viewModel.loadUpComingSessions()
   }
+
+  // Stop real-time subscriptions when screen is disposed
+  DisposableEffect(Unit) {
+    onDispose {
+      viewModel.stopListeningToRegistrationCounts()
+    }
+  }
+
   val uiState by viewModel.uiState.collectAsState()
   val registrationCounts by viewModel.registrationCounts.collectAsState()
 
