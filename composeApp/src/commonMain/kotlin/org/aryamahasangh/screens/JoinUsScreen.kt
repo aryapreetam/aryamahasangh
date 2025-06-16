@@ -11,7 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import dev.burnoo.compose.remembersetting.rememberStringSetting
+import org.aryamahasangh.LocalIsAuthenticated
 import org.aryamahasangh.components.ActivityListItem
 import org.aryamahasangh.components.LoadingErrorState
 import org.aryamahasangh.features.activities.OrganisationalActivityShort
@@ -20,7 +20,6 @@ import org.aryamahasangh.viewmodel.JoinUsUiState
 import org.aryamahasangh.viewmodel.JoinUsViewModel
 import org.aryamahasangh.viewmodel.LabelState
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import org.aryamahasangh.LocalIsAuthenticated
 
 @ExperimentalMaterial3Api
 @Composable
@@ -70,7 +69,8 @@ fun EditImageButton(
     Icon(
       Icons.Default.Edit,
       contentDescription = "edit",
-      Modifier.size(24.dp)
+      modifier  = Modifier.size(24.dp),
+      tint = MaterialTheme.colorScheme.primary
     )
   }
 }
@@ -453,3 +453,37 @@ val indianStatesToDistricts =
     "लक्षद्वीप" to listOf("लक्षद्वीप"),
     "पुदुचेरी" to listOf("करैकल", "माही", "पुदुचेरी", "यानम")
   )
+
+val vidhansabhaByState = mapOf(
+  "हरियाणा" to listOf(
+    "कलका", "पंचकुला", "नरैना", "अम्बाला छावनी", "अम्बाला शहर", "मुलाना",
+    "साधौरा", "जगाधरी", "यमुनानगर", "रादौर", "लाडवा", "शाहबाद", "थानेसर",
+    "पिहोवा", "गुहला", "कलायत", "कैथल", "पुंडरी", "नीलोखेड़ी", "इंद्री",
+    "कर्णाल", "घरौंड़ा", "असंध", "पानीपत ग्रामीण", "पानीपत शहर", "इसराना",
+    "समालखा", "गन्नौर", "राई", "खरखौदा", "सोनीपत", "गोहाना", "बरोदा",
+    "जुलाना", "सफीदों", "जींद", "उचाना", "नरवाना", "तूगाना", "कैथल शहर",
+    "भिवानी", "तोशाम", "लोहारू", "बाढड़ा", "दादरी", "बाधरा", "महेंद्रगढ़",
+    "नांगल चौधरी", "रेवाड़ी", "कोसली", "बहादुरगढ़", "बादली", "झज्जर",
+    "बेरि", "रोहतक", "कलानौर", "महाम", "गढ़ी सांपला किलोई", "करनाल",
+    "नारनौल", "अटेली", "उचाना", "बरवाला", "नारवाना", "हांसी", "नलवा",
+    "बरवाला", "हिसार", "नारनौंद", "उकलाना", "सिरसा", "रानियां", "ऐलनाबाद",
+    "डबवाली", "कालांवाली", "फतेहाबाद", "रतिया", "टोहाना", "अग्रोहा",
+    "फरीदाबाद एनआईटी", "फरीदाबाद", "बल्लभगढ़", "तिगांव", "बढखल",
+    "पलवल", "होडल", "हथीन", "फतेहपुर", "नूंह", "पुन्हाना", "फिरोजपुर झिरका"
+  ),
+  "दिल्ली" to listOf(
+    "नरेला", "बादली", "रिठाला", "बवाना", "मंगोलपुरी", "सुल्तानपुर माजरा",
+    "नांगलोई जाट", "किराड़ी", "मुंडका", "राजौरी गार्डन", "मोती नगर",
+    "मादीपुर", "जनकपुरी", "विकासपुरी", "उत्तम नगर", "द्वारका", "मटियाला",
+    "नजफगढ़", "बिजवासन", "पालम", "दिल्ली कैंट", "राजेन्द्र नगर", "नई दिल्ली",
+    "कस्तूरबा नगर", "मालवीय नगर", "आरके पुरम", "महरौली", "छतरपुर",
+    "देवली", "अम्बेडकर नगर", "संगम विहार", "तुग़लक़ाबाद", "बदरपुर",
+    "कालकाजी", "त्रिलोकपुरी", "कोंडली", "पटपड़गंज", "लक्ष्मी नगर",
+    "विश्वास नगर", "कृष्णा नगर", "गांधी नगर", "शाहदरा", "सीलमपुर",
+    "सेलमपुर", "गोकलपुर", "मुस्तफाबाद", "करावल नगर", "बाबरपुर",
+    "घोंडा", "गोकुलपुरी", "मटियामहल", "बल्लीमारान", "चांदनी चौक",
+    "सदर बाजार", "मालका गंज", "शालीमार बाग़", "त्रिनगर", "वज़ीरपुर",
+    "मॉडल टाउन", "संगम विहार", "आदर्श नगर", "बुराड़ी", "तिमारपुर",
+    "वज़ीराबाद", "मजनू का टीला", "सीमा पुरी", "नंद नगरी", "यमुना विहार"
+  )
+)

@@ -43,7 +43,7 @@ import org.aryamahasangh.LocalIsAuthenticated
 fun ActivityDetailScreen(
   id: String,
   onNavigateToEdit: (String) -> Unit = {},
-  onNavigateToRegistration: (String) -> Unit = {},
+  onNavigateToRegistration: (String, Int) -> Unit = { _, _ -> },
   viewModel: ActivitiesViewModel = koinInject()
 ) {
   val snackbarHostState = LocalSnackbarHostState.current
@@ -185,7 +185,7 @@ fun ActivityDisplay(
   activity: OrganisationalActivity,
   registeredUsers: List<UserProfile> = emptyList(),
   isLoggedIn: Boolean,
-  onNavigateToRegistration: (String) -> Unit = {}
+  onNavigateToRegistration: (String, Int) -> Unit = { _, _ -> }
 ) {
   println(activity)
 
@@ -381,7 +381,7 @@ fun ActivityDisplay(
       println("Activity ${activity.id}: registrations=$registrationCount, capacity=${activity.capacity}, isFull=$isFull")
 
       Button(
-        onClick = { onNavigateToRegistration(activity.id) },
+        onClick = { onNavigateToRegistration(activity.id, activity.capacity) },
         enabled = !isFull
       ) {
         Text(

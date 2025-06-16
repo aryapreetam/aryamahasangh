@@ -19,7 +19,7 @@ import org.aryamahasangh.components.EventListItem
 @Composable
 fun AryaNirmanHomeScreen(
   viewModel: AryaNirmanViewModel,
-  onNavigateToRegistrationForm: (id: String) -> Unit
+  onNavigateToRegistrationForm: (id: String, capacity: Int) -> Unit
 ) {
   LaunchedEffect(Unit) {
     viewModel.loadUpComingSessions()
@@ -102,7 +102,7 @@ fun AryaNirmanHomeScreen(
           EventListItem(
             event = updatedActivity,
             onRegisterClick = {
-              onNavigateToRegistrationForm(activity.id)
+              onNavigateToRegistrationForm(activity.id, activity.capacity)
             }
           )
         }

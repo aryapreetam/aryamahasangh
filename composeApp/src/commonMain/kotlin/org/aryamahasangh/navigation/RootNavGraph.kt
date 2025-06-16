@@ -142,9 +142,9 @@ fun RootNavGraph(navController: NavHostController) {
             // Navigate to edit screen
             navController.navigate(Screen.EditActivity(activityId))
           },
-          onNavigateToRegistration = { activityId ->
+          onNavigateToRegistration = { activityId, capacity ->
             // Navigate to registration form
-            navController.navigate(Screen.AryaNirmanRegistrationForm(activityId))
+            navController.navigate(Screen.AryaNirmanRegistrationForm(activityId, capacity))
           },
           viewModel = viewModel
         )
@@ -246,15 +246,20 @@ fun RootNavGraph(navController: NavHostController) {
         val viewModel = koinInject<AryaNirmanViewModel>()
         AryaNirmanHomeScreen(
           viewModel,
-          onNavigateToRegistrationForm = {
-            navController.navigate(Screen.AryaNirmanRegistrationForm(activityId = it))
+          onNavigateToRegistrationForm = { id, capacity ->
+            navController.navigate(Screen.AryaNirmanRegistrationForm(activityId = id, capacity = capacity))
           }
         )
       }
       composable<Screen.AryaNirmanRegistrationForm> {
         val viewModel = koinInject<SatraRegistrationViewModel>()
-        val id = it.toRoute<Screen.AryaNirmanRegistrationForm>().activityId
-        SatraRegistrationFormScreen(viewModel = viewModel, activityId = id)
+        val args = it.toRoute<Screen.AryaNirmanRegistrationForm>()
+        SatraRegistrationFormScreen(
+          viewModel = viewModel,
+          activityId = args.activityId,
+          activityCapacity = args.capacity,
+          onNavigateBack = { navController.popBackStack() }
+        )
       }
     }
     navigation<Screen.AryaPariwarSection>(startDestination = Screen.AryaPariwarHome) {
