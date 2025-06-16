@@ -27,15 +27,13 @@ import aryamahasangh.composeapp.generated.resources.baseline_groups
 import aryamahasangh.composeapp.generated.resources.error_profile_image
 import aryamahasangh.composeapp.generated.resources.mahasangh_logo_without_background
 import coil3.compose.AsyncImage
-import dev.burnoo.compose.remembersetting.rememberBooleanSetting
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.core.PickerMode
 import io.github.vinceglb.filekit.core.PickerType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
-import org.aryamahasangh.auth.SessionManager
-import org.aryamahasangh.components.LoginDialog
+import org.aryamahasangh.LocalIsAuthenticated
 import org.aryamahasangh.features.activities.Member
 import org.aryamahasangh.features.organisations.*
 import org.aryamahasangh.navigation.LocalSnackbarHostState
@@ -43,7 +41,6 @@ import org.aryamahasangh.network.bucket
 import org.aryamahasangh.screens.EditImageButton
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
-import org.aryamahasangh.LocalIsAuthenticated
 
 fun drawableFromImageName(imageName: String) =
   when (imageName) {
@@ -242,7 +239,10 @@ fun OrganisationDetail(
             state = rememberTooltipState()
           ) {
             IconButton(onClick = { showAddMemberDialog = true }) {
-              Icon(Icons.Default.PersonAdd, contentDescription = null)
+              Icon(
+                Icons.Default.PersonAdd,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary)
             }
           }
         }
@@ -490,7 +490,8 @@ fun KeyPersonItem(
             IconButton(onClick = { showOptionsMenu = true }) {
               Icon(
                 imageVector = Icons.Default.MoreVert,
-                contentDescription = "Options"
+                contentDescription = "Options",
+                tint = MaterialTheme.colorScheme.primary
               )
             }
 
@@ -504,7 +505,13 @@ fun KeyPersonItem(
                   showOptionsMenu = false
                   onUpdatePost()
                 },
-                leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
+                leadingIcon = {
+                  Icon(
+                    Icons.Default.Edit,
+                    contentDescription = null,
+                      tint = MaterialTheme.colorScheme.primary
+                  )
+                }
               )
               DropdownMenuItem(
                 text = { Text("पदाधिकारी को हटाएं") },
@@ -512,7 +519,13 @@ fun KeyPersonItem(
                   showOptionsMenu = false
                   onDelete()
                 },
-                leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) }
+                leadingIcon = {
+                  Icon(
+                    Icons.Default.Delete,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                  )
+                }
               )
             }
           }
@@ -620,7 +633,11 @@ fun AddMemberDialog(
           value = query,
           onValueChange = { query = it },
           placeholder = { Text("आर्य का नाम/दूरभाष") },
-          leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+          leadingIcon = {
+            Icon(Icons.Default.Search,
+              contentDescription = null,
+              tint = MaterialTheme.colorScheme.primary
+            ) },
           trailingIcon = {
             if (isSearching) {
               CircularProgressIndicator(
@@ -823,7 +840,11 @@ fun NewMemberPostInput(
           onClick = onCancel,
           modifier = Modifier.padding(start = 8.dp)
         ) {
-          Icon(Icons.Default.Close, contentDescription = "Cancel")
+          Icon(
+            Icons.Default.Close,
+            contentDescription = "Cancel",
+            tint = MaterialTheme.colorScheme.primary
+          )
         }
       }
 
@@ -845,7 +866,8 @@ fun NewMemberPostInput(
             )
             Spacer(modifier = Modifier.width(8.dp))
           }
-          Icon(Icons.Default.Check, contentDescription = null)
+          Icon(
+            Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
           Spacer(modifier = Modifier.width(4.dp))
           Text("जोड़ें")
         }

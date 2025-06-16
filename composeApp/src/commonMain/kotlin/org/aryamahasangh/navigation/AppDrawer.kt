@@ -104,7 +104,21 @@ fun DrawerContent(
       modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())
     ) {
       Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable {
+          // Navigate to AboutUs page
+          navController.navigate(Screen.AboutSection) {
+            // Clear back stack to root when navigating to AboutSection
+            popUpTo(Screen.AboutSection) {
+              inclusive = true
+              saveState = false
+            }
+            launchSingleTop = true
+            restoreState = false
+          }
+          scope.launch {
+            drawerState.close()
+          }
+        },
         horizontalArrangement = Arrangement.spacedBy(8.dp)
       ) {
         Image(
@@ -120,7 +134,7 @@ fun DrawerContent(
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
           )
-          Text("कृण्वन्तो विश्वमार्यम", style = MaterialTheme.typography.bodyMedium)
+          Text("कृण्वन्तो विश्वमार्यम्", style = MaterialTheme.typography.bodyMedium)
         }
       }
       Spacer(modifier = Modifier.height(16.dp))

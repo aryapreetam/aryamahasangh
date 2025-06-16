@@ -4,6 +4,8 @@ import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
 import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Count
+import io.github.jan.supabase.postgrest.query.filter.FilterOperator
 import io.github.jan.supabase.realtime.selectAsFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -27,6 +29,7 @@ interface AryaNirmanRepository {
   ): Flow<Result<Boolean>>
 
   fun getRegistrationCounts(): Flow<Map<String, Int>>
+  suspend fun getRegistrationCountByActivityId(activityId: String): Long?
 }
 
 class AryaNirmanRepositoryImpl(private val apolloClient: ApolloClient) : AryaNirmanRepository {
@@ -103,5 +106,20 @@ class AryaNirmanRepositoryImpl(private val apolloClient: ApolloClient) : AryaNir
       ).map { registrations ->
         registrations.groupingBy { it.activity_id }.eachCount()
       }
+  }
+
+  override suspend fun getRegistrationCountByActivityId(activityId: String): Long? {
+    return supabaseClient
+      .from("satr_registration")
+      .select {
+        count(Count.EXACT)
+        filter {
+          filter(
+            column ="activity_id",
+            operator = FilterOperator.EQ,
+            value = activityId
+            )
+        }
+      }.countOrNull()
   }
 }

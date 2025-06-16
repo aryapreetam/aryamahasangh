@@ -21,6 +21,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.aryamahasangh.features.activities.GenderAllowed
 
@@ -61,8 +62,10 @@ val inspirationOptions = InspirationType.values().toList()
 fun SatraRegistrationFormScreen(
   onRegistrationSuccess: () -> Unit = {}, // Callback for successful registration
   onRegistrationFailed: () -> Unit = {}, // Callback for failed registration (e.g. server error, not validation)
+  onNavigateBack: () -> Unit = {}, // Callback for navigating back
   viewModel: SatraRegistrationViewModel,
-  activityId: String
+  activityId: String,
+  activityCapacity: Int
 ) {
   val uiState by viewModel.uiState.collectAsState()
 
@@ -70,6 +73,17 @@ fun SatraRegistrationFormScreen(
   val coroutineScope = rememberCoroutineScope()
   val scrollState = rememberScrollState()
   val focusManager = LocalFocusManager.current
+
+  // Handle activity loading error
+  LaunchedEffect(uiState.error) {
+    val error = uiState.error
+    if (error != null && !uiState.isLoading) {
+      snackbarHostState.showSnackbar(
+        message = error,
+        duration = SnackbarDuration.Long
+      )
+    }
+  }
 
   // --- Form State with Validation Holders ---
   var fullName by remember { mutableStateOf("") }
@@ -411,7 +425,7 @@ fun SatraRegistrationFormScreen(
           trainedAryaPhone = if (hasTrainedAryaInFamily) trainedAryaPhone else null, // NEW
           instructionsAcknowledged = instructionsAcknowledged
         )
-      viewModel.createRegistration(activityId = activityId, data)
+      viewModel.createRegistration(activityId = activityId, data = data, activityCapacity = activityCapacity)
     } else {
       coroutineScope.launch {
         snackbarHostState.showSnackbar(
@@ -870,7 +884,7 @@ fun SatraRegistrationFormScreen(
       }
 
       // Effect to react to registration result
-      LaunchedEffect(uiState.registrationResult) {
+      LaunchedEffect(uiState.registrationResult, uiState.isCapacityFull) {
         when (uiState.registrationResult) {
           true -> { // Success
             coroutineScope.launch {
@@ -891,6 +905,11 @@ fun SatraRegistrationFormScreen(
                   message = "पंजीकरण विफल: ${uiState.error}",
                   duration = SnackbarDuration.Long
                 )
+              }
+              // If capacity is full, navigate back after showing the message
+              if (uiState.isCapacityFull) {
+                kotlinx.coroutines.delay(2000) // Wait 2 seconds for user to read the message
+                onNavigateBack()
               }
             }
             viewModel.registrationEventHandled() // Consume the event
