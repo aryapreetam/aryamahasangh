@@ -29,7 +29,7 @@
     "Display loading indicators separately for initial and paginated loads.",
     "Use lazy lists (LazyColumn, LazyVerticalGrid) and detect scroll to end via derived state.",
     "Never paginate inside UI layer directly — delegate scroll end detection to a ViewModel call.",
-    "All user facing communication display like alerts, snackbar, messages should happen using hindi language and with devnagari script",
+    "All user facing communication display like alerts, snackbar, messages should happen using pure hindi language and with devnagari script. I want sanskritised hindi, do not include any urdu or persian words that are mixed in hindi language",
     {
       "filePathMatches": "*Test.kt",
       "rules": [
