@@ -80,6 +80,12 @@ sealed class Screen {
   data class OrgDetails(val organisationId: String) : Screen()
 
   @Serializable
+  data class NewOrganisationForm(val priority: Int) : Screen()
+
+  @Serializable
+  data object CreateOrganisation : Screen()
+
+  @Serializable
   data object AboutSection : Screen()
 
   @Serializable

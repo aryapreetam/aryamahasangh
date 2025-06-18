@@ -30,6 +30,8 @@
     "Use lazy lists (LazyColumn, LazyVerticalGrid) and detect scroll to end via derived state.",
     "Never paginate inside UI layer directly — delegate scroll end detection to a ViewModel call.",
     "All user facing communication display like alerts, snackbar, messages should happen using pure hindi language and with devnagari script. I want sanskritised hindi, do not include any urdu or persian words that are mixed in hindi language",
+    "this is a compose multiplatform project targeting Android, iOS, web and desktop so please build UI in such a way so that it is adaptive. for example, UI components do not have to fillMaxWidth(). that doesn't look good.",
+    "if you need clarity on something, please ask me",
     {
       "filePathMatches": "*Test.kt",
       "rules": [

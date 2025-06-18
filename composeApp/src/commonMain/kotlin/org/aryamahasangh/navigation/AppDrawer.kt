@@ -400,11 +400,12 @@ fun MainContent(
               "ActivityDetails",
               "EditActivity",
               "OrgDetails",
+              "NewOrganisationForm",
               "VideoDetails",
               "AdmissionForm",
               "BookOrderDetails",
               "AryaNirmanRegistrationForm",
-              "MemberDetail"
+              "MemberDetail",
             ).any {
               currentScreen?.startsWith(it) == true
             }

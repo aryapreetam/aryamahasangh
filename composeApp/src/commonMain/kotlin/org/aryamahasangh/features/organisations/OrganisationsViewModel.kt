@@ -3,6 +3,7 @@ package org.aryamahasangh.features.organisations
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import org.aryamahasangh.features.activities.Member
 import org.aryamahasangh.util.Result
 import org.aryamahasangh.viewmodel.BaseViewModel
 
@@ -47,6 +48,19 @@ data class MemberManagementState(
   val successMessage: String? = null
 )
 
+data class CreateOrganisationState(
+  val isCreating: Boolean = false,
+  val isSuccess: Boolean = false,
+  val error: String? = null,
+  val createdOrganisationId: String? = null
+)
+
+data class DeleteOrganisationState(
+  val isDeleting: Boolean = false,
+  val isSuccess: Boolean = false,
+  val error: String? = null
+)
+
 /**
  * ViewModel for the Organisations and Organisation Details screens
  */
@@ -69,6 +83,14 @@ class OrganisationsViewModel(
   // Separate state for member management
   private val _memberManagementState = MutableStateFlow(MemberManagementState())
   val memberManagementState: StateFlow<MemberManagementState> = _memberManagementState.asStateFlow()
+
+  // Separate state for creating an organisation
+  private val _createOrganisationState = MutableStateFlow(CreateOrganisationState())
+  val createOrganisationState: StateFlow<CreateOrganisationState> = _createOrganisationState.asStateFlow()
+
+  // Separate state for deleting an organisation
+  private val _deleteOrganisationState = MutableStateFlow(DeleteOrganisationState())
+  val deleteOrganisationState: StateFlow<DeleteOrganisationState> = _deleteOrganisationState.asStateFlow()
 
   init {
     loadOrganisations()
@@ -329,42 +351,87 @@ class OrganisationsViewModel(
   }
 
   /**
-   * Update a member's post in the organisation
+   * Update a member's post in an organisation
    */
-  fun updateMemberPost(organisationalMemberId: String, newPost: String, orgId: String) {
+  fun updateMemberPost(organisationalMemberId: String, post: String, organisationId: String) {
     launch {
-      _memberManagementState.value = _memberManagementState.value.copy(
-        isUpdatingPost = true,
-        updatePostError = null,
-        successMessage = null
-      )
+      _memberManagementState.value = _memberManagementState.value.copy(isUpdatingPost = true)
 
-      organisationsRepository.updateMemberPost(organisationalMemberId, newPost).collect { result ->
+      organisationsRepository.updateMemberPost(organisationalMemberId, post).collect { result ->
         when (result) {
           is Result.Loading -> {
             // Already set loading state above
           }
 
           is Result.Success -> {
-            if (result.data) {
-              _memberManagementState.value = _memberManagementState.value.copy(
-                isUpdatingPost = false,
-                successMessage = "Post updated successfully"
-              )
-              // Reload organisation details to refresh the member list
-              loadOrganisationDetail(orgId)
-            } else {
-              _memberManagementState.value = _memberManagementState.value.copy(
-                isUpdatingPost = false,
-                updatePostError = "Failed to update member post"
-              )
-            }
+            _memberManagementState.value = _memberManagementState.value.copy(
+              isUpdatingPost = false,
+              successMessage = "पद सफलतापूर्वक अद्यतन किया गया"
+            )
+            // Reload organisation details to reflect changes
+            loadOrganisationDetail(organisationId)
           }
 
           is Result.Error -> {
             _memberManagementState.value = _memberManagementState.value.copy(
               isUpdatingPost = false,
               updatePostError = result.message
+            )
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Update a member's priority in an organisation
+   */
+  fun updateMemberPriority(organisationalMemberId: String, priority: Int) {
+    launch {
+      organisationsRepository.updateMemberPriority(organisationalMemberId, priority).collect { result ->
+        when (result) {
+          is Result.Loading -> {
+            // No need to show loading state for priority updates as they should be seamless
+          }
+
+          is Result.Success -> {
+            // Reload organisation details to reflect the new order
+            _organisationDetailUiState.value.organisation?.let { org ->
+              loadOrganisationDetail(org.id)
+            }
+          }
+
+          is Result.Error -> {
+            _memberManagementState.value = _memberManagementState.value.copy(
+              updatePostError = "प्राथमिकता अद्यतन करने में त्रुटि: ${result.message}"
+            )
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Update multiple member priorities at once (for drag and drop reordering)
+   */
+  fun updateMemberPriorities(memberPriorities: List<Pair<String, Int>>) {
+    launch {
+      organisationsRepository.updateMemberPriorities(memberPriorities).collect { result ->
+        when (result) {
+          is Result.Loading -> {
+            // No need to show loading state for priority updates as they should be seamless
+          }
+
+          is Result.Success -> {
+            // Reload organisation details to reflect the new order
+            _organisationDetailUiState.value.organisation?.let { org ->
+              loadOrganisationDetail(org.id)
+            }
+          }
+
+          is Result.Error -> {
+            _memberManagementState.value = _memberManagementState.value.copy(
+              updatePostError = "प्राथमिकताएं अद्यतन करने में त्रुटि: ${result.message}"
             )
           }
         }
@@ -421,6 +488,100 @@ class OrganisationsViewModel(
             _memberManagementState.value = _memberManagementState.value.copy(
               isAddingMember = false,
               addMemberError = result.message
+            )
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Create a new organisation
+   * @param name The name of the organisation
+   * @param description The description of the organisation
+   * @param logoUrl The URL of the organisation's logo
+   * @param members List of members with their posts
+   */
+  fun createOrganisation(
+    name: String,
+    description: String,
+    logoUrl: String,
+    priority: Int,
+    members: List<Triple<Member, String, Int>>
+  ) {
+    launch {
+      _createOrganisationState.value = _createOrganisationState.value.copy(
+        isCreating = true,
+        isSuccess = false,
+        error = null,
+        createdOrganisationId = null
+      )
+
+      organisationsRepository.createOrganisation(name, description, logoUrl, priority, members).collect { result ->
+        when (result) {
+          is Result.Loading -> {
+            // Already set loading state above
+          }
+
+          is Result.Success -> {
+            _createOrganisationState.value = _createOrganisationState.value.copy(
+              isCreating = false,
+              isSuccess = true,
+              createdOrganisationId = result.data
+            )
+            // Reload organisations after successful creation
+            loadOrganisations()
+          }
+
+          is Result.Error -> {
+            _createOrganisationState.value = _createOrganisationState.value.copy(
+              isCreating = false,
+              error = result.message
+            )
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Delete an organisation
+   * @param orgId The ID of the organisation to delete
+   */
+  fun deleteOrganisation(orgId: String) {
+    launch {
+      _deleteOrganisationState.value = _deleteOrganisationState.value.copy(
+        isDeleting = true,
+        isSuccess = false,
+        error = null
+      )
+
+      organisationsRepository.deleteOrganisation(orgId).collect { result ->
+        when (result) {
+          is Result.Loading -> {
+            // Already set loading state above
+          }
+
+          is Result.Success -> {
+            if (result.data) {
+              _deleteOrganisationState.value = _deleteOrganisationState.value.copy(
+                isDeleting = false,
+                isSuccess = true
+              )
+              // Reload organisations after successful deletion
+              loadOrganisations()
+            } else {
+              _deleteOrganisationState.value = _deleteOrganisationState.value.copy(
+                isDeleting = false,
+                error = "Failed to delete organisation"
+              )
+            }
+          }
+
+          is Result.Error -> {
+            _deleteOrganisationState.value = _deleteOrganisationState.value.copy(
+              isDeleting = false,
+              error = result.message
             )
           }
         }

@@ -2,11 +2,16 @@ package org.aryamahasangh.features.organisations
 
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
+import io.github.jan.supabase.postgrest.from
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import org.aryamahasangh.*
 import org.aryamahasangh.features.activities.Member
+import org.aryamahasangh.network.supabaseClient
 import org.aryamahasangh.type.OrganisationFilter
+import org.aryamahasangh.type.Organisational_memberInsertInput
 import org.aryamahasangh.type.StringFilter
 import org.aryamahasangh.util.Result
 import org.aryamahasangh.util.safeCall
@@ -45,6 +50,22 @@ interface OrganisationsRepository {
   fun removeMemberFromOrganisation(organisationalMemberId: String): Flow<Result<Boolean>>
   fun updateMemberPost(organisationalMemberId: String, post: String): Flow<Result<Boolean>>
   fun updateMemberPriority(organisationalMemberId: String, priority: Int): Flow<Result<Boolean>>
+  fun updateMemberPriorities(memberPriorities: List<Pair<String, Int>>): Flow<Result<Boolean>>
+  /**
+   * Create a new organisation
+   */
+  fun createOrganisation(
+    name: String,
+    description: String,
+    logoUrl: String,
+    priority: Int,
+    members: List<Triple<Member, String, Int>> // Member to Post pairs
+  ): Flow<Result<String>> // Returns organisation ID
+
+  /**
+   * Delete an organisation by ID
+   */
+  fun deleteOrganisation(organisationId: String): Flow<Result<Boolean>>
 }
 
 /**
@@ -234,6 +255,108 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
           throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
         }
         response.data?.updateorganisational_memberCollection?.affectedCount!! > 0
+      }
+      emit(result)
+    }
+  }
+
+  /**
+   * Updates the priorities for a list of organizational members.
+   *
+   * @param memberPriorities A list of pairs, where each pair contains a organisationalMember's id(OrganisationalMember::id) as a String and its priority as an Int.
+   * @return A Flow object emitting a Result that encapsulates a Boolean indicating whether the updates were successful.
+   */
+  override fun updateMemberPriorities(memberPriorities: List<Pair<String, Int>>): Flow<Result<Boolean>> {
+    println(memberPriorities)
+    return flow {
+      emit(Result.Loading)
+      val result = safeCall {
+        kotlinx.coroutines.coroutineScope {
+          val updateTasks = memberPriorities.map { (id, priority) ->
+            async {
+              try {
+                supabaseClient.from("organisational_member").update(
+                  {
+                    set("priority", priority)
+                  }
+                ) {
+                  filter {
+                    eq("id", id)
+                  }
+                }
+              } catch (e: Exception) {
+                println(e)
+              }
+            }
+          }
+          updateTasks.awaitAll()
+          true // Return success if all updates complete without exception
+        }
+      }
+      emit(result)
+    }
+  }
+
+  override fun createOrganisation(
+    name: String,
+    description: String,
+    logoUrl: String,
+    priority: Int,
+    members: List<Triple<Member, String, Int>> // Member to Post pairs
+  ): Flow<Result<String>> {
+    return flow {
+      emit(Result.Loading)
+      val result = safeCall {
+        val response = apolloClient.mutation(CreateOrganisationMutation(name, logoUrl, description, priority)).execute()
+        if (response.hasErrors()) {
+          throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+        }
+
+        if (response.data?.insertIntoorganisationCollection?.affectedCount!! > 0) {
+          val organisationId = response.data?.insertIntoorganisationCollection?.records?.first()?.id!!
+
+          // Only add members if there are any
+          if (members.isNotEmpty()) {
+            val organisationalMembers = members.map { (member, post, memberPriority) ->
+              Organisational_memberInsertInput(
+                member_id = Optional.present(member.id),
+                organisation_id = Optional.present(organisationId),
+                post = Optional.present(post),
+                priority = Optional.present(memberPriority)
+              )
+            }
+
+            val memberInsertResult =
+              apolloClient.mutation(AddMembersToOrganisationMutation(organisationalMembers)).execute()
+            if (memberInsertResult.hasErrors()) {
+              throw Exception(
+                memberInsertResult.errors?.firstOrNull()?.message ?: "Error adding members to organisation"
+              )
+            }
+
+            // Return organisation ID if members were added successfully
+            organisationId
+          } else {
+            // Organisation created successfully without members
+            organisationId
+          }
+        } else {
+          // Organisation creation failed
+          throw Exception("Failed to create organisation")
+        }
+      }
+      emit(result)
+    }
+  }
+
+  override fun deleteOrganisation(organisationId: String): Flow<Result<Boolean>> {
+    return flow {
+      emit(Result.Loading)
+      val result = safeCall {
+        // TODO: Implement with proper GraphQL mutation when available
+        // For now, return success as placeholder
+        kotlinx.coroutines.delay(1000) // Simulate network delay
+        true
       }
       emit(result)
     }

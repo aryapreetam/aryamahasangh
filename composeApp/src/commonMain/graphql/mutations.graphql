@@ -157,6 +157,14 @@ mutation addMemberToOrganisation($memberId: String!, $organisationId: String!, $
   }
 }
 
+mutation addMembersToOrganisation($input: [organisational_memberInsertInput!]!){
+    insertIntoorganisational_memberCollection(
+        objects: $input
+    ){
+        affectedCount
+    }
+}
+
 mutation removeMemberFromOrganisation($organisationalMemberId: String!) {
   deleteFromorganisational_memberCollection(
     filter: {id: {eq: $organisationalMemberId}}
@@ -251,4 +259,15 @@ mutation UpdateActivity(
             ...ActivityFields
     }
   }
+}
+
+mutation createOrganisation($name: String!, $logo: String!, $description: String!, $priority: Int!) {
+    insertIntoorganisationCollection(
+        objects: [{name: $name, logo: $logo, description: $description, priority: $priority}]
+    ) {
+        affectedCount
+        records{
+            id
+        }
+    }
 }
