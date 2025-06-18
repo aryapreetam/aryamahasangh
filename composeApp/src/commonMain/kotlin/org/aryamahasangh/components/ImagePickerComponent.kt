@@ -207,7 +207,7 @@ private fun ProfilePhotoPickerContent(
             contentDescription = "Profile Photo",
             modifier = Modifier
               .size(150.dp)
-              .clip(CircleShape),
+              .clip(RoundedCornerShape(12.dp)),
             contentScale = ContentScale.Crop
           )
         }
@@ -227,7 +227,7 @@ private fun ProfilePhotoPickerContent(
               contentDescription = "Profile Photo",
               modifier = Modifier
                 .size(150.dp)
-                .clip(CircleShape),
+                .clip(RoundedCornerShape(12.dp)),
               contentScale = ContentScale.Crop
             )
           }
@@ -239,7 +239,7 @@ private fun ProfilePhotoPickerContent(
             contentDescription = "Profile Photo Placeholder",
             modifier = Modifier
               .size(150.dp)
-              .clip(CircleShape),
+              .clip(RoundedCornerShape(12.dp)),
             contentScale = ContentScale.Crop,
             placeholder = BrushPainter(
               Brush.linearGradient(
@@ -255,7 +255,7 @@ private fun ProfilePhotoPickerContent(
           Box(
             modifier = Modifier
               .size(150.dp)
-              .clip(CircleShape)
+              .clip(RoundedCornerShape(12.dp))
               .background(Color.Black.copy(alpha = 0.3f)),
             contentAlignment = Alignment.Center
           ) {
@@ -715,4 +715,3 @@ fun ImagePickerState.getActiveImageUrls(): List<String> {
 fun ImagePickerState.hasChanges(): Boolean {
   return newImages.isNotEmpty() || deletedImageUrls.isNotEmpty()
 }
-

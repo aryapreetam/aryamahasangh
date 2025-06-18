@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import org.aryamahasangh.LocalIsAuthenticated
 import org.aryamahasangh.components.OrganisationDetail
 import org.aryamahasangh.features.activities.Member
 import org.aryamahasangh.navigation.LocalSnackbarHostState
@@ -25,6 +26,7 @@ fun OrgDetailScreen(
 ) {
   val scope = rememberCoroutineScope()
   val snackbarHostState = LocalSnackbarHostState.current
+  val isAuthenticated = LocalIsAuthenticated.current
 
   // Load organisation details
   LaunchedEffect(id) {
@@ -178,14 +180,21 @@ fun OrgDetailScreen(
   }
 
   OrganisationDetail(
-    organisation = uiState.organisation!!,
-    updateOrganisationLogo = viewModel::updateOrganisationLogo,
-    updateOrganisationDescription = viewModel::updateOrganisationDescription,
+    id = uiState.organisation!!.id,
+    name = uiState.organisation!!.name,
+    logo = uiState.organisation!!.logo,
+    description = uiState.organisation!!.description,
+    keyPeople = uiState.organisation!!.members,
+    isLoggedIn = isAuthenticated,
     organisationDescriptionState = descriptionState,
     onDescriptionEditModeChange = viewModel::setDescriptionEditMode,
+    updateOrganisationDescription = viewModel::updateOrganisationDescription,
+    updateOrganisationLogo = viewModel::updateOrganisationLogo,
     organisationLogoState = logoState,
     onRemoveMember = viewModel::removeMemberFromOrganisation,
     onUpdateMemberPost = viewModel::updateMemberPost,
+    onUpdateMemberPriority = viewModel::updateMemberPriority,
+    onUpdateMemberPriorities = viewModel::updateMemberPriorities,
     onAddMemberToOrganisation = viewModel::addMemberToOrganisation,
     onTriggerSearch = onTriggerSearch,
     memberManagementState = memberManagementState,

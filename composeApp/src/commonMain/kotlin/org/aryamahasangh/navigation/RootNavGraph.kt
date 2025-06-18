@@ -19,6 +19,7 @@ import org.aryamahasangh.features.arya_nirman.AryaNirmanHomeScreen
 import org.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
 import org.aryamahasangh.features.arya_nirman.SatraRegistrationFormScreen
 import org.aryamahasangh.features.arya_nirman.SatraRegistrationViewModel
+import org.aryamahasangh.features.organisations.NewOrganisationFormScreen
 import org.aryamahasangh.features.organisations.OrgDetailScreen
 import org.aryamahasangh.features.organisations.OrganisationsViewModel
 import org.aryamahasangh.features.organisations.OrgsScreen
@@ -153,9 +154,15 @@ fun RootNavGraph(navController: NavHostController) {
     navigation<Screen.OrgsSection>(startDestination = Screen.Orgs) {
       composable<Screen.Orgs> {
         val viewModel = koinInject<OrganisationsViewModel>()
-        OrgsScreen(onNavigateToOrgDetails = {
-          navController.navigate(Screen.OrgDetails(it))
-        }, viewModel)
+        OrgsScreen(
+          onNavigateToOrgDetails = {
+            navController.navigate(Screen.OrgDetails(it))
+          },
+          onNavigateToCreateOrganisation = {
+            navController.navigate(Screen.NewOrganisationForm(it))
+          },
+          viewModel
+        )
       }
       composable<Screen.OrgDetails> {
         val orgId = it.toRoute<Screen.OrgDetails>().organisationId
@@ -176,6 +183,62 @@ fun RootNavGraph(navController: NavHostController) {
           searchMembers = { query ->
             // Use the search results from AdminViewModel
             // This will contain fresh results from server
+            if (query.isNotBlank()) {
+              adminUiState.searchResults.map { memberShort ->
+                org.aryamahasangh.features.activities.Member(
+                  id = memberShort.id,
+                  name = memberShort.name,
+                  profileImage = memberShort.profileImage,
+                  phoneNumber = "", // Not available in MemberShort
+                  email = "" // Not available in MemberShort
+                )
+              }
+            } else {
+              emptyList()
+            }
+          },
+          allMembers = adminUiState.members.map { memberShort ->
+            org.aryamahasangh.features.activities.Member(
+              id = memberShort.id,
+              name = memberShort.name,
+              profileImage = memberShort.profileImage,
+              phoneNumber = "", // Not available in MemberShort
+              email = "" // Not available in MemberShort
+            )
+          },
+          onTriggerSearch = { query ->
+            // Trigger the server search in AdminViewModel
+            adminViewModel.searchMembers(query)
+          }
+        )
+      }
+      composable<Screen.NewOrganisationForm> {
+        val priority = it.toRoute<Screen.NewOrganisationForm>().priority
+        val viewModel = koinInject<OrganisationsViewModel>()
+        val adminViewModel = koinInject<AdminViewModel>()
+
+        // Load members when screen is accessed
+        LaunchedEffect(Unit) {
+          adminViewModel.loadMembers()
+        }
+
+        // Collect admin state for search results
+        val adminUiState by adminViewModel.membersUiState.collectAsState()
+
+        NewOrganisationFormScreen(
+          priority = priority,
+          viewModel = viewModel,
+          onOrganisationCreated = { organisationId ->
+            // Navigate to organisation details after successful creation
+            navController.navigate(Screen.OrgDetails(organisationId)) {
+              popUpTo(Screen.Orgs)
+            }
+          },
+          onCancel = {
+            navController.popBackStack()
+          },
+          searchMembers = { query ->
+            // Use the search results from AdminViewModel
             if (query.isNotBlank()) {
               adminUiState.searchResults.map { memberShort ->
                 org.aryamahasangh.features.activities.Member(
