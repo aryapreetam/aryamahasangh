@@ -63,15 +63,18 @@ fun NewOrganisationFormScreen(
 
   // Handle back button with unsaved changes
   val setBackHandler = LocalSetBackHandler.current
-  DisposableEffect(Unit) {
-    val handler = {
-      if (hasUnsavedChanges()) {
-        showUnsavedChangesDialog = true
-      } else {
-        onCancel()
-      }
+
+  // Create the back handler function
+  val backHandler = {
+    if (hasUnsavedChanges()) {
+      showUnsavedChangesDialog = true
+    } else {
+      onCancel()
     }
-    setBackHandler?.invoke(handler)
+  }
+
+  DisposableEffect(Unit) {
+    setBackHandler?.invoke(backHandler)
     onDispose {
       setBackHandler?.invoke(null)
     }
@@ -238,7 +241,7 @@ fun NewOrganisationFormScreen(
         }
       },
       label = { Text("संस्था का नाम") },
-      modifier = Modifier.fillMaxWidth(),
+      modifier = Modifier.width(500.dp),
       isError = errors.nameError != null,
       supportingText = {
         errors.nameError?.let {
@@ -260,7 +263,7 @@ fun NewOrganisationFormScreen(
         }
       },
       label = { Text("संस्था का विवरण") },
-      modifier = Modifier.fillMaxWidth(),
+      modifier = Modifier.width(700.dp),
       minLines = 4,
       maxLines = 8,
       isError = errors.descriptionError != null,
@@ -285,7 +288,9 @@ fun NewOrganisationFormScreen(
         onStateChange = { formData = formData.copy(members = it) },
         config = MembersConfig(
           isMandatory = true,
-          isPostMandatory = true
+          isPostMandatory = true,
+          enableReordering = true,
+          reorderingHint = "पदाधिकारियों का क्रम सुनिश्चित करें"
         ),
         error = errors.membersError,
         searchMembers = searchMembers,
@@ -306,52 +311,76 @@ fun NewOrganisationFormScreen(
 
     Spacer(modifier = Modifier.height(32.dp))
 
-    // Submit Button
-    val canSubmit = formData.name.isNotBlank() &&
-      formData.description.isNotBlank() &&
-      formData.logo.newImages.isNotEmpty() &&
-      formData.members.hasMembers
-
-    Button(
-      onClick = { submitForm() },
-      enabled = !vmCreateState.isCreating && canSubmit
-    ) {
-      if (vmCreateState.isCreating) {
-        CircularProgressIndicator(
-          modifier = Modifier.size(20.dp),
-          strokeWidth = 2.dp,
-          color = MaterialTheme.colorScheme.onPrimary
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text("संस्था बनाई जा रही है...")
-      } else {
-        Text(
-          text = if (canSubmit) "संस्था बनाएं" else when {
-            !formData.members.hasMembers -> "पहले पदाधिकारी जोड़ें"
-            formData.name.isBlank() -> "संस्था का नाम भरें"
-            formData.description.isBlank() -> "विवरण भरें"
-            formData.logo.newImages.isEmpty() -> "चिह्न चुनें"
-            else -> "संस्था बनाएं"
-          },
-          modifier = Modifier.padding(horizontal = 24.dp)
-        )
-      }
-    }
-
-    // Helper text below submit button
-    if (!canSubmit && !vmCreateState.isCreating) {
-      Text(
-        text = when {
-          !formData.members.hasMembers -> "⚠️ न्यूनतम एक पदाधिकारी जोड़ना आवश्यक है"
-          formData.name.isBlank() || formData.description.isBlank() || formData.logo.newImages.isEmpty() ->
-            "⚠️ सभी आवश्यक क्षेत्र भरें"
-
-          else -> ""
-        },
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        style = MaterialTheme.typography.bodySmall,
-        modifier = Modifier.padding(top = 8.dp)
+    // Submit Button Section with divider and status
+    Column {
+      // Horizontal divider for visual separation
+      HorizontalDivider(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 16.dp),
+        color = MaterialTheme.colorScheme.outlineVariant
       )
+
+      // Calculate canSubmit before UI
+      val canSubmit = formData.name.isNotBlank() &&
+        formData.description.isNotBlank() &&
+        formData.logo.newImages.isNotEmpty() &&
+        formData.members.hasMembers
+
+      // Form completion status - show only when form is incomplete
+      if (!canSubmit && !vmCreateState.isCreating) {
+        Card(
+          modifier = Modifier.padding(bottom = 16.dp).width(500.dp),
+          colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+          )
+        ) {
+          Column(
+            modifier = Modifier.padding(16.dp)
+          ) {
+            Text(
+              text = "फॉर्म पूर्ण करने के लिए:",
+              style = MaterialTheme.typography.titleSmall,
+              color = MaterialTheme.colorScheme.onSurfaceVariant,
+              modifier = Modifier.padding(bottom = 8.dp)
+            )
+
+            val missingItems = mutableListOf<String>()
+            if (formData.name.isBlank()) missingItems.add("• संस्था का नाम भरें")
+            if (formData.description.isBlank()) missingItems.add("• संस्था का विवरण भरें")
+            if (formData.logo.newImages.isEmpty()) missingItems.add("• संस्था का चिह्न चुनें")
+            if (!formData.members.hasMembers) missingItems.add("• न्यूनतम एक पदाधिकारी जोड़ें")
+
+            missingItems.forEach { item ->
+              Text(
+                text = item,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(vertical = 2.dp)
+              )
+            }
+          }
+        }
+      }
+
+      // Submit Button
+      Button(
+        onClick = { submitForm() },
+        enabled = !vmCreateState.isCreating && canSubmit,
+      ) {
+        if (vmCreateState.isCreating) {
+          CircularProgressIndicator(
+            modifier = Modifier.size(20.dp),
+            strokeWidth = 2.dp,
+            color = MaterialTheme.colorScheme.onPrimary
+          )
+          Spacer(modifier = Modifier.width(8.dp))
+          Text("संस्था बनाई जा रही है...")
+        } else {
+          Text(
+            text = "संस्था बनाएं",
+            modifier = Modifier.padding(horizontal = 24.dp)
+          )
+        }
+      }
     }
 
     // Show error if any

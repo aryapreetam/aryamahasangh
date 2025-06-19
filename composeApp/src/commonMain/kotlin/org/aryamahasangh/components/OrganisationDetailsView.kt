@@ -1,9 +1,13 @@
 package org.aryamahasangh.components
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -17,7 +21,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.BrushPainter
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -44,6 +50,8 @@ import org.aryamahasangh.network.bucket
 import org.aryamahasangh.screens.EditImageButton
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyStaggeredGridState
 
 fun drawableFromImageName(imageName: String) =
   when (imageName) {
@@ -96,22 +104,23 @@ fun OrganisationDetail(
 
   // State for priority editing mode
   var editPriorityMode by remember { mutableStateOf(false) }
-  var tempMembersList by remember { mutableStateOf<List<OrganisationalMember>>(emptyList()) }
   var isUpdatingPriorities by remember { mutableStateOf(false) }
 
-  // State for drag and drop reordering (only used in priority edit mode)
+  // State for reorderable members list
   var membersList by remember(keyPeople) {
     mutableStateOf(keyPeople.sortedBy { it.priority })
   }
 
-  val dragDropState = rememberDragDropState { fromIndex, toIndex ->
-    if (editPriorityMode && fromIndex != toIndex && fromIndex < tempMembersList.size && toIndex < tempMembersList.size) {
-      // Reorder the temporary list for immediate UI feedback
-      val newList = tempMembersList.toMutableList()
-      val item = newList.removeAt(fromIndex)
-      newList.add(toIndex, item)
-      tempMembersList = newList
+  // Haptic feedback for reordering
+  val hapticFeedback = LocalHapticFeedback.current
+
+  // Reorderable staggered grid state for priority editing
+  val lazyStaggeredGridState = rememberLazyStaggeredGridState()
+  val reorderableLazyStaggeredGridState = rememberReorderableLazyStaggeredGridState(lazyStaggeredGridState) { from, to ->
+    membersList = membersList.toMutableList().apply {
+      add(to.index, removeAt(from.index))
     }
+    hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
   }
 
   // Update local list when keyPeople changes (from API updates)
@@ -122,12 +131,11 @@ fun OrganisationDetail(
   // Functions for priority editing
   fun startPriorityEdit() {
     editPriorityMode = true
-    tempMembersList = membersList.toList()
   }
 
   fun cancelPriorityEdit() {
     editPriorityMode = false
-    tempMembersList = emptyList()
+    membersList = keyPeople.sortedBy { it.priority } // Reset to original order
   }
 
   fun savePriorityChanges() {
@@ -136,11 +144,11 @@ fun OrganisationDetail(
     // Calculate new priorities for all affected members
     val priorityUpdates = mutableListOf<Pair<String, Int>>()
 
-    tempMembersList.forEachIndexed { index, member ->
+    membersList.forEachIndexed { index, member ->
       val newPriority = index
       // Only update if priority actually changed from original
-      val originalIndex = membersList.indexOf(member)
-      if (originalIndex != index) {
+      val originalMember = keyPeople.find { it.id == member.id }
+      if (originalMember != null && originalMember.priority != newPriority) {
         priorityUpdates.add(Pair(member.id, newPriority))
       }
     }
@@ -150,174 +158,176 @@ fun OrganisationDetail(
       onUpdateMemberPriorities(priorityUpdates)
     }
 
-    // Update local state and exit priority mode
-    membersList = tempMembersList.toList()
     editPriorityMode = false
-    tempMembersList = emptyList()
     isUpdatingPriorities = false
   }
 
   Box(modifier = Modifier.fillMaxSize()) {
-    // Main content
-    Column(
-      modifier =
-        Modifier.fillMaxSize().padding(8.dp)
-          .verticalScroll(rememberScrollState())
+    // Main content - Replace Column with LazyColumn to avoid nested scrolling
+    LazyColumn(
+      modifier = Modifier.fillMaxSize().padding(8.dp),
+      verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-      Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        Column(
-          modifier = Modifier.fillMaxWidth(),
-          verticalArrangement = Arrangement.spacedBy(8.dp),
-          horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
-        ) {
-          if (isLoggedIn) {
-            Row(modifier = Modifier.padding()) {
-              val scope = rememberCoroutineScope()
-              val snackbarHostState = LocalSnackbarHostState.current
-              val launcher =
-                rememberFilePickerLauncher(
-                  type = PickerType.File(extensions = listOf("png", "jpg", "jpeg", "webp")),
-                  mode = PickerMode.Single,
-                  title = "Select logo"
-                ) { file ->
-                  if (file != null) {
-                    scope.launch {
-                      try {
-                        // Show immediate upload feedback
-                        val snackbarJob = launch {
+      // Logo and description section
+      item {
+        Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+          Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+          ) {
+            if (isLoggedIn) {
+              Row(modifier = Modifier.padding()) {
+                val scope = rememberCoroutineScope()
+                val snackbarHostState = LocalSnackbarHostState.current
+                val launcher =
+                  rememberFilePickerLauncher(
+                    type = PickerType.File(extensions = listOf("png", "jpg", "jpeg", "webp")),
+                    mode = PickerMode.Single,
+                    title = "Select logo"
+                  ) { file ->
+                    if (file != null) {
+                      scope.launch {
+                        try {
+                          // Show immediate upload feedback
+                          val snackbarJob = launch {
+                            snackbarHostState.showSnackbar(
+                              message = "🔄 Uploading new logo...",
+                              duration = SnackbarDuration.Indefinite
+                            )
+                          }
+
+                          val uploadResponse =
+                            bucket.upload(
+                              path = "org_logo_${Clock.System.now().epochSeconds}.jpg",
+                              data = file.readBytes()
+                            )
+                          val imageUrl = bucket.publicUrl(uploadResponse.path)
+
+                          // Cancel the upload progress snackbar
+                          snackbarJob.cancel()
+                          snackbarHostState.currentSnackbarData?.dismiss()
+
+                          // Update the logo in the ViewModel (this will show success message)
+                          updateOrganisationLogo(id, name, imageUrl)
+                        } catch (e: Exception) {
+                          // Show error message directly here since upload failed before reaching ViewModel
                           snackbarHostState.showSnackbar(
-                            message = "🔄 Uploading new logo...",
-                            duration = SnackbarDuration.Indefinite
+                            message = "❌ Failed to upload logo: ${e.message}",
+                            actionLabel = "Close"
                           )
+                          println("error uploading files: $e")
                         }
-
-                        val uploadResponse =
-                          bucket.upload(
-                            path = "org_logo_${Clock.System.now().epochSeconds}.jpg",
-                            data = file.readBytes()
-                          )
-                        val imageUrl = bucket.publicUrl(uploadResponse.path)
-
-                        // Cancel the upload progress snackbar
-                        snackbarJob.cancel()
-                        snackbarHostState.currentSnackbarData?.dismiss()
-
-                        // Update the logo in the ViewModel (this will show success message)
-                        updateOrganisationLogo(id, name, imageUrl)
-                      } catch (e: Exception) {
-                        // Show error message directly here since upload failed before reaching ViewModel
-                        snackbarHostState.showSnackbar(
-                          message = "❌ Failed to upload logo: ${e.message}",
-                          actionLabel = "Close"
-                        )
-                        println("error uploading files: $e")
                       }
+                    }
+                  }
+
+                Box(contentAlignment = Alignment.Center) {
+                  AsyncImage(
+                    model = logo,
+                    contentDescription = "logo for $name",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(150.dp),
+                    placeholder =
+                      BrushPainter(
+                        Brush.linearGradient(
+                          listOf(
+                            Color(color = 0xFFFFFFFF),
+                            Color(color = 0xFFDDDDDD)
+                          )
+                        )
+                      ),
+                    fallback = painterResource(Res.drawable.baseline_groups),
+                    error = painterResource(Res.drawable.baseline_groups)
+                  )
+
+                  // Show loading indicator while logo is updating
+                  if (organisationLogoState.isUpdating) {
+                    Box(
+                      modifier = Modifier
+                        .size(150.dp)
+                        .background(Color.Black.copy(alpha = 0.5f)),
+                      contentAlignment = Alignment.Center
+                    ) {
+                      CircularProgressIndicator(
+                        color = Color.White,
+                        strokeWidth = 3.dp
+                      )
                     }
                   }
                 }
 
-              Box(contentAlignment = Alignment.Center) {
-                AsyncImage(
-                  model = logo,
-                  contentDescription = "logo for $name",
-                  contentScale = ContentScale.Fit,
-                  modifier = Modifier.size(150.dp),
-                  placeholder =
-                    BrushPainter(
-                      Brush.linearGradient(
-                        listOf(
-                          Color(color = 0xFFFFFFFF),
-                          Color(color = 0xFFDDDDDD)
-                        )
-                      )
-                    ),
-                  fallback = painterResource(Res.drawable.baseline_groups),
-                  error = painterResource(Res.drawable.baseline_groups)
+                EditImageButton(
+                  onClick = {
+                    if (!organisationLogoState.isUpdating) {
+                      launcher.launch()
+                    }
+                  }
                 )
-
-                // Show loading indicator while logo is updating
-                if (organisationLogoState.isUpdating) {
-                  Box(
-                    modifier = Modifier
-                      .size(150.dp)
-                      .background(Color.Black.copy(alpha = 0.5f)),
-                    contentAlignment = Alignment.Center
-                  ) {
-                    CircularProgressIndicator(
-                      color = Color.White,
-                      strokeWidth = 3.dp
-                    )
-                  }
-                }
               }
-
-              EditImageButton(
-                onClick = {
-                  if (!organisationLogoState.isUpdating) {
-                    launcher.launch()
-                  }
-                }
+            } else {
+              AsyncImage(
+                model = logo,
+                contentDescription = "logo for $name",
+                contentScale = ContentScale.Fit,
+                modifier = Modifier.size(150.dp),
+                placeholder =
+                  BrushPainter(
+                    Brush.linearGradient(
+                      listOf(
+                        Color(color = 0xFFFFFFFF),
+                        Color(color = 0xFFDDDDDD)
+                      )
+                    )
+                  ),
+                fallback = painterResource(Res.drawable.baseline_groups),
+                error = painterResource(Res.drawable.baseline_groups)
               )
             }
-          } else {
-            AsyncImage(
-              model = logo,
-              contentDescription = "logo for $name",
-              contentScale = ContentScale.Fit,
-              modifier = Modifier.size(150.dp),
-              placeholder =
-                BrushPainter(
-                  Brush.linearGradient(
-                    listOf(
-                      Color(color = 0xFFFFFFFF),
-                      Color(color = 0xFFDDDDDD)
-                    )
-                  )
-                ),
-              fallback = painterResource(Res.drawable.baseline_groups),
-              error = painterResource(Res.drawable.baseline_groups)
-            )
+            Text(name, style = MaterialTheme.typography.headlineMedium)
           }
-          Text(name, style = MaterialTheme.typography.headlineMedium)
+          OrganisationDescription(
+            orgId = id,
+            description = description!!,
+            isLoggedIn = isLoggedIn,
+            organisationDescriptionState = organisationDescriptionState,
+            onEditModeChange = onDescriptionEditModeChange,
+            updateDescription = updateOrganisationDescription
+          )
         }
-        OrganisationDescription(
-          orgId = id,
-          description = description!!,
-          isLoggedIn = isLoggedIn,
-          organisationDescriptionState = organisationDescriptionState,
-          onEditModeChange = onDescriptionEditModeChange,
-          updateDescription = updateOrganisationDescription
-        )
       }
 
+      // Members section header
       if (keyPeople.isNotEmpty() || isLoggedIn) {
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          verticalAlignment = Alignment.CenterVertically,
-          horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-          Text(
-            "कार्यकारिणी/पदाधिकारी",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp)
-          )
-          if (isLoggedIn) {
-            TooltipBox(
-              positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-              tooltip = {
-                PlainTooltip {
-                  Text("नए पदाधिकारी जोड़ें")
+        item {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+          ) {
+            Text(
+              "कार्यकारिणी/पदाधिकारी",
+              style = MaterialTheme.typography.titleMedium,
+              fontWeight = FontWeight.Bold,
+              modifier = Modifier.padding(horizontal = 8.dp, vertical = 16.dp)
+            )
+            if (isLoggedIn) {
+              TooltipBox(
+                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                tooltip = {
+                  PlainTooltip {
+                    Text("नए पदाधिकारी जोड़ें")
+                  }
+                },
+                state = rememberTooltipState()
+              ) {
+                IconButton(onClick = { showAddMemberDialog = true }) {
+                  Icon(
+                    Icons.Default.PersonAdd,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                  )
                 }
-              },
-              state = rememberTooltipState()
-            ) {
-              IconButton(onClick = { showAddMemberDialog = true }) {
-                Icon(
-                  Icons.Default.PersonAdd,
-                  contentDescription = null,
-                  tint = MaterialTheme.colorScheme.primary
-                )
               }
             }
           }
@@ -325,111 +335,133 @@ fun OrganisationDetail(
 
         // Priority editing mode completion button
         if (editPriorityMode) {
-          Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-          ) {
-            OutlinedButton(
-              onClick = { cancelPriorityEdit() },
-              enabled = !isUpdatingPriorities
+          item {
+            Row(
+              modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
+              horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-              Icon(Icons.Default.Close, contentDescription = null)
-              Spacer(Modifier.width(4.dp))
-              Text("निरस्त करें")
-            }
-
-            Button(
-              onClick = { savePriorityChanges() },
-              enabled = !isUpdatingPriorities
-            ) {
-              if (isUpdatingPriorities) {
-                CircularProgressIndicator(
-                  modifier = Modifier.size(16.dp),
-                  strokeWidth = 2.dp,
-                  color = MaterialTheme.colorScheme.onPrimary
-                )
-                Spacer(Modifier.width(8.dp))
-              } else {
-                Icon(Icons.Default.Check, contentDescription = null)
+              OutlinedButton(
+                onClick = { cancelPriorityEdit() },
+                enabled = !isUpdatingPriorities
+              ) {
+                Icon(Icons.Default.Close, contentDescription = null)
                 Spacer(Modifier.width(4.dp))
+                Text("निरस्त करें")
               }
-              Text("क्रम परिवर्तन पूर्ण हुआ")
+
+              Button(
+                onClick = { savePriorityChanges() },
+                enabled = !isUpdatingPriorities
+              ) {
+                if (isUpdatingPriorities) {
+                  CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp,
+                    color = MaterialTheme.colorScheme.onPrimary
+                  )
+                  Spacer(Modifier.width(8.dp))
+                } else {
+                  Icon(Icons.Default.Check, contentDescription = null)
+                  Spacer(Modifier.width(4.dp))
+                }
+                Text("क्रम परिवर्तन पूर्ण हुआ")
+              }
             }
           }
         }
 
-        // Members layout: Always Column in priority edit mode, FlowRow otherwise
-        if (editPriorityMode) {
-          // Use Column layout during priority editing for better control
-          Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-          ) {
-            tempMembersList.forEachIndexed { index, member ->
-              KeyPersonItem(
-                member = member,
-                isLoggedIn = isLoggedIn,
-                editPriorityMode = editPriorityMode,
-                onStartPriorityEdit = { startPriorityEdit() },
-                onUpdatePost = {
-                  showUpdatePostDialog = member
-                  updatedPost = member.post
-                },
-                onDelete = { showDeleteDialog = member },
-                isUpdatingPost = memberManagementState.isUpdatingPost,
-                isRemoving = memberManagementState.isRemovingMember,
-                dragDropState = dragDropState,
-                index = index
-              )
-            }
-          }
-        } else {
-          // Use FlowRow for normal viewing
-          FlowRow(
+        // Members staggered grid - now as a LazyColumn item
+        item {
+          LazyVerticalStaggeredGrid(
+            columns = StaggeredGridCells.Adaptive(minSize = 300.dp),
+            state = lazyStaggeredGridState,
+            modifier = Modifier
+              .fillMaxWidth()
+              .heightIn(min = 100.dp, max = 800.dp), // Constrain height but allow flexibility
+            verticalItemSpacing = 8.dp,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            userScrollEnabled = false // Disable scrolling since we're in a LazyColumn
           ) {
-            membersList.forEachIndexed { index, member ->
-              KeyPersonItem(
-                member = member,
-                isLoggedIn = isLoggedIn,
-                editPriorityMode = editPriorityMode,
-                onStartPriorityEdit = { startPriorityEdit() },
-                onUpdatePost = {
-                  showUpdatePostDialog = member
-                  updatedPost = member.post
-                },
-                onDelete = { showDeleteDialog = member },
-                isUpdatingPost = memberManagementState.isUpdatingPost,
-                isRemoving = memberManagementState.isRemovingMember,
-                dragDropState = dragDropState,
-                index = -1 // No drag in FlowRow mode
-              )
+            // Members items
+            items(membersList.size, key = { membersList[it].id }) { index ->
+              val member = membersList[index]
+
+              if (editPriorityMode) {
+                ReorderableItem(reorderableLazyStaggeredGridState, key = member.id) { isDragging ->
+                  val elevation by animateDpAsState(if (isDragging) 8.dp else 0.dp, label = "drag_elevation")
+
+                  Surface(
+                    shadowElevation = elevation,
+                    modifier = Modifier.fillMaxWidth()
+                  ) {
+                    KeyPersonItem(
+                      member = member,
+                      isLoggedIn = isLoggedIn,
+                      editPriorityMode = editPriorityMode,
+                      onStartPriorityEdit = { startPriorityEdit() },
+                      onUpdatePost = {
+                        showUpdatePostDialog = member
+                        updatedPost = member.post
+                      },
+                      onDelete = { showDeleteDialog = member },
+                      isUpdatingPost = memberManagementState.isUpdatingPost,
+                      isRemoving = memberManagementState.isRemovingMember,
+                      isDragHandle = true,
+                      modifier = Modifier.draggableHandle(
+                        onDragStarted = {
+                          hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                        },
+                        onDragStopped = {
+                          hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                        }
+                      )
+                    )
+                  }
+                }
+              } else {
+                KeyPersonItem(
+                  member = member,
+                  isLoggedIn = isLoggedIn,
+                  editPriorityMode = editPriorityMode,
+                  onStartPriorityEdit = { startPriorityEdit() },
+                  onUpdatePost = {
+                    showUpdatePostDialog = member
+                    updatedPost = member.post
+                  },
+                  onDelete = { showDeleteDialog = member },
+                  isUpdatingPost = memberManagementState.isUpdatingPost,
+                  isRemoving = memberManagementState.isRemovingMember,
+                  isDragHandle = false
+                )
+              }
             }
 
             // Show new members being added with post input (only in normal mode)
-            newMembersWithPosts.forEach { (member, post) ->
-              NewMemberPostInput(
-                member = member,
-                post = post,
-                onPostChange = { newPost ->
-                  newMembersWithPosts = newMembersWithPosts.toMutableMap().apply {
-                    this[member] = newPost
-                  }
-                },
-                onConfirm = {
-                  if (post.isNotBlank()) {
-                    val maxPriority = keyPeople.maxOfOrNull { it.priority } ?: 0
-                    val priority = maxPriority + 1
-                    onAddMemberToOrganisation(member.id, post, id, priority)
+            if (!editPriorityMode) {
+              items(newMembersWithPosts.size, key = { newMembersWithPosts.keys.toList()[it].id }) { index ->
+                val (member, post) = newMembersWithPosts.toList()[index]
+                NewMemberPostInput(
+                  member = member,
+                  post = post,
+                  onPostChange = { newPost ->
+                    newMembersWithPosts = newMembersWithPosts.toMutableMap().apply {
+                      this[member] = newPost
+                    }
+                  },
+                  onConfirm = {
+                    if (post.isNotBlank()) {
+                      val maxPriority = keyPeople.maxOfOrNull { it.priority } ?: 0
+                      val priority = maxPriority + 1
+                      onAddMemberToOrganisation(member.id, post, id, priority)
+                      newMembersWithPosts = newMembersWithPosts - member
+                    }
+                  },
+                  onCancel = {
                     newMembersWithPosts = newMembersWithPosts - member
-                  }
-                },
-                onCancel = {
-                  newMembersWithPosts = newMembersWithPosts - member
-                },
-                isLoading = memberManagementState.isAddingMember
-              )
+                  },
+                  isLoading = memberManagementState.isAddingMember
+                )
+              }
             }
           }
         }
@@ -518,6 +550,133 @@ fun OrganisationDetail(
   }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun KeyPersonItem(
+  member: OrganisationalMember,
+  isLoggedIn: Boolean,
+  editPriorityMode: Boolean,
+  onStartPriorityEdit: () -> Unit,
+  onUpdatePost: () -> Unit,
+  onDelete: () -> Unit,
+  isUpdatingPost: Boolean = false,
+  isRemoving: Boolean = false,
+  isDragHandle: Boolean = false,
+  modifier: Modifier = Modifier
+) {
+  var showOptionsMenu by remember { mutableStateOf(false) }
+
+  Row(
+    modifier = Modifier
+      .padding(8.dp)
+      .then(modifier),
+    verticalAlignment = Alignment.CenterVertically
+  ) {
+    AsyncImage(
+      model = member.member.profileImage ?: "",
+      contentDescription = "profile image ${member.member.name}",
+      contentScale = ContentScale.Crop,
+      modifier = Modifier
+        .clip(CircleShape)
+        .size(80.dp),
+      placeholder =
+        BrushPainter(
+          Brush.linearGradient(
+            listOf(
+              Color(color = 0xFFFFFFFF),
+              Color(color = 0xFFDDDDDD)
+            )
+          )
+        ),
+      fallback = painterResource(Res.drawable.error_profile_image),
+      error = painterResource(Res.drawable.error_profile_image)
+    )
+
+    Column(
+      modifier = Modifier.padding(12.dp, 8.dp)
+    ) {
+      Text(member.member.name, style = MaterialTheme.typography.bodyLarge)
+      Text(member.post, style = MaterialTheme.typography.bodyMedium)
+    }
+
+    if (isLoggedIn) {
+      if (isUpdatingPost || isRemoving) {
+        CircularProgressIndicator(
+          modifier = Modifier.size(24.dp),
+          strokeWidth = 2.dp
+        )
+      } else {
+        if (editPriorityMode && isDragHandle) {
+          Icon(
+            Icons.Default.DragHandle,
+            contentDescription = "Drag to reorder",
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(8.dp)
+          )
+        } else if (!editPriorityMode) {
+          Box {
+            IconButton(onClick = { showOptionsMenu = true }) {
+              Icon(
+                Icons.Default.MoreVert,
+                contentDescription = "Options",
+                tint = MaterialTheme.colorScheme.primary
+              )
+            }
+
+            DropdownMenu(
+              expanded = showOptionsMenu,
+              onDismissRequest = { showOptionsMenu = false }
+            ) {
+              DropdownMenuItem(
+                text = { Text("पद बदलें") },
+                onClick = {
+                  showOptionsMenu = false
+                  onUpdatePost()
+                },
+                leadingIcon = {
+                  Icon(
+                    Icons.Default.Edit,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                  )
+                }
+              )
+              DropdownMenuItem(
+                text = { Text("क्रम परिवर्तन") },
+                onClick = {
+                  showOptionsMenu = false
+                  onStartPriorityEdit()
+                },
+                leadingIcon = {
+                  Icon(
+                    Icons.Default.SwapVert,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                  )
+                }
+              )
+              DropdownMenuItem(
+                text = { Text("पदाधिकारी को हटाएं") },
+                onClick = {
+                  showOptionsMenu = false
+                  onDelete()
+                },
+                leadingIcon = {
+                  Icon(
+                    Icons.Default.Delete,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                  )
+                }
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 @Composable
 fun OrganisationDescription(
   orgId: String,
@@ -570,157 +729,11 @@ fun OrganisationDescription(
         }
         ButtonWithProgressIndicator(
           enabled = !organisationDescriptionState.isUpdating,
-          inProgress = organisationDescriptionState.isUpdating
-        ) {
-          updateDescription(orgId, localText)
-        }
-      }
-    }
-  }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun KeyPersonItem(
-  member: OrganisationalMember,
-  isLoggedIn: Boolean,
-  editPriorityMode: Boolean,
-  onStartPriorityEdit: () -> Unit,
-  onUpdatePost: () -> Unit,
-  onDelete: () -> Unit,
-  isUpdatingPost: Boolean = false,
-  isRemoving: Boolean = false,
-  dragDropState: DragDropState,
-  index: Int
-) {
-  var showOptionsMenu by remember { mutableStateOf(false) }
-
-  Column(
-    modifier = Modifier.padding(4.dp)
-  ) {
-    Row(
-      modifier = Modifier
-        .padding(8.dp)
-        .then(
-          // Only apply drag and drop modifiers for logged-in users with valid index
-          if (isLoggedIn && index >= 0) {
-            Modifier
-              .draggableItem(
-                state = dragDropState,
-                index = index,
-                enabled = true
-              )
-              .hoverTarget(
-                state = dragDropState,
-                index = index
-              )
-          } else {
-            Modifier
+          inProgress = organisationDescriptionState.isUpdating,
+          onClick = {
+            updateDescription(orgId, localText)
           }
-        ),
-      verticalAlignment = Alignment.CenterVertically
-    ) {
-      AsyncImage(
-        model = member.member.profileImage ?: "",
-        contentDescription = "profile image ${member.member.name}",
-        contentScale = ContentScale.Crop,
-        modifier = Modifier.clip(CircleShape).size(80.dp),
-        placeholder =
-          BrushPainter(
-            Brush.linearGradient(
-              listOf(
-                Color(color = 0xFFFFFFFF),
-                Color(color = 0xFFDDDDDD)
-              )
-            )
-          ),
-        fallback = painterResource(Res.drawable.error_profile_image),
-        error = painterResource(Res.drawable.error_profile_image)
-      )
-
-      Column(
-        modifier = Modifier.padding(12.dp, 8.dp)
-      ) {
-        Text(member.member.name, style = MaterialTheme.typography.bodyLarge)
-        Text(member.post, style = MaterialTheme.typography.bodyMedium)
-      }
-
-      if (isLoggedIn) {
-        if (isUpdatingPost || isRemoving) {
-          // Show loading indicator when operations are in progress
-          CircularProgressIndicator(
-            modifier = Modifier.size(24.dp),
-            strokeWidth = 2.dp
-          )
-        } else {
-          if (editPriorityMode) {
-            // Show drag indicator in priority edit mode
-            Icon(
-              Icons.Default.DragHandle,
-              contentDescription = "Drag to reorder",
-              tint = MaterialTheme.colorScheme.primary,
-              modifier = Modifier.padding(8.dp)
-            )
-          } else {
-            Box {
-              IconButton(onClick = { showOptionsMenu = true }) {
-                Icon(
-                  Icons.Default.MoreVert,
-                  contentDescription = "Options",
-                  tint = MaterialTheme.colorScheme.primary
-                )
-              }
-
-              DropdownMenu(
-                expanded = showOptionsMenu,
-                onDismissRequest = { showOptionsMenu = false }
-              ) {
-                DropdownMenuItem(
-                  text = { Text("पद बदलें") },
-                  onClick = {
-                    showOptionsMenu = false
-                    onUpdatePost()
-                  },
-                  leadingIcon = {
-                    Icon(
-                      Icons.Default.Edit,
-                      contentDescription = null,
-                      tint = MaterialTheme.colorScheme.primary
-                    )
-                  }
-                )
-                DropdownMenuItem(
-                  text = { Text("क्रम परिवर्तन") },
-                  onClick = {
-                    showOptionsMenu = false
-                    onStartPriorityEdit()
-                  },
-                  leadingIcon = {
-                    Icon(
-                      Icons.Default.SwapVert,
-                      contentDescription = null,
-                      tint = MaterialTheme.colorScheme.primary
-                    )
-                  }
-                )
-                DropdownMenuItem(
-                  text = { Text("पदाधिकारी को हटाएं") },
-                  onClick = {
-                    showOptionsMenu = false
-                    onDelete()
-                  },
-                  leadingIcon = {
-                    Icon(
-                      Icons.Default.Delete,
-                      contentDescription = null,
-                      tint = MaterialTheme.colorScheme.primary
-                    )
-                  }
-                )
-              }
-            }
-          }
-        }
+        )
       }
     }
   }
@@ -938,7 +951,7 @@ fun MemberListItem(
     Column(
       modifier = Modifier
         .weight(1f)
-        .padding(horizontal = 12.dp)
+        .padding(start = 12.dp)
     ) {
       Text(
         text = member.name,

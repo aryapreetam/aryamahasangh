@@ -1,10 +1,15 @@
 package org.aryamahasangh.components
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.DragHandle
 import androidx.compose.material.icons.filled.Face
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -12,7 +17,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
@@ -20,6 +27,8 @@ import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import org.aryamahasangh.features.activities.Member
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyStaggeredGridState
 
 /**
  * Edit modes for MembersComponent
@@ -41,7 +50,9 @@ data class MembersConfig(
   val isMandatory: Boolean = false,
   val minMembers: Int = 1,
   val showMemberCount: Boolean = true,
-  val editMode: MembersEditMode = MembersEditMode.GROUPED
+  val editMode: MembersEditMode = MembersEditMode.GROUPED,
+  val enableReordering: Boolean = false, // Enable drag-and-drop reordering
+  val reorderingHint: String = "खींचकर क्रम बदलें" // Hint text for reordering
 )
 
 /**
@@ -94,6 +105,11 @@ data class MembersState(
   fun hasChanges(initialState: MembersState): Boolean {
     return this != initialState
   }
+
+  // Get members sorted by priority
+  fun getSortedMembers(): List<Member> {
+    return members.keys.sortedBy { members[it]?.second ?: 0 }
+  }
 }
 
 /**
@@ -131,14 +147,33 @@ fun MembersComponent(
       modifier = Modifier.padding(bottom = 8.dp)
     )
 
+    // Show reordering hint if enabled and members exist
+    if (config.enableReordering && state.hasMembers) {
+      Text(
+        text = config.reorderingHint,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(bottom = 8.dp)
+      )
+    }
+
     when (config.editMode) {
       MembersEditMode.GROUPED -> {
-        GroupedMembersEditor(
-          state = state,
-          onStateChange = onStateChange,
-          config = config,
-          onShowAddDialog = { showAddMemberDialog = true }
-        )
+        if (config.enableReordering) {
+          ReorderableGroupedMembersEditor(
+            state = state,
+            onStateChange = onStateChange,
+            config = config,
+            onShowAddDialog = { showAddMemberDialog = true }
+          )
+        } else {
+          GroupedMembersEditor(
+            state = state,
+            onStateChange = onStateChange,
+            config = config,
+            onShowAddDialog = { showAddMemberDialog = true }
+          )
+        }
       }
 
       MembersEditMode.INDIVIDUAL -> {
@@ -213,6 +248,206 @@ fun MembersComponent(
       allMembers = allMembers,
       onTriggerSearch = onTriggerSearch
     )
+  }
+}
+
+@Composable
+private fun ReorderableGroupedMembersEditor(
+  state: MembersState,
+  onStateChange: (MembersState) -> Unit,
+  config: MembersConfig,
+  onShowAddDialog: () -> Unit
+) {
+  val sortedMembers = state.getSortedMembers()
+  val hapticFeedback = LocalHapticFeedback.current
+
+  // Reorderable staggered grid state
+  val lazyStaggeredGridState = rememberLazyStaggeredGridState()
+  val reorderableLazyStaggeredGridState =
+    rememberReorderableLazyStaggeredGridState(lazyStaggeredGridState) { from, to ->
+      // Reorder the members list
+      val mutableList = sortedMembers.toMutableList()
+      val item = mutableList.removeAt(from.index)
+      mutableList.add(to.index, item)
+
+      // Update state with new ordering
+      onStateChange(state.reorderMembers(mutableList))
+      hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
+    }
+
+  // Display members in a reorderable staggered grid
+  LazyVerticalStaggeredGrid(
+    columns = StaggeredGridCells.Adaptive(minSize = 320.dp),
+    state = lazyStaggeredGridState,
+    modifier = Modifier
+      .fillMaxWidth()
+      .heightIn(min = 100.dp, max = 600.dp),
+    verticalItemSpacing = 8.dp,
+    horizontalArrangement = Arrangement.spacedBy(8.dp),
+    userScrollEnabled = false
+  ) {
+    items(sortedMembers.size, key = { sortedMembers[it].id }) { index ->
+      val member = sortedMembers[index]
+      val postPair = state.members[member] ?: Pair("", 0)
+
+      ReorderableItem(reorderableLazyStaggeredGridState, key = member.id) { isDragging ->
+        val elevation by animateDpAsState(if (isDragging) 8.dp else 2.dp, label = "drag_elevation")
+
+        Surface(
+          shadowElevation = elevation,
+          modifier = Modifier.fillMaxWidth()
+        ) {
+          ReorderableMemberChip(
+            member = member,
+            post = postPair.first,
+            config = config,
+            onPostChange = { newPost ->
+              onStateChange(state.updateMemberPost(member, newPost))
+            },
+            onRemove = {
+              onStateChange(state.removeMember(member))
+            },
+            isDragging = isDragging,
+            modifier = Modifier.draggableHandle(
+              onDragStarted = {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+              },
+              onDragStopped = {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
+              }
+            )
+          )
+        }
+      }
+    }
+  }
+
+  Spacer(modifier = Modifier.height(8.dp))
+
+  // Add member button and count
+  Row(
+    modifier = Modifier.fillMaxWidth(),
+    horizontalArrangement = Arrangement.SpaceBetween,
+    verticalAlignment = Alignment.CenterVertically
+  ) {
+    OutlinedButton(
+      onClick = onShowAddDialog
+    ) {
+      Icon(
+        Icons.Default.Add,
+        contentDescription = null,
+        modifier = Modifier.size(ButtonDefaults.IconSize)
+      )
+      Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+      Text(config.addButtonText)
+    }
+
+    if (config.showMemberCount && state.hasMembers) {
+      Text(
+        text = "${state.memberCount} ${if (state.memberCount == 1) "पदाधिकारी जोड़ा गया" else "पदाधिकारी जोड़े गए"}",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.primary
+      )
+    }
+  }
+}
+
+@Composable
+private fun ReorderableMemberChip(
+  member: Member,
+  post: String,
+  config: MembersConfig,
+  onPostChange: (String) -> Unit,
+  onRemove: () -> Unit,
+  isDragging: Boolean,
+  modifier: Modifier = Modifier
+) {
+  var text by remember { mutableStateOf(post) }
+
+  // Update text when post changes externally
+  LaunchedEffect(post) {
+    text = post
+  }
+
+  Card(
+    modifier = modifier.padding(4.dp),
+    colors = CardDefaults.cardColors(
+      containerColor = if (isDragging)
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+      else
+        MaterialTheme.colorScheme.surface
+    )
+  ) {
+    Row(
+      modifier = Modifier.padding(12.dp),
+      horizontalArrangement = Arrangement.spacedBy(12.dp),
+      verticalAlignment = Alignment.Top
+    ) {
+      // Drag handle icon
+      Icon(
+        Icons.Default.DragHandle,
+        contentDescription = "खींचकर क्रम बदलें",
+        tint = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(top = 4.dp)
+      )
+
+      // Member profile image or icon
+      if (!member.profileImage.isNullOrEmpty()) {
+        AsyncImage(
+          model = ImageRequest.Builder(LocalPlatformContext.current)
+            .data(member.profileImage)
+            .crossfade(true)
+            .build(),
+          contentDescription = "Profile Image",
+          modifier = Modifier.size(32.dp).clip(CircleShape),
+          contentScale = ContentScale.Crop
+        )
+      } else {
+        Icon(
+          modifier = Modifier.size(32.dp),
+          imageVector = Icons.Filled.Face,
+          contentDescription = "Profile",
+          tint = Color.Gray
+        )
+      }
+
+      // Member info and role input
+      Column(modifier = Modifier.weight(1f)) {
+        Text(
+          text = member.name,
+          style = MaterialTheme.typography.bodyMedium,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        OutlinedTextField(
+          modifier = Modifier.fillMaxWidth(),
+          value = text,
+          onValueChange = { newText ->
+            text = newText
+            onPostChange(newText)
+          },
+          label = { Text(config.postLabel) },
+          placeholder = { Text(config.postPlaceholder) },
+          textStyle = MaterialTheme.typography.bodySmall,
+          isError = config.isPostMandatory && text.isBlank(),
+          singleLine = true
+        )
+      }
+
+      // Remove button
+      IconButton(
+        onClick = onRemove,
+        modifier = Modifier.size(32.dp)
+      ) {
+        Icon(
+          Icons.Default.Close,
+          contentDescription = "हटाएं",
+          modifier = Modifier.size(20.dp),
+          tint = MaterialTheme.colorScheme.error
+        )
+      }
+    }
   }
 }
 

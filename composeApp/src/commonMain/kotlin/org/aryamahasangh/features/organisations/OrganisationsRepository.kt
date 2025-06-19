@@ -353,10 +353,11 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
     return flow {
       emit(Result.Loading)
       val result = safeCall {
-        // TODO: Implement with proper GraphQL mutation when available
-        // For now, return success as placeholder
-        kotlinx.coroutines.delay(1000) // Simulate network delay
-        true
+        val response = apolloClient.mutation(RemoveOrganisationMutation(organisationId)).execute()
+        if (response.hasErrors()) {
+          throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+        }
+        response.data?.deleteFromorganisationCollection?.affectedCount!! > 0
       }
       emit(result)
     }

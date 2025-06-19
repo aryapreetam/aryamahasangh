@@ -150,6 +150,8 @@ kotlin {
 
       // logging
       api("com.diamondedge:logging:2.0.3")
+      // list reorder
+      implementation(libs.reorderable)
     }
     commonTest.dependencies {
       implementation(libs.kotlin.test)
