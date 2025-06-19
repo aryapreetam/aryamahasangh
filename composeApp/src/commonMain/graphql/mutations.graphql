@@ -271,3 +271,9 @@ mutation createOrganisation($name: String!, $logo: String!, $description: String
         }
     }
 }
+
+mutation removeOrganisation($organisationId: String!) {
+    deleteFromorganisationCollection(filter: {id: {eq: $organisationId}}) {
+        affectedCount
+    }
+}
