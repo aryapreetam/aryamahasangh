@@ -8,7 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.navigation
+import androidx.navigation.compose.navigation
 import androidx.navigation.toRoute
 import org.aryamahasangh.LocalIsAuthenticated
 import org.aryamahasangh.features.activities.*
@@ -146,6 +146,29 @@ fun RootNavGraph(navController: NavHostController) {
           onNavigateToRegistration = { activityId, capacity ->
             // Navigate to registration form
             navController.navigate(Screen.AryaNirmanRegistrationForm(activityId, capacity))
+          },
+          onNavigateToCreateOverview = { activityId, existingOverview, existingMediaUrls ->
+            // Navigate to create/edit overview form
+            navController.navigate(Screen.CreateOverviewForm(activityId, existingOverview, existingMediaUrls))
+          },
+          viewModel = viewModel
+        )
+      }
+      composable<Screen.CreateOverviewForm> {
+        val args = it.toRoute<Screen.CreateOverviewForm>()
+        val viewModel = koinInject<ActivitiesViewModel>()
+        CreateOverviewFormScreen(
+          activityId = args.activityId,
+          existingOverview = args.existingOverview,
+          existingMediaUrls = args.existingMediaUrls,
+          onNavigateBack = {
+            navController.popBackStack()
+          },
+          onSuccess = {
+            // Navigate back to activity details after successful save
+            navController.navigate(Screen.ActivityDetails(args.activityId)) {
+              popUpTo(Screen.ActivityDetails(args.activityId)) { inclusive = true }
+            }
           },
           viewModel = viewModel
         )

@@ -5,7 +5,6 @@ import androidx.compose.runtime.*
 import org.aryamahasangh.auth.SessionManager
 import org.aryamahasangh.di.KoinInitializer
 import org.aryamahasangh.navigation.AppDrawer
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 // CompositionLocal for Authentication State
 val LocalIsAuthenticated = compositionLocalOf { false }
@@ -16,25 +15,37 @@ private val initKoin by lazy {
   true // Return a value to satisfy the lazy property
 }
 
+
 @Composable
-@Preview
 fun App() {
-  // Ensure Koin is initialized
-  initKoin
+  val demo = false
+  if (!demo) {
 
-  // Initialize session management when app starts
-  LaunchedEffect(Unit) {
-    SessionManager.initialize()
-  }
-  
-  // Observe authentication state
-  val isAuthenticated by SessionManager.isAuthenticated.collectAsState(initial = false)
+    // Ensure Koin is initialized
+    initKoin
 
-  AppTheme {
-    // Provide authentication state to the entire app
-    CompositionLocalProvider(LocalIsAuthenticated provides isAuthenticated) {
-      // Always show AppDrawer - login is optional
-      AppDrawer()
+    // Initialize session management when app starts
+    LaunchedEffect(Unit) {
+      SessionManager.initialize()
     }
+
+    // Observe authentication state
+    val isAuthenticated by SessionManager.isAuthenticated.collectAsState(initial = false)
+
+    AppTheme {
+      // Provide authentication state to the entire app
+      CompositionLocalProvider(LocalIsAuthenticated provides isAuthenticated) {
+        // Always show AppDrawer - login is optional
+        AppDrawer()
+      }
+    }
+  } else {
+    //ImagePickerExample()
+    //ActivityFormImagePickerIntegration()
+//    DragAndDropSample()
+    //DNDWithCursor()
   }
 }
+
+
+

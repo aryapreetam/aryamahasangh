@@ -277,3 +277,12 @@ mutation removeOrganisation($organisationId: String!) {
         affectedCount
     }
 }
+
+mutation addActivityOverview($activityId: String!, $description: String!, $mediaUrls: [String]) {
+    updateactivitiesCollection(
+        set: {overview_description: $description, overview_media_urls: $mediaUrls}
+        filter: {id: {eq: $activityId}}
+    ) {
+        affectedCount
+    }
+}

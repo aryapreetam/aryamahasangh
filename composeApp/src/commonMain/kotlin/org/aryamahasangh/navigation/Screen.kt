@@ -23,6 +23,13 @@ sealed class Screen {
   data class EditActivity(val id: String) : Screen()
 
   @Serializable
+  data class CreateOverviewForm(
+    val activityId: String,
+    val existingOverview: String? = null,
+    val existingMediaUrls: List<String> = emptyList()
+  ) : Screen()
+
+  @Serializable
   data object JoinUs : Screen()
 
   @Serializable

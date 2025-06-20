@@ -973,9 +973,13 @@ type activities implements Node {
 
   allowed_gender: gender_filter
 
-  organisational_activityCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: organisational_activityFilter, "Sort order to apply to the collection" orderBy: [organisational_activityOrderBy!]): organisational_activityConnection
+  overview_description: String
+
+  overview_media_urls: [String]!
 
   activity_memberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: activity_memberFilter, "Sort order to apply to the collection" orderBy: [activity_memberOrderBy!]): activity_memberConnection
+
+  organisational_activityCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: organisational_activityFilter, "Sort order to apply to the collection" orderBy: [organisational_activityOrderBy!]): organisational_activityConnection
 
   satr_registrationCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: satr_registrationFilter, "Sort order to apply to the collection" orderBy: [satr_registrationOrderBy!]): satr_registrationConnection
 }
@@ -1037,6 +1041,10 @@ input activitiesFilter {
 
   allowed_gender: gender_filterFilter
 
+  overview_description: StringFilter
+
+  overview_media_urls: StringListFilter
+
   nodeId: IDFilter
 
   """
@@ -1087,6 +1095,10 @@ input activitiesInsertInput {
   longitude: Float
 
   allowed_gender: gender_filter
+
+  overview_description: String
+
+  overview_media_urls: [String]
 }
 
 type activitiesInsertResponse {
@@ -1131,6 +1143,8 @@ input activitiesOrderBy {
   longitude: OrderByDirection
 
   allowed_gender: OrderByDirection
+
+  overview_description: OrderByDirection
 }
 
 input activitiesUpdateInput {
@@ -1165,6 +1179,10 @@ input activitiesUpdateInput {
   longitude: Float
 
   allowed_gender: gender_filter
+
+  overview_description: String
+
+  overview_media_urls: [String]
 }
 
 type activitiesUpdateResponse {
@@ -1195,9 +1213,9 @@ type activity_member implements Node {
 
   priority: Int!
 
-  member: member!
+  activities: activities
 
-  activities: activities!
+  member: member
 }
 
 type activity_memberConnection {
@@ -2157,9 +2175,11 @@ type member implements Node {
 
   longitude: Float
 
-  organisational_memberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: organisational_memberFilter, "Sort order to apply to the collection" orderBy: [organisational_memberOrderBy!]): organisational_memberConnection
+  dob: Date
 
   activity_memberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: activity_memberFilter, "Sort order to apply to the collection" orderBy: [activity_memberOrderBy!]): activity_memberConnection
+
+  organisational_memberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: organisational_memberFilter, "Sort order to apply to the collection" orderBy: [organisational_memberOrderBy!]): organisational_memberConnection
 }
 
 type memberConnection {
@@ -2211,6 +2231,8 @@ input memberFilter {
 
   longitude: FloatFilter
 
+  dob: DateFilter
+
   nodeId: IDFilter
 
   """
@@ -2253,6 +2275,8 @@ input memberInsertInput {
   latitude: Float
 
   longitude: Float
+
+  dob: Date
 }
 
 type memberInsertResponse {
@@ -2291,6 +2315,8 @@ input memberOrderBy {
   latitude: OrderByDirection
 
   longitude: OrderByDirection
+
+  dob: OrderByDirection
 }
 
 input memberUpdateInput {
@@ -2317,6 +2343,8 @@ input memberUpdateInput {
   latitude: Float
 
   longitude: Float
+
+  dob: Date
 }
 
 type memberUpdateResponse {
@@ -2347,9 +2375,9 @@ type organisation implements Node {
 
   priority: Int!
 
-  organisational_memberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: organisational_memberFilter, "Sort order to apply to the collection" orderBy: [organisational_memberOrderBy!]): organisational_memberConnection
-
   organisational_activityCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: organisational_activityFilter, "Sort order to apply to the collection" orderBy: [organisational_activityOrderBy!]): organisational_activityConnection
+
+  organisational_memberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: organisational_memberFilter, "Sort order to apply to the collection" orderBy: [organisational_memberOrderBy!]): organisational_memberConnection
 }
 
 type organisationConnection {
@@ -2477,9 +2505,9 @@ type organisational_activity implements Node {
 
   organisation_id: String!
 
-  organisation: organisation!
+  activities: activities
 
-  activities: activities!
+  organisation: organisation
 }
 
 type organisational_activityConnection {
@@ -2595,9 +2623,9 @@ type organisational_member implements Node {
 
   priority: Int!
 
-  organisation: organisation!
+  member: member
 
-  member: member!
+  organisation: organisation
 }
 
 type organisational_memberConnection {
@@ -2749,7 +2777,7 @@ type satr_registration implements Node {
 
   activity_id: String!
 
-  activities: activities!
+  activities: activities
 }
 
 type satr_registrationConnection {

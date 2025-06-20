@@ -9,6 +9,7 @@ query Organisations{
     }
   }
 }
+
 query OrganisationsAndMembers{
   memberCollection{
     edges{
@@ -168,6 +169,8 @@ query OrganisationalActivityDetailById($activityId: String!){
         latitude
         longitude
         allowed_gender
+          overview_description
+          overview_media_urls
         organisational_activityCollection{
           edges{
             node{
@@ -213,6 +216,8 @@ query OrganisationalActivityDetail($filter: activitiesFilter){
         latitude
         longitude
         allowed_gender
+          overview_description
+          overview_media_urls
         organisational_activityCollection{
           edges{
             node{

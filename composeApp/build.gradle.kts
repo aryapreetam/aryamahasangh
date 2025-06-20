@@ -293,9 +293,9 @@ apollo {
     mapScalar("Datetime", "kotlinx.datetime.Instant")
     // If you're using adapters, you can also set this
     generateKotlinModels.set(true)
-
     introspection {
       endpointUrl.set("$supabaseUrl/graphql/v1")
+      // do not write composeApp here, as that will be take care by downloadSchema task
       schemaFile.set(file("src/commonMain/graphql/schema.graphqls"))
       headers.put("Authorization", "Bearer $supabaseKey")
       headers.put("apikey", supabaseKey)

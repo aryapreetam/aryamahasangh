@@ -223,7 +223,6 @@ class ActivitiesViewModel(
       )
     launch {
       _formSubmissionState.value = AdmissionFormSubmissionState(isSubmitting = true)
-      _createdActivityId.value = null
 
       when (
         val result =
@@ -404,6 +403,15 @@ class ActivitiesViewModel(
 
     println("Real-time listener job created: ${registrationListenerJob != null}")
   }
+
+  /**
+   * Add overview to an activity
+   */
+  fun addActivityOverview(
+    activityId: String,
+    description: String,
+    mediaUrls: List<String>
+  ) = activityRepository.addActivityOverview(activityId, description, mediaUrls)
 
   /**
    * Stop listening for real-time registration updates

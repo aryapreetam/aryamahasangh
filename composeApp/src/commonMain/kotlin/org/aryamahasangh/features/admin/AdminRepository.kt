@@ -100,7 +100,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
       // For now, return empty lists for organisations and activities
       // These will be properly mapped once the exact GraphQL schema is known
       val organisations = memberNode.organisational_memberCollection?.edges?.map {
-        val organisation = it.node.organisation
+        val organisation = it.node.organisation!!
         OrganisationInfo(
           id = organisation.id,
           name = organisation.name!!,

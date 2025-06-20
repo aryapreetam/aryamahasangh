@@ -92,6 +92,20 @@ data class Organisation(
   val name: String
 )
 
+enum class ActivityStatus {
+  PAST,
+  ONGOING,
+  UPCOMING;
+
+  fun toDisplayName(): String {
+    return when (this) {
+      PAST -> "समाप्त"
+      ONGOING -> "चल रही है"
+      UPCOMING -> "आगामी"
+    }
+  }
+}
+
 enum class ActivityType {
   SESSION,
   CAMP,
@@ -149,23 +163,11 @@ data class OrganisationalActivity(
   val shortDescription: String,
   val additionalInstructions: String,
   val contactPeople: List<ActivityMember>,
-  val associatedOrganisations: List<AssociatedOrganisation>
+  val associatedOrganisations: List<AssociatedOrganisation>,
+  val overviewDescription: String? = null,
+  val overviewMediaUrls: List<String> = emptyList()
 ) {
   companion object
-}
-
-enum class ActivityStatus {
-  PAST,
-  ONGOING,
-  UPCOMING;
-
-  fun toDisplayName(): String {
-    return when(this){
-      PAST -> "समाप्त"
-      ONGOING -> "चल रही है"
-      UPCOMING -> "आगामी"
-    }
-  }
 }
 
 fun OrganisationalActivity.getStatus(): ActivityStatus {
@@ -176,8 +178,13 @@ fun OrganisationalActivity.getStatus(): ActivityStatus {
     else -> ActivityStatus.ONGOING
   }
 }
+
 fun OrganisationalActivity.isFromPast() = getStatus() == ActivityStatus.PAST
 fun OrganisationalActivity.isUpcoming() = getStatus() == ActivityStatus.UPCOMING
+
+fun OrganisationalActivity.hasOverview(): Boolean {
+  return !overviewDescription.isNullOrEmpty() || overviewMediaUrls.isNotEmpty()
+}
 
 fun org.aryamahasangh.features.activities.OrganisationalActivityShort.getStatus(): ActivityStatus {
   val currentTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
@@ -232,7 +239,22 @@ fun OrganisationalActivity.Companion.camelCased(
           id = it.node.id,
           organisation = Organisation(id = id, name = name!!)
         )
-      }!!
+      }!!,
+    overviewDescription = node.overview_description ?: null,
+    overviewMediaUrls = node.overview_media_urls.map { it ?: "" }
+  )
+}
+
+fun OrganisationalActivityShort.camelCased(): org.aryamahasangh.features.activities.OrganisationalActivityShort {
+  return OrganisationalActivityShort(
+    id = this.id,
+    name = this.name,
+    shortDescription = this.short_description,
+    startDatetime = this.start_datetime.toLocalDateTime(TimeZone.currentSystemDefault()),
+    endDatetime = this.end_datetime.toLocalDateTime(TimeZone.currentSystemDefault()),
+    type = this.type.toDomain(),
+    district = this.district ?: "",
+    state = this.state ?: ""
   )
 }
 
@@ -254,19 +276,6 @@ data class OrganisationalActivityShort(
   val district: String,
   val state: String
 )
-
-fun OrganisationalActivityShort.camelCased(): org.aryamahasangh.features.activities.OrganisationalActivityShort {
-  return OrganisationalActivityShort(
-    id = this.id,
-    name = this.name,
-    shortDescription = this.short_description,
-    startDatetime = this.start_datetime.toLocalDateTime(TimeZone.currentSystemDefault()),
-    endDatetime = this.end_datetime.toLocalDateTime(TimeZone.currentSystemDefault()),
-    type = this.type.toDomain(),
-    district = this.district ?: "",
-    state = this.state ?: ""
-  )
-}
 
 data class OrganisationsAndMembers(
   val members: List<Member>,
