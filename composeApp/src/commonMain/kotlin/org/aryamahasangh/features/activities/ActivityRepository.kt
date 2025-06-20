@@ -1,6 +1,7 @@
 package org.aryamahasangh.features.activities
 
 import com.apollographql.apollo.ApolloClient
+import com.apollographql.apollo.api.Optional
 import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.filter.FilterOperation
@@ -67,6 +68,7 @@ interface ActivityRepository {
    * Listen to real-time registration updates for an activity
    */
   fun listenToRegistrations(activityId: String): Flow<List<UserProfile>>
+  fun addActivityOverview(activityId: String, overview: String, mediaUrls: List<String> = emptyList()): Flow<Result<Boolean>>
 }
 
 /**
@@ -302,6 +304,32 @@ class ActivityRepositoryImpl(
           )
         }
       }
+  }
+
+  override fun addActivityOverview(
+    activityId: String,
+    overview: String,
+    mediaUrls: List<String>
+  ): Flow<Result<Boolean>> {
+    return flow {
+      emit(Result.Loading)
+      val result = safeCall {
+        val response = apolloClient.mutation(
+          AddActivityOverviewMutation(
+            activityId,
+            overview,
+            Optional.present(mediaUrls)
+          )
+        ).execute()
+
+        if (response.hasErrors()) {
+          throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+        }
+
+        response.data?.updateactivitiesCollection?.affectedCount!! > 0
+      }
+      emit(result)
+    }
   }
 }
 

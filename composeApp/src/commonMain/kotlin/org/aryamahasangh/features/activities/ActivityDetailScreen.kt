@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
@@ -28,6 +29,7 @@ import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.error_profile_image
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.launch
+import org.aryamahasangh.LocalIsAuthenticated
 import org.aryamahasangh.components.activityTypeData
 import org.aryamahasangh.isWeb
 import org.aryamahasangh.navigation.LocalSnackbarHostState
@@ -37,13 +39,13 @@ import org.aryamahasangh.utils.toHumanReadable
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
-import org.aryamahasangh.LocalIsAuthenticated
 
 @Composable
 fun ActivityDetailScreen(
   id: String,
   onNavigateToEdit: (String) -> Unit = {},
   onNavigateToRegistration: (String, Int) -> Unit = { _, _ -> },
+  onNavigateToCreateOverview: (String, String?, List<String>) -> Unit = { _, _, _ -> },
   viewModel: ActivitiesViewModel = koinInject()
 ) {
   val snackbarHostState = LocalSnackbarHostState.current
@@ -119,7 +121,13 @@ fun ActivityDetailScreen(
   }
 
   Box(modifier = Modifier.fillMaxSize()) {
-    ActivityDisplay(uiState.activity!!, registeredUsers, isLoggedIn, onNavigateToRegistration)
+    ActivityDisplay(
+      activity = uiState.activity!!,
+      registeredUsers = registeredUsers,
+      isLoggedIn = isLoggedIn,
+      onNavigateToRegistration = onNavigateToRegistration,
+      onNavigateToCreateOverview = onNavigateToCreateOverview
+    )
 
     // Edit button in top-right corner
     if (isLoggedIn) {
@@ -141,12 +149,118 @@ fun ActivityDetailScreen(
   }
 }
 
+@OptIn(ExperimentalMaterial3Api::class) // For ListItem
+@Composable
+fun UserProfileListItem(user: UserProfile, modifier: Modifier = Modifier) {
+  // Using Material 3 ListItem for standard list item appearance and structure
+  val uriHandler = LocalUriHandler.current
+  val snackbarHostState = LocalSnackbarHostState.current
+  val scope = rememberCoroutineScope()
+  ListItem(
+    modifier = modifier.widthIn(max = 500.dp),
+    headlineContent = {
+      Text(
+        text = user.fullname,
+        style = MaterialTheme.typography.titleMedium,
+        maxLines = 1, // Ensure full name doesn't wrap excessively if very long
+        overflow = TextOverflow.Ellipsis
+      )
+    },
+    supportingContent = {
+      Text(
+        text = user.address,
+        style = MaterialTheme.typography.bodySmall,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
+      )
+    },
+    leadingContent = {
+      val genderIcon: ImageVector =
+        if (user.gender.equals("female", ignoreCase = true)) {
+          Icons.Filled.Face4
+        } else {
+          Icons.Filled.Person
+        }
+      // Circular background for the icon
+      Box(
+        modifier =
+          Modifier
+            .size(48.dp) // Standard M3 size for leading icon container
+            .clip(CircleShape) // Apply circular clipping
+            .background(MaterialTheme.colorScheme.primaryContainer),
+        // Background color for the circle
+        contentAlignment = Alignment.Center // Center the icon within the Box
+      ) {
+        Icon(
+          imageVector = genderIcon,
+          contentDescription = user.gender,
+          tint = MaterialTheme.colorScheme.onPrimaryContainer, // Icon color on top of primaryContainer
+          modifier = Modifier.size(36.dp) // Standard M3 icon size
+        )
+      }
+    },
+    trailingContent = {
+      IconButton(
+        onClick = {
+          uriHandler.openUri("tel:${user.mobile}")
+          if (isWeb()) {
+            scope.launch {
+              snackbarHostState.showSnackbar(
+                message = "If you do not have calling apps installed, you can manually call to ${user.mobile}",
+                actionLabel = "Close"
+              )
+            }
+          }
+        }
+        // Modifier.align(Alignment.CenterVertically) is handled by ListItem for trailingContent
+      ) {
+        Icon(
+          imageVector = Icons.Filled.Call,
+          contentDescription = "Call ${user.fullname}",
+          tint = MaterialTheme.colorScheme.primary
+        )
+      }
+    },
+    colors =
+      ListItemDefaults.colors(
+        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f) // Optional: slight background
+      ),
+    tonalElevation = 1.dp // Optional: adds a slight shadow
+  )
+}
+
+@Composable
+fun RegisteredUsers(users: List<UserProfile>, capacity: Int = 0) {
+  Column(
+    verticalArrangement = Arrangement.spacedBy(8.dp) // Space between items
+  ) {
+    Column {
+      val count = "${users.size}"
+      val capacityText = if (capacity > 0) " / ${capacity.toString()}" else ""
+      Text(
+        "कुल पंजीकरण (${count.toDevanagariNumerals()}${capacityText.toDevanagariNumerals()}):",
+        style = MaterialTheme.typography.labelLarge,
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(vertical = 16.dp)
+      )
+    }
+    FlowRow(
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
+      verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+      users.forEach { user ->
+        UserProfileListItem(user = user)
+      }
+    }
+  }
+}
+
 // @Preview
 // @Composable
 // fun ActivityDisplayPreview(){
 //  val activity = OrganisationalActivityDetailQuery.OrganisationalActivity(
 //    id = "",
-//    name =  "नियमित संध्या अनुष्ठान अभियान",
+//    name =  "नियमित संध्या अनुषठान अभियान",
 //    description = "ईश के ज्ञान से लोक में जांच के आर्य कार्य आगे बढ़ाते रहें। नित्य है ना मिटे ना हटे ले चले प्रार्थना प्रेम से भाव लाते रहें।",
 //        associatedOrganisations = listOf(
 //          OrganisationalActivityDetailQuery.AssociatedOrganisation("sdfsdfdsf", "राष्ट्रीय आर्य निर्मात्री सभा")
@@ -185,7 +299,8 @@ fun ActivityDisplay(
   activity: OrganisationalActivity,
   registeredUsers: List<UserProfile> = emptyList(),
   isLoggedIn: Boolean,
-  onNavigateToRegistration: (String, Int) -> Unit = { _, _ -> }
+  onNavigateToRegistration: (String, Int) -> Unit = { _, _ -> },
+  onNavigateToCreateOverview: (String, String?, List<String>) -> Unit = { _, _, _ -> }
 ) {
   println(activity)
 
@@ -230,7 +345,7 @@ fun ActivityDisplay(
 
     // Associated Organisations
     Text(
-      text = "संबधित संस्थाएँ:",
+      text = "संबंधित संस्थाएँ:",
       style = MaterialTheme.typography.titleMedium,
       fontWeight = FontWeight.Bold
     )
@@ -353,6 +468,7 @@ fun ActivityDisplay(
 
     // Additional Instructions
     if (activity.additionalInstructions.isNotEmpty()) {
+      Spacer(modifier = Modifier.height(16.dp))
       Text(
         text = "अतिरिक्त निर्देश:",
         style = MaterialTheme.typography.titleMedium,
@@ -380,21 +496,215 @@ fun ActivityDisplay(
 
       println("Activity ${activity.id}: registrations=$registrationCount, capacity=${activity.capacity}, isFull=$isFull")
 
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+        Button(
+          onClick = { onNavigateToRegistration(activity.id, activity.capacity) },
+          enabled = !isFull,
+          modifier = Modifier.weight(1f)
+        ) {
+          Text(
+            text = if (isFull) "पंजीकरण बंद" else "पंजीकरण",
+            style = MaterialTheme.typography.labelLarge
+          )
+        }
+
+        // Show overview write button next to registration if applicable
+        if (isLoggedIn && !activity.hasOverview() && (activity.isFromPast() || activity.getStatus() == ActivityStatus.ONGOING)) {
+          Button(
+            onClick = {
+              onNavigateToCreateOverview(
+                activity.id,
+                activity.overviewDescription,
+                activity.overviewMediaUrls
+              )
+            },
+            modifier = Modifier.weight(1f)
+          ) {
+            Text(
+              text = "अवलोकन लिखें",
+              style = MaterialTheme.typography.labelLarge
+            )
+          }
+        }
+      }
+    }
+
+    // Overview and Registration sections with tabs for logged in users
+    if (activity.hasOverview() || isLoggedIn) {
+      Spacer(modifier = Modifier.height(16.dp))
+
+      if (isLoggedIn) {
+        // Tabs for logged in users
+        var selectedTabIndex by remember { mutableStateOf(0) }
+        val tabs = listOf(
+          "अवलोकन",
+          "कुल पंजीकरण (${
+            registeredUsers.size.toString().toDevanagariNumerals()
+          }${if (activity.capacity > 0) " / ${activity.capacity.toString().toDevanagariNumerals()}" else ""})"
+        )
+
+        TabRow(selectedTabIndex = selectedTabIndex) {
+          tabs.forEachIndexed { index, title ->
+            Tab(
+              selected = selectedTabIndex == index,
+              onClick = { selectedTabIndex = index },
+              text = { Text(title) }
+            )
+          }
+        }
+
+        when (selectedTabIndex) {
+          0 -> {
+            if (activity.hasOverview()) {
+              OverviewSection(
+                activity = activity,
+                isLoggedIn = isLoggedIn,
+                onNavigateToCreateOverview = onNavigateToCreateOverview
+              )
+            } else {
+              Card(
+                modifier = Modifier.fillMaxWidth().padding(16.dp)
+              ) {
+                Column(
+                  modifier = Modifier.padding(16.dp),
+                  horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                  Text(
+                    "अभी तक कोई अवलोकन नहीं जोड़ा गया है",
+                    style = MaterialTheme.typography.bodyLarge
+                  )
+                  Spacer(modifier = Modifier.height(8.dp))
+                  Button(
+                    onClick = {
+                      onNavigateToCreateOverview(
+                        activity.id,
+                        activity.overviewDescription,
+                        activity.overviewMediaUrls
+                      )
+                    }
+                  ) {
+                    Text("अवलोकन लिखें")
+                  }
+                }
+              }
+            }
+          }
+
+          1 -> {
+            RegisteredUsers(registeredUsers, activity.capacity)
+          }
+        }
+      } else {
+        // Only overview for non-logged in users
+        if (activity.hasOverview()) {
+          OverviewSection(
+            activity = activity,
+            isLoggedIn = isLoggedIn,
+            onNavigateToCreateOverview = onNavigateToCreateOverview
+          )
+        }
+      }
+    }
+  }
+}
+
+@Composable
+fun OverviewSection(
+  activity: OrganisationalActivity,
+  isLoggedIn: Boolean,
+  onNavigateToCreateOverview: (String, String?, List<String>) -> Unit
+) {
+  Column(
+    modifier = Modifier.padding(8.dp)
+  ) {
+    if(!isLoggedIn) {
+      Text(
+        text = "अवलोकन",
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.Bold
+      )
+      HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+    }
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.End,
+      verticalAlignment = Alignment.CenterVertically
+    ) {
+      // Edit button for logged in users
+      if (isLoggedIn && activity.hasOverview()) {
+        IconButton(
+          onClick = {
+            onNavigateToCreateOverview(
+              activity.id,
+              activity.overviewDescription,
+              activity.overviewMediaUrls
+            )
+          }
+        ) {
+          Icon(
+            imageVector = Icons.Default.Edit,
+            contentDescription = "अवलोकन संपादित करें",
+            tint = MaterialTheme.colorScheme.primary
+          )
+        }
+      }
+    }
+
+    Spacer(modifier = Modifier.height(8.dp))
+
+    if (activity.overviewMediaUrls.isNotEmpty()) {
+      Spacer(modifier = Modifier.height(12.dp))
+      FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+      ) {
+        val uriHandler = LocalUriHandler.current
+        activity.overviewMediaUrls.forEach { imageUrl ->
+          AsyncImage(
+            model = imageUrl,
+            contentDescription = "अवलोकन चित्र",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+              .size(150.dp)
+              .clip(RoundedCornerShape(8.dp))
+              .clickable {
+                // Handle image click if needed - could open in full screen
+                uriHandler.openUri(imageUrl)
+              }
+          )
+        }
+      }
+    }
+    Spacer(modifier = Modifier.height(16.dp))
+    if (!activity.overviewDescription.isNullOrEmpty()) {
+      Text(
+        text = activity.overviewDescription,
+        style = MaterialTheme.typography.bodyLarge
+      )
+    }
+
+
+
+    if (isLoggedIn && !activity.hasOverview()) {
       Button(
-        onClick = { onNavigateToRegistration(activity.id, activity.capacity) },
-        enabled = !isFull
+        onClick = {
+          onNavigateToCreateOverview(
+            activity.id,
+            activity.overviewDescription,
+            activity.overviewMediaUrls
+          )
+        },
+        modifier = Modifier.padding(top = 16.dp)
       ) {
         Text(
-          text = if (isFull) "पंजीकरण बंद" else "पंजीकरण",
+          text = "अवलोकन लिखें",
           style = MaterialTheme.typography.labelLarge,
           modifier = Modifier.padding(horizontal = 24.dp)
         )
       }
-    }
-
-    if (isLoggedIn) {
-      HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-      RegisteredUsers(registeredUsers, activity.capacity)
     }
   }
 }
@@ -494,153 +804,4 @@ fun ContactPersonItem(contactPerson: ActivityMember) {
 
 fun formatDateTime(dateTimeString: Any): String {
   return format(dateTimeString)
-}
-
-@OptIn(ExperimentalMaterial3Api::class) // For ListItem
-@Composable
-fun UserProfileListItem(user: UserProfile, modifier: Modifier = Modifier) {
-  // Using Material 3 ListItem for standard list item appearance and structure
-  val uriHandler = LocalUriHandler.current
-  val snackbarHostState = LocalSnackbarHostState.current
-  val scope = rememberCoroutineScope()
-  ListItem(
-    modifier = modifier.widthIn(max = 500.dp),
-    headlineContent = {
-      Text(
-        text = user.fullname,
-        style = MaterialTheme.typography.titleMedium,
-        maxLines = 1, // Ensure full name doesn't wrap excessively if very long
-        overflow = TextOverflow.Ellipsis
-      )
-    },
-    supportingContent = {
-      Text(
-        text = user.address,
-        style = MaterialTheme.typography.bodySmall,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis
-      )
-    },
-    leadingContent = {
-      val genderIcon: ImageVector =
-        if (user.gender.equals("female", ignoreCase = true)) {
-          Icons.Filled.Face4
-        } else {
-          Icons.Filled.Person
-        }
-      // Circular background for the icon
-      Box(
-        modifier =
-          Modifier
-            .size(48.dp) // Standard M3 size for leading icon container
-            .clip(CircleShape) // Apply circular clipping
-            .background(MaterialTheme.colorScheme.primaryContainer),
-        // Background color for the circle
-        contentAlignment = Alignment.Center // Center the icon within the Box
-      ) {
-        Icon(
-          imageVector = genderIcon,
-          contentDescription = user.gender,
-          tint = MaterialTheme.colorScheme.onPrimaryContainer, // Icon color on top of primaryContainer
-          modifier = Modifier.size(36.dp) // Standard M3 icon size
-        )
-      }
-    },
-    trailingContent = {
-      IconButton(
-        onClick = {
-          uriHandler.openUri("tel:${user.mobile}")
-          if (isWeb()) {
-            scope.launch {
-              snackbarHostState.showSnackbar(
-                message = "If you do not have calling apps installed, you can manually call to ${user.mobile}",
-                actionLabel = "Close"
-              )
-            }
-          }
-        }
-        // Modifier.align(Alignment.CenterVertically) is handled by ListItem for trailingContent
-      ) {
-        Icon(
-          imageVector = Icons.Filled.Call,
-          contentDescription = "Call ${user.fullname}",
-          tint = MaterialTheme.colorScheme.primary
-        )
-      }
-    },
-    colors =
-      ListItemDefaults.colors(
-        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f) // Optional: slight background
-      ),
-    tonalElevation = 1.dp // Optional: adds a slight shadow
-  )
-}
-
-// Sample data
-val sampleUser =
-  UserProfile(
-    id = "03a708a4-44d6-405e-88c1-ab5e7b097c85",
-    gender = "male",
-    mobile = "9889898989",
-    address = "A very long address that should definitely be ellipsized at the end to fit nicely.",
-    fullname = "Skdnfskjdfn Longname"
-  )
-
-val sampleUserFemale =
-  UserProfile(
-    id = "12345-female",
-    gender = "female",
-    mobile = "1231231234",
-    address = "Another interesting place in the world",
-    fullname = "Jane Doe"
-  )
-
-val sampleUserShortAddress =
-  UserProfile(
-    id = "67890-short",
-    gender = "male",
-    mobile = "5555555555",
-    address = "Short St.",
-    fullname = "John Smith"
-  )
-
-val users =
-  listOf(
-    sampleUser,
-    sampleUserFemale,
-    sampleUserShortAddress,
-    sampleUser.copy(id = "newId1", fullname = "Another Male User"),
-    sampleUserFemale.copy(id = "newId2", address = "Yet another street somewhere in this big city")
-  )
-
-@Preview
-@Composable
-fun RegisteredUsersPreview() {
-  RegisteredUsers(users = users)
-}
-
-@Composable
-fun RegisteredUsers(users: List<UserProfile>, capacity: Int = 0) {
-  Column(
-    verticalArrangement = Arrangement.spacedBy(8.dp) // Space between items
-  ) {
-    Column {
-      val count = "${users.size}"
-      val capacityText = if (capacity > 0) " / ${capacity.toString()}" else ""
-      Text(
-        "कुल पंजीकरण (${count.toDevanagariNumerals()}${capacityText.toDevanagariNumerals()}):",
-        style = MaterialTheme.typography.labelLarge,
-        fontWeight = FontWeight.Bold,
-        modifier = Modifier.padding(vertical = 16.dp)
-      )
-    }
-    FlowRow(
-      horizontalArrangement = Arrangement.spacedBy(8.dp),
-      verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-      users.forEach { user ->
-        UserProfileListItem(user = user)
-      }
-    }
-  }
 }

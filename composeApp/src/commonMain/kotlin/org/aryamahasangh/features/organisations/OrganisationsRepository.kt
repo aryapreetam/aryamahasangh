@@ -117,7 +117,8 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
               logo = node.logo,
               members =
                 it.node.organisational_memberCollection?.edges?.map {
-                  val (id, post, priority, member) = it.node
+                  val (id, post, priority, _member) = it.node
+                  val member = _member!!
                   OrganisationalMember(
                     id = id,
                     post = post!!,
