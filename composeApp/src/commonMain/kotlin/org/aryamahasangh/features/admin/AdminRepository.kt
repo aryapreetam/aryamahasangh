@@ -8,11 +8,20 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import org.aryamahasangh.*
+import org.aryamahasangh.components.AddressData
+import org.aryamahasangh.components.getActiveImageUrls
+import org.aryamahasangh.features.activities.LatLng
+import org.aryamahasangh.features.admin.data.AryaSamajDetail
+import org.aryamahasangh.features.admin.data.AryaSamajFormData
+import org.aryamahasangh.features.admin.data.AryaSamajListItem
+import org.aryamahasangh.features.admin.data.AryaSamajMember
 import org.aryamahasangh.network.supabaseClient
+import org.aryamahasangh.type.SamajMemberInsertInput
 import org.aryamahasangh.util.Result
 import org.aryamahasangh.util.safeCall
 
 interface AdminRepository {
+  // Member methods
   suspend fun getMembers(): Flow<Result<List<MemberShort>>>
   suspend fun getMembersCount(): Flow<Result<Long>>
   suspend fun getMember(id: String): Flow<Result<MemberDetail>>
@@ -22,11 +31,7 @@ interface AdminRepository {
     name: String?,
     phoneNumber: String?,
     educationalQualification: String?,
-    email: String?,
-    address: String?,
-    state: String?,
-    district: String?,
-    pincode: String?
+    email: String?
   ): Flow<Result<Boolean>>
 
   suspend fun updateMemberPhoto(memberId: String, photoUrl: String): Flow<Result<Boolean>>
@@ -35,11 +40,7 @@ interface AdminRepository {
     phoneNumber: String,
     educationalQualification: String?,
     profileImageUrl: String?,
-    email: String?,
-    address: String?,
-    state: String?,
-    district: String?,
-    pincode: String?
+    email: String?
   ): Flow<Result<Boolean>>
 
   suspend fun deleteMember(memberId: String): Flow<Result<Boolean>>
@@ -62,7 +63,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
         MemberShort(
           id = member.id,
           name = member.name!!,
-          profileImage = member.profile_image ?: "",
+          profileImage = member.profileImage ?: "",
           place = place
         )
       }!!
@@ -97,9 +98,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
         throw Exception("Member not found")
       }
 
-      // For now, return empty lists for organisations and activities
-      // These will be properly mapped once the exact GraphQL schema is known
-      val organisations = memberNode.organisational_memberCollection?.edges?.map {
+      val organisations = memberNode.organisationalMemberCollection?.edges?.map {
         val organisation = it.node.organisation!!
         OrganisationInfo(
           id = organisation.id,
@@ -107,29 +106,34 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
           logo = organisation.logo ?: "",
         )
       }
-      val activities = memberNode.activity_memberCollection?.edges?.map {
-        val activity = it.node.activities!!
+      val activities = memberNode.activityMemberCollection?.edges?.map {
+        val activity = it.node.activity!!
         ActivityInfo(
           id = activity.id,
           name = activity.name!!,
           district = activity.district!!,
           state = activity.state!!,
-          startDatetime = activity.start_datetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
-          endDatetime = activity.end_datetime!!.toLocalDateTime(TimeZone.currentSystemDefault())
+          startDatetime = activity.startDatetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
+          endDatetime = activity.endDatetime!!.toLocalDateTime(TimeZone.currentSystemDefault())
         )
       }
+
+      val address = memberNode.address
+      val addressInfo = if (address != null) {
+        "${address.basicAddress ?: ""}, ${address.district ?: ""}, ${address.state ?: ""} ${address.pincode ?: ""}"
+      } else ""
 
       MemberDetail(
         id = memberNode.id,
         name = memberNode.name ?: "",
-        profileImage = memberNode.profile_image ?: "",
-        phoneNumber = memberNode.phone_number ?: "",
-        educationalQualification = memberNode.educational_qualification ?: "",
+        profileImage = memberNode.profileImage ?: "",
+        phoneNumber = memberNode.phoneNumber ?: "",
+        educationalQualification = memberNode.educationalQualification ?: "",
         email = memberNode.email ?: "",
-        address = memberNode.address ?: "",
-        district = memberNode.district ?: "",
-        state = memberNode.state ?: "",
-        pincode = memberNode.pin ?: "",
+        address = addressInfo,
+        district = address?.district ?: "",
+        state = address?.state ?: "",
+        pincode = address?.pincode ?: "",
         organisations = organisations ?: emptyList(),
         activities = activities ?: emptyList()
       )
@@ -153,7 +157,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
         MemberShort(
           id = member.id,
           name = member.name!!,
-          profileImage = member.profile_image ?: "",
+          profileImage = member.profileImage ?: "",
           place = place
         )
       } ?: emptyList()
@@ -166,11 +170,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
     name: String?,
     phoneNumber: String?,
     educationalQualification: String?,
-    email: String?,
-    address: String?,
-    state: String?,
-    district: String?,
-    pincode: String?
+    email: String?
   ): Flow<Result<Boolean>> = flow {
     emit(Result.Loading)
     val result = safeCall {
@@ -182,11 +182,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
             name = name,
             phoneNumber = phoneNumber,
             educationalQualification = com.apollographql.apollo.api.Optional.presentIfNotNull(educationalQualification),
-            email = com.apollographql.apollo.api.Optional.presentIfNotNull(email),
-            address = com.apollographql.apollo.api.Optional.presentIfNotNull(address),
-            state = com.apollographql.apollo.api.Optional.presentIfNotNull(state),
-            district = com.apollographql.apollo.api.Optional.presentIfNotNull(district),
-            pincode = com.apollographql.apollo.api.Optional.presentIfNotNull(pincode)
+            email = com.apollographql.apollo.api.Optional.presentIfNotNull(email)
           )
         ).execute()
         if (response.hasErrors()) {
@@ -223,11 +219,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
     phoneNumber: String,
     educationalQualification: String?,
     profileImageUrl: String?,
-    email: String?,
-    address: String?,
-    state: String?,
-    district: String?,
-    pincode: String?
+    email: String?
   ): Flow<Result<Boolean>> = flow {
     emit(Result.Loading)
     val result = safeCall {
@@ -237,11 +229,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
           phoneNumber = phoneNumber,
           educationalQualification = educationalQualification ?: "",
           profileImageUrl = profileImageUrl ?: "",
-          email = com.apollographql.apollo.api.Optional.presentIfNotNull(email),
-          address = com.apollographql.apollo.api.Optional.presentIfNotNull(address),
-          state = com.apollographql.apollo.api.Optional.presentIfNotNull(state),
-          district = com.apollographql.apollo.api.Optional.presentIfNotNull(district),
-          pincode = com.apollographql.apollo.api.Optional.presentIfNotNull(pincode)
+          email = com.apollographql.apollo.api.Optional.presentIfNotNull(email)
         )
       ).execute()
       if (response.hasErrors()) {

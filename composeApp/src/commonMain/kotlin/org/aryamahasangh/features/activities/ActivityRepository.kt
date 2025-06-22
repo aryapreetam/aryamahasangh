@@ -10,14 +10,16 @@ import io.github.jan.supabase.realtime.selectAsFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.aryamahasangh.*
+import org.aryamahasangh.fragment.OrganisationalActivityShort
 import org.aryamahasangh.network.supabaseClient
 import org.aryamahasangh.type.ActivitiesInsertInput
 import org.aryamahasangh.type.ActivitiesUpdateInput
-import org.aryamahasangh.type.Gender_filter
 import org.aryamahasangh.util.Result
 import org.aryamahasangh.util.safeCall
+import org.aryamahasangh.type.GenderFilter as ApolloGenderFilter
 
 /**
  * Repository for handling activity-related operations
@@ -87,7 +89,7 @@ class ActivityRepositoryImpl(
           if (response.hasErrors()) {
             throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
           }
-          response.data?.activitiesCollection?.edges?.map { it.node.organisationalActivityShort.camelCased() }
+          response.data?.activitiesCollection?.edges?.map { it.node.organisationalActivityShort }
             ?: emptyList()
         }
 
@@ -112,7 +114,7 @@ class ActivityRepositoryImpl(
       if (response.hasErrors()) {
         throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
       }
-      response.data?.deleteFromactivitiesCollection?.affectedCount!! > 0
+      response.data?.deleteFromActivitiesCollection?.affectedCount!! > 0
     }
   }
 
@@ -126,19 +128,19 @@ class ActivityRepositoryImpl(
       if (response.hasErrors()) {
         throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
       }
-      if (response.data?.insertIntoactivitiesCollection?.affectedCount!! > 0) {
-        val activityId = response.data?.insertIntoactivitiesCollection?.records?.first()?.activityFields?.id!!
+      if (response.data?.insertIntoActivitiesCollection?.affectedCount!! > 0) {
+        val activityId = response.data?.insertIntoActivitiesCollection?.records?.first()?.activityFields?.id!!
         val organisations =
           associatedOrganisations.map {
-            OrganisationalActivityInsertData(organisation_id = it.id, activity_id = activityId)
+            OrganisationalActivityInsertData(organisationId = it.id, activityId = activityId)
           }
         try {
           supabaseClient.from("organisational_activity").insert(organisations)
           val members =
             activityMembers.map {
               ActivityMemberInsertData(
-                activity_id = activityId,
-                member_id = it.member.id,
+                activityId = activityId,
+                memberId = it.member.id,
                 post = it.post,
                 priority = it.priority
               )
@@ -165,19 +167,19 @@ class ActivityRepositoryImpl(
       val updateInput = ActivitiesUpdateInput(
         name = input.name,
         type = input.type,
-        short_description = input.short_description,
-        long_description = input.long_description,
+        shortDescription = input.shortDescription,
+        longDescription = input.longDescription,
         address = input.address,
         state = input.state,
         district = input.district,
-        start_datetime = input.start_datetime,
-        end_datetime = input.end_datetime,
-        media_files = input.media_files,
-        additional_instructions = input.additional_instructions,
+        startDatetime = input.startDatetime,
+        endDatetime = input.endDatetime,
+        mediaFiles = input.mediaFiles,
+        additionalInstructions = input.additionalInstructions,
         capacity = input.capacity,
         latitude = input.latitude,
         longitude = input.longitude,
-        allowed_gender = input.allowed_gender
+        allowedGender = input.allowedGender
       )
 
       // Update the activity
@@ -195,22 +197,22 @@ class ActivityRepositoryImpl(
       supabaseClient.from("organisational_activity")
         .delete {
           filter {
-            eq("activity_id", id)
+            eq("activityId", id)
           }
         }
 
       supabaseClient.from("activity_member")
         .delete {
           filter {
-            eq("activity_id", id)
+            eq("activityId", id)
           }
         }
 
       // Add new associations
       val organisationData = organisations.map {
         OrganisationalActivityInsertData(
-          activity_id = id,
-          organisation_id = it.id
+          activityId = id,
+          organisationId = it.id
         )
       }
 
@@ -221,8 +223,8 @@ class ActivityRepositoryImpl(
 
       val contactData = contactMembers.map {
         ActivityMemberInsertData(
-          activity_id = id,
-          member_id = it.member.id,
+          activityId = id,
+          memberId = it.member.id,
           post = it.post,
           priority = it.priority
         )
@@ -252,7 +254,7 @@ class ActivityRepositoryImpl(
               Member(
                 id = it.node.id,
                 name = it.node.name!!,
-                profileImage = it.node.profile_image ?: ""
+                profileImage = it.node.profileImage ?: ""
               )
             }!!,
           organisations =
@@ -273,12 +275,12 @@ class ActivityRepositoryImpl(
       if (response.hasErrors()) {
         throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
       }
-      response.data?.satr_registrationCollection?.edges?.map {
+      response.data?.satrRegistrationCollection?.edges?.map {
         UserProfile(
           id = it.node.id as String,
           fullname = it.node.fullname!!,
           mobile = it.node.mobile ?: "",
-          gender = (it.node.gender ?: Gender_filter.ANY) as String,
+          gender = (it.node.gender ?: ApolloGenderFilter.ANY).toString(),
           address = it.node.address ?: ""
         )
       }!!
@@ -326,7 +328,7 @@ class ActivityRepositoryImpl(
           throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
         }
 
-        response.data?.updateactivitiesCollection?.affectedCount!! > 0
+        response.data?.updateActivitiesCollection?.affectedCount!! > 0
       }
       emit(result)
     }
@@ -336,7 +338,8 @@ class ActivityRepositoryImpl(
 @Serializable
 data class SatrRegistration(
   val id: String,
-  val activity_id: String,
+  @SerialName("activity_id")
+  val activityId: String,
   val fullname: String,
   val mobile: String,
   val gender: String,
@@ -345,14 +348,18 @@ data class SatrRegistration(
 
 @Serializable
 data class ActivityMemberInsertData(
-  val activity_id: String,
-  val member_id: String,
+  @SerialName("activity_id")
+  val activityId: String,
+  @SerialName("member_id")
+  val memberId: String,
   val post: String = "",
   val priority: Int = 1
 )
 
 @Serializable
 data class OrganisationalActivityInsertData(
-  val organisation_id: String,
-  val activity_id: String
+  @SerialName("organisation_id")
+  val organisationId: String,
+  @SerialName("activity_id")
+  val activityId: String
 )

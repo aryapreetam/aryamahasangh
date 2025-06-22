@@ -623,7 +623,7 @@ fun OverviewSection(
     if(!isLoggedIn) {
       Text(
         text = "अवलोकन",
-        style = MaterialTheme.typography.titleLarge,
+        style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.Bold
       )
       HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -661,18 +661,16 @@ fun OverviewSection(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
       ) {
-        val uriHandler = LocalUriHandler.current
         activity.overviewMediaUrls.forEach { imageUrl ->
           AsyncImage(
             model = imageUrl,
             contentDescription = "अवलोकन चित्र",
-            contentScale = ContentScale.Fit,
+            contentScale = ContentScale.Crop,
             modifier = Modifier
               .size(150.dp)
               .clip(RoundedCornerShape(8.dp))
               .clickable {
                 // Handle image click if needed - could open in full screen
-                uriHandler.openUri(imageUrl)
               }
           )
         }

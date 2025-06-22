@@ -12,9 +12,7 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.toRoute
 import org.aryamahasangh.LocalIsAuthenticated
 import org.aryamahasangh.features.activities.*
-import org.aryamahasangh.features.admin.AdminContainerScreen
-import org.aryamahasangh.features.admin.AdminViewModel
-import org.aryamahasangh.features.admin.MemberDetailScreen
+import org.aryamahasangh.features.admin.*
 import org.aryamahasangh.features.arya_nirman.AryaNirmanHomeScreen
 import org.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
 import org.aryamahasangh.features.arya_nirman.SatraRegistrationFormScreen
@@ -24,7 +22,10 @@ import org.aryamahasangh.features.organisations.OrgDetailScreen
 import org.aryamahasangh.features.organisations.OrganisationsViewModel
 import org.aryamahasangh.features.organisations.OrgsScreen
 import org.aryamahasangh.screens.*
-import org.aryamahasangh.viewmodel.*
+import org.aryamahasangh.viewmodel.AboutUsViewModel
+import org.aryamahasangh.viewmodel.BookOrderViewModel
+import org.aryamahasangh.viewmodel.JoinUsViewModel
+import org.aryamahasangh.viewmodel.LearningViewModel
 import org.koin.compose.koinInject
 
 @ExperimentalMaterial3Api
@@ -64,7 +65,7 @@ fun RootNavGraph(navController: NavHostController) {
             // This will contain fresh results from server
             if (query.isNotBlank()) {
               adminUiState.searchResults.map { memberShort ->
-                org.aryamahasangh.features.activities.Member(
+                Member(
                   id = memberShort.id,
                   name = memberShort.name,
                   profileImage = memberShort.profileImage,
@@ -77,7 +78,7 @@ fun RootNavGraph(navController: NavHostController) {
             }
           },
           allMembers = adminUiState.members.map { memberShort ->
-            org.aryamahasangh.features.activities.Member(
+            Member(
               id = memberShort.id,
               name = memberShort.name,
               profileImage = memberShort.profileImage,
@@ -208,7 +209,7 @@ fun RootNavGraph(navController: NavHostController) {
             // This will contain fresh results from server
             if (query.isNotBlank()) {
               adminUiState.searchResults.map { memberShort ->
-                org.aryamahasangh.features.activities.Member(
+                Member(
                   id = memberShort.id,
                   name = memberShort.name,
                   profileImage = memberShort.profileImage,
@@ -221,7 +222,7 @@ fun RootNavGraph(navController: NavHostController) {
             }
           },
           allMembers = adminUiState.members.map { memberShort ->
-            org.aryamahasangh.features.activities.Member(
+            Member(
               id = memberShort.id,
               name = memberShort.name,
               profileImage = memberShort.profileImage,
@@ -264,7 +265,7 @@ fun RootNavGraph(navController: NavHostController) {
             // Use the search results from AdminViewModel
             if (query.isNotBlank()) {
               adminUiState.searchResults.map { memberShort ->
-                org.aryamahasangh.features.activities.Member(
+                Member(
                   id = memberShort.id,
                   name = memberShort.name,
                   profileImage = memberShort.profileImage,
@@ -277,7 +278,7 @@ fun RootNavGraph(navController: NavHostController) {
             }
           },
           allMembers = adminUiState.members.map { memberShort ->
-            org.aryamahasangh.features.activities.Member(
+            Member(
               id = memberShort.id,
               name = memberShort.name,
               profileImage = memberShort.profileImage,
@@ -356,39 +357,160 @@ fun RootNavGraph(navController: NavHostController) {
     }
     navigation<Screen.AryaSamajSection>(startDestination = Screen.AryaSamajHome) {
       composable<Screen.AryaSamajHome> {
-        AryaSamajHomeScreen()
+        val aryaSamajViewModel = koinInject<org.aryamahasangh.features.admin.data.AryaSamajViewModel>()
+        AryaSamajHomeScreen(viewModel = aryaSamajViewModel)
       }
-    }
+      composable<Screen.AddAryaSamajForm> {
+        val viewModel = koinInject<org.aryamahasangh.features.admin.data.AryaSamajViewModel>()
+        val adminViewModel = koinInject<AdminViewModel>()
 
-    navigation<Screen.AryaGurukulSection>(startDestination = Screen.AryaGurukulCollege) {
-      composable<Screen.AryaGurukulCollege> {
-        GurukulCollegeHomeScreen(
-          navigateToAdmissionForm = {
-            navController.navigate(Screen.AdmissionForm)
-          }
-        )
-      }
-    }
-    navigation<Screen.AryaaGurukulSection>(startDestination = Screen.AryaaGurukulCollege) {
-      composable<Screen.AryaaGurukulCollege> {
-        AryaaGurukulHomeScreen(
-          navigateToAdmissionForm = {
-            navController.navigate(Screen.AdmissionForm)
-          }
-        )
-      }
-      composable<Screen.AdmissionForm> {
-        val viewModel = koinInject<AdmissionsViewModel>()
-        if (isLoggedIn) {
-          AdmissionScreen(viewModel)
-        } else {
-          RegistrationForm(viewModel)
+        // Load members when screen is accessed
+        LaunchedEffect(Unit) {
+          adminViewModel.loadMembers()
         }
+
+        // Collect admin state for search results
+        val adminUiState by adminViewModel.membersUiState.collectAsState()
+
+        AddAryaSamajFormScreen(
+          viewModel = viewModel,
+          onNavigateBack = {
+            navController.popBackStack()
+          },
+          searchMembers = { query ->
+            if (query.isNotBlank()) {
+              adminUiState.searchResults.map { memberShort ->
+                Member(
+                  id = memberShort.id,
+                  name = memberShort.name,
+                  profileImage = memberShort.profileImage,
+                  phoneNumber = "", // Not available in MemberShort
+                  email = "" // Not available in MemberShort
+                )
+              }
+            } else {
+              emptyList()
+            }
+          },
+          allMembers = adminUiState.members.map { memberShort ->
+            Member(
+              id = memberShort.id,
+              name = memberShort.name,
+              profileImage = memberShort.profileImage,
+              phoneNumber = "", // Not available in MemberShort
+              email = "" // Not available in MemberShort
+            )
+          },
+          onTriggerSearch = { query ->
+            // Trigger the server search in AdminViewModel
+            adminViewModel.searchMembers(query)
+          }
+        )
+      }
+      composable<Screen.AryaSamajDetail> {
+        val aryaSamajId = it.toRoute<Screen.AryaSamajDetail>().aryaSamajId
+        val viewModel = koinInject<org.aryamahasangh.features.admin.data.AryaSamajViewModel>()
+        val adminViewModel = koinInject<AdminViewModel>()
+
+        // Load members when screen is accessed
+        LaunchedEffect(Unit) {
+          adminViewModel.loadMembers()
+        }
+
+        // Collect admin state for search results
+        val adminUiState by adminViewModel.membersUiState.collectAsState()
+
+        AryaSamajDetailScreen(
+          aryaSamajId = aryaSamajId,
+          viewModel = viewModel,
+          onNavigateBack = {
+            navController.popBackStack()
+          },
+          searchMembers = { query ->
+            if (query.isNotBlank()) {
+              adminUiState.searchResults.map { memberShort ->
+                Member(
+                  id = memberShort.id,
+                  name = memberShort.name,
+                  profileImage = memberShort.profileImage,
+                  phoneNumber = "", // Not available in MemberShort
+                  email = "" // Not available in MemberShort
+                )
+              }
+            } else {
+              emptyList()
+            }
+          },
+          allMembers = adminUiState.members.map { memberShort ->
+            Member(
+              id = memberShort.id,
+              name = memberShort.name,
+              profileImage = memberShort.profileImage,
+              phoneNumber = "", // Not available in MemberShort
+              email = "" // Not available in MemberShort
+            )
+          },
+          onTriggerSearch = { query ->
+            // Trigger the server search in AdminViewModel
+            adminViewModel.searchMembers(query)
+          }
+        )
+      }
+      composable<Screen.EditAryaSamajForm> {
+        val aryaSamajId = it.toRoute<Screen.EditAryaSamajForm>().aryaSamajId
+        val viewModel = koinInject<org.aryamahasangh.features.admin.data.AryaSamajViewModel>()
+        val adminViewModel = koinInject<AdminViewModel>()
+
+        // Load members when screen is accessed
+        LaunchedEffect(Unit) {
+          adminViewModel.loadMembers()
+        }
+
+        // Collect admin state for search results
+        val adminUiState by adminViewModel.membersUiState.collectAsState()
+
+        AddAryaSamajFormScreen(
+          viewModel = viewModel,
+          onNavigateBack = {
+            navController.popBackStack()
+          },
+          searchMembers = { query ->
+            if (query.isNotBlank()) {
+              adminUiState.searchResults.map { memberShort ->
+                Member(
+                  id = memberShort.id,
+                  name = memberShort.name,
+                  profileImage = memberShort.profileImage,
+                  phoneNumber = "", // Not available in MemberShort
+                  email = "" // Not available in MemberShort
+                )
+              }
+            } else {
+              emptyList()
+            }
+          },
+          allMembers = adminUiState.members.map { memberShort ->
+            Member(
+              id = memberShort.id,
+              name = memberShort.name,
+              profileImage = memberShort.profileImage,
+              phoneNumber = "", // Not available in MemberShort
+              email = "" // Not available in MemberShort
+            )
+          },
+          onTriggerSearch = { query ->
+            // Trigger the server search in AdminViewModel
+            adminViewModel.searchMembers(query)
+          },
+          isEditMode = true,
+          aryaSamajId = aryaSamajId
+        )
       }
     }
     navigation<Screen.AdminSection>(startDestination = Screen.AdminContainer) {
       composable<Screen.AdminContainer> {
         val viewModel = koinInject<AdminViewModel>()
+        val aryaSamajViewModel = koinInject<org.aryamahasangh.features.admin.data.AryaSamajViewModel>()
 
         // Navigate to AboutSection if user logs out
         LaunchedEffect(isLoggedIn) {
@@ -402,11 +524,21 @@ fun RootNavGraph(navController: NavHostController) {
 
         AdminContainerScreen(
           viewModel = viewModel,
+          aryaSamajViewModel = aryaSamajViewModel,
           onNavigateToMemberDetail = { memberId ->
             navController.navigate(Screen.MemberDetail(memberId))
           },
           onNavigateToAddMember = {
             navController.navigate(Screen.MemberDetail("new"))
+          },
+          onNavigateToAddAryaSamaj = {
+            navController.navigate(Screen.AddAryaSamajForm)
+          },
+          onNavigateToAryaSamajDetail = { aryaSamajId ->
+            navController.navigate(Screen.AryaSamajDetail(aryaSamajId))
+          },
+          onEditAryaSamaj = { aryaSamajId ->
+            navController.navigate(Screen.EditAryaSamajForm(aryaSamajId))
           }
         )
       }
@@ -447,7 +579,7 @@ fun RootNavGraph(navController: NavHostController) {
     }
     navigation<Screen.ChatraTrainingSection>(startDestination = Screen.ChatraTrainingHome) {
       composable<Screen.ChatraTrainingHome> {
-        PhysicalTrainingFormGirl(Gender.GIRL, {})
+        PhysicalTrainingForm(Gender.GIRL, {})
       }
     }
   }

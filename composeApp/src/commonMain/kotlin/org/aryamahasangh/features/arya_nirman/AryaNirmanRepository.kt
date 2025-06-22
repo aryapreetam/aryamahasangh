@@ -47,10 +47,10 @@ class AryaNirmanRepositoryImpl(private val apolloClient: ApolloClient) : AryaNir
               UpcomingActivity(
                 id = it.id,
                 name = it.name!!,
-                genderAllowed = it.allowed_gender.toDomain(),
-                isFull = (it.satr_registrationCollection?.edges?.size ?: 0) >= it.capacity!!,
-                startDateTime = it.start_datetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
-                endDateTime = it.end_datetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
+                genderAllowed = it.allowedGender.toDomain(),
+                isFull = (it.satrRegistrationCollection?.edges?.size ?: 0) >= it.capacity!!,
+                startDateTime = it.startDatetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
+                endDateTime = it.endDatetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
                 district = it.district!!,
                 state = it.state!!,
                 latitude = it.latitude!!,
@@ -92,7 +92,7 @@ class AryaNirmanRepositoryImpl(private val apolloClient: ApolloClient) : AryaNir
           if (response.hasErrors()) {
             throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
           }
-          response.data?.insertIntosatr_registrationCollection?.affectedCount!! > 0
+          response.data?.insertIntoSatrRegistrationCollection?.affectedCount!! > 0
         }
       emit(result)
     }
@@ -103,8 +103,8 @@ class AryaNirmanRepositoryImpl(private val apolloClient: ApolloClient) : AryaNir
       .from("satr_registration")
       .selectAsFlow(
         primaryKeys = listOf(SatrRegistrationCount::id)
-      ).map { registrations ->
-        registrations.groupingBy { it.activity_id }.eachCount()
+      ).map {
+        it.groupingBy { it.activity_id }.eachCount()
       }
   }
 

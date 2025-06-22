@@ -3,26 +3,33 @@ package org.aryamahasangh.features.admin
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import org.aryamahasangh.components.ErrorSnackbar
 import org.aryamahasangh.components.InlineErrorMessage
 import org.aryamahasangh.features.activities.toDevanagariNumerals
+import org.aryamahasangh.features.admin.data.AryaSamajViewModel
 import org.aryamahasangh.navigation.LocalSnackbarHostState
 
 @Composable
 fun AdminContainerScreen(
   viewModel: AdminViewModel,
+  aryaSamajViewModel: AryaSamajViewModel,
   onNavigateToMemberDetail: (String) -> Unit = {},
-  onNavigateToAddMember: () -> Unit = {}
+  onNavigateToAddMember: () -> Unit = {},
+  onNavigateToAddAryaSamaj: () -> Unit = {},
+  onNavigateToAryaSamajDetail: (String) -> Unit = {},
+  onEditAryaSamaj: (String) -> Unit = {} // New parameter for editing
 ) {
   val membersCount by viewModel.membersCount.collectAsState()
   val membersUiState by viewModel.membersUiState.collectAsState()
+  val aryaSamajUiState by aryaSamajViewModel.listUiState.collectAsState()
   val snackbarHostState = LocalSnackbarHostState.current
 
   LaunchedEffect(Unit) {
@@ -41,8 +48,8 @@ fun AdminContainerScreen(
   )
 
   Column(modifier = Modifier.fillMaxSize()) {
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
-    val pagerState = rememberPagerState { 1 } // Only showing members tab for now
+    var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
+    val pagerState = rememberPagerState { 4 } // Now showing 2 tabs: members and arya samaj
 
     LaunchedEffect(selectedTabIndex) {
       pagerState.animateScrollToPage(selectedTabIndex)
@@ -65,7 +72,7 @@ fun AdminContainerScreen(
       )
     }
 
-    ScrollableTabRow(
+    PrimaryScrollableTabRow(
       selectedTabIndex = selectedTabIndex
     ) {
       val count = if (membersUiState.appError == null) {
@@ -74,9 +81,11 @@ fun AdminContainerScreen(
         "?" // Show question mark if count couldn't be loaded
       }
 
-      val aryaSamajCount = 0
-      val aryaPariwarCount = 0
-      val ekalAryaCount = 0
+      val aryaSamajCount = if (aryaSamajUiState.appError == null) {
+        "${aryaSamajUiState.aryaSamajs.size}".toDevanagariNumerals()
+      } else {
+        "?"
+      }
 
       Tab(
         selected = selectedTabIndex == 0,
@@ -84,14 +93,19 @@ fun AdminContainerScreen(
         text = { Text("पदाधिकारी ($count)") }
       )
       Tab(
-        selected = selectedTabIndex == 0,
-        onClick = { selectedTabIndex = 0 },
-        text = { Text("आर्य परिवार ($aryaPariwarCount)") }
+        selected = selectedTabIndex == 1,
+        onClick = { selectedTabIndex = 1 },
+        text = { Text("आर्य समाज ($aryaSamajCount)") }
       )
       Tab(
-        selected = selectedTabIndex == 0,
-        onClick = { selectedTabIndex = 0 },
-        text = { Text("एकल आर्य ($ekalAryaCount)") }
+        selected = selectedTabIndex == 2,
+        onClick = { selectedTabIndex = 2 },
+        text = { Text("आर्य परिवार (0)") }
+      )
+      Tab(
+        selected = selectedTabIndex == 3,
+        onClick = { selectedTabIndex = 3 },
+        text = { Text("एकल आर्य (0)") }
       )
     }
 
@@ -112,6 +126,17 @@ fun AdminContainerScreen(
             onNavigateToMemberDetail = onNavigateToMemberDetail,
             onNavigateToAddMember = onNavigateToAddMember
           )
+        } else if (it == 1) {
+          AryaSamajListScreen(
+            viewModel = aryaSamajViewModel,
+            onNavigateToAddAryaSamaj = onNavigateToAddAryaSamaj,
+            onNavigateToAryaSamajDetail = onNavigateToAryaSamajDetail,
+            onEditAryaSamaj = onEditAryaSamaj // Pass the new handler
+          )
+        } else if(it == 2){
+          AryaPariwarListScreen()
+        } else if(it == 3){
+          EkalAryaListScreen()
         }
       }
     }

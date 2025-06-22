@@ -8,11 +8,14 @@ import kotlinx.datetime.Clock
 import org.aryamahasangh.AppLabelQuery
 import org.aryamahasangh.OrganisationalActivitiesQuery
 import org.aryamahasangh.UpdateJoinUsLabelMutation
-import org.aryamahasangh.domain.error.ErrorHandler
-import org.aryamahasangh.features.activities.OrganisationalActivityShort
-import org.aryamahasangh.features.activities.camelCased
-import org.aryamahasangh.type.*
+import org.aryamahasangh.fragment.OrganisationalActivityShort
+import org.aryamahasangh.type.ActivitiesFilter
+import org.aryamahasangh.type.ActivityTypeFilter
+import org.aryamahasangh.type.DatetimeFilter
+import org.aryamahasangh.type.StringFilter
 import org.aryamahasangh.util.Result
+import org.aryamahasangh.util.safeCall
+import org.aryamahasangh.type.ActivityType as ApolloActivityType
 
 /**
  * Repository for handling join us related operations
@@ -51,9 +54,8 @@ class JoinUsRepositoryImpl(private val apolloClient: ApolloClient) : JoinUsRepos
                 )
             )
         )
-      println(startTimeFilter)
       val result =
-        ErrorHandler.safeCall {
+        safeCall {
           val response =
             apolloClient.query(
               OrganisationalActivitiesQuery(
@@ -61,7 +63,7 @@ class JoinUsRepositoryImpl(private val apolloClient: ApolloClient) : JoinUsRepos
                   Optional.present(
                     value =
                       ActivitiesFilter(
-                        type = Optional.present(Activity_typeFilter(eq = Optional.present(Activity_type.SESSION))),
+                        type = Optional.present(ActivityTypeFilter(eq = Optional.present(ApolloActivityType.SESSION))),
                         state = Optional.present(StringFilter(eq = Optional.present(state))),
                         district =
                           if (district.isNotEmpty()) {
@@ -71,7 +73,7 @@ class JoinUsRepositoryImpl(private val apolloClient: ApolloClient) : JoinUsRepos
                           } else {
                             Optional.absent()
                           },
-                        start_datetime = startTimeFilter
+                        startDatetime = startTimeFilter
                       )
                   )
               )
@@ -79,9 +81,8 @@ class JoinUsRepositoryImpl(private val apolloClient: ApolloClient) : JoinUsRepos
           if (response.hasErrors()) {
             throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
           }
-          response.data?.activitiesCollection?.edges?.map { it.node.organisationalActivityShort.camelCased() } ?: emptyList()
+          response.data?.activitiesCollection?.edges?.map { it.node.organisationalActivityShort } ?: emptyList()
         }
-
       emit(result)
     }
 
@@ -89,12 +90,12 @@ class JoinUsRepositoryImpl(private val apolloClient: ApolloClient) : JoinUsRepos
     flow {
       emit(Result.Loading)
       val res =
-        ErrorHandler.safeCall {
+        safeCall {
           val resp = apolloClient.query(AppLabelQuery(labelKey = "join_us")).execute()
           if (resp.hasErrors()) {
             throw Exception(resp.errors?.firstOrNull()?.message ?: "Unknown error occurred")
           }
-          resp.data?.app_labelsCollection?.edges[0]?.node?.label_value ?: ""
+          resp.data?.appLabelsCollection?.edges?.firstOrNull()?.node?.labelValue ?: ""
         }
       emit(res)
     }
@@ -103,7 +104,7 @@ class JoinUsRepositoryImpl(private val apolloClient: ApolloClient) : JoinUsRepos
     return flow {
       emit(Result.Loading)
       val res =
-        ErrorHandler.safeCall {
+        safeCall {
           val resp =
             apolloClient.mutation(
               UpdateJoinUsLabelMutation(input = label)
@@ -111,7 +112,7 @@ class JoinUsRepositoryImpl(private val apolloClient: ApolloClient) : JoinUsRepos
           if (resp.hasErrors()) {
             throw Exception(resp.errors?.firstOrNull()?.message ?: "Unknown error occurred")
           }
-          resp.data?.updateapp_labelsCollection?.affectedCount!! > 0
+          resp.data?.updateAppLabelsCollection?.affectedCount!! > 0
         }
       emit(res)
     }

@@ -14,7 +14,7 @@ import androidx.compose.ui.unit.dp
 import org.aryamahasangh.LocalIsAuthenticated
 import org.aryamahasangh.components.ActivityListItem
 import org.aryamahasangh.components.LoadingErrorState
-import org.aryamahasangh.features.activities.OrganisationalActivityShort
+import org.aryamahasangh.fragment.OrganisationalActivityShort
 import org.aryamahasangh.navigation.LocalSnackbarHostState
 import org.aryamahasangh.viewmodel.JoinUsUiState
 import org.aryamahasangh.viewmodel.JoinUsViewModel

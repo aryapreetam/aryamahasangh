@@ -11,7 +11,7 @@ import org.aryamahasangh.*
 import org.aryamahasangh.features.activities.Member
 import org.aryamahasangh.network.supabaseClient
 import org.aryamahasangh.type.OrganisationFilter
-import org.aryamahasangh.type.Organisational_memberInsertInput
+import org.aryamahasangh.type.OrganisationalMemberInsertInput
 import org.aryamahasangh.type.StringFilter
 import org.aryamahasangh.util.Result
 import org.aryamahasangh.util.safeCall
@@ -116,7 +116,7 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
               description = node.description!!,
               logo = node.logo,
               members =
-                it.node.organisational_memberCollection?.edges?.map {
+                it.node.organisationalMemberCollection?.edges?.map {
                   val (id, post, priority, _member) = it.node
                   val member = _member!!
                   OrganisationalMember(
@@ -127,8 +127,8 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
                       Member(
                         id = member.id,
                         name = member.name!!,
-                        profileImage = member.profile_image ?: "",
-                        phoneNumber = member.phone_number ?: ""
+                        profileImage = member.profileImage ?: "",
+                        phoneNumber = member.phoneNumber ?: ""
                       )
                   )
                 }!!
@@ -154,7 +154,7 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
           if (response.hasErrors()) {
             throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
           }
-          response.data?.updateorganisationCollection?.affectedCount!! > 0
+          response.data?.updateOrganisationCollection?.affectedCount!! > 0
         }
       emit(result)
     }
@@ -175,7 +175,7 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
           if (response.hasErrors()) {
             throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
           }
-          response.data?.updateorganisationCollection?.affectedCount!! > 0
+          response.data?.updateOrganisationCollection?.affectedCount!! > 0
         }
       emit(result)
     }
@@ -201,7 +201,7 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
         if (response.hasErrors()) {
           throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
         }
-        response.data?.insertIntoorganisational_memberCollection?.affectedCount!! > 0
+        response.data?.insertIntoOrganisationalMemberCollection?.affectedCount!! > 0
       }
       emit(result)
     }
@@ -217,7 +217,7 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
         if (response.hasErrors()) {
           throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
         }
-        response.data?.deleteFromorganisational_memberCollection?.affectedCount!! > 0
+        response.data?.deleteFromOrganisationalMemberCollection?.affectedCount!! > 0
       }
       emit(result)
     }
@@ -236,7 +236,7 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
         if (response.hasErrors()) {
           throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
         }
-        response.data?.updateorganisational_memberCollection?.affectedCount!! > 0
+        response.data?.updateOrganisationalMemberCollection?.affectedCount!! > 0
       }
       emit(result)
     }
@@ -255,7 +255,7 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
         if (response.hasErrors()) {
           throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
         }
-        response.data?.updateorganisational_memberCollection?.affectedCount!! > 0
+        response.data?.updateOrganisationalMemberCollection?.affectedCount!! > 0
       }
       emit(result)
     }
@@ -313,15 +313,15 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
           throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
         }
 
-        if (response.data?.insertIntoorganisationCollection?.affectedCount!! > 0) {
-          val organisationId = response.data?.insertIntoorganisationCollection?.records?.first()?.id!!
+        if (response.data?.insertIntoOrganisationCollection?.affectedCount!! > 0) {
+          val organisationId = response.data?.insertIntoOrganisationCollection?.records?.first()?.id!!
 
           // Only add members if there are any
           if (members.isNotEmpty()) {
             val organisationalMembers = members.map { (member, post, memberPriority) ->
-              Organisational_memberInsertInput(
-                member_id = Optional.present(member.id),
-                organisation_id = Optional.present(organisationId),
+              OrganisationalMemberInsertInput(
+                memberId = Optional.present(member.id),
+                organisationId = Optional.present(organisationId),
                 post = Optional.present(post),
                 priority = Optional.present(memberPriority)
               )
@@ -358,7 +358,7 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
         if (response.hasErrors()) {
           throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
         }
-        response.data?.deleteFromorganisationCollection?.affectedCount!! > 0
+        response.data?.deleteFromOrganisationCollection?.affectedCount!! > 0
       }
       emit(result)
     }

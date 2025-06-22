@@ -6,7 +6,7 @@ import kotlinx.coroutines.flow.map
 import org.aryamahasangh.domain.error.ErrorHandler
 import org.aryamahasangh.features.activities.ActivityRepository
 import org.aryamahasangh.features.activities.OrganisationalActivity
-import org.aryamahasangh.features.activities.OrganisationalActivityShort
+import org.aryamahasangh.fragment.OrganisationalActivityShort
 import org.aryamahasangh.util.Result
 
 /**

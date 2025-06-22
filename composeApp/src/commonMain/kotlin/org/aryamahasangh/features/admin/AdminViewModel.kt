@@ -11,7 +11,6 @@ import kotlinx.coroutines.launch
 import org.aryamahasangh.domain.error.AppError
 import org.aryamahasangh.domain.error.ErrorHandler
 import org.aryamahasangh.domain.error.getUserMessage
-import org.aryamahasangh.domain.error.toAppError
 import org.aryamahasangh.util.Result
 import org.aryamahasangh.viewmodel.ErrorState
 import org.aryamahasangh.viewmodel.handleResult
@@ -218,18 +217,14 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
     name: String?,
     phoneNumber: String?,
     educationalQualification: String?,
-    email: String?,
-    address: String?,
-    state: String?,
-    district: String?,
-    pincode: String?
+    email: String?
   ) {
     viewModelScope.launch {
       _memberDetailUiState.value = _memberDetailUiState.value.copy(isUpdating = true)
 
       repository.updateMemberDetails(
         memberId, name, phoneNumber, educationalQualification,
-        email, address, state, district, pincode
+        email
       ).collect { result ->
         result.handleResult(
           onLoading = {
@@ -293,18 +288,14 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
     phoneNumber: String,
     educationalQualification: String?,
     profileImageUrl: String?,
-    email: String?,
-    address: String?,
-    state: String?,
-    district: String?,
-    pincode: String?
+    email: String?
   ) {
     viewModelScope.launch {
       _memberDetailUiState.value = _memberDetailUiState.value.copy(isUpdating = true)
 
       repository.addMember(
         name, phoneNumber, educationalQualification,
-        profileImageUrl, email, address, state, district, pincode
+        profileImageUrl, email
       ).collect { result ->
         result.handleResult(
           onLoading = {

@@ -10,9 +10,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import org.aryamahasangh.features.admin.data.AryaSamajViewModel
 
 @Composable
-fun AryaSamajHomeScreen() {
+fun AryaSamajHomeScreen(viewModel: AryaSamajViewModel? = null) {
   Column(Modifier.padding(8.dp)) {
     listOf("आर्ष कर्मविधि").forEach { name ->
       Text(
