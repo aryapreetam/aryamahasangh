@@ -2,7 +2,7 @@ package org.aryamahasangh.features.activities
 
 import androidx.compose.runtime.Immutable
 import kotlinx.serialization.Serializable
-import org.aryamahasangh.type.Gender_filter as ApolloGenderFilter // Alias for clarity
+import org.aryamahasangh.type.GenderFilter as ApolloGenderFilter // Alias for clarity
 
 @Immutable // For better Compose performance if data doesn't change after creation
 data class UserProfile(

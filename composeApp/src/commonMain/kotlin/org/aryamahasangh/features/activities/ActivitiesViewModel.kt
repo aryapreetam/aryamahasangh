@@ -12,6 +12,7 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
+import org.aryamahasangh.fragment.OrganisationalActivityShort
 import org.aryamahasangh.type.ActivitiesInsertInput
 import org.aryamahasangh.util.Result
 import org.aryamahasangh.viewmodel.AdmissionFormSubmissionState
@@ -206,20 +207,20 @@ class ActivitiesViewModel(
     val activity =
       ActivitiesInsertInput(
         name = Optional.present(input.name),
-        type = Optional.present(input.type.toApollo()),
-        short_description = Optional.present(input.shortDescription),
-        long_description = Optional.present(input.longDescription),
+        type = Optional.present(input.type),
+        shortDescription = Optional.present(input.shortDescription),
+        longDescription = Optional.present(input.longDescription),
         address = Optional.present(input.address),
         state = Optional.present(input.state),
         district = Optional.present(input.district),
-        start_datetime = Optional.present(input.startDatetime.convertToInstant()),
-        end_datetime = Optional.present(input.endDatetime.convertToInstant()),
-        media_files = Optional.present(input.mediaFiles),
-        additional_instructions = Optional.present(input.additionalInstructions),
+        startDatetime = Optional.present(input.startDatetime.convertToInstant()),
+        endDatetime = Optional.present(input.endDatetime.convertToInstant()),
+        mediaFiles = Optional.present(input.mediaFiles),
+        additionalInstructions = Optional.present(input.additionalInstructions),
         capacity = Optional.present(input.capacity),
         latitude = Optional.present(input.latitude),
         longitude = Optional.present(input.longitude),
-        allowed_gender = Optional.present(input.allowedGender.toApollo())
+        allowedGender = Optional.present(input.allowedGender.toApollo())
       )
     launch {
       _formSubmissionState.value = AdmissionFormSubmissionState(isSubmitting = true)
@@ -267,20 +268,20 @@ class ActivitiesViewModel(
     val activity =
       ActivitiesInsertInput(
         name = Optional.present(input.name),
-        type = Optional.present(input.type.toApollo()),
-        short_description = Optional.present(input.shortDescription),
-        long_description = Optional.present(input.longDescription),
+        type = Optional.present(input.type),
+        shortDescription = Optional.present(input.shortDescription),
+        longDescription = Optional.present(input.longDescription),
         address = Optional.present(input.address),
         state = Optional.present(input.state),
         district = Optional.present(input.district),
-        start_datetime = Optional.present(input.startDatetime.convertToInstant()),
-        end_datetime = Optional.present(input.endDatetime.convertToInstant()),
-        media_files = Optional.present(input.mediaFiles),
-        additional_instructions = Optional.present(input.additionalInstructions),
+        startDatetime = Optional.present(input.startDatetime.convertToInstant()),
+        endDatetime = Optional.present(input.endDatetime.convertToInstant()),
+        mediaFiles = Optional.present(input.mediaFiles),
+        additionalInstructions = Optional.present(input.additionalInstructions),
         capacity = Optional.present(input.capacity),
         latitude = Optional.present(input.latitude),
         longitude = Optional.present(input.longitude),
-        allowed_gender = Optional.present(input.allowedGender.toApollo())
+        allowedGender = Optional.present(input.allowedGender.toApollo())
       )
     launch {
       _formSubmissionState.value = AdmissionFormSubmissionState(isSubmitting = true)

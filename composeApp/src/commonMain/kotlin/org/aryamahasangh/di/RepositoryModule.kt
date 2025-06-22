@@ -4,6 +4,8 @@ import org.aryamahasangh.features.activities.ActivityRepository
 import org.aryamahasangh.features.activities.ActivityRepositoryImpl
 import org.aryamahasangh.features.admin.AdminRepository
 import org.aryamahasangh.features.admin.AdminRepositoryImpl
+import org.aryamahasangh.features.admin.data.AryaSamajRepository
+import org.aryamahasangh.features.admin.data.AryaSamajRepositoryImpl
 import org.aryamahasangh.features.arya_nirman.AryaNirmanRepository
 import org.aryamahasangh.features.arya_nirman.AryaNirmanRepositoryImpl
 import org.aryamahasangh.features.organisations.OrganisationsRepository
@@ -39,4 +41,5 @@ val repositoryModule =
     singleOf(::BookOrderRepositoryImpl) { bind<BookOrderRepository>() }
     singleOf(::AryaNirmanRepositoryImpl) { bind<AryaNirmanRepository>() }
     singleOf(::AdminRepositoryImpl) { bind<AdminRepository>() }
+    singleOf(::AryaSamajRepositoryImpl) { bind<AryaSamajRepository>() }
   }

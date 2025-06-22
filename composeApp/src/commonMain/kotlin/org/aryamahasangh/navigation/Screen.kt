@@ -81,6 +81,15 @@ sealed class Screen {
   data object AryaSamajHome : Screen()
 
   @Serializable
+  data object AddAryaSamajForm : Screen()
+
+  @Serializable
+  data class EditAryaSamajForm(val aryaSamajId: String) : Screen()
+
+  @Serializable
+  data class AryaSamajDetail(val aryaSamajId: String) : Screen()
+
+  @Serializable
   data class VideoDetails(val learningItemId: String) : Screen()
 
   @Serializable

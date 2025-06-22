@@ -49,6 +49,7 @@ import org.aryamahasangh.screens.ButtonForFilePicker
 import org.aryamahasangh.screens.DistrictDropdown
 import org.aryamahasangh.screens.StateDropdown
 import org.aryamahasangh.screens.indianStatesToDistricts
+import org.aryamahasangh.type.ActivityType
 
 // Wrapper class to handle both new files and existing URLs
 // No MediaFile sealed class needed - we'll track existing and new files separately
@@ -1126,8 +1127,8 @@ private fun CreateActivityScreenContent(
       Column {
         // ActivityType (Filter Chips)
         Text(text = "प्रकार :", style = MaterialTheme.typography.bodyMedium)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-          ActivityType.entries.forEach { type ->
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+          ActivityType.knownEntries.forEach { type ->
             FilterChip(
               selected = (selectedType == type), // Check for equality, not `in`
               onClick = {

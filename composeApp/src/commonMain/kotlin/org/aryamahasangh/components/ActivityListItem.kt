@@ -24,19 +24,21 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.event_upcoming
+import kotlinx.datetime.offsetIn
 import org.aryamahasangh.LocalIsAuthenticated
 import org.aryamahasangh.features.activities.ActivityStatus
-import org.aryamahasangh.features.activities.ActivityType
-import org.aryamahasangh.features.activities.OrganisationalActivityShort
 import org.aryamahasangh.features.activities.getStatus
+import org.aryamahasangh.features.activities.toDisplayName
+import org.aryamahasangh.features.activities.toLocalDateTime
 import org.aryamahasangh.features.arya_nirman.convertDates
+import org.aryamahasangh.fragment.OrganisationalActivityShort
+import org.aryamahasangh.type.ActivityType
 import org.aryamahasangh.utils.WithTooltip
 import org.aryamahasangh.utils.formatShort
 import org.jetbrains.compose.resources.painterResource
 
 
 val activityTypeData = ActivityType.entries.associateWith { it.toDisplayName() }
-
 
 @Composable
 fun ActivityListItem(
@@ -45,8 +47,8 @@ fun ActivityListItem(
   handleDeleteActivity: () -> Unit = {},
   handleEditActivity: () -> Unit = {}
 ) {
-  val startDate = formatShort(activity.startDatetime)
-  val endDate = formatShort(activity.endDatetime)
+  val startDate = formatShort(activity.startDatetime.toLocalDateTime())
+  val endDate = formatShort(activity.endDatetime.toLocalDateTime())
   val isLoggedIn = LocalIsAuthenticated.current
   var showConfirmDialog by remember { mutableStateOf(false) }
   var showMenu by remember { mutableStateOf(false) }
@@ -154,7 +156,7 @@ fun ActivityListItem(
           Text(
             text =
               buildAnnotatedString {
-                val (dateRange, timeRange) = convertDates(activity.startDatetime, activity.endDatetime)
+                val (dateRange, timeRange) = convertDates(activity.startDatetime.toLocalDateTime(), activity.endDatetime.toLocalDateTime())
                 withStyle(
                   style =
                     SpanStyle(

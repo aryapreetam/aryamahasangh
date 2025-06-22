@@ -3,7 +3,7 @@ package org.aryamahasangh.viewmodel
 import org.aryamahasangh.domain.error.AppError
 import org.aryamahasangh.domain.error.ErrorHandler
 import org.aryamahasangh.domain.error.getUserMessage
-import org.aryamahasangh.features.activities.OrganisationalActivityShort
+import org.aryamahasangh.fragment.OrganisationalActivityShort
 import org.aryamahasangh.repository.JoinUsRepository
 
 /**

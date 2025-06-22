@@ -16,7 +16,7 @@ query OrganisationsAndMembers{
       node{
         id
         name
-        profile_image
+        profileImage
       }
     }
   }
@@ -38,7 +38,7 @@ query OrganisationDetailById($orgnisationId: String!) {
         name
         logo
         description
-        organisational_memberCollection{
+        organisationalMemberCollection{
           edges{
             node{
               id
@@ -48,9 +48,9 @@ query OrganisationDetailById($orgnisationId: String!) {
                 id
                 name
                 email
-                phone_number
-                profile_image
-                educational_qualification
+                phoneNumber
+                profileImage
+                educationalQualification
               }
             }
           }
@@ -60,7 +60,7 @@ query OrganisationDetailById($orgnisationId: String!) {
   }
 }
 
-query Organisation($filter: organisationFilter) {
+query Organisation($filter: OrganisationFilter) {
   organisationCollection(filter: $filter){
     edges{
       node{
@@ -68,7 +68,7 @@ query Organisation($filter: organisationFilter) {
         name
         logo
         description
-        organisational_memberCollection{
+        organisationalMemberCollection{
           edges{
             node{
               id
@@ -78,9 +78,9 @@ query Organisation($filter: organisationFilter) {
                 id
                 name
                 email
-                phone_number
-                profile_image
-                educational_qualification
+                phoneNumber
+                profileImage
+                educationalQualification
               }
             }
           }
@@ -95,21 +95,21 @@ query LearningItems {
     edges{
       node{
         id
-        thumbnail_url
+        thumbnailUrl
         title
       }
     }
   }
 }
 
-query LearningItem($filter: learningFilter) {
+query LearningItem($filter: LearningFilter) {
   learningCollection(filter: $filter){
     edges{
       node{
         id
-        thumbnail_url
+        thumbnailUrl
         title
-        video_id
+        videoId
         url
         description
       }
@@ -117,15 +117,15 @@ query LearningItem($filter: learningFilter) {
   }
 }
 
-fragment OrganisationalActivityShort on activities {
+fragment OrganisationalActivityShort on Activities {
   id
   name
-  short_description
-  start_datetime
-  end_datetime
+  shortDescription
+  startDatetime
+  endDatetime
   type
   district
-    state
+  state
 }
 
 query UpcomingSatrByRegion($state: String!, $district: String, $currentDateTime: Datetime){
@@ -133,7 +133,7 @@ query UpcomingSatrByRegion($state: String!, $district: String, $currentDateTime:
     filter: {
       state: {eq: $state},
       district: {eq: $district},
-      start_datetime: {gt: $currentDateTime},
+      startDatetime: {gt: $currentDateTime},
       type: {eq: SESSION}
     }
   ){
@@ -145,7 +145,7 @@ query UpcomingSatrByRegion($state: String!, $district: String, $currentDateTime:
   }
 }
 
-query OrganisationalActivities($filter: activitiesFilter){
+query OrganisationalActivities($filter: ActivitiesFilter){
   activitiesCollection(filter: $filter){
     edges{
       node{
@@ -160,18 +160,18 @@ query OrganisationalActivityDetailById($activityId: String!){
     edges{
       node{
         ...OrganisationalActivityShort
-        long_description
+        longDescription
         address
         state
-        media_files
-        additional_instructions
+        mediaFiles
+        additionalInstructions
         capacity
         latitude
         longitude
-        allowed_gender
-          overview_description
-          overview_media_urls
-        organisational_activityCollection{
+        allowedGender
+        overviewDescription
+        overviewMediaUrls
+        organisationalActivityCollection{
           edges{
             node{
               id
@@ -182,7 +182,7 @@ query OrganisationalActivityDetailById($activityId: String!){
             }
           }
         }
-        activity_memberCollection{
+        activityMemberCollection{
           edges{
             node{
               id
@@ -191,8 +191,8 @@ query OrganisationalActivityDetailById($activityId: String!){
               member{
                 id
                 name
-                profile_image
-                phone_number
+                profileImage
+                phoneNumber
               }
             }
           }
@@ -202,23 +202,23 @@ query OrganisationalActivityDetailById($activityId: String!){
   }
 }
 
-query OrganisationalActivityDetail($filter: activitiesFilter){
+query OrganisationalActivityDetail($filter: ActivitiesFilter){
   activitiesCollection(filter: $filter){
     edges{
       node{
         ...OrganisationalActivityShort
-        long_description
+        longDescription
         address
         state
-        media_files
-        additional_instructions
+        mediaFiles
+        additionalInstructions
         capacity
         latitude
         longitude
-        allowed_gender
-          overview_description
-          overview_media_urls
-        organisational_activityCollection{
+        allowedGender
+        overviewDescription
+        overviewMediaUrls
+        organisationalActivityCollection{
           edges{
             node{
               id
@@ -229,7 +229,7 @@ query OrganisationalActivityDetail($filter: activitiesFilter){
             }
           }
         }
-        activity_memberCollection{
+        activityMemberCollection{
           edges{
             node{
               id
@@ -238,8 +238,8 @@ query OrganisationalActivityDetail($filter: activitiesFilter){
               member{
                 id
                 name
-                profile_image
-                phone_number
+                profileImage
+                phoneNumber
               }
             }
           }
@@ -264,18 +264,18 @@ query StudentsApplied {
 }
 
 query AppLabel($labelKey: String!){
-  app_labelsCollection(filter: { label_key: { eq: $labelKey } }){
+  appLabelsCollection(filter: { labelKey: { eq: $labelKey } }){
     edges{
       node{
         id
-        label_value
+        labelValue
       }
     }
   }
 }
 
-query BookOrders($filter: book_ordersFilter) {
-  book_ordersCollection(filter: $filter) {
+query BookOrders($filter: BookOrdersFilter) {
+  bookOrdersCollection(filter: $filter) {
     edges {
       node {
         id
@@ -287,11 +287,11 @@ query BookOrders($filter: book_ordersFilter) {
         pincode
         country
         mobile
-        district_officer_name
-        district_officer_number
-        payment_receipt_url
-        created_at
-        is_fulfilled
+        districtOfficerName
+        districtOfficerNumber
+        paymentReceiptUrl
+        createdAt
+        isFulfilled
       }
     }
   }
@@ -299,24 +299,24 @@ query BookOrders($filter: book_ordersFilter) {
 
 query UpcomingSatrActivities($currentDateTime: Datetime!){
   activitiesCollection(
-      filter: {
-          start_datetime: {gt: $currentDateTime},
-          type: {eq: SESSION}
-      }
+    filter: {
+      startDatetime: {gt: $currentDateTime},
+      type: {eq: SESSION}
+    }
   ){
     edges{
       node{
         id
         name
-        start_datetime
-        end_datetime
-        allowed_gender
+        startDatetime
+        endDatetime
+        allowedGender
         district
         state
         latitude
         longitude
         capacity
-        satr_registrationCollection{
+        satrRegistrationCollection{
           pageInfo{
             startCursor
           }
@@ -332,7 +332,7 @@ query UpcomingSatrActivities($currentDateTime: Datetime!){
 }
 
 query registrationsForActivity($activityId: String!){
-  satr_registrationCollection(filter: { activity_id: { eq: $activityId } }){
+  satrRegistrationCollection(filter: { activityId: { eq: $activityId } }){
     edges{
       node{
         id
@@ -345,10 +345,10 @@ query registrationsForActivity($activityId: String!){
   }
 }
 
-fragment MemberShort on member {
+fragment MemberShort on Member {
   id
   name
-  profile_image
+  profileImage
 }
 
 query members {
@@ -367,15 +367,17 @@ query memberDetail($memberId: String!) {
       node {
         id
         name
-        profile_image
-        phone_number
-        educational_qualification
+        profileImage
+        phoneNumber
+        educationalQualification
         email
-        address
-        district
-        state
-        pin
-        organisational_memberCollection {
+        address{
+          basicAddress
+          district
+          state
+          pincode
+        }
+        organisationalMemberCollection {
           edges {
             node {
               id
@@ -387,16 +389,16 @@ query memberDetail($memberId: String!) {
             }
           }
         }
-        activity_memberCollection {
+        activityMemberCollection {
           edges {
             node {
-              activities {
+              activity {
                 id
                 name
                 district
                 state
-                start_datetime
-                end_datetime
+                startDatetime
+                endDatetime
               }
             }
           }
@@ -411,13 +413,281 @@ query searchMembers($nameOrPhoneNumber: String!) {
     filter: {
       or: [
         {name: {ilike: $nameOrPhoneNumber}},
-        {phone_number: {ilike: $nameOrPhoneNumber}}
+        {phoneNumber: {ilike: $nameOrPhoneNumber}}
       ]
     }
   ) {
     edges {
       node {
         ...MemberShort
+      }
+    }
+  }
+}
+
+# Address Queries
+fragment AddressFields on Address {
+  id
+  basicAddress
+  state
+  district
+  pincode
+  latitude
+  longitude
+  vidhansabha
+  createdAt
+}
+
+query addresses($filter: AddressFilter) {
+  addressCollection(filter: $filter) {
+    edges {
+      node {
+        ...AddressFields
+      }
+    }
+  }
+}
+
+query addressDetail($addressId: String!) {
+  addressCollection(filter: {id: {eq: $addressId}}) {
+    edges {
+      node {
+        ...AddressFields
+        memberCollection {
+          edges {
+            node {
+              id
+              name
+              profileImage
+              phoneNumber
+            }
+          }
+        }
+        memberWithTempAddressCollection {
+          edges {
+            node {
+              id
+              name
+              profileImage
+              phoneNumber
+            }
+          }
+        }
+        aryaSamajCollection {
+          edges {
+            node {
+              id
+              name
+              description
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query addressesByLocation($state: String!, $district: String) {
+  addressCollection(
+    filter: {
+      and: [
+        {state: {eq: $state}},
+        {district: {eq: $district}}
+      ]
+    }
+  ) {
+    edges {
+      node {
+        ...AddressFields
+      }
+    }
+  }
+}
+
+# Arya Samaj Queries
+fragment AryaSamajFields on AryaSamaj {
+  id
+  name
+  description
+  mediaUrls
+  addressId
+  createdAt
+}
+
+query aryaSamajs($filter: AryaSamajFilter) {
+  aryaSamajCollection(filter: $filter) {
+    edges {
+      node {
+        ...AryaSamajFields
+        address {
+          ...AddressFields
+        }
+      }
+    }
+  }
+}
+
+query aryaSamajDetail($aryaSamajId: String!) {
+  aryaSamajCollection(filter: {id: {eq: $aryaSamajId}}) {
+    edges {
+      node {
+        ...AryaSamajFields
+        address {
+          ...AddressFields
+        }
+        samajMemberCollection {
+          edges {
+            node {
+              id
+              post
+              priority
+              member {
+                id
+                name
+                profileImage
+                phoneNumber
+                educationalQualification
+              }
+            }
+          }
+        }
+        memberCollection {
+          edges {
+            node {
+              id
+              name
+              profileImage
+              phoneNumber
+              educationalQualification
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
+# Samaj Member Queries
+fragment SamajMemberFields on SamajMember {
+  id
+  post
+  priority
+  createdAt
+}
+
+query samajMembers($filter: SamajMemberFilter) {
+  samajMemberCollection(filter: $filter) {
+    edges {
+      node {
+        ...SamajMemberFields
+        member {
+          id
+          name
+          profileImage
+          phoneNumber
+          educationalQualification
+        }
+        aryaSamaj {
+          id
+          name
+          description
+        }
+      }
+    }
+  }
+}
+
+query samajMembersByAryaSamaj($aryaSamajId: String!) {
+  samajMemberCollection(filter: {aryaSamajId: {eq: $aryaSamajId}}) {
+    edges {
+      node {
+        ...SamajMemberFields
+        member {
+          id
+          name
+          profileImage
+          phoneNumber
+          educationalQualification
+        }
+      }
+    }
+  }
+}
+
+query samajMembersByMember($memberId: String!) {
+  samajMemberCollection(filter: {memberId: {eq: $memberId}}) {
+    edges {
+      node {
+        ...SamajMemberFields
+        aryaSamaj {
+          id
+          name
+          description
+          address {
+            basicAddress
+            state
+            district
+          }
+        }
+      }
+    }
+  }
+}
+
+# Enhanced Member Queries with Address
+query memberWithAddress($memberId: String!) {
+  memberCollection(filter: {id: {eq: $memberId}}) {
+    edges {
+      node {
+        id
+        name
+        profileImage
+        phoneNumber
+        educationalQualification
+        email
+        dob
+        joiningDate
+        address {
+          ...AddressFields
+        }
+        tempAddress {
+          ...AddressFields
+        }
+        aryaSamaj {
+          id
+          name
+          description
+        }
+        organisationalMemberCollection {
+          edges {
+            node {
+              id
+              post
+              priority
+              organisation {
+                id
+                name
+                logo
+              }
+            }
+          }
+        }
+        samajMemberCollection {
+          edges {
+            node {
+              id
+              post
+              priority
+              aryaSamaj {
+                id
+                name
+                description
+              }
+            }
+          }
+        }
       }
     }
   }

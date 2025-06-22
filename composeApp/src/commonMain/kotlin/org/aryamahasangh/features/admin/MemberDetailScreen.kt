@@ -134,10 +134,10 @@ fun MemberDetailScreen(
           educationalQualification = editableEducationalQualification,
           profileImageUrl = finalImageUrl,
           email = editableEmail,
-          address = editableAddress,
-          state = editableState,
-          district = editableDistrict,
-          pincode = editablePincode
+//          address = editableAddress,
+//          state = editableState,
+//          district = editableDistrict,
+//          pincode = editablePincode
         )
       } catch (e: Exception) {
         snackbarHostState.showSnackbar("Error: ${e.message}")
@@ -245,10 +245,10 @@ fun MemberDetailScreen(
                 educationalQualification = editableEducationalQualification,
                 profileImageUrl = null,
                 email = editableEmail,
-                address = editableAddress,
-                state = editableState,
-                district = editableDistrict,
-                pincode = editablePincode
+//                address = editableAddress,
+//                state = editableState,
+//                district = editableDistrict,
+//                pincode = editablePincode
               )
             }
           }
@@ -346,10 +346,10 @@ fun MemberDetailScreen(
               phoneNumber = editablePhoneNumber,
               educationalQualification = editableEducationalQualification,
               email = editableEmail,
-              address = editableAddress,
-              state = editableState,
-              district = editableDistrict,
-              pincode = editablePincode
+//              address = editableAddress,
+//              state = editableState,
+//              district = editableDistrict,
+//              pincode = editablePincode
             )
           }
         },

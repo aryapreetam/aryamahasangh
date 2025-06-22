@@ -4,7 +4,7 @@ import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import org.aryamahasangh.LearningItemQuery
 import org.aryamahasangh.LearningItemsQuery
 import org.aryamahasangh.type.LearningFilter
@@ -24,17 +24,16 @@ interface LearningRepository {
   /**
    * Get learning item details by ID
    */
-  suspend fun getLearningItemDetail(id: String): Result<LearningItem>
+  fun getLearningItemDetail(id: String): Flow<Result<LearningItem>>
 }
 
+@Serializable
 data class LearningItem(
   val id: String,
   val title: String,
   val description: String = "",
   val url: String = "",
-  @SerialName("thumbnail_url")
   val thumbnailUrl: String = "",
-  @SerialName("video_id")
   val videoId: String = ""
 )
 
@@ -57,7 +56,7 @@ class LearningRepositoryImpl(private val apolloClient: ApolloClient) : LearningR
             LearningItem(
               id = item.id,
               title = item.title!!,
-              thumbnailUrl = item.thumbnail_url!!
+              thumbnailUrl = item.thumbnailUrl!!
             )
           } ?: emptyList()
         }
@@ -65,36 +64,42 @@ class LearningRepositoryImpl(private val apolloClient: ApolloClient) : LearningR
       emit(result)
     }
 
-  override suspend fun getLearningItemDetail(id: String): Result<LearningItem> {
-    return safeCall {
-      val response =
-        apolloClient.query(
-          LearningItemQuery(
-            filter =
-              Optional.present(
-                LearningFilter(
-                  id =
-                    Optional.present(
-                      StringFilter(eq = Optional.present(id))
+  override  fun getLearningItemDetail(id: String): Flow<Result<LearningItem>> =
+    flow {
+      emit(Result.Loading)
+
+      val result =
+        safeCall {
+          val response =
+            apolloClient.query(
+              LearningItemQuery(
+                filter =
+                  Optional.present(
+                    LearningFilter(
+                      id =
+                        Optional.present(
+                          StringFilter(eq = Optional.present(id))
+                        )
                     )
-                )
+                  )
               )
-          )
-        ).execute()
-      if (response.hasErrors()) {
-        throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-      }
-      response.data?.learningCollection?.edges?.map {
-        val item = it.node
-        LearningItem(
-          id = item.id,
-          title = item.title!!,
-          thumbnailUrl = item.thumbnail_url ?: "",
-          description = item.description ?: "",
-          url = item.url ?: "",
-          videoId = item.video_id ?: ""
-        )
-      }[0] ?: throw Exception("Learning item not found")
+            ).execute()
+          if (response.hasErrors()) {
+            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+          }
+          response.data?.learningCollection?.edges?.map {
+            val item = it.node
+            LearningItem(
+              id = item.id,
+              title = item.title!!,
+              thumbnailUrl = item.thumbnailUrl ?: "",
+              description = item.description ?: "",
+              url = item.url ?: "",
+              videoId = item.videoId ?: ""
+            )
+          }[0] ?: throw Exception("Learning item not found")
+        }
+
+      emit(result)
     }
-  }
 }

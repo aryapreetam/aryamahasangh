@@ -77,25 +77,26 @@ class LearningViewModel(
   fun loadLearningItemDetail(id: String) {
     launch {
       _videoPlayerUiState.value = VideoPlayerUiState(isLoading = true)
-
-      when (val result = learningRepository.getLearningItemDetail(id)) {
-        is Result.Success -> {
-          _videoPlayerUiState.value =
-            VideoPlayerUiState(
-              learningItem = result.data,
-              isLoading = false,
-              error = null
-            )
-        }
-        is Result.Error -> {
-          _videoPlayerUiState.value =
-            VideoPlayerUiState(
-              isLoading = false,
-              error = result.message
-            )
-        }
-        is Result.Loading -> {
-          // This shouldn't happen with the current implementation
+      learningRepository.getLearningItemDetail(id).collect {
+        when (it) {
+          is Result.Success -> {
+            _videoPlayerUiState.value =
+              VideoPlayerUiState(
+                learningItem = it.data,
+                isLoading = false,
+                error = null
+              )
+          }
+          is Result.Error -> {
+            _videoPlayerUiState.value =
+              VideoPlayerUiState(
+                isLoading = false,
+                error = it.message
+              )
+          }
+          is Result.Loading -> {
+            // This shouldn't happen with the current implementation
+          }
         }
       }
     }

@@ -1,164 +1,164 @@
-fragment ActivityFields on activities {
-  id
-  name
-  short_description
-  long_description
-  start_datetime
-  end_datetime
-  type
-  address
-  state
-  district
-  media_files
-  additional_instructions
+fragment ActivityFields on Activities {
+    id
+    name
+    shortDescription
+    longDescription
+    startDatetime
+    endDatetime
+    type
+    address
+    state
+    district
+    mediaFiles
+    additionalInstructions
 }
 
-mutation AddOrganisationActivity($input: activitiesInsertInput!) {
-  insertIntoactivitiesCollection(objects: [$input]) {
-    affectedCount
-    records {
-      ...ActivityFields
-      organisational_activityCollection {
-        edges {
-          node {
-            id
-            organisation {
-              id
-              name
+mutation AddOrganisationActivity($input: ActivitiesInsertInput!) {
+    insertIntoActivitiesCollection(objects: [$input]) {
+        affectedCount
+        records {
+            ...ActivityFields
+            organisationalActivityCollection {
+                edges {
+                    node {
+                        id
+                        organisation {
+                            id
+                            name
+                        }
+                    }
+                }
             }
-          }
-        }
-      }
-      activity_memberCollection {
-        edges {
-          node {
-            id
-            post
-            priority
-            member {
-              name
-              profile_image
-              phone_number
+            activityMemberCollection {
+                edges {
+                    node {
+                        id
+                        post
+                        priority
+                        member {
+                            name
+                            profileImage
+                            phoneNumber
+                        }
+                    }
+                }
             }
-          }
         }
-      }
     }
-  }
 }
 
-mutation AddStudentAdmissionData($input: admissionInsertInput!){
-  insertIntoadmissionCollection(objects: [$input]){
-    affectedCount
-  }
+mutation AddStudentAdmissionData($input: AdmissionInsertInput!){
+    insertIntoAdmissionCollection(objects: [$input]){
+        affectedCount
+    }
 }
 
 mutation DeleteActivity($id: String!) {
-  deleteFromactivitiesCollection(filter: {id: {eq: $id}}, atMost: 1) {
-    affectedCount
-  }
+    deleteFromActivitiesCollection(filter: {id: {eq: $id}}, atMost: 1) {
+        affectedCount
+    }
 }
 
 mutation updateJoinUsLabel($input: String!){
-  updateapp_labelsCollection(
-    set: { label_value: $input },
-      filter: { label_key: { eq: "join_us" } }
-  ){
-    affectedCount
-  }
+    updateAppLabelsCollection(
+        set: { labelValue: $input },
+        filter: { labelKey: { eq: "join_us" } }
+    ){
+        affectedCount
+    }
 }
 
-mutation CreateBookOrder($input: book_ordersInsertInput!) {
-  insertIntobook_ordersCollection(objects: [$input]) {
-    affectedCount
-    records {
-      fullname
-      address
-      city
-      district
-      state
-      pincode
-      country
-      mobile
-      district_officer_name
-      district_officer_number
-      payment_receipt_url
-      created_at
+mutation CreateBookOrder($input: BookOrdersInsertInput!) {
+    insertIntoBookOrdersCollection(objects: [$input]) {
+        affectedCount
+        records {
+            fullname
+            address
+            city
+            district
+            state
+            pincode
+            country
+            mobile
+            districtOfficerName
+            districtOfficerNumber
+            paymentReceiptUrl
+            createdAt
+        }
     }
-  }
 }
 
 mutation updateOrganisationLogo($id: String!, $imageUrl: String!) {
-  updateorganisationCollection(
-    set: {logo: $imageUrl}
-    filter: {id: {eq: $id}}
-    atMost: 1
-  ) {
-    affectedCount
-  }
+    updateOrganisationCollection(
+        set: {logo: $imageUrl}
+        filter: {id: {eq: $id}}
+        atMost: 1
+    ) {
+        affectedCount
+    }
 }
 
 mutation updateOrganisationDescription($id: String!, $description: String!){
-  updateorganisationCollection(
-    set: {description: $description}
-    filter: {id: {eq: $id}}
-    atMost: 1
-  ) {
-    affectedCount
-  }
+    updateOrganisationCollection(
+        set: {description: $description}
+        filter: {id: {eq: $id}}
+        atMost: 1
+    ) {
+        affectedCount
+    }
 }
 
 mutation registerForSatr(
-  $fullName: String!,
-  $gender: String!,
-  $mobile: String!,
-  $aadharNo: String!,
-  $educationalQualification: String!,
-  $address: String!,
-  $inspirationSource: String!,
-  $inspirationSourceName: String,
-  $inspirationSourceNo: String,
-  $hasTrainedAryaInFamily: Boolean!,
-  $trainedAryaName: String,
-  $trainedAryaNo: String,
-  $activityId: String!,
+    $fullName: String!,
+    $gender: String!,
+    $mobile: String!,
+    $aadharNo: String!,
+    $educationalQualification: String!,
+    $address: String!,
+    $inspirationSource: String!,
+    $inspirationSourceName: String,
+    $inspirationSourceNo: String,
+    $hasTrainedAryaInFamily: Boolean!,
+    $trainedAryaName: String,
+    $trainedAryaNo: String,
+    $activityId: String!,
 ){
-  insertIntosatr_registrationCollection(
-    objects: [
-      {
-        fullname: $fullName,
-        mobile: $mobile,
-        aadhar_no: $aadharNo,
-        educational_qualification: $educationalQualification,
-        address: $address,
-        inspiration_source: $inspirationSource,
-        inspiration_source_name: $inspirationSourceName,
-        inspiration_source_no: $inspirationSourceNo,
-        has_trained_arya_in_family: $hasTrainedAryaInFamily,
-        trained_arya_name: $trainedAryaName,
-        trained_arya_no: $trainedAryaNo,
-        activity_id: $activityId,
-        gender: $gender
-      }
-    ]
-  ){
-    affectedCount
-    records {
-      id
+    insertIntoSatrRegistrationCollection(
+        objects: [
+            {
+                fullname: $fullName,
+                mobile: $mobile,
+                aadharNo: $aadharNo,
+                educationalQualification: $educationalQualification,
+                address: $address,
+                inspirationSource: $inspirationSource,
+                inspirationSourceName: $inspirationSourceName,
+                inspirationSourceNo: $inspirationSourceNo,
+                hasTrainedAryaInFamily: $hasTrainedAryaInFamily,
+                trainedAryaName: $trainedAryaName,
+                trainedAryaNo: $trainedAryaNo,
+                activityId: $activityId,
+                gender: $gender
+            }
+        ]
+    ){
+        affectedCount
+        records {
+            id
+        }
     }
-  }
 }
 
 mutation addMemberToOrganisation($memberId: String!, $organisationId: String!, $post: String!, $priority: Int!) {
-  insertIntoorganisational_memberCollection(
-    objects: [{member_id: $memberId, organisation_id: $organisationId, post: $post, priority: $priority}]
-  ) {
-    affectedCount
-  }
+    insertIntoOrganisationalMemberCollection(
+        objects: [{memberId: $memberId, organisationId: $organisationId, post: $post, priority: $priority}]
+    ) {
+        affectedCount
+    }
 }
 
-mutation addMembersToOrganisation($input: [organisational_memberInsertInput!]!){
-    insertIntoorganisational_memberCollection(
+mutation addMembersToOrganisation($input: [OrganisationalMemberInsertInput!]!){
+    insertIntoOrganisationalMemberCollection(
         objects: $input
     ){
         affectedCount
@@ -166,103 +166,92 @@ mutation addMembersToOrganisation($input: [organisational_memberInsertInput!]!){
 }
 
 mutation removeMemberFromOrganisation($organisationalMemberId: String!) {
-  deleteFromorganisational_memberCollection(
-    filter: {id: {eq: $organisationalMemberId}}
-  ) {
-    affectedCount
-  }
+    deleteFromOrganisationalMemberCollection(
+        filter: {id: {eq: $organisationalMemberId}}
+    ) {
+        affectedCount
+    }
 }
 
 mutation updateOrganisationalMemberPost($organisationalMemberId: String!, $post: String!) {
-  updateorganisational_memberCollection(
-    set: { post: $post }
-    filter: {id: {eq: $organisationalMemberId} }
-  ){
-    affectedCount
-  }
+    updateOrganisationalMemberCollection(
+        set: { post: $post }
+        filter: {id: {eq: $organisationalMemberId} }
+    ){
+        affectedCount
+    }
 }
-
-
 
 mutation updateOrganisationalMemberPriority($organisationalMemberId: String!, $priority: Int!) {
-  updateorganisational_memberCollection(
-    set: { priority: $priority }
-    filter: {id: {eq: $organisationalMemberId} }
-  ){
-    affectedCount
-  }
+    updateOrganisationalMemberCollection(
+        set: { priority: $priority }
+        filter: {id: {eq: $organisationalMemberId} }
+    ){
+        affectedCount
+    }
 }
 
-
-
-mutation addMember($name: String!, $phoneNumber: String!, $educationalQualification: String!, $profileImageUrl: String!, $email: String, $address: String, $state: String, $district: String, $pincode: String) {
-  insertIntomemberCollection(
-    objects: [{
-      name: $name,
-      phone_number: $phoneNumber,
-      educational_qualification: $educationalQualification,
-      profile_image: $profileImageUrl,
-      email: $email,
-      address: $address,
-      state: $state,
-      district: $district,
-      pin: $pincode
-    }]
-  ) {
-    affectedCount
-  }
+mutation addMember($name: String!, $phoneNumber: String!, $educationalQualification: String!, $profileImageUrl: String!, $email: String) {
+    insertIntoMemberCollection(
+        objects: [{
+            name: $name,
+            phoneNumber: $phoneNumber,
+            educationalQualification: $educationalQualification,
+            profileImage: $profileImageUrl,
+            email: $email,
+        }]
+    ) {
+        affectedCount
+    }
 }
 
 mutation deleteMember($memberId: String!){
-  deleteFrommemberCollection(filter: { id: {eq: $memberId} }){
-    affectedCount
-  }
+    deleteFromMemberCollection(filter: { id: {eq: $memberId} }){
+        affectedCount
+    }
 }
 
 mutation updateMemberPhoto($memberId: String!, $profileImageUrl: String!) {
-  updatememberCollection(
-    filter: {id: {eq: $memberId}}
-    set: {profile_image: $profileImageUrl}
-  ) {
-    affectedCount
-  }
+    updateMemberCollection(
+        filter: {id: {eq: $memberId}}
+        set: {profileImage: $profileImageUrl}
+    ) {
+        affectedCount
+    }
 }
 
-mutation updateMemberDetails($memberId: String!, $name: String!, $phoneNumber: String!, $educationalQualification: String, $email: String, $address: String, $state: String, $district: String, $pincode: String) {
-  updatememberCollection(
-    filter: {id: {eq: $memberId}}
-    set: {
-      name: $name,
-      phone_number: $phoneNumber,
-      educational_qualification: $educationalQualification,
-      email: $email,
-      address: $address,
-      state: $state,
-      district: $district,
-      pin: $pincode
+mutation updateMemberDetails($memberId: String!, $name: String!, $phoneNumber: String!, $educationalQualification: String, $email: String) {
+    updateMemberCollection(
+        filter: {id: {eq: $memberId}}
+        set: {
+            name: $name,
+            phoneNumber: $phoneNumber,
+            educationalQualification: $educationalQualification,
+            email: $email,
+
+        }
+    ) {
+        affectedCount
     }
-  ) {
-    affectedCount
-  }
 }
 
 mutation UpdateActivity(
     $id: String!,
-    $input: activitiesUpdateInput!
+    $input: ActivitiesUpdateInput!
 ) {
-    updateactivitiesCollection(
+    updateActivitiesCollection(
         filter: {id: {eq: $id}}
         set: $input
     ) {
         affectedCount
         records {
             ...ActivityFields
+        }
     }
-  }
 }
 
 mutation createOrganisation($name: String!, $logo: String!, $description: String!, $priority: Int!) {
-    insertIntoorganisationCollection(
+    insertIntoOrganisationCollection(
         objects: [{name: $name, logo: $logo, description: $description, priority: $priority}]
     ) {
         affectedCount
@@ -273,16 +262,260 @@ mutation createOrganisation($name: String!, $logo: String!, $description: String
 }
 
 mutation removeOrganisation($organisationId: String!) {
-    deleteFromorganisationCollection(filter: {id: {eq: $organisationId}}) {
+    deleteFromOrganisationCollection(filter: {id: {eq: $organisationId}}) {
         affectedCount
     }
 }
 
 mutation addActivityOverview($activityId: String!, $description: String!, $mediaUrls: [String]) {
-    updateactivitiesCollection(
-        set: {overview_description: $description, overview_media_urls: $mediaUrls}
+    updateActivitiesCollection(
+        set: {overviewDescription: $description, overviewMediaUrls: $mediaUrls}
         filter: {id: {eq: $activityId}}
     ) {
         affectedCount
     }
 }
+
+# Address Mutations
+mutation createAddress($basicAddress: String!, $state: String!, $district: String!, $pincode: String!, $latitude: Float, $longitude: Float, $vidhansabha: String) {
+  insertIntoAddressCollection(
+    objects: [{
+      basicAddress: $basicAddress,
+      state: $state,
+      district: $district,
+      pincode: $pincode,
+      latitude: $latitude,
+      longitude: $longitude,
+      vidhansabha: $vidhansabha
+    }]
+  ) {
+    affectedCount
+    records {
+      id
+      basicAddress
+      state
+      district
+      pincode
+      latitude
+      longitude
+      vidhansabha
+    }
+  }
+}
+
+mutation updateAddress($id: String!, $basicAddress: String, $state: String, $district: String, $pincode: String, $latitude: Float, $longitude: Float, $vidhansabha: String) {
+  updateAddressCollection(
+    filter: {id: {eq: $id}}
+    set: {
+      basicAddress: $basicAddress,
+      state: $state,
+      district: $district,
+      pincode: $pincode,
+      latitude: $latitude,
+      longitude: $longitude,
+      vidhansabha: $vidhansabha
+    }
+  ) {
+    affectedCount
+    records {
+      id
+      basicAddress
+      state
+      district
+      pincode
+      latitude
+      longitude
+      vidhansabha
+    }
+  }
+}
+
+mutation deleteAddress($id: String!) {
+  deleteFromAddressCollection(filter: {id: {eq: $id}}) {
+    affectedCount
+  }
+}
+
+# Arya Samaj Mutations
+mutation createAryaSamaj($name: String!, $description: String!, $mediaUrls: [String!], $addressId: String) {
+  insertIntoAryaSamajCollection(
+    objects: [{
+      name: $name,
+      description: $description,
+      mediaUrls: $mediaUrls,
+      addressId: $addressId
+    }]
+  ) {
+    affectedCount
+    records {
+      id
+      name
+      description
+      mediaUrls
+      addressId
+      address {
+        id
+        basicAddress
+        state
+        district
+        pincode
+      }
+    }
+  }
+}
+
+mutation updateAryaSamaj($id: String!, $name: String, $description: String, $mediaUrls: [String], $addressId: String) {
+  updateAryaSamajCollection(
+    filter: {id: {eq: $id}}
+    set: {
+      name: $name,
+      description: $description,
+      mediaUrls: $mediaUrls,
+      addressId: $addressId
+    }
+  ) {
+    affectedCount
+    records {
+      id
+      name
+      description
+      mediaUrls
+      addressId
+      address {
+        id
+        basicAddress
+        state
+        district
+        pincode
+      }
+    }
+  }
+}
+
+mutation deleteAryaSamaj($id: String!) {
+  deleteFromAryaSamajCollection(filter: {id: {eq: $id}}) {
+    affectedCount
+  }
+}
+
+# Samaj Member Mutations
+mutation addMemberToAryaSamaj($memberId: String!, $aryaSamajId: String!, $post: String, $priority: Int) {
+  insertIntoSamajMemberCollection(
+    objects: [{
+      memberId: $memberId,
+      aryaSamajId: $aryaSamajId,
+      post: $post,
+      priority: $priority
+    }]
+  ) {
+    affectedCount
+    records {
+      id
+      post
+      priority
+      member {
+        id
+        name
+        profileImage
+        phoneNumber
+      }
+      aryaSamaj {
+        id
+        name
+      }
+    }
+  }
+}
+
+mutation addMembersToAryaSamaj($input: [SamajMemberInsertInput!]!) {
+  insertIntoSamajMemberCollection(
+    objects: $input
+  ) {
+    affectedCount
+    records {
+      id
+      post
+      priority
+      member {
+        id
+        name
+        profileImage
+        phoneNumber
+      }
+      aryaSamaj {
+        id
+        name
+      }
+    }
+  }
+}
+
+mutation updateSamajMemberPost($samajMemberId: String!, $post: String!) {
+  updateSamajMemberCollection(
+    set: { post: $post }
+    filter: {id: {eq: $samajMemberId} }
+  ){
+    affectedCount
+  }
+}
+
+mutation updateSamajMemberPriority($samajMemberId: String!, $priority: Int!) {
+  updateSamajMemberCollection(
+    set: { priority: $priority }
+    filter: {id: {eq: $samajMemberId} }
+  ){
+    affectedCount
+  }
+}
+
+mutation removeMemberFromAryaSamaj($samajMemberId: String!) {
+  deleteFromSamajMemberCollection(
+    filter: {id: {eq: $samajMemberId}}
+  ) {
+    affectedCount
+  }
+}
+
+# Update Member with Address
+mutation updateMemberWithAddress($memberId: String!, $name: String!, $phoneNumber: String!, $educationalQualification: String, $email: String, $addressId: String, $tempAddressId: String, $aryaSamajId: String) {
+  updateMemberCollection(
+    filter: {id: {eq: $memberId}}
+    set: {
+      name: $name,
+      phoneNumber: $phoneNumber,
+      educationalQualification: $educationalQualification,
+      email: $email,
+      addressId: $addressId,
+      tempAddressId: $tempAddressId,
+      aryaSamajId: $aryaSamajId
+    }
+  ) {
+    affectedCount
+    records {
+      id
+      name
+      phoneNumber
+      educationalQualification
+      email
+      address {
+        id
+        basicAddress
+        state
+        district
+        pincode
+      }
+      tempAddress {
+        id
+        basicAddress
+        state
+        district
+        pincode
+      }
+      aryaSamaj {
+        id
+        name
+      }
+    }
+  }
+}
+

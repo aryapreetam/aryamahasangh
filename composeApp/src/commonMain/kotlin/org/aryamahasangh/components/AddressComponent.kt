@@ -21,6 +21,8 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
@@ -52,7 +54,7 @@ data class AddressFieldsConfig(
   val showState: Boolean = true,
   val showDistrict: Boolean = true,
   val showVidhansabha: Boolean = true,
-  val showPincode: Boolean = true
+  val showPincode: Boolean = true,
 )
 
 /**
@@ -113,6 +115,12 @@ fun AddressComponent(
   isSmallScreen: Boolean = false,
   modifier: Modifier = Modifier
 ) {
+  // Debug: Track address data changes
+  LaunchedEffect(addressData) {
+    println("DEBUG: AddressComponent received new addressData: $addressData")
+    println("DEBUG: Location in addressData: ${addressData.location}")
+  }
+
   val focusManager = LocalFocusManager.current
   val scope = rememberCoroutineScope()
 
@@ -121,6 +129,9 @@ fun AddressComponent(
 
   // State for reverse geocoding
   var isReverseGeocoding by remember { mutableStateOf(false) }
+
+  // Flag to track if reverse geocoding should be triggered (only for map-picked locations)
+  var shouldTriggerReverseGeocoding by remember { mutableStateOf(false) }
 
   // Focus requesters for keyboard navigation
   val addressFocusRequester = remember { FocusRequester() }
@@ -143,6 +154,10 @@ fun AddressComponent(
     isReverseGeocoding = true
     try {
       println("Starting reverse geocoding for lat: $lat, lon: $lon")
+
+      // Store the original location to ensure it's preserved
+      val originalLocation = addressData.location
+      println("Original location before reverse geocoding: $originalLocation")
 
       // Try with Hindi first, then fallback to English
       val languages = listOf("hi", "en")
@@ -267,15 +282,21 @@ fun AddressComponent(
               // Get pincode
               val pincode = address["postcode"]?.jsonPrimitive?.content ?: ""
 
-              // Update address data
+              // CRITICAL: Ensure we preserve the exact original location coordinates
+              val preservedLocation = originalLocation ?: addressData.location
+              println("Preserved location: $preservedLocation")
+
+              // Update address data with explicit location preservation
               val newAddressData = addressData.copy(
+                location = LatLng(lat,lon), // Explicitly preserve the original location
                 address = if (fullAddress.isNotBlank()) fullAddress else addressData.address,
                 state = if (mappedState.isNotBlank()) mappedState else addressData.state,
                 district = if (mappedDistrict.isNotBlank()) mappedDistrict else addressData.district,
                 pincode = if (pincode.isNotBlank()) pincode else addressData.pincode
               )
 
-              println("Updating address data: $newAddressData")
+              println("Final address data after reverse geocoding: $newAddressData")
+              println("Location preserved: ${newAddressData.location}")
               onAddressChange(newAddressData)
 
               // If we successfully got and mapped data, don't try other languages
@@ -318,7 +339,10 @@ fun AddressComponent(
         )
 
         OutlinedButton(
-          onClick = { showMapDialog = true },
+          onClick = {
+            shouldTriggerReverseGeocoding = true
+            showMapDialog = true
+          },
           contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
         ) {
           Icon(
@@ -465,9 +489,12 @@ fun AddressComponent(
           onAddressChange(addressData.copy(location = latLng))
           showMapDialog = false
 
-          // Perform reverse geocoding
-          scope.launch {
-            reverseGeocode(latLng.latitude, latLng.longitude)
+          // Only trigger reverse geocoding if the location was set by the map picker
+          if (shouldTriggerReverseGeocoding) {
+            shouldTriggerReverseGeocoding = false
+            scope.launch {
+              reverseGeocode(latLng.latitude, latLng.longitude)
+            }
           }
         }
       )

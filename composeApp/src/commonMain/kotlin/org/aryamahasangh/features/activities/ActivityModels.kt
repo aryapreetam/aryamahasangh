@@ -4,7 +4,8 @@ import kotlinx.datetime.*
 import kotlinx.serialization.SerialName
 import org.aryamahasangh.OrganisationalActivityDetailByIdQuery
 import org.aryamahasangh.fragment.OrganisationalActivityShort
-import org.aryamahasangh.type.Activity_type as ApolloActivityType
+import org.aryamahasangh.type.ActivityType
+import org.aryamahasangh.type.ActivityType.*
 
 data class ActivityResponse(
   val data: ActivityData?
@@ -98,7 +99,7 @@ enum class ActivityStatus {
   UPCOMING;
 
   fun toDisplayName(): String {
-    return when (this) {
+    return when(this){
       PAST -> "समाप्त"
       ONGOING -> "चल रही है"
       UPCOMING -> "आगामी"
@@ -106,42 +107,14 @@ enum class ActivityStatus {
   }
 }
 
-enum class ActivityType {
-  SESSION,
-  CAMP,
-  COURSE,
-  EVENT,
-  CAMPAIGN;
-
-  fun toDisplayName(): String {
-    return when (this) {
-      SESSION -> "सत्र"
-      CAMP -> "शिविर"
-      COURSE -> "कक्षा"
-      EVENT -> "कार्यक्रम"
-      CAMPAIGN -> "अभियान"
-    }
-  }
-}
-
-fun ApolloActivityType?.toDomain(): ActivityType {
-  return when(this){
-    ApolloActivityType.SESSION -> ActivityType.SESSION
-    ApolloActivityType.CAMP -> ActivityType.CAMP
-    ApolloActivityType.COURSE -> ActivityType.COURSE
-    ApolloActivityType.EVENT -> ActivityType.EVENT
-    ApolloActivityType.CAMPAIGN -> ActivityType.CAMPAIGN
-    else -> ActivityType.EVENT
-  }
-}
-
-fun ActivityType.toApollo(): ApolloActivityType {
-  return when(this){
-    ActivityType.SESSION -> ApolloActivityType.SESSION
-    ActivityType.CAMP -> ApolloActivityType.CAMP
-    ActivityType.COURSE -> ApolloActivityType.COURSE
-    ActivityType.EVENT -> ApolloActivityType.EVENT
-    ActivityType.CAMPAIGN -> ApolloActivityType.CAMPAIGN
+fun ActivityType.toDisplayName(): String {
+  return when (this) {
+    SESSION -> "सत्र"
+    CAMP -> "शिविर"
+    COURSE -> "कक्षा"
+    EVENT -> "कार्यक्रम"
+    CAMPAIGN -> "अभियान"
+    UNKNOWN__ -> "कार्यक्रम"
   }
 }
 
@@ -186,38 +159,42 @@ fun OrganisationalActivity.hasOverview(): Boolean {
   return !overviewDescription.isNullOrEmpty() || overviewMediaUrls.isNotEmpty()
 }
 
-fun org.aryamahasangh.features.activities.OrganisationalActivityShort.getStatus(): ActivityStatus {
+fun OrganisationalActivityShort.getStatus(): ActivityStatus {
   val currentTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
   return when {
-    currentTime < startDatetime -> ActivityStatus.UPCOMING
-    currentTime > endDatetime -> ActivityStatus.PAST
+    currentTime < startDatetime.toLocalDateTime() -> ActivityStatus.UPCOMING
+    currentTime > endDatetime.toLocalDateTime() -> ActivityStatus.PAST
     else -> ActivityStatus.ONGOING
   }
+}
+
+fun Instant.toLocalDateTime(): LocalDateTime {
+  return this.toLocalDateTime(TimeZone.currentSystemDefault())
 }
 
 fun OrganisationalActivity.Companion.camelCased(
   node: OrganisationalActivityDetailByIdQuery.Node
 ): OrganisationalActivity {
-  val organisationalActivityShort = node.organisationalActivityShort.camelCased()
+  val organisationalActivityShort = node.organisationalActivityShort
   return OrganisationalActivity(
     id = organisationalActivityShort.id,
     name = organisationalActivityShort.name,
     type = organisationalActivityShort.type,
     shortDescription = organisationalActivityShort.shortDescription,
-    district = organisationalActivityShort.district,
+    district = organisationalActivityShort.district ?: "",
     state = node.state!!,
     address = node.address!!,
     capacity = node.capacity!!,
     latitude = node.latitude,
     longitude = node.longitude,
-    mediaFiles = node.media_files.map { it ?: "" },
-    endDatetime = organisationalActivityShort.endDatetime,
-    allowedGender = node.allowed_gender!!.name,
-    startDatetime = organisationalActivityShort.startDatetime,
-    longDescription = node.long_description!!,
-    additionalInstructions = node.additional_instructions ?: "",
+    mediaFiles = node.mediaFiles.map { it ?: "" },
+    endDatetime = organisationalActivityShort.endDatetime.toLocalDateTime(),
+    allowedGender = node.allowedGender!!.name,
+    startDatetime = organisationalActivityShort.startDatetime.toLocalDateTime(),
+    longDescription = node.longDescription!!,
+    additionalInstructions = node.additionalInstructions ?: "",
     contactPeople =
-      node.activity_memberCollection?.edges?.map {
+      node.activityMemberCollection?.edges?.map {
         val member = it.node.member!!
         ActivityMember(
           id = it.node.id.toString(),
@@ -226,35 +203,22 @@ fun OrganisationalActivity.Companion.camelCased(
             Member(
               id = member.id,
               name = member.name!!,
-              phoneNumber = member.phone_number ?: "",
-              profileImage = member.profile_image ?: ""
+              phoneNumber = member.phoneNumber ?: "",
+              profileImage = member.profileImage ?: ""
             ),
           priority = it.node.priority!!
         )
       }!!,
     associatedOrganisations =
-      node.organisational_activityCollection?.edges?.map {
+      node.organisationalActivityCollection?.edges?.map {
         val (id, name) = it.node.organisation!!
         AssociatedOrganisation(
           id = it.node.id,
           organisation = Organisation(id = id, name = name!!)
         )
       }!!,
-    overviewDescription = node.overview_description ?: null,
-    overviewMediaUrls = node.overview_media_urls.map { it ?: "" }
-  )
-}
-
-fun OrganisationalActivityShort.camelCased(): org.aryamahasangh.features.activities.OrganisationalActivityShort {
-  return OrganisationalActivityShort(
-    id = this.id,
-    name = this.name,
-    shortDescription = this.short_description,
-    startDatetime = this.start_datetime.toLocalDateTime(TimeZone.currentSystemDefault()),
-    endDatetime = this.end_datetime.toLocalDateTime(TimeZone.currentSystemDefault()),
-    type = this.type.toDomain(),
-    district = this.district ?: "",
-    state = this.state ?: ""
+    overviewDescription = node.overviewDescription ?: null,
+    overviewMediaUrls = node.overviewMediaUrls.map { it ?: "" }
   )
 }
 
@@ -265,17 +229,6 @@ fun getLocalDateTime(timestamptzStr: Any): LocalDateTime {
   // Convert to LocalDateTime in the system's default timezone
   return instant.toLocalDateTime(TimeZone.currentSystemDefault())
 }
-
-data class OrganisationalActivityShort(
-  val id: String,
-  val name: String,
-  val shortDescription: String,
-  val startDatetime: LocalDateTime,
-  val endDatetime: LocalDateTime,
-  val type: ActivityType,
-  val district: String,
-  val state: String
-)
 
 data class OrganisationsAndMembers(
   val members: List<Member>,

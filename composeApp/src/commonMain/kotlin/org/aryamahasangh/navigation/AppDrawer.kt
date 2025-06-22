@@ -97,11 +97,18 @@ fun DrawerContent(
   val isLoggedIn = LocalIsAuthenticated.current
 
   Column(
-    modifier = Modifier.width(250.dp).padding(8.dp).fillMaxHeight()
+    modifier =
+      Modifier
+        .width(250.dp)
+        .padding(8.dp)
+        .fillMaxHeight()
   ) {
     // Main content in scrollable column
     Column(
-      modifier = Modifier.weight(1f).verticalScroll(rememberScrollState())
+      modifier =
+        Modifier
+          .weight(1f)
+          .verticalScroll(rememberScrollState())
     ) {
       Row(
         modifier = Modifier.fillMaxWidth().clickable {
@@ -217,14 +224,18 @@ fun DrawerContent(
       }
     }
 
-    if(isLoggedIn) {
+    if (isLoggedIn) {
       // Admin option at the bottom
       HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
       NavigationDrawerItem(
         label = {
           Text("व्यवस्थापकीय", style = MaterialTheme.typography.bodyLarge)
         },
-        selected = checkIfSelected(currentDestination, Screen.AdminContainer.toString()),
+        selected =
+          checkIfSelected(
+            currentDestination,
+            Screen.AdminContainer.toString()
+          ),
         onClick = {
           navController.navigate(Screen.AdminContainer) {
             // For admin section, clear back stack completely to root
@@ -256,33 +267,75 @@ private fun checkIfSelected(
 ): Boolean {
   return if ((currentDestination?.contains("AboutUs") == true || currentDestination?.contains("AboutUsDetails") == true) && currentDrawerItem == Screen.AboutSection.toString()) {
     true
-  } else if ((
-      currentDestination?.contains("Activities") == true ||
+  } else if (
+    (currentDestination?.contains("Activities") == true ||
         currentDestination?.contains("ActivityDetails") == true ||
-        currentDestination?.contains("EditActivity") == true
-      ) && currentDrawerItem == Screen.ActivitiesSection.toString()) {
+        currentDestination?.contains("EditActivity") == true) &&
+      currentDrawerItem == Screen.ActivitiesSection.toString()
+  ) {
     true
-  } else if ((currentDestination?.contains("Orgs") == true || currentDestination?.contains("OrgDetails") == true) && currentDrawerItem == Screen.OrgsSection.toString()) {
+  } else if (
+    (currentDestination?.contains("Orgs") == true ||
+      currentDestination?.contains("OrgDetails") == true) &&
+    currentDrawerItem == Screen.OrgsSection.toString()
+  ) {
     true
-  } else if ((currentDestination?.contains("Learning") == true || currentDestination?.contains("VideoDetails") == true) && currentDrawerItem == Screen.LearningSection.toString()) {
+  } else if (
+    (currentDestination?.contains("Learning") == true ||
+      currentDestination?.contains("VideoDetails") == true) &&
+    currentDrawerItem == Screen.LearningSection.toString()
+  ) {
     true
-  } else if ((currentDestination?.contains("BookOrderForm") == true || currentDestination?.contains("BookOrderDetails") == true) && currentDrawerItem == Screen.BookSection.toString()) {
+  } else if (
+    (currentDestination?.contains("BookOrderForm") == true ||
+      currentDestination?.contains("BookOrderDetails") == true) &&
+    currentDrawerItem == Screen.BookSection.toString()
+  ) {
     true
-  } else if ((currentDestination?.contains("AryaNirmanHome") == true || currentDestination?.contains("AryaNirmanRegistrationForm") == true) && currentDrawerItem == Screen.AryaNirmanSection.toString()) {
+  } else if (
+    (currentDestination?.contains("AryaNirmanHome") == true ||
+      currentDestination?.contains("AryaNirmanRegistrationForm") == true) &&
+    currentDrawerItem == Screen.AryaNirmanSection.toString()
+  ) {
     true
-  } else if ((currentDestination?.contains("AryaPariwarHome") == true) && currentDrawerItem == Screen.AryaPariwarSection.toString()) {
+  } else if (
+    currentDestination?.contains("AryaPariwarHome") == true &&
+    currentDrawerItem == Screen.AryaPariwarSection.toString()
+  ) {
     true
-  } else if ((currentDestination?.contains("AryaSamajHome") == true) && currentDrawerItem == Screen.AryaSamajSection.toString()) {
+  } else if (
+    currentDestination?.contains("AryaSamajHome") == true &&
+    currentDrawerItem == Screen.AryaSamajSection.toString()
+  ) {
     true
-  } else if ((currentDestination?.contains("KshatraTrainingHome") == true) && currentDrawerItem == Screen.KshatraTrainingSection.toString()) {
+  } else if (
+    currentDestination?.contains("KshatraTrainingHome") == true &&
+    currentDrawerItem == Screen.KshatraTrainingSection.toString()
+  ) {
     true
-  } else if ((currentDestination?.contains("ChatraTrainingHome") == true) && currentDrawerItem == Screen.ChatraTrainingSection.toString()) {
+  } else if (
+    currentDestination?.contains("ChatraTrainingHome") == true &&
+    currentDrawerItem == Screen.ChatraTrainingSection.toString()
+  ) {
     true
-  } else if ((currentDestination?.contains("AryaGurukulCollege") == true) && currentDrawerItem == Screen.AryaGurukulSection.toString()) {
+  } else if (
+    currentDestination?.contains("AryaGurukulCollege") == true &&
+    currentDrawerItem == Screen.AryaGurukulSection.toString()
+  ) {
     true
-  } else if ((currentDestination?.contains("AryaaGurukulCollege") == true || currentDestination?.contains("AdmissionForm") == true) && currentDrawerItem == Screen.AryaaGurukulSection.toString()) {
+  } else if (
+    (currentDestination?.contains("AryaaGurukulCollege") == true ||
+      currentDestination?.contains("AdmissionForm") == true) &&
+    currentDrawerItem == Screen.AryaaGurukulSection.toString()
+  ) {
     true
-  } else if ((currentDestination?.contains("AdminContainer") == true || currentDestination?.contains("MemberDetail") == true) && currentDrawerItem == Screen.AdminSection.toString()) {
+  } else if (
+    (currentDestination?.contains("AdminContainer") == true ||
+      currentDestination?.contains("MemberDetail") == true ||
+      currentDestination?.contains("AddAryaSamajForm") == true ||
+      currentDestination?.contains("AryaSamajDetail") == true) &&
+    currentDrawerItem == Screen.AdminSection.toString()
+  ) {
     true
   } else if (currentDestination?.contains(currentDrawerItem) == true) {
     true
@@ -406,6 +459,8 @@ fun MainContent(
               "BookOrderDetails",
               "AryaNirmanRegistrationForm",
               "MemberDetail",
+              "AddAryaSamajForm",
+              "AryaSamajDetail"
             ).any {
               currentScreen?.startsWith(it) == true
             }
@@ -452,7 +507,9 @@ fun MainContent(
               state = rememberTooltipState()
             ) {
               IconButton(
-                onClick = { showLogoutDialog = true }
+                onClick = {
+                  showLogoutDialog = true
+                }
               ) {
                 Icon(
                   Icons.AutoMirrored.Filled.Logout,
@@ -467,7 +524,9 @@ fun MainContent(
               state = rememberTooltipState()
             ) {
               IconButton(
-                onClick = { showLoginDialog = true }
+                onClick = {
+                  showLoginDialog = true
+                }
               ) {
                 Icon(
                   Icons.AutoMirrored.Filled.Login,
@@ -529,6 +588,7 @@ fun MainContent(
     bottomBar = {
     }
   )
+
   // Login Dialog
   if (showLoginDialog) {
     LoginDialog(
