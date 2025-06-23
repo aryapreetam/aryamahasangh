@@ -384,7 +384,7 @@ fun AddressComponent(
         },
         label = { Text("पूर्ण पता") },
         modifier = Modifier
-          .fillMaxWidth()
+          .width(500.dp)
           .focusRequester(addressFocusRequester),
         minLines = 2,
         maxLines = 3,

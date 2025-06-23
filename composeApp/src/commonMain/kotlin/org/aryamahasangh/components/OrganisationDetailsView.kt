@@ -303,7 +303,7 @@ fun OrganisationDetail(
           Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
           ) {
             Text(
               "कार्यकारिणी/पदाधिकारी",
@@ -467,86 +467,86 @@ fun OrganisationDetail(
         }
       }
     }
+  }
 
-    // Add Member Dialog
-    if (showAddMemberDialog) {
-      AddMemberDialog(
-        onDismiss = { showAddMemberDialog = false },
-        onMembersSelected = { selectedMembers ->
-          // Filter out members that are already part of the organisation
-          val existingMemberIds = keyPeople.map { it.member.id }.toSet()
-          val newMembers = selectedMembers.filter { it.id !in existingMemberIds }
+  // Add Member Dialog
+  if (showAddMemberDialog) {
+    AddMemberDialog(
+      onDismiss = { showAddMemberDialog = false },
+      onMembersSelected = { selectedMembers ->
+        // Filter out members that are already part of the organisation
+        val existingMemberIds = keyPeople.map { it.member.id }.toSet()
+        val newMembers = selectedMembers.filter { it.id !in existingMemberIds }
 
-          // Add new members to the post input map
-          val newMembersMap = newMembers.associateWith { "" }
-          newMembersWithPosts = newMembersWithPosts + newMembersMap
+        // Add new members to the post input map
+        val newMembersMap = newMembers.associateWith { "" }
+        newMembersWithPosts = newMembersWithPosts + newMembersMap
 
-          showAddMemberDialog = false
-        },
-        searchMembers = searchMembers,
-        allMembers = allMembers,
-        onTriggerSearch = onTriggerSearch
-      )
-    }
+        showAddMemberDialog = false
+      },
+      searchMembers = searchMembers,
+      allMembers = allMembers,
+      onTriggerSearch = onTriggerSearch
+    )
+  }
 
-    // Delete Confirmation Dialog
-    showDeleteDialog?.let { member ->
-      AlertDialog(
-        onDismissRequest = { showDeleteDialog = null },
-        title = { Text("पदाधिकारी हटाएँ?") },
-        text = { Text("क्या निश्चितरूप से इन इस पदाधिकारी को हटाना चाहते है?") },
-        confirmButton = {
-          TextButton(
-            onClick = {
-              onRemoveMember(member.id, member.member.name, id)
-              showDeleteDialog = null
-            }
-          ) {
-            Text("Yes")
+  // Delete Confirmation Dialog
+  showDeleteDialog?.let { member ->
+    AlertDialog(
+      onDismissRequest = { showDeleteDialog = null },
+      title = { Text("पदाधिकारी हटाएँ?") },
+      text = { Text("क्या निश्चितरूप से इन इस पदाधिकारी को हटाना चाहते है?") },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            onRemoveMember(member.id, member.member.name, id)
+            showDeleteDialog = null
           }
-        },
-        dismissButton = {
-          TextButton(onClick = { showDeleteDialog = null }) {
-            Text("No")
-          }
+        ) {
+          Text("Yes")
         }
-      )
-    }
-
-    // Update Post Dialog
-    showUpdatePostDialog?.let { member ->
-      AlertDialog(
-        onDismissRequest = { showUpdatePostDialog = null },
-        title = { Text("पद बदलें") },
-        text = {
-          Column {
-            OutlinedTextField(
-              value = updatedPost,
-              onValueChange = { updatedPost = it },
-              label = { Text("पद") },
-              modifier = Modifier.fillMaxWidth()
-            )
-          }
-        },
-        confirmButton = {
-          TextButton(
-            onClick = {
-              if (updatedPost.isNotBlank()) {
-                onUpdateMemberPost(member.id, updatedPost, id)
-                showUpdatePostDialog = null
-              }
-            }
-          ) {
-            Text("Save")
-          }
-        },
-        dismissButton = {
-          TextButton(onClick = { showUpdatePostDialog = null }) {
-            Text("Cancel")
-          }
+      },
+      dismissButton = {
+        TextButton(onClick = { showDeleteDialog = null }) {
+          Text("No")
         }
-      )
-    }
+      }
+    )
+  }
+
+  // Update Post Dialog
+  showUpdatePostDialog?.let { member ->
+    AlertDialog(
+      onDismissRequest = { showUpdatePostDialog = null },
+      title = { Text("पद बदलें") },
+      text = {
+        Column {
+          OutlinedTextField(
+            value = updatedPost,
+            onValueChange = { updatedPost = it },
+            label = { Text("पद") },
+            modifier = Modifier.fillMaxWidth()
+          )
+        }
+      },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            if (updatedPost.isNotBlank()) {
+              onUpdateMemberPost(member.id, updatedPost, id)
+              showUpdatePostDialog = null
+            }
+          }
+        ) {
+          Text("Save")
+        }
+      },
+      dismissButton = {
+        TextButton(onClick = { showUpdatePostDialog = null }) {
+          Text("Cancel")
+        }
+      }
+    )
   }
 }
 
@@ -579,15 +579,14 @@ fun KeyPersonItem(
       modifier = Modifier
         .clip(CircleShape)
         .size(80.dp),
-      placeholder =
-        BrushPainter(
-          Brush.linearGradient(
-            listOf(
-              Color(color = 0xFFFFFFFF),
-              Color(color = 0xFFDDDDDD)
-            )
+      placeholder = BrushPainter(
+        Brush.linearGradient(
+          listOf(
+            Color(color = 0xFFFFFFFF),
+            Color(color = 0xFFDDDDDD)
           )
-        ),
+        )
+      ),
       fallback = painterResource(Res.drawable.error_profile_image),
       error = painterResource(Res.drawable.error_profile_image)
     )
@@ -829,7 +828,10 @@ fun AddMemberDialog(
           .fillMaxSize()
           .padding(16.dp)
       ) {
-        Text("नए पदाधिकारी जोड़ें", style = MaterialTheme.typography.titleMedium)
+        Text(
+          text = "नए पदाधिकारी जोड़ें",
+          style = MaterialTheme.typography.titleMedium
+        )
         Spacer(modifier = Modifier.height(16.dp))
 
         // Search bar
@@ -971,7 +973,7 @@ fun MemberListItem(
       }
     }
 
-    // Checkbox on the right
+    // Selection indicator on the right
     Checkbox(
       checked = selected,
       onCheckedChange = { onClick() }
@@ -1005,15 +1007,14 @@ fun NewMemberPostInput(
           modifier = Modifier
             .clip(CircleShape)
             .size(48.dp),
-          placeholder =
-            BrushPainter(
-              Brush.linearGradient(
-                listOf(
-                  Color(color = 0xFFFFFFFF),
-                  Color(color = 0xFFDDDDDD)
-                )
+          placeholder = BrushPainter(
+            Brush.linearGradient(
+              listOf(
+                Color(color = 0xFFFFFFFF),
+                Color(color = 0xFFDDDDDD)
               )
-            ),
+            )
+          ),
           fallback = painterResource(Res.drawable.error_profile_image),
           error = painterResource(Res.drawable.error_profile_image)
         )
@@ -1071,7 +1072,10 @@ fun NewMemberPostInput(
             Spacer(modifier = Modifier.width(8.dp))
           }
           Icon(
-            Icons.Default.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+            Icons.Default.Check,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary
+          )
           Spacer(modifier = Modifier.width(4.dp))
           Text("जोड़ें")
         }

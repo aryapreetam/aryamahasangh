@@ -1,0 +1,213 @@
+# Family Mutations
+
+# Create a new family
+mutation CreateFamily(
+  $name: String!
+  $addressId: String
+  $aryaSamajId: String
+  $photos: [String!]
+) {
+  insertIntoFamilyCollection(
+    objects: [{
+      name: $name
+      addressId: $addressId
+      aryaSamajId: $aryaSamajId
+      photos: $photos
+    }]
+  ) {
+    affectedCount
+    records {
+      id
+      name
+      createdAt
+      addressId
+      aryaSamajId
+      photos
+    }
+  }
+}
+
+# Update family information
+mutation UpdateFamily(
+  $id: String!
+  $name: String
+  $addressId: String
+  $aryaSamajId: String
+  $photos: [String!]
+) {
+  updateFamilyCollection(
+    filter: { id: { eq: $id } }
+    set: {
+      name: $name
+      addressId: $addressId
+      aryaSamajId: $aryaSamajId
+      photos: $photos
+    }
+  ) {
+    affectedCount
+    records {
+      id
+      name
+      createdAt
+      addressId
+      aryaSamajId
+      photos
+      address {
+        basicAddress
+        state
+        district
+        pincode
+      }
+      aryaSamaj {
+        name
+      }
+    }
+  }
+}
+
+# Delete a family
+mutation DeleteFamily($id: String!) {
+  deleteFromFamilyCollection(
+    filter: { id: { eq: $id } }
+    atMost: 1
+  ) {
+    affectedCount
+    records {
+      id
+      name
+    }
+  }
+}
+
+# Create address for family (separate mutation to be called first)
+mutation CreateAddressForFamily(
+  $basicAddress: String!
+  $state: String!
+  $district: String
+  $pincode: String
+  $latitude: Float
+  $longitude: Float
+  $vidhansabha: String
+) {
+  insertIntoAddressCollection(
+    objects: [{
+      basicAddress: $basicAddress
+      state: $state
+      district: $district
+      pincode: $pincode
+      latitude: $latitude
+      longitude: $longitude
+      vidhansabha: $vidhansabha
+    }]
+  ) {
+    affectedCount
+    records {
+      id
+      basicAddress
+      state
+      district
+      pincode
+      latitude
+      longitude
+      vidhansabha
+    }
+  }
+}
+
+# Create family with existing address
+mutation CreateFamilyWithAddress(
+  $familyName: String!
+  $addressId: String!
+  $aryaSamajId: String
+  $photos: [String!]
+) {
+  insertIntoFamilyCollection(
+    objects: [{
+      name: $familyName
+      addressId: $addressId
+      aryaSamajId: $aryaSamajId
+      photos: $photos
+    }]
+  ) {
+    affectedCount
+    records {
+      id
+      name
+      createdAt
+      address {
+        id
+        basicAddress
+        state
+        district
+        pincode
+      }
+      aryaSamaj {
+        id
+        name
+      }
+    }
+  }
+}
+
+# Update family photos
+mutation UpdateFamilyPhotos(
+  $id: String!
+  $photos: [String!]!
+) {
+  updateFamilyCollection(
+    filter: { id: { eq: $id } }
+    set: { photos: $photos }
+  ) {
+    affectedCount
+    records {
+      id
+      name
+      photos
+    }
+  }
+}
+
+# Move family to different Arya Samaj
+mutation MoveFamilyToAryaSamaj(
+  $familyId: String!
+  $newAryaSamajId: String!
+) {
+  updateFamilyCollection(
+    filter: { id: { eq: $familyId } }
+    set: { aryaSamajId: $newAryaSamajId }
+  ) {
+    affectedCount
+    records {
+      id
+      name
+      aryaSamaj {
+        id
+        name
+      }
+    }
+  }
+}
+
+# Update family address
+mutation UpdateFamilyAddress(
+  $familyId: String!
+  $addressId: String!
+) {
+  updateFamilyCollection(
+    filter: { id: { eq: $familyId } }
+    set: { addressId: $addressId }
+  ) {
+    affectedCount
+    records {
+      id
+      name
+      address {
+        id
+        basicAddress
+        state
+        district
+        pincode
+      }
+    }
+  }
+}

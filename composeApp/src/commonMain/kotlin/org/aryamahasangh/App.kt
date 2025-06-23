@@ -4,6 +4,7 @@ import AppTheme
 import androidx.compose.runtime.*
 import org.aryamahasangh.auth.SessionManager
 import org.aryamahasangh.di.KoinInitializer
+import org.aryamahasangh.examples.FormComponentsExample
 import org.aryamahasangh.navigation.AppDrawer
 
 // CompositionLocal for Authentication State
@@ -18,7 +19,7 @@ private val initKoin by lazy {
 
 @Composable
 fun App() {
-  val demo = false
+  val demo = false // Set to true to show form components example
   if (!demo) {
 
     // Ensure Koin is initialized
@@ -40,12 +41,13 @@ fun App() {
       }
     }
   } else {
+    AppTheme {
+      // Show the form components example
+      FormComponentsExample()
+    }
     //ImagePickerExample()
     //ActivityFormImagePickerIntegration()
 //    DragAndDropSample()
     //DNDWithCursor()
   }
 }
-
-
-

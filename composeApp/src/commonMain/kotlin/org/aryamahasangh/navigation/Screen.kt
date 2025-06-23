@@ -126,6 +126,9 @@ sealed class Screen {
   data object Members : Screen()
 
   @Serializable
+  data object AddMemberForm : Screen()
+
+  @Serializable
   data object KshatraTrainingSection : Screen()
   @Serializable
   data object KshatraTrainingHome : Screen()

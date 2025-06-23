@@ -210,7 +210,7 @@ private fun AryaSamajListItem(
             }
           )
           DropdownMenuItem(
-            text = { Text("मिटाएं") },
+            text = { Text("हटाएँ") },
             onClick = {
               showDropdownMenu = false
               showDeleteDialog = true
