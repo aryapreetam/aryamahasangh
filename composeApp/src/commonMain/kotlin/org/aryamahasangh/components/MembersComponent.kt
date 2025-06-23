@@ -1,16 +1,14 @@
 package org.aryamahasangh.components
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.DragHandle
-import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,9 +24,18 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import kotlinx.coroutines.delay
 import org.aryamahasangh.features.activities.Member
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyStaggeredGridState
+
+/**
+ * Choice type for MembersComponent
+ */
+enum class MembersChoiceType {
+  MULTIPLE, // Default - allows multiple member selection
+  SINGLE    // Allows only single member selection
+}
 
 /**
  * Edit modes for MembersComponent
@@ -52,7 +59,13 @@ data class MembersConfig(
   val showMemberCount: Boolean = true,
   val editMode: MembersEditMode = MembersEditMode.GROUPED,
   val enableReordering: Boolean = false, // Enable drag-and-drop reordering
-  val reorderingHint: String = "खींचकर क्रम बदलें" // Hint text for reordering
+  val reorderingHint: String = "खींचकर क्रम बदलें", // Hint text for reordering
+  // NEW: Choice type
+  val choiceType: MembersChoiceType = MembersChoiceType.MULTIPLE,
+  // NEW: Label for single mode
+  val singleModeLabel: String = "सदस्य चुनें",
+  // NEW: Button text for single mode
+  val singleModeButtonText: String = "सदस्य चुनें"
 )
 
 /**
@@ -142,7 +155,7 @@ fun MembersComponent(
     modifier = modifier
   ) {
     Text(
-      text = config.label,
+      text = if (config.choiceType == MembersChoiceType.SINGLE) config.singleModeLabel else config.label,
       style = MaterialTheme.typography.titleMedium,
       modifier = Modifier.padding(bottom = 8.dp)
     )
@@ -159,7 +172,15 @@ fun MembersComponent(
 
     when (config.editMode) {
       MembersEditMode.GROUPED -> {
-        if (config.enableReordering) {
+        if (config.choiceType == MembersChoiceType.SINGLE) {
+          // For single mode, show simple member display without role editing
+          SingleMemberDisplay(
+            state = state,
+            onStateChange = onStateChange,
+            config = config,
+            onShowAddDialog = { showAddMemberDialog = true }
+          )
+        } else if (config.enableReordering) {
           ReorderableGroupedMembersEditor(
             state = state,
             onStateChange = onStateChange,
@@ -177,12 +198,22 @@ fun MembersComponent(
       }
 
       MembersEditMode.INDIVIDUAL -> {
-        IndividualMembersEditor(
-          state = state,
-          onStateChange = onStateChange,
-          config = config,
-          onShowAddDialog = { showAddMemberDialog = true }
-        )
+        if (config.choiceType == MembersChoiceType.SINGLE) {
+          // For single mode, show simple member display
+          SingleMemberDisplay(
+            state = state,
+            onStateChange = onStateChange,
+            config = config,
+            onShowAddDialog = { showAddMemberDialog = true }
+          )
+        } else {
+          IndividualMembersEditor(
+            state = state,
+            onStateChange = onStateChange,
+            config = config,
+            onShowAddDialog = { showAddMemberDialog = true }
+          )
+        }
       }
     }
 
@@ -202,7 +233,9 @@ fun MembersComponent(
             modifier = Modifier.size(ButtonDefaults.IconSize)
           )
           Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-          Text(config.addButtonText)
+          Text(
+            text = if (config.choiceType == MembersChoiceType.SINGLE) config.singleModeButtonText else config.addButtonText
+          )
         }
 
         if (config.showMemberCount && state.hasMembers) {
@@ -228,25 +261,39 @@ fun MembersComponent(
 
   // Add Member Dialog
   if (showAddMemberDialog) {
-    AddMemberDialog(
+    MemberSelectionDialog(
       onDismiss = { showAddMemberDialog = false },
       onMembersSelected = { selectedMembers ->
-        // Filter out members that are already added
-        val existingMemberIds = state.members.keys.map { it.id }.toSet()
-        val newMembers = selectedMembers.filter { it.id !in existingMemberIds }
+        if (config.choiceType == MembersChoiceType.SINGLE) {
+          // For single choice, replace any existing selection with the new one
+          if (selectedMembers.isNotEmpty()) {
+            val newMember = selectedMembers.first()
+            // Clear existing members and add the new one
+            val newState = MembersState(
+              members = mapOf(newMember to Pair("", 0))
+            )
+            onStateChange(newState)
+          }
+          showAddMemberDialog = false
+        } else {
+          // For multiple choice, keep existing logic
+          val existingMemberIds = state.members.keys.map { it.id }.toSet()
+          val newMembers = selectedMembers.filter { it.id !in existingMemberIds }
 
-        // Add new members with empty posts and sequential priority
-        var newState = state
-        newMembers.forEach { member ->
-          newState = newState.addMember(member, "", newState.memberCount)
+          // Add new members with empty posts and sequential priority
+          var newState = state
+          newMembers.forEach { member ->
+            newState = newState.addMember(member, "", newState.memberCount)
+          }
+          onStateChange(newState)
+
+          showAddMemberDialog = false
         }
-        onStateChange(newState)
-
-        showAddMemberDialog = false
       },
       searchMembers = searchMembers,
       allMembers = allMembers,
-      onTriggerSearch = onTriggerSearch
+      onTriggerSearch = onTriggerSearch,
+      choiceType = config.choiceType
     )
   }
 }
@@ -443,8 +490,7 @@ private fun ReorderableMemberChip(
         Icon(
           Icons.Default.Close,
           contentDescription = "हटाएं",
-          modifier = Modifier.size(20.dp),
-          tint = MaterialTheme.colorScheme.error
+          modifier = Modifier.size(20.dp)
         )
       }
     }
@@ -633,6 +679,352 @@ private fun IndividualMembersEditor(
             )
           }
         }
+      }
+    }
+  }
+}
+
+@Composable
+private fun SingleMemberDisplay(
+  state: MembersState,
+  onStateChange: (MembersState) -> Unit,
+  config: MembersConfig,
+  onShowAddDialog: () -> Unit
+) {
+  // Display a single member in a simplified way
+  if (state.hasMembers) {
+    val member = state.getSortedMembers().first()
+    val post = state.members[member]?.first ?: ""
+
+    Card(
+      modifier = Modifier.width(500.dp).padding(vertical = 8.dp)
+    ) {
+      Row(
+        modifier = Modifier.padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        // Profile image or icon
+        if (!member.profileImage.isNullOrEmpty()) {
+          AsyncImage(
+            model = ImageRequest.Builder(LocalPlatformContext.current)
+              .data(member.profileImage)
+              .crossfade(true)
+              .build(),
+            contentDescription = "Profile Image",
+            modifier = Modifier.size(48.dp).clip(CircleShape),
+            contentScale = ContentScale.Crop
+          )
+        } else {
+          Icon(
+            modifier = Modifier.size(48.dp),
+            imageVector = Icons.Filled.Face,
+            contentDescription = "Profile",
+            tint = Color.Gray
+          )
+        }
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        // Member info
+        Column(modifier = Modifier.weight(1f)) {
+          Text(
+            text = member.name,
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+          )
+        }
+
+        // Remove button
+        IconButton(
+          onClick = {
+            onStateChange(state.removeMember(member))
+          }
+        ) {
+          Icon(
+            Icons.Default.Close,
+            contentDescription = "हटाएं",
+            tint = MaterialTheme.colorScheme.error
+          )
+        }
+      }
+    }
+  } else {
+    // Show empty state when no member is selected in single mode
+    Surface(
+      modifier = Modifier.width(500.dp),
+      color = MaterialTheme.colorScheme.surfaceVariant,
+      shape = MaterialTheme.shapes.medium
+    ) {
+      Row(
+        modifier = Modifier.padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+      ) {
+        Icon(
+          Icons.Default.Face,
+          contentDescription = "No member selected",
+          modifier = Modifier.size(48.dp),
+          tint = Color.Gray
+        )
+        Spacer(modifier = Modifier.width(16.dp))
+        Text(
+          text = "कोई सदस्य नहीं चुना गया है",
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+      }
+    }
+  }
+}
+
+/**
+ * Member selection dialog with support for single and multiple selection
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MemberSelectionDialog(
+  onDismiss: () -> Unit,
+  onMembersSelected: (List<Member>) -> Unit,
+  searchMembers: (String) -> List<Member>,
+  allMembers: List<Member>,
+  onTriggerSearch: (String) -> Unit = {},
+  choiceType: MembersChoiceType = MembersChoiceType.MULTIPLE
+) {
+  var query by remember { mutableStateOf("") }
+  var selectedMembers by remember { mutableStateOf<Set<Member>>(emptySet()) }
+  var filteredMembers by remember { mutableStateOf(allMembers) }
+  var isSearching by remember { mutableStateOf(false) }
+
+  // Debounced search
+  LaunchedEffect(query) {
+    isSearching = true
+    delay(500)
+
+    if (query.isBlank()) {
+      filteredMembers = allMembers
+    } else {
+      // First show local results
+      val localResults = allMembers.filter { member ->
+        member.name.contains(query, ignoreCase = true) ||
+          member.phoneNumber.contains(query, ignoreCase = true) ||
+          member.email.contains(query, ignoreCase = true)
+      }
+      filteredMembers = localResults
+
+      // Trigger server search
+      onTriggerSearch(query)
+
+      // Get server results
+      try {
+        val serverResults = searchMembers(query)
+        if (serverResults.isNotEmpty()) {
+          filteredMembers = serverResults
+        }
+      } catch (e: Exception) {
+        println("Server search failed: ${e.message}")
+      }
+    }
+    isSearching = false
+  }
+
+  androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+    Surface(
+      shape = MaterialTheme.shapes.large,
+      modifier = Modifier
+        .width(400.dp)
+        .height(600.dp)
+    ) {
+      Column(
+        modifier = Modifier
+          .fillMaxSize()
+          .padding(16.dp)
+      ) {
+        Text(
+          text = if (choiceType == MembersChoiceType.SINGLE) "सदस्य चुनें" else "पदाधिकारी चुनें",
+          style = MaterialTheme.typography.titleMedium
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Search bar
+        OutlinedTextField(
+          value = query,
+          onValueChange = { query = it },
+          placeholder = { Text("आर्य का नाम/दूरभाष") },
+          leadingIcon = {
+            Icon(
+              androidx.compose.material.icons.Icons.Default.Search,
+              contentDescription = null,
+              tint = MaterialTheme.colorScheme.primary
+            )
+          },
+          trailingIcon = {
+            if (isSearching) {
+              CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                strokeWidth = 2.dp
+              )
+            }
+          },
+          modifier = Modifier.fillMaxWidth(),
+          singleLine = true
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // List of members
+        androidx.compose.foundation.lazy.LazyColumn(
+          modifier = Modifier.weight(1f)
+        ) {
+          if (filteredMembers.isEmpty() && query.isNotEmpty() && !isSearching) {
+            item {
+              Box(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                contentAlignment = Alignment.Center
+              ) {
+                Text(
+                  "कोई सदस्य नहीं मिला",
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+              }
+            }
+          } else {
+            items(filteredMembers.size) { index ->
+              val member = filteredMembers[index]
+              MemberSelectionItem(
+                member = member,
+                selected = selectedMembers.contains(member),
+                choiceType = choiceType,
+                onClick = {
+                  when (choiceType) {
+                    MembersChoiceType.SINGLE -> {
+                      selectedMembers = setOf(member)
+                      onMembersSelected(listOf(member))
+                      onDismiss()
+                    }
+                    MembersChoiceType.MULTIPLE -> {
+                      selectedMembers = if (selectedMembers.contains(member)) {
+                        selectedMembers - member
+                      } else {
+                        selectedMembers + member
+                      }
+                    }
+                  }
+                }
+              )
+            }
+          }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Action buttons (only for MULTIPLE mode)
+        if (choiceType == MembersChoiceType.MULTIPLE) {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+          ) {
+            TextButton(onClick = onDismiss) {
+              Text("रद्द करें")
+            }
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(
+              onClick = {
+                onMembersSelected(selectedMembers.toList())
+                onDismiss()
+              },
+              enabled = selectedMembers.isNotEmpty()
+            ) {
+              Text("चुनें")
+            }
+          }
+        } else {
+          // For single mode, just show cancel button
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End
+          ) {
+            TextButton(onClick = onDismiss) {
+              Text("रद्द करें")
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Member selection item for the dialog
+ */
+@Composable
+private fun MemberSelectionItem(
+  member: Member,
+  selected: Boolean,
+  choiceType: MembersChoiceType,
+  onClick: () -> Unit
+) {
+  Row(
+    modifier = Modifier
+      .fillMaxWidth()
+      .clickable { onClick() }
+      .padding(12.dp),
+    verticalAlignment = Alignment.CenterVertically
+  ) {
+    // Profile image
+    if (!member.profileImage.isNullOrEmpty()) {
+      AsyncImage(
+        model = ImageRequest.Builder(LocalPlatformContext.current)
+          .data(member.profileImage)
+          .crossfade(true)
+          .build(),
+        contentDescription = "Profile Image",
+        modifier = Modifier.size(48.dp).clip(CircleShape),
+        contentScale = ContentScale.Crop
+      )
+    } else {
+      Icon(
+        modifier = Modifier.size(48.dp),
+        imageVector = androidx.compose.material.icons.Icons.Filled.Face,
+        contentDescription = "Profile",
+        tint = Color.Gray
+      )
+    }
+
+    // Member info
+    Column(
+      modifier = Modifier
+        .weight(1f)
+        .padding(start = 12.dp)
+    ) {
+      Text(
+        text = member.name,
+        style = MaterialTheme.typography.bodyMedium,
+        fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis
+      )
+      if (member.email.isNotEmpty()) {
+        Text(
+          text = member.email,
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis
+        )
+      }
+    }
+
+    // Selection indicator
+    when (choiceType) {
+      MembersChoiceType.SINGLE -> {
+        RadioButton(
+          selected = selected,
+          onClick = { onClick() }
+        )
+      }
+      MembersChoiceType.MULTIPLE -> {
+        Checkbox(
+          checked = selected,
+          onCheckedChange = { onClick() }
+        )
       }
     }
   }

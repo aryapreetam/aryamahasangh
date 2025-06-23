@@ -1,0 +1,199 @@
+# Enhanced Member Queries with Family and Address Support
+
+# Get member with complete family and address information
+query GetMemberWithFamilyAndAddress($memberId: String!) {
+  memberCollection(filter: { id: { eq: $memberId } }) {
+    edges {
+      node {
+        id
+        name
+        profileImage
+        educationalQualification
+        phoneNumber
+        email
+        dob
+        joiningDate
+        occupation
+        introduction
+        gender
+        # Permanent address
+        address {
+          id
+          basicAddress
+          state
+          district
+          pincode
+          latitude
+          longitude
+          vidhansabha
+        }
+        # Temporary address
+        tempAddress {
+          id
+          basicAddress
+          state
+          district
+          pincode
+          latitude
+          longitude
+          vidhansabha
+        }
+        # Arya Samaj information
+        aryaSamaj {
+          id
+          name
+          description
+          address {
+            basicAddress
+            state
+            district
+          }
+        }
+        # Family information
+        familyMember {
+          id
+          isHead
+          relationToHead
+          family {
+            id
+            name
+            photos
+            address {
+              basicAddress
+              state
+              district
+              pincode
+            }
+            # Other family members
+            familyMemberCollection(
+              filter: { memberId: { neq: $memberId } }
+              orderBy: [{ isHead: DescNullsLast }, { relationToHead: AscNullsFirst }]
+            ) {
+              edges {
+                node {
+                  id
+                  isHead
+                  relationToHead
+                  member {
+                    id
+                    name
+                    profileImage
+                    phoneNumber
+                    gender
+                    dob
+                  }
+                }
+              }
+            }
+          }
+        }
+        # Referrer information
+        referrer {
+          id
+          name
+          phoneNumber
+          profileImage
+        }
+        # Members referred by this member
+        referredMembers {
+          edges {
+            node {
+              id
+              name
+              profileImage
+              phoneNumber
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Get members with temporary addresses (members living away from permanent address)
+query GetMembersWithTempAddress(
+  $first: Int
+  $after: Cursor
+) {
+  memberCollection(
+    filter: { tempAddressId: { is: NOT_NULL } }
+    first: $first
+    after: $after
+    orderBy: [{ name: AscNullsFirst }]
+  ) {
+    edges {
+      node {
+        id
+        name
+        profileImage
+        phoneNumber
+        email
+        # Permanent address
+        address {
+          basicAddress
+          state
+          district
+          pincode
+        }
+        # Temporary address
+        tempAddress {
+          basicAddress
+          state
+          district
+          pincode
+        }
+        familyMember {
+          family {
+            name
+          }
+        }
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+  }
+}
+
+# Get member referral tree (who referred whom)
+query GetMemberReferralTree($rootMemberId: String!) {
+  memberCollection(filter: { id: { eq: $rootMemberId } }) {
+    edges {
+      node {
+        id
+        name
+        profileImage
+        phoneNumber
+        # Direct referrals
+        referredMembers(
+          orderBy: [{ joiningDate: AscNullsFirst }]
+        ) {
+          edges {
+            node {
+              id
+              name
+              profileImage
+              phoneNumber
+              joiningDate
+              # Second level referrals
+              referredMembers {
+                edges {
+                  node {
+                    id
+                    name
+                    profileImage
+                    joiningDate
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

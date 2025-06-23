@@ -1,0 +1,207 @@
+# Family Member Queries
+
+# Get all family members with details
+query GetFamilyMembers(
+  $first: Int
+  $after: Cursor
+  $filter: FamilyMemberFilter
+  $orderBy: [FamilyMemberOrderBy!]
+) {
+  familyMemberCollection(
+    first: $first
+    after: $after
+    filter: $filter
+    orderBy: $orderBy
+  ) {
+    edges {
+      node {
+        id
+        isHead
+        relationToHead
+        createdAt
+        family {
+          id
+          name
+          aryaSamaj {
+            name
+          }
+        }
+        member {
+          id
+          name
+          profileImage
+          phoneNumber
+          email
+          gender
+          dob
+          educationalQualification
+          occupation
+        }
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+  }
+}
+
+# Get members of a specific family
+query GetFamilyMembersByFamily(
+  $familyId: String!
+  $orderBy: [FamilyMemberOrderBy!]
+) {
+  familyMemberCollection(
+    filter: { familyId: { eq: $familyId } }
+    orderBy: $orderBy
+  ) {
+    edges {
+      node {
+        id
+        isHead
+        relationToHead
+        createdAt
+        member {
+          id
+          name
+          profileImage
+          phoneNumber
+          email
+          gender
+          dob
+          educationalQualification
+          occupation
+          introduction
+          joiningDate
+          address {
+            basicAddress
+            state
+            district
+          }
+          tempAddress {
+            basicAddress
+            state
+            district
+          }
+        }
+      }
+    }
+  }
+}
+
+# Get family head information
+query GetFamilyHead($familyId: String!) {
+  familyMemberCollection(
+    filter: {
+      and: [
+        { familyId: { eq: $familyId } }
+        { isHead: { eq: true } }
+      ]
+    }
+  ) {
+    edges {
+      node {
+        id
+        isHead
+        relationToHead
+        createdAt
+        member {
+          id
+          name
+          profileImage
+          phoneNumber
+          email
+          gender
+          dob
+          educationalQualification
+          occupation
+          introduction
+        }
+        family {
+          id
+          name
+          address {
+            basicAddress
+            state
+            district
+            pincode
+          }
+        }
+      }
+    }
+  }
+}
+
+# Get family member by member ID
+query GetFamilyMemberByMemberId($memberId: String!) {
+  familyMemberCollection(
+    filter: { memberId: { eq: $memberId } }
+  ) {
+    edges {
+      node {
+        id
+        isHead
+        relationToHead
+        createdAt
+        family {
+          id
+          name
+          photos
+          address {
+            basicAddress
+            state
+            district
+            pincode
+          }
+          aryaSamaj {
+            id
+            name
+          }
+        }
+        member {
+          id
+          name
+          profileImage
+          phoneNumber
+          email
+        }
+      }
+    }
+  }
+}
+
+# Get family members by relation type
+query GetFamilyMembersByRelation(
+  $familyId: String!
+  $relationToHead: FamilyRelation!
+) {
+  familyMemberCollection(
+    filter: {
+      and: [
+        { familyId: { eq: $familyId } }
+        { relationToHead: { eq: $relationToHead } }
+      ]
+    }
+    orderBy: [{ createdAt: AscNullsFirst }]
+  ) {
+    edges {
+      node {
+        id
+        isHead
+        relationToHead
+        createdAt
+        member {
+          id
+          name
+          profileImage
+          phoneNumber
+          gender
+          dob
+        }
+      }
+    }
+  }
+}

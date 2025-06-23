@@ -1,0 +1,223 @@
+# Family Queries
+
+# Get all families with basic information
+query GetFamilies(
+  $first: Int
+  $after: Cursor
+  $filter: FamilyFilter
+  $orderBy: [FamilyOrderBy!]
+) {
+  familyCollection(
+    first: $first
+    after: $after
+    filter: $filter
+    orderBy: $orderBy
+  ) {
+    edges {
+      node {
+        id
+        name
+        createdAt
+        photos
+        address {
+          id
+          basicAddress
+          state
+          district
+          pincode
+          latitude
+          longitude
+          vidhansabha
+        }
+        aryaSamaj {
+          id
+          name
+        }
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+  }
+}
+
+# Get detailed family information with all members
+query GetFamilyDetail($familyId: String!) {
+  familyCollection(filter: { id: { eq: $familyId } }) {
+    edges {
+      node {
+        id
+        name
+        createdAt
+        photos
+        addressId
+        aryaSamajId
+        address {
+          id
+          basicAddress
+          state
+          district
+          pincode
+          latitude
+          longitude
+          vidhansabha
+        }
+        aryaSamaj {
+          id
+          name
+          description
+        }
+        familyMemberCollection(
+          orderBy: [{ isHead: DescNullsLast }, { createdAt: AscNullsFirst }]
+        ) {
+          edges {
+            node {
+              id
+              isHead
+              relationToHead
+              createdAt
+              member {
+                id
+                name
+                profileImage
+                phoneNumber
+                email
+                gender
+                dob
+                educationalQualification
+                occupation
+                introduction
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Get families by Arya Samaj
+query GetFamiliesByAryaSamaj(
+  $aryaSamajId: String!
+  $first: Int
+  $after: Cursor
+) {
+  familyCollection(
+    filter: { aryaSamajId: { eq: $aryaSamajId } }
+    first: $first
+    after: $after
+    orderBy: [{ name: AscNullsFirst }]
+  ) {
+    edges {
+      node {
+        id
+        name
+        createdAt
+        photos
+        address {
+          basicAddress
+          state
+          district
+        }
+        familyMemberCollection(filter: { isHead: { eq: true } }) {
+          edges {
+            node {
+              id
+              member {
+                id
+                name
+                phoneNumber
+                profileImage
+              }
+            }
+          }
+        }
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+  }
+}
+
+# Get families by address/location using addressId
+query GetFamiliesByLocation(
+  $state: String
+  $district: String
+  $first: Int
+) {
+  addressCollection(
+    filter: {
+      and: [
+        { state: { eq: $state } }
+        { district: { eq: $district } }
+      ]
+    }
+  ) {
+    edges {
+      node {
+        id
+        basicAddress
+        state
+        district
+        pincode
+        familyCollection(
+          first: $first
+          orderBy: [{ name: AscNullsFirst }]
+        ) {
+          edges {
+            node {
+              id
+              name
+              familyMemberCollection(filter: { isHead: { eq: true } }) {
+                edges {
+                  node {
+                    id
+                    member {
+                      id
+                      name
+                      phoneNumber
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Search families by name
+query SearchFamilies($searchTerm: String!, $first: Int) {
+  familyCollection(
+    filter: { name: { ilike: $searchTerm } }
+    first: $first
+    orderBy: [{ name: AscNullsFirst }]
+  ) {
+    edges {
+      node {
+        id
+        name
+        photos
+        address {
+          basicAddress
+          state
+          district
+        }
+        aryaSamaj {
+          name
+        }
+      }
+    }
+  }
+}

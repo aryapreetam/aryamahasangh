@@ -503,11 +503,11 @@ fun ActivityDisplay(
         Button(
           onClick = { onNavigateToRegistration(activity.id, activity.capacity) },
           enabled = !isFull,
-          modifier = Modifier.weight(1f)
         ) {
           Text(
             text = if (isFull) "पंजीकरण बंद" else "पंजीकरण",
-            style = MaterialTheme.typography.labelLarge
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(horizontal = 24.dp)
           )
         }
 
@@ -533,7 +533,7 @@ fun ActivityDisplay(
     }
 
     // Overview and Registration sections with tabs for logged in users
-    if (activity.hasOverview() || isLoggedIn) {
+    if (activity.hasOverview() && isLoggedIn) {
       Spacer(modifier = Modifier.height(16.dp))
 
       if (isLoggedIn) {
@@ -546,7 +546,7 @@ fun ActivityDisplay(
           }${if (activity.capacity > 0) " / ${activity.capacity.toString().toDevanagariNumerals()}" else ""})"
         )
 
-        TabRow(selectedTabIndex = selectedTabIndex) {
+        PrimaryTabRow(selectedTabIndex = selectedTabIndex) {
           tabs.forEachIndexed { index, title ->
             Tab(
               selected = selectedTabIndex == index,
@@ -607,6 +607,8 @@ fun ActivityDisplay(
           )
         }
       }
+    }else if(isLoggedIn){
+      RegisteredUsers(registeredUsers, activity.capacity)
     }
   }
 }
@@ -623,7 +625,7 @@ fun OverviewSection(
     if(!isLoggedIn) {
       Text(
         text = "अवलोकन",
-        style = MaterialTheme.typography.titleMedium,
+        style = MaterialTheme.typography.titleLarge,
         fontWeight = FontWeight.Bold
       )
       HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -661,16 +663,18 @@ fun OverviewSection(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
       ) {
+        val uriHandler = LocalUriHandler.current
         activity.overviewMediaUrls.forEach { imageUrl ->
           AsyncImage(
             model = imageUrl,
             contentDescription = "अवलोकन चित्र",
-            contentScale = ContentScale.Crop,
+            contentScale = ContentScale.Fit,
             modifier = Modifier
               .size(150.dp)
               .clip(RoundedCornerShape(8.dp))
               .clickable {
                 // Handle image click if needed - could open in full screen
+                uriHandler.openUri(imageUrl)
               }
           )
         }

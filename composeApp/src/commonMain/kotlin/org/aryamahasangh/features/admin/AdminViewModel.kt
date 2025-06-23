@@ -7,10 +7,15 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
+import org.aryamahasangh.components.AryaSamaj
+import org.aryamahasangh.components.Gender
 import org.aryamahasangh.domain.error.AppError
 import org.aryamahasangh.domain.error.ErrorHandler
 import org.aryamahasangh.domain.error.getUserMessage
+import org.aryamahasangh.features.activities.Member
 import org.aryamahasangh.util.Result
 import org.aryamahasangh.viewmodel.ErrorState
 import org.aryamahasangh.viewmodel.handleResult
@@ -33,7 +38,11 @@ data class MemberDetailUiState(
   val isEditingProfile: Boolean = false,
   val isEditingDetails: Boolean = false,
   val isUpdating: Boolean = false,
-  val updateSuccess: Boolean = false
+  val updateSuccess: Boolean = false,
+  val allMembers: List<Member> = emptyList(),
+  val searchMembersResults: List<Member> = emptyList(),
+  val allAryaSamajs: List<AryaSamaj> = emptyList(),
+  val searchAryaSamajResults: List<AryaSamaj> = emptyList()
 ) : ErrorState
 
 data class DeleteMemberState(
@@ -125,6 +134,106 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
               error = appError.getUserMessage(),
               appError = appError
             )
+          }
+        )
+      }
+    }
+  }
+
+  // New method for searching members for selection component
+  fun searchMembersForSelection(query: String): List<Member> {
+    // This is a synchronous version that returns the current results
+    return _memberDetailUiState.value.searchMembersResults.filter { member ->
+      member.name.contains(query, ignoreCase = true) ||
+        member.phoneNumber.contains(query, ignoreCase = true) ||
+        member.email.contains(query, ignoreCase = true)
+    }
+  }
+
+  // Load all members for member selection component
+  fun loadAllMembersForSelection() {
+    viewModelScope.launch {
+      repository.searchMembersForSelection("").collect { result ->
+        result.handleResult(
+          onSuccess = { allMembers ->
+            _memberDetailUiState.value = _memberDetailUiState.value.copy(
+              allMembers = allMembers
+            )
+          },
+          onError = { appError ->
+            ErrorHandler.logError(appError, "AdminViewModel.loadAllMembersForSelection")
+          }
+        )
+      }
+    }
+  }
+
+  // Load all AryaSamajs for selection
+  fun loadAllAryaSamajsForSelection() {
+    viewModelScope.launch {
+      repository.getAllAryaSamajs().collect { result ->
+        result.handleResult(
+          onSuccess = { allAryaSamajs ->
+            _memberDetailUiState.value = _memberDetailUiState.value.copy(
+              allAryaSamajs = allAryaSamajs
+            )
+          },
+          onError = { appError ->
+            ErrorHandler.logError(appError, "AdminViewModel.loadAllAryaSamajsForSelection")
+          }
+        )
+      }
+    }
+  }
+
+  // Search AryaSamajs
+  fun searchAryaSamajs(query: String): List<AryaSamaj> {
+    // This is a synchronous version that returns the current results
+    return _memberDetailUiState.value.searchAryaSamajResults.filter { aryaSamaj ->
+      aryaSamaj.name.contains(query, ignoreCase = true) ||
+        aryaSamaj.address.contains(query, ignoreCase = true) ||
+        aryaSamaj.district.contains(query, ignoreCase = true)
+    }
+  }
+
+  // Trigger search for AryaSamaj selection
+  fun triggerAryaSamajSearch(query: String) {
+    viewModelScope.launch {
+      if (query.isBlank()) {
+        return@launch
+      }
+
+      repository.searchAryaSamajs(query).collect { result ->
+        result.handleResult(
+          onSuccess = { searchResults ->
+            _memberDetailUiState.value = _memberDetailUiState.value.copy(
+              searchAryaSamajResults = searchResults
+            )
+          },
+          onError = { appError ->
+            ErrorHandler.logError(appError, "AdminViewModel.triggerAryaSamajSearch")
+          }
+        )
+      }
+    }
+  }
+
+  // Trigger search for member selection
+  fun triggerMemberSearch(query: String) {
+    viewModelScope.launch {
+      if (query.isBlank()) {
+        return@launch
+      }
+
+      repository.searchMembersForSelection(query).collect { result ->
+        result.handleResult(
+          onSuccess = { searchResults ->
+            _memberDetailUiState.value = _memberDetailUiState.value.copy(
+              searchMembersResults = searchResults
+            )
+          },
+          onError = { appError ->
+            ErrorHandler.logError(appError, "AdminViewModel.triggerMemberSearch")
           }
         )
       }
@@ -283,19 +392,40 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
     }
   }
 
-  fun addMember(
+  fun createMember(
     name: String,
     phoneNumber: String,
+    email: String?,
+    dob: LocalDate?,
+    gender: Gender?,
     educationalQualification: String?,
+    occupation: String?,
+    joiningDate: LocalDate?,
+    introduction: String?,
     profileImageUrl: String?,
-    email: String?
+    addressId: String,
+    tempAddressId: String?,
+    referrerId: String?,
+    aryaSamajId: String?
   ) {
     viewModelScope.launch {
       _memberDetailUiState.value = _memberDetailUiState.value.copy(isUpdating = true)
 
-      repository.addMember(
-        name, phoneNumber, educationalQualification,
-        profileImageUrl, email
+      repository.createMember(
+        name = name,
+        phoneNumber = phoneNumber,
+        email = email,
+        dob = dob,
+        gender = gender,
+        educationalQualification = educationalQualification,
+        occupation = occupation,
+        joiningDate = joiningDate,
+        introduction = introduction,
+        profileImageUrl = profileImageUrl,
+        addressId = addressId,
+        tempAddressId = tempAddressId,
+        referrerId = referrerId,
+        aryaSamajId = aryaSamajId
       ).collect { result ->
         result.handleResult(
           onLoading = {
@@ -308,9 +438,10 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
             )
             // Refresh members list
             loadMembers()
+            getMembersCount()
           },
           onError = { appError ->
-            ErrorHandler.logError(appError, "AdminViewModel.addMember")
+            ErrorHandler.logError(appError, "AdminViewModel.createMember")
             _memberDetailUiState.value = _memberDetailUiState.value.copy(
               isUpdating = false,
               error = appError.getUserMessage(),
@@ -320,6 +451,36 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
         )
       }
     }
+  }
+
+  // New method to create address
+  suspend fun createAddress(
+    basicAddress: String,
+    state: String,
+    district: String,
+    pincode: String,
+    latitude: Double?,
+    longitude: Double?,
+    vidhansabha: String?
+  ): String? {
+    var addressId: String? = null
+    repository.createAddress(
+      basicAddress, state, district, pincode, latitude, longitude, vidhansabha
+    ).collect { result ->
+      result.handleResult(
+        onSuccess = { id ->
+          addressId = id
+        },
+        onError = { appError ->
+          ErrorHandler.logError(appError, "AdminViewModel.createAddress")
+          _memberDetailUiState.value = _memberDetailUiState.value.copy(
+            error = appError.getUserMessage(),
+            appError = appError
+          )
+        }
+      )
+    }
+    return addressId
   }
 
   fun resetUpdateState() {

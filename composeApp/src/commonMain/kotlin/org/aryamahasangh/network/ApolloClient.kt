@@ -1,6 +1,7 @@
 package org.aryamahasangh.network
 
 import com.apollographql.adapter.datetime.KotlinxInstantAdapter
+import com.apollographql.adapter.datetime.KotlinxLocalDateAdapter
 import com.apollographql.apollo.api.ApolloRequest
 import com.apollographql.apollo.api.ApolloResponse
 import com.apollographql.apollo.api.Operation
@@ -24,6 +25,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.serialization.json.Json
 import org.aryamahasangh.config.AppConfig
+import org.aryamahasangh.type.Date
 import org.aryamahasangh.type.Datetime
 
 /**
@@ -63,6 +65,10 @@ val supabaseClient =
         addCustomScalarAdapter(
           customScalarType = Datetime.type,
           customScalarAdapter = KotlinxInstantAdapter
+        )
+        addCustomScalarAdapter(
+          customScalarType = Date.type,
+          customScalarAdapter = KotlinxLocalDateAdapter
         )
       }
     }

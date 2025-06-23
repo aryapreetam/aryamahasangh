@@ -1,0 +1,282 @@
+# Enhanced Address Queries with Family and Member Support
+
+# Get address with all associated entities (families, members, arya samajs)
+query GetAddressWithAssociations($addressId: String!) {
+  addressCollection(filter: { id: { eq: $addressId } }) {
+    edges {
+      node {
+        id
+        basicAddress
+        state
+        district
+        pincode
+        latitude
+        longitude
+        vidhansabha
+        createdAt
+        # Families at this address
+        familyCollection(
+          orderBy: [{ name: AscNullsFirst }]
+        ) {
+          edges {
+            node {
+              id
+              name
+              photos
+              aryaSamaj {
+                id
+                name
+              }
+              # Family members count
+              familyMemberCollection {
+                edges {
+                  node {
+                    id
+                    member {
+                      name
+                      gender
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        # Members with permanent address here
+        memberCollection(
+          orderBy: [{ name: AscNullsFirst }]
+        ) {
+          edges {
+            node {
+              id
+              name
+              profileImage
+              phoneNumber
+              email
+              familyMember {
+                family {
+                  name
+                }
+                isHead
+                relationToHead
+              }
+            }
+          }
+        }
+        # Members with temporary address here
+        memberWithTempAddressCollection(
+          orderBy: [{ name: AscNullsFirst }]
+        ) {
+          edges {
+            node {
+              id
+              name
+              profileImage
+              phoneNumber
+              email
+              # Their permanent address
+              address {
+                basicAddress
+                state
+                district
+              }
+              familyMember {
+                family {
+                  name
+                }
+              }
+            }
+          }
+        }
+        # Arya Samajs at this address
+        aryaSamajCollection(
+          orderBy: [{ name: AscNullsFirst }]
+        ) {
+          edges {
+            node {
+              id
+              name
+              description
+              mediaUrls
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Get addresses by location with statistics
+query GetAddressesByLocation(
+  $state: String!
+  $district: String
+  $first: Int
+  $after: Cursor
+) {
+  addressCollection(
+    filter: {
+      and: [
+        { state: { eq: $state } }
+        { district: { eq: $district } }
+      ]
+    }
+    first: $first
+    after: $after
+    orderBy: [{ basicAddress: AscNullsFirst }]
+  ) {
+    edges {
+      node {
+        id
+        basicAddress
+        pincode
+        vidhansabha
+        # Count of families
+        familyCollection {
+          edges {
+            node {
+              id
+            }
+          }
+        }
+        # Count of permanent members
+        memberCollection {
+          edges {
+            node {
+              id
+            }
+          }
+        }
+        # Count of temporary members
+        memberWithTempAddressCollection {
+          edges {
+            node {
+              id
+            }
+          }
+        }
+        # Count of Arya Samajs
+        aryaSamajCollection {
+          edges {
+            node {
+              id
+              name
+            }
+          }
+        }
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+  }
+}
+
+# Get addresses with geographical coordinates
+query GetAddressesWithCoordinates(
+  $state: String
+  $district: String
+) {
+  addressCollection(
+    filter: {
+      and: [
+        { latitude: { is: NOT_NULL } }
+        { longitude: { is: NOT_NULL } }
+        { state: { eq: $state } }
+        { district: { eq: $district } }
+      ]
+    }
+    orderBy: [{ basicAddress: AscNullsFirst }]
+  ) {
+    edges {
+      node {
+        id
+        basicAddress
+        state
+        district
+        pincode
+        latitude
+        longitude
+        vidhansabha
+        # Associated entities for map markers
+        familyCollection(first: 1) {
+          edges {
+            node {
+              name
+            }
+          }
+        }
+        memberCollection(first: 1) {
+          edges {
+            node {
+              name
+            }
+          }
+        }
+        aryaSamajCollection(first: 1) {
+          edges {
+            node {
+              name
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+# Search addresses by text
+query SearchAddresses(
+  $searchTerm: String!
+  $first: Int = 20
+) {
+  addressCollection(
+    filter: {
+      or: [
+        { basicAddress: { ilike: $searchTerm } }
+        { district: { ilike: $searchTerm } }
+        { state: { ilike: $searchTerm } }
+        { pincode: { ilike: $searchTerm } }
+        { vidhansabha: { ilike: $searchTerm } }
+      ]
+    }
+    first: $first
+    orderBy: [{ basicAddress: AscNullsFirst }]
+  ) {
+    edges {
+      node {
+        id
+        basicAddress
+        state
+        district
+        pincode
+        vidhansabha
+        # Show what's at this address
+        familyCollection(first: 3) {
+          edges {
+            node {
+              name
+            }
+          }
+        }
+        memberCollection(first: 3) {
+          edges {
+            node {
+              name
+            }
+          }
+        }
+        aryaSamajCollection(first: 1) {
+          edges {
+            node {
+              name
+            }
+          }
+        }
+      }
+    }
+  }
+}

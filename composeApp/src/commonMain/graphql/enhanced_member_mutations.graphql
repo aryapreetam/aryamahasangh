@@ -1,0 +1,272 @@
+# Enhanced Member Mutations with Family and Address Support
+
+# Create member (without family assignment)
+mutation CreateMember(
+  $name: String!
+  $profileImage: String
+  $educationalQualification: String
+  $phoneNumber: String!
+  $email: String
+  $dob: Date
+  $addressId: String
+  $aryaSamajId: String
+  $joiningDate: Date
+  $tempAddressId: String
+  $referrerId: String
+  $occupation: String
+  $introduction: String
+  $gender: GenderFilter
+) {
+  insertIntoMemberCollection(
+    objects: [{
+      name: $name
+      profileImage: $profileImage
+      educationalQualification: $educationalQualification
+      phoneNumber: $phoneNumber
+      email: $email
+      dob: $dob
+      addressId: $addressId
+      aryaSamajId: $aryaSamajId
+      joiningDate: $joiningDate
+      tempAddressId: $tempAddressId
+      referrerId: $referrerId
+      occupation: $occupation
+      introduction: $introduction
+      gender: $gender
+    }]
+  ) {
+    affectedCount
+    records {
+      id
+      name
+      phoneNumber
+      email
+    }
+  }
+}
+
+# Update member with addresses (permanent and temporary)
+mutation UpdateMemberAddresses(
+  $memberId: String!
+  $addressId: String
+  $tempAddressId: String
+) {
+  updateMemberCollection(
+    filter: { id: { eq: $memberId } }
+    set: {
+      addressId: $addressId
+      tempAddressId: $tempAddressId
+    }
+  ) {
+    affectedCount
+    records {
+      id
+      name
+      address {
+        basicAddress
+        state
+        district
+      }
+      tempAddress {
+        basicAddress
+        state
+        district
+      }
+    }
+  }
+}
+
+# Set member temporary address
+mutation SetMemberTempAddress(
+  $memberId: String!
+  $tempAddressId: String!
+) {
+  updateMemberCollection(
+    filter: { id: { eq: $memberId } }
+    set: { tempAddressId: $tempAddressId }
+  ) {
+    affectedCount
+    records {
+      id
+      name
+      tempAddress {
+        id
+        basicAddress
+        state
+        district
+        pincode
+      }
+      address {
+        basicAddress
+        state
+        district
+      }
+    }
+  }
+}
+
+# Remove member temporary address
+mutation RemoveMemberTempAddress($memberId: String!) {
+  updateMemberCollection(
+    filter: { id: { eq: $memberId } }
+    set: { tempAddressId: null }
+  ) {
+    affectedCount
+    records {
+      id
+      name
+    }
+  }
+}
+
+# Update member family status (move to different family or remove from family)
+mutation UpdateMemberFamilyStatus(
+  $memberId: String!
+  $newFamilyId: String
+  $newRelationToHead: FamilyRelation
+  $isHead: Boolean = false
+  $removeFamilyMembership: Boolean = false
+) {
+  # If removing from family
+  removeFromFamily: deleteFromFamilyMemberCollection(
+    filter: { memberId: { eq: $memberId } }
+    atMost: 1
+  ) @include(if: $removeFamilyMembership) {
+    affectedCount
+  }
+
+  # If adding to new family
+  addToFamily: insertIntoFamilyMemberCollection(
+    objects: [{
+      familyId: $newFamilyId
+      memberId: $memberId
+      isHead: $isHead
+      relationToHead: $newRelationToHead
+    }]
+  ) @skip(if: $removeFamilyMembership) {
+    affectedCount
+    records {
+      id
+      isHead
+      relationToHead
+      family {
+        id
+        name
+      }
+    }
+  }
+}
+
+# Bulk update member Arya Samaj
+mutation BulkUpdateMemberAryaSamaj(
+  $memberIds: [String!]!
+  $newAryaSamajId: String!
+) {
+  updateMemberCollection(
+    filter: { id: { in: $memberIds } }
+    set: { aryaSamajId: $newAryaSamajId }
+    atMost: 100
+  ) {
+    affectedCount
+    records {
+      id
+      name
+      aryaSamaj {
+        id
+        name
+      }
+    }
+  }
+}
+
+# Update member referrer
+mutation UpdateMemberReferrer(
+  $memberId: String!
+  $referrerId: String
+) {
+  updateMemberCollection(
+    filter: { id: { eq: $memberId } }
+    set: { referrerId: $referrerId }
+  ) {
+    affectedCount
+    records {
+      id
+      name
+      referrer {
+        id
+        name
+        phoneNumber
+      }
+    }
+  }
+}
+
+# Create permanent address
+mutation CreatePermanentAddress(
+  $basicAddress: String!
+  $state: String!
+  $district: String
+  $pincode: String
+  $latitude: Float
+  $longitude: Float
+  $vidhansabha: String
+) {
+  insertIntoAddressCollection(
+    objects: [{
+      basicAddress: $basicAddress
+      state: $state
+      district: $district
+      pincode: $pincode
+      latitude: $latitude
+      longitude: $longitude
+      vidhansabha: $vidhansabha
+    }]
+  ) {
+    affectedCount
+    records {
+      id
+      basicAddress
+      state
+      district
+      pincode
+      latitude
+      longitude
+      vidhansabha
+    }
+  }
+}
+
+# Create temporary address
+mutation CreateTempAddress(
+  $basicAddress: String!
+  $state: String!
+  $district: String
+  $pincode: String
+  $latitude: Float
+  $longitude: Float
+  $vidhansabha: String
+) {
+  insertIntoAddressCollection(
+    objects: [{
+      basicAddress: $basicAddress
+      state: $state
+      district: $district
+      pincode: $pincode
+      latitude: $latitude
+      longitude: $longitude
+      vidhansabha: $vidhansabha
+    }]
+  ) {
+    affectedCount
+    records {
+      id
+      basicAddress
+      state
+      district
+      pincode
+      latitude
+      longitude
+      vidhansabha
+    }
+  }
+}

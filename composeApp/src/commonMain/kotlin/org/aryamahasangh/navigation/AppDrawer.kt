@@ -62,8 +62,16 @@ val drawerOptions =
     DrawerOption("गतिविधियां", Res.drawable.local_activity, Screen.ActivitiesSection),
     DrawerOption("संलग्न संस्थाएं", Res.drawable.account_tree, Screen.OrgsSection),
     DrawerOption("हमसें जुडें", Res.drawable.handshake, Screen.JoinUs),
-    DrawerOption("आर्य गुरुकुल", Res.drawable.school, Screen.AryaGurukulSection),
-    DrawerOption("आर्या गुरुकुल", Res.drawable.school, Screen.AryaaGurukulSection),
+    DrawerOption(
+      "आर्य गुरुकुल",
+      Res.drawable.school,
+      Screen.AryaGurukulSection
+    ),
+    DrawerOption(
+      "आर्या गुरुकुल",
+      Res.drawable.school,
+      Screen.AryaaGurukulSection
+    ),
     DrawerOption(
       "आर्य-आर्या निर्माण(सत्र)",
       Res.drawable.interactive_space,
@@ -170,6 +178,8 @@ fun DrawerContent(
                 Screen.AryaGurukulSection -> true
                 Screen.AryaaGurukulSection -> true
                 Screen.JoinUs -> true
+                Screen.KshatraTrainingSection -> true
+                Screen.ChatraTrainingSection -> true
                 else -> false
               }
 
@@ -234,7 +244,7 @@ fun DrawerContent(
         selected =
           checkIfSelected(
             currentDestination,
-            Screen.AdminContainer.toString()
+            Screen.AdminSection.toString()
           ),
         onClick = {
           navController.navigate(Screen.AdminContainer) {
@@ -323,20 +333,24 @@ private fun checkIfSelected(
     currentDrawerItem == Screen.AryaGurukulSection.toString()
   ) {
     true
+
   } else if (
     (currentDestination?.contains("AryaaGurukulCollege") == true ||
       currentDestination?.contains("AdmissionForm") == true) &&
     currentDrawerItem == Screen.AryaaGurukulSection.toString()
   ) {
     true
+
   } else if (
     (currentDestination?.contains("AdminContainer") == true ||
       currentDestination?.contains("MemberDetail") == true ||
+      currentDestination?.contains("AddMemberForm") == true ||
       currentDestination?.contains("AddAryaSamajForm") == true ||
       currentDestination?.contains("AryaSamajDetail") == true) &&
     currentDrawerItem == Screen.AdminSection.toString()
   ) {
     true
+
   } else if (currentDestination?.contains(currentDrawerItem) == true) {
     true
   } else {
@@ -459,6 +473,7 @@ fun MainContent(
               "BookOrderDetails",
               "AryaNirmanRegistrationForm",
               "MemberDetail",
+              "AddMemberForm",
               "AddAryaSamajForm",
               "AryaSamajDetail"
             ).any {

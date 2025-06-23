@@ -448,6 +448,8 @@ type Address implements Node {
   memberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: MemberFilter, "Sort order to apply to the collection" orderBy: [MemberOrderBy!]): MemberConnection
 
   memberWithTempAddressCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: MemberFilter, "Sort order to apply to the collection" orderBy: [MemberOrderBy!]): MemberConnection
+
+  familyCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: FamilyFilter, "Sort order to apply to the collection" orderBy: [FamilyOrderBy!]): FamilyConnection
 }
 
 type AddressConnection {
@@ -1026,6 +1028,8 @@ type AryaSamaj implements Node {
   samajMemberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: SamajMemberFilter, "Sort order to apply to the collection" orderBy: [SamajMemberOrderBy!]): SamajMemberConnection
 
   memberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: MemberFilter, "Sort order to apply to the collection" orderBy: [MemberOrderBy!]): MemberConnection
+
+  familyCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: FamilyFilter, "Sort order to apply to the collection" orderBy: [FamilyOrderBy!]): FamilyConnection
 }
 
 type AryaSamajConnection {
@@ -1565,6 +1569,351 @@ input DatetimeListFilter {
   overlaps: [Datetime!]
 }
 
+type Family implements Node {
+  """
+  Globally Unique Record Identifier
+  """
+  nodeId: ID!
+
+  id: String!
+
+  createdAt: Datetime!
+
+  addressId: String
+
+  aryaSamajId: String
+
+  name: String
+
+  photos: [String]
+
+  address: Address
+
+  aryaSamaj: AryaSamaj
+
+  familyMemberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: FamilyMemberFilter, "Sort order to apply to the collection" orderBy: [FamilyMemberOrderBy!]): FamilyMemberConnection
+}
+
+type FamilyConnection {
+  edges: [FamilyEdge!]!
+
+  pageInfo: PageInfo!
+}
+
+type FamilyDeleteResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [Family!]!
+}
+
+type FamilyEdge {
+  cursor: String!
+
+  node: Family!
+}
+
+input FamilyFilter {
+  id: StringFilter
+
+  createdAt: DatetimeFilter
+
+  addressId: StringFilter
+
+  aryaSamajId: StringFilter
+
+  name: StringFilter
+
+  photos: StringListFilter
+
+  nodeId: IDFilter
+
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [FamilyFilter!]
+
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [FamilyFilter!]
+
+  """
+  Negates a filter
+  """
+  not: FamilyFilter
+}
+
+input FamilyInsertInput {
+  id: String
+
+  createdAt: Datetime
+
+  addressId: String
+
+  aryaSamajId: String
+
+  name: String
+
+  photos: [String]
+}
+
+type FamilyInsertResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [Family!]!
+}
+
+type FamilyMember implements Node {
+  """
+  Globally Unique Record Identifier
+  """
+  nodeId: ID!
+
+  id: String!
+
+  createdAt: Datetime!
+
+  familyId: String!
+
+  memberId: String!
+
+  isHead: Boolean!
+
+  relationToHead: FamilyRelation!
+
+  family: Family
+
+  member: Member
+}
+
+type FamilyMemberConnection {
+  edges: [FamilyMemberEdge!]!
+
+  pageInfo: PageInfo!
+}
+
+type FamilyMemberDeleteResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [FamilyMember!]!
+}
+
+type FamilyMemberEdge {
+  cursor: String!
+
+  node: FamilyMember!
+}
+
+input FamilyMemberFilter {
+  id: StringFilter
+
+  createdAt: DatetimeFilter
+
+  familyId: StringFilter
+
+  memberId: StringFilter
+
+  isHead: BooleanFilter
+
+  relationToHead: FamilyRelationFilter
+
+  nodeId: IDFilter
+
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [FamilyMemberFilter!]
+
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [FamilyMemberFilter!]
+
+  """
+  Negates a filter
+  """
+  not: FamilyMemberFilter
+}
+
+input FamilyMemberInsertInput {
+  id: String
+
+  createdAt: Datetime
+
+  familyId: String
+
+  memberId: String
+
+  isHead: Boolean
+
+  relationToHead: FamilyRelation
+}
+
+type FamilyMemberInsertResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [FamilyMember!]!
+}
+
+input FamilyMemberOrderBy {
+  id: OrderByDirection
+
+  createdAt: OrderByDirection
+
+  familyId: OrderByDirection
+
+  memberId: OrderByDirection
+
+  isHead: OrderByDirection
+
+  relationToHead: OrderByDirection
+}
+
+input FamilyMemberUpdateInput {
+  id: String
+
+  createdAt: Datetime
+
+  familyId: String
+
+  memberId: String
+
+  isHead: Boolean
+
+  relationToHead: FamilyRelation
+}
+
+type FamilyMemberUpdateResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [FamilyMember!]!
+}
+
+input FamilyOrderBy {
+  id: OrderByDirection
+
+  createdAt: OrderByDirection
+
+  addressId: OrderByDirection
+
+  aryaSamajId: OrderByDirection
+
+  name: OrderByDirection
+}
+
+enum FamilyRelation {
+  SELF
+
+  FATHER
+
+  MOTHER
+
+  HUSBAND
+
+  WIFE
+
+  SON
+
+  DAUGHTER
+
+  BROTHER
+
+  SISTER
+
+  GRANDFATHER
+
+  GRANDMOTHER
+
+  GRANDSON
+
+  GRANDDAUGHTER
+
+  UNCLE
+
+  AUNT
+
+  COUSIN
+
+  NEPHEW
+
+  NIECE
+
+  GUARDIAN
+
+  RELATIVE
+
+  OTHER
+}
+
+"""
+Boolean expression comparing fields on type "FamilyRelation"
+"""
+input FamilyRelationFilter {
+  eq: FamilyRelation
+
+  in: [FamilyRelation!]
+
+  is: FilterIs
+
+  neq: FamilyRelation
+}
+
+input FamilyUpdateInput {
+  id: String
+
+  createdAt: Datetime
+
+  addressId: String
+
+  aryaSamajId: String
+
+  name: String
+
+  photos: [String]
+}
+
+type FamilyUpdateResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [Family!]!
+}
+
 enum FilterIs {
   NULL
 
@@ -1844,17 +2193,31 @@ type Member implements Node {
 
   tempAddressId: String
 
+  referrerId: String
+
+  occupation: String
+
+  introduction: String
+
+  gender: GenderFilter
+
   address: Address
 
   aryaSamaj: AryaSamaj
 
   tempAddress: Address
 
+  referrer: Member
+
   activityMemberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: ActivityMemberFilter, "Sort order to apply to the collection" orderBy: [ActivityMemberOrderBy!]): ActivityMemberConnection
 
   organisationalMemberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: OrganisationalMemberFilter, "Sort order to apply to the collection" orderBy: [OrganisationalMemberOrderBy!]): OrganisationalMemberConnection
 
   samajMemberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: SamajMemberFilter, "Sort order to apply to the collection" orderBy: [SamajMemberOrderBy!]): SamajMemberConnection
+
+  familyMember: FamilyMember
+
+  referredMembers("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: MemberFilter, "Sort order to apply to the collection" orderBy: [MemberOrderBy!]): MemberConnection
 }
 
 type MemberConnection {
@@ -1909,6 +2272,14 @@ input MemberFilter {
 
   tempAddressId: StringFilter
 
+  referrerId: StringFilter
+
+  occupation: StringFilter
+
+  introduction: StringFilter
+
+  gender: GenderFilterFilter
+
   nodeId: IDFilter
 
   """
@@ -1949,6 +2320,14 @@ input MemberInsertInput {
   joiningDate: Date
 
   tempAddressId: String
+
+  referrerId: String
+
+  occupation: String
+
+  introduction: String
+
+  gender: GenderFilter
 }
 
 type MemberInsertResponse {
@@ -1985,6 +2364,14 @@ input MemberOrderBy {
   joiningDate: OrderByDirection
 
   tempAddressId: OrderByDirection
+
+  referrerId: OrderByDirection
+
+  occupation: OrderByDirection
+
+  introduction: OrderByDirection
+
+  gender: OrderByDirection
 }
 
 input MemberUpdateInput {
@@ -2009,6 +2396,14 @@ input MemberUpdateInput {
   joiningDate: Date
 
   tempAddressId: String
+
+  referrerId: String
+
+  occupation: String
+
+  introduction: String
+
+  gender: GenderFilter
 }
 
 type MemberUpdateResponse {
@@ -2061,6 +2456,16 @@ type Mutation {
   Deletes zero or more records from the `BookOrders` collection
   """
   deleteFromBookOrdersCollection("Restricts the mutation's impact to records matching the criteria" filter: BookOrdersFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): BookOrdersDeleteResponse!
+
+  """
+  Deletes zero or more records from the `Family` collection
+  """
+  deleteFromFamilyCollection("Restricts the mutation's impact to records matching the criteria" filter: FamilyFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): FamilyDeleteResponse!
+
+  """
+  Deletes zero or more records from the `FamilyMember` collection
+  """
+  deleteFromFamilyMemberCollection("Restricts the mutation's impact to records matching the criteria" filter: FamilyMemberFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): FamilyMemberDeleteResponse!
 
   """
   Deletes zero or more records from the `Learning` collection
@@ -2133,6 +2538,16 @@ type Mutation {
   insertIntoBookOrdersCollection(objects: [BookOrdersInsertInput!]!): BookOrdersInsertResponse
 
   """
+  Adds one or more `Family` records to the collection
+  """
+  insertIntoFamilyCollection(objects: [FamilyInsertInput!]!): FamilyInsertResponse
+
+  """
+  Adds one or more `FamilyMember` records to the collection
+  """
+  insertIntoFamilyMemberCollection(objects: [FamilyMemberInsertInput!]!): FamilyMemberInsertResponse
+
+  """
   Adds one or more `Learning` records to the collection
   """
   insertIntoLearningCollection(objects: [LearningInsertInput!]!): LearningInsertResponse
@@ -2201,6 +2616,16 @@ type Mutation {
   Updates zero or more records in the `BookOrders` collection
   """
   updateBookOrdersCollection("Fields that are set will be updated for all records matching the `filter`" set: BookOrdersUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: BookOrdersFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): BookOrdersUpdateResponse!
+
+  """
+  Updates zero or more records in the `Family` collection
+  """
+  updateFamilyCollection("Fields that are set will be updated for all records matching the `filter`" set: FamilyUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: FamilyFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): FamilyUpdateResponse!
+
+  """
+  Updates zero or more records in the `FamilyMember` collection
+  """
+  updateFamilyMemberCollection("Fields that are set will be updated for all records matching the `filter`" set: FamilyMemberUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: FamilyMemberFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): FamilyMemberUpdateResponse!
 
   """
   Updates zero or more records in the `Learning` collection
@@ -2714,6 +3139,16 @@ type Query {
   A pagable collection of type `BookOrders`
   """
   bookOrdersCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: BookOrdersFilter, "Sort order to apply to the collection" orderBy: [BookOrdersOrderBy!]): BookOrdersConnection
+
+  """
+  A pagable collection of type `Family`
+  """
+  familyCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: FamilyFilter, "Sort order to apply to the collection" orderBy: [FamilyOrderBy!]): FamilyConnection
+
+  """
+  A pagable collection of type `FamilyMember`
+  """
+  familyMemberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: FamilyMemberFilter, "Sort order to apply to the collection" orderBy: [FamilyMemberOrderBy!]): FamilyMemberConnection
 
   """
   A pagable collection of type `Learning`

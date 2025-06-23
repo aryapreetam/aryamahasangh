@@ -291,6 +291,7 @@ apollo {
   service("service") {
     packageName.set("org.aryamahasangh")
     mapScalar("Datetime", "kotlinx.datetime.Instant")
+    mapScalar("Date", "kotlinx.datetime.LocalDate")
     // If you're using adapters, you can also set this
     generateKotlinModels.set(true)
     introspection {

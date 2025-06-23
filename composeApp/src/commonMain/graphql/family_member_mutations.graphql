@@ -1,0 +1,234 @@
+# Family Member Mutations
+
+# Add a member to a family
+mutation AddMemberToFamily(
+  $familyId: String!
+  $memberId: String!
+  $isHead: Boolean!
+  $relationToHead: FamilyRelation!
+) {
+  insertIntoFamilyMemberCollection(
+    objects: [{
+      familyId: $familyId
+      memberId: $memberId
+      isHead: $isHead
+      relationToHead: $relationToHead
+    }]
+  ) {
+    affectedCount
+    records {
+      id
+      isHead
+      relationToHead
+      createdAt
+      family {
+        id
+        name
+      }
+      member {
+        id
+        name
+        profileImage
+        phoneNumber
+        email
+      }
+    }
+  }
+}
+
+# Update family member information
+mutation UpdateFamilyMember(
+  $id: String!
+  $isHead: Boolean
+  $relationToHead: FamilyRelation
+) {
+  updateFamilyMemberCollection(
+    filter: { id: { eq: $id } }
+    set: {
+      isHead: $isHead
+      relationToHead: $relationToHead
+    }
+  ) {
+    affectedCount
+    records {
+      id
+      isHead
+      relationToHead
+      createdAt
+      family {
+        id
+        name
+      }
+      member {
+        id
+        name
+        profileImage
+      }
+    }
+  }
+}
+
+# Remove member from family
+mutation RemoveMemberFromFamily($id: String!) {
+  deleteFromFamilyMemberCollection(
+    filter: { id: { eq: $id } }
+    atMost: 1
+  ) {
+    affectedCount
+    records {
+      id
+      family {
+        id
+        name
+      }
+      member {
+        id
+        name
+      }
+    }
+  }
+}
+
+# Change family head
+mutation ChangeFamilyHead(
+  $familyId: String!
+  $oldHeadId: String!
+  $newHeadId: String!
+  $newHeadRelation: FamilyRelation!
+) {
+  # First, remove head status from current head
+  removeOldHead: updateFamilyMemberCollection(
+    filter: {
+      and: [
+        { id: { eq: $oldHeadId } }
+        { familyId: { eq: $familyId } }
+        { isHead: { eq: true } }
+      ]
+    }
+    set: { isHead: false }
+  ) {
+    affectedCount
+  }
+
+  # Then, make new member the head
+  setNewHead: updateFamilyMemberCollection(
+    filter: {
+      and: [
+        { id: { eq: $newHeadId } }
+        { familyId: { eq: $familyId } }
+      ]
+    }
+    set: {
+      isHead: true
+      relationToHead: $newHeadRelation
+    }
+  ) {
+    affectedCount
+    records {
+      id
+      isHead
+      relationToHead
+      member {
+        id
+        name
+        profileImage
+      }
+    }
+  }
+}
+
+# Move member to different family
+mutation MoveMemberToFamily(
+  $familyMemberId: String!
+  $newFamilyId: String!
+  $newRelationToHead: FamilyRelation!
+  $isHead: Boolean = false
+) {
+  updateFamilyMemberCollection(
+    filter: { id: { eq: $familyMemberId } }
+    set: {
+      familyId: $newFamilyId
+      relationToHead: $newRelationToHead
+      isHead: $isHead
+    }
+  ) {
+    affectedCount
+    records {
+      id
+      isHead
+      relationToHead
+      family {
+        id
+        name
+      }
+      member {
+        id
+        name
+      }
+    }
+  }
+}
+
+# Bulk add members to family
+mutation AddMultipleMembersToFamily(
+  $familyMembers: [FamilyMemberInsertInput!]!
+) {
+  insertIntoFamilyMemberCollection(
+    objects: $familyMembers
+  ) {
+    affectedCount
+    records {
+      id
+      isHead
+      relationToHead
+      family {
+        id
+        name
+      }
+      member {
+        id
+        name
+        profileImage
+      }
+    }
+  }
+}
+
+# Remove multiple members from family
+mutation RemoveMultipleMembersFromFamily(
+  $familyMemberIds: [String!]!
+) {
+  deleteFromFamilyMemberCollection(
+    filter: { id: { in: $familyMemberIds } }
+    atMost: 50
+  ) {
+    affectedCount
+    records {
+      id
+      member {
+        name
+      }
+    }
+  }
+}
+
+# Update member relation to head
+mutation UpdateMemberRelation(
+  $id: String!
+  $relationToHead: FamilyRelation!
+) {
+  updateFamilyMemberCollection(
+    filter: { id: { eq: $id } }
+    set: { relationToHead: $relationToHead }
+  ) {
+    affectedCount
+    records {
+      id
+      relationToHead
+      member {
+        id
+        name
+      }
+    }
+  }
+}

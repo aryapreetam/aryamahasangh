@@ -23,6 +23,7 @@ import org.aryamahasangh.features.organisations.OrganisationsViewModel
 import org.aryamahasangh.features.organisations.OrgsScreen
 import org.aryamahasangh.screens.*
 import org.aryamahasangh.viewmodel.AboutUsViewModel
+import org.aryamahasangh.viewmodel.AdmissionsViewModel
 import org.aryamahasangh.viewmodel.BookOrderViewModel
 import org.aryamahasangh.viewmodel.JoinUsViewModel
 import org.aryamahasangh.viewmodel.LearningViewModel
@@ -91,6 +92,68 @@ fun RootNavGraph(navController: NavHostController) {
             adminViewModel.searchMembers(query)
           }
         )
+      }
+    }
+    composable<Screen.JoinUs> {
+      val viewModel = koinInject<JoinUsViewModel>()
+      JoinUsScreen(viewModel)
+    }
+    navigation<Screen.LearningSection>(startDestination = Screen.Learning) {
+      composable<Screen.Learning> {
+        val viewModel = koinInject<LearningViewModel>()
+        LearningScreen(navController, { }, viewModel)
+      }
+      composable<Screen.VideoDetails> {
+        val id = it.toRoute<Screen.VideoDetails>().learningItemId
+        val viewModel = koinInject<LearningViewModel>()
+        VideoDetailsScreen(id, viewModel)
+      }
+    }
+    navigation<Screen.BookSection>(startDestination = Screen.BookOrderForm) {
+      composable<Screen.BookOrderForm> {
+        val viewModel = koinInject<BookOrderViewModel>()
+        if (isLoggedIn) {
+          BookOrdersContainer(
+            viewModel = viewModel,
+            onNavigateToDetails = {
+              navController.navigate(Screen.BookOrderDetails(it))
+            }
+          )
+        } else {
+          BookOrderFormScreen(viewModel = viewModel)
+        }
+      }
+      composable<Screen.BookOrderDetails> {
+        val id = it.toRoute<Screen.BookOrderDetails>().bookOrderId
+        val viewModel = koinInject<BookOrderViewModel>()
+        BookOrderDetailsScreen(viewModel, id, {})
+      }
+    }
+    navigation<Screen.AryaNirmanSection>(startDestination = Screen.AryaNirmanHome) {
+      composable<Screen.AryaNirmanHome> {
+        val viewModel = koinInject<AryaNirmanViewModel>()
+        AryaNirmanHomeScreen(
+          viewModel,
+          onNavigateToRegistrationForm = { id, capacity ->
+            navController.navigate(Screen.AryaNirmanRegistrationForm(activityId = id, capacity = capacity))
+          }
+        )
+      }
+      composable<Screen.AryaNirmanRegistrationForm> {
+        val viewModel = koinInject<SatraRegistrationViewModel>()
+        val args = it.toRoute<Screen.AryaNirmanRegistrationForm>()
+        SatraRegistrationFormScreen(
+          viewModel = viewModel,
+          activityId = args.activityId,
+          activityCapacity = args.capacity,
+          onNavigateBack = { navController.popBackStack() }
+        )
+      }
+    }
+    navigation<Screen.AryaPariwarSection>(startDestination = Screen.AryaPariwarHome) {
+      composable<Screen.AryaPariwarHome> {
+        val viewModel = koinInject<JoinUsViewModel>()
+        AryaPariwarScreen(viewModel)
       }
     }
     navigation<Screen.ActivitiesSection>(startDestination = Screen.Activities) {
@@ -293,68 +356,6 @@ fun RootNavGraph(navController: NavHostController) {
         )
       }
     }
-    composable<Screen.JoinUs> {
-      val viewModel = koinInject<JoinUsViewModel>()
-      JoinUsScreen(viewModel)
-    }
-    navigation<Screen.LearningSection>(startDestination = Screen.Learning) {
-      composable<Screen.Learning> {
-        val viewModel = koinInject<LearningViewModel>()
-        LearningScreen(navController, { }, viewModel)
-      }
-      composable<Screen.VideoDetails> {
-        val id = it.toRoute<Screen.VideoDetails>().learningItemId
-        val viewModel = koinInject<LearningViewModel>()
-        VideoDetailsScreen(id, viewModel)
-      }
-    }
-    navigation<Screen.BookSection>(startDestination = Screen.BookOrderForm) {
-      composable<Screen.BookOrderForm> {
-        val viewModel = koinInject<BookOrderViewModel>()
-        if (isLoggedIn) {
-          BookOrdersContainer(
-            viewModel = viewModel,
-            onNavigateToDetails = {
-              navController.navigate(Screen.BookOrderDetails(it))
-            }
-          )
-        } else {
-          BookOrderFormScreen(viewModel = viewModel)
-        }
-      }
-      composable<Screen.BookOrderDetails> {
-        val id = it.toRoute<Screen.BookOrderDetails>().bookOrderId
-        val viewModel = koinInject<BookOrderViewModel>()
-        BookOrderDetailsScreen(viewModel, id, {})
-      }
-    }
-    navigation<Screen.AryaNirmanSection>(startDestination = Screen.AryaNirmanHome) {
-      composable<Screen.AryaNirmanHome> {
-        val viewModel = koinInject<AryaNirmanViewModel>()
-        AryaNirmanHomeScreen(
-          viewModel,
-          onNavigateToRegistrationForm = { id, capacity ->
-            navController.navigate(Screen.AryaNirmanRegistrationForm(activityId = id, capacity = capacity))
-          }
-        )
-      }
-      composable<Screen.AryaNirmanRegistrationForm> {
-        val viewModel = koinInject<SatraRegistrationViewModel>()
-        val args = it.toRoute<Screen.AryaNirmanRegistrationForm>()
-        SatraRegistrationFormScreen(
-          viewModel = viewModel,
-          activityId = args.activityId,
-          activityCapacity = args.capacity,
-          onNavigateBack = { navController.popBackStack() }
-        )
-      }
-    }
-    navigation<Screen.AryaPariwarSection>(startDestination = Screen.AryaPariwarHome) {
-      composable<Screen.AryaPariwarHome> {
-        val viewModel = koinInject<JoinUsViewModel>()
-        AryaPariwarScreen(viewModel)
-      }
-    }
     navigation<Screen.AryaSamajSection>(startDestination = Screen.AryaSamajHome) {
       composable<Screen.AryaSamajHome> {
         val aryaSamajViewModel = koinInject<org.aryamahasangh.features.admin.data.AryaSamajViewModel>()
@@ -507,6 +508,32 @@ fun RootNavGraph(navController: NavHostController) {
         )
       }
     }
+    navigation<Screen.AryaGurukulSection>(startDestination = Screen.AryaGurukulCollege) {
+      composable<Screen.AryaGurukulCollege> {
+        GurukulCollegeHomeScreen(
+          navigateToAdmissionForm = {
+            navController.navigate(Screen.AdmissionForm)
+          }
+        )
+      }
+    }
+    navigation<Screen.AryaaGurukulSection>(startDestination = Screen.AryaaGurukulCollege) {
+      composable<Screen.AryaaGurukulCollege> {
+        AryaaGurukulHomeScreen(
+          navigateToAdmissionForm = {
+            navController.navigate(Screen.AdmissionForm)
+          }
+        )
+      }
+      composable<Screen.AdmissionForm> {
+        val viewModel = koinInject<AdmissionsViewModel>()
+        if (isLoggedIn) {
+          AdmissionScreen(viewModel)
+        } else {
+          RegistrationForm(viewModel)
+        }
+      }
+    }
     navigation<Screen.AdminSection>(startDestination = Screen.AdminContainer) {
       composable<Screen.AdminContainer> {
         val viewModel = koinInject<AdminViewModel>()
@@ -529,7 +556,7 @@ fun RootNavGraph(navController: NavHostController) {
             navController.navigate(Screen.MemberDetail(memberId))
           },
           onNavigateToAddMember = {
-            navController.navigate(Screen.MemberDetail("new"))
+            navController.navigate(Screen.AddMemberForm)
           },
           onNavigateToAddAryaSamaj = {
             navController.navigate(Screen.AddAryaSamajForm)
@@ -539,6 +566,15 @@ fun RootNavGraph(navController: NavHostController) {
           },
           onEditAryaSamaj = { aryaSamajId ->
             navController.navigate(Screen.EditAryaSamajForm(aryaSamajId))
+          }
+        )
+      }
+      composable<Screen.AddMemberForm> {
+        val viewModel = koinInject<AdminViewModel>()
+        AddMemberFormScreen(
+          viewModel = viewModel,
+          onNavigateBack = {
+            navController.popBackStack()
           }
         )
       }
@@ -559,15 +595,8 @@ fun RootNavGraph(navController: NavHostController) {
         MemberDetailScreen(
           memberId = memberId,
           viewModel = viewModel,
-          isAddMode = memberId == "new",
           onNavigateBack = {
-            if (memberId == "new") {
-              // For add mode, first check if there are unsaved changes
-              // The screen will handle this logic internally
-              navController.popBackStack()
-            } else {
-              navController.popBackStack()
-            }
+            navController.popBackStack()
           }
         )
       }
