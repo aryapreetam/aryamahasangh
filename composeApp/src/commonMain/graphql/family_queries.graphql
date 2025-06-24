@@ -1,3 +1,79 @@
+# GraphQL Fragments for Family Management
+
+# Family Fields Fragment
+fragment FamilyFields on Family {
+  id
+  name
+  photos
+  address {
+    id
+    basicAddress
+    state
+    district
+    pincode
+    latitude
+    longitude
+    vidhansabha
+    createdAt
+  }
+  aryaSamaj {
+    id
+    name
+    address {
+      basicAddress
+      district
+      state
+    }
+  }
+  familyMemberCollection(
+    orderBy: [{ isHead: DescNullsLast }, { createdAt: AscNullsFirst }]
+  ) {
+    edges {
+      node {
+        id
+        isHead
+        relationToHead
+        createdAt
+        member {
+          ...MemberDetails
+        }
+      }
+    }
+  }
+  createdAt
+}
+
+# Member Details Fragment (includes DOB and address info)
+fragment MemberDetails on Member {
+  id
+  name
+  profileImage
+  phoneNumber
+  email
+  dob
+  address {
+    id
+    basicAddress
+    state
+    district
+    pincode
+    latitude
+    longitude
+    vidhansabha
+  }
+  tempAddress {
+    id
+    basicAddress
+    state
+    district
+    pincode
+    latitude
+    longitude
+    vidhansabha
+  }
+  educationalQualification
+}
+
 # Family Queries
 
 # Get all families with basic information
@@ -15,24 +91,7 @@ query GetFamilies(
   ) {
     edges {
       node {
-        id
-        name
-        createdAt
-        photos
-        address {
-          id
-          basicAddress
-          state
-          district
-          pincode
-          latitude
-          longitude
-          vidhansabha
-        }
-        aryaSamaj {
-          id
-          name
-        }
+        ...FamilyFields
       }
       cursor
     }
@@ -52,10 +111,7 @@ query GetFamilyDetail($familyId: String!) {
       node {
         id
         name
-        createdAt
         photos
-        addressId
-        aryaSamajId
         address {
           id
           basicAddress
@@ -65,11 +121,16 @@ query GetFamilyDetail($familyId: String!) {
           latitude
           longitude
           vidhansabha
+          createdAt
         }
         aryaSamaj {
           id
           name
-          description
+          address {
+            basicAddress
+            district
+            state
+          }
         }
         familyMemberCollection(
           orderBy: [{ isHead: DescNullsLast }, { createdAt: AscNullsFirst }]
@@ -79,22 +140,16 @@ query GetFamilyDetail($familyId: String!) {
               id
               isHead
               relationToHead
-              createdAt
               member {
                 id
                 name
                 profileImage
                 phoneNumber
-                email
-                gender
-                dob
-                educationalQualification
-                occupation
-                introduction
               }
             }
           }
         }
+        createdAt
       }
     }
   }
@@ -114,28 +169,7 @@ query GetFamiliesByAryaSamaj(
   ) {
     edges {
       node {
-        id
-        name
-        createdAt
-        photos
-        address {
-          basicAddress
-          state
-          district
-        }
-        familyMemberCollection(filter: { isHead: { eq: true } }) {
-          edges {
-            node {
-              id
-              member {
-                id
-                name
-                phoneNumber
-                profileImage
-              }
-            }
-          }
-        }
+        ...FamilyFields
       }
       cursor
     }
@@ -175,20 +209,7 @@ query GetFamiliesByLocation(
         ) {
           edges {
             node {
-              id
-              name
-              familyMemberCollection(filter: { isHead: { eq: true } }) {
-                edges {
-                  node {
-                    id
-                    member {
-                      id
-                      name
-                      phoneNumber
-                    }
-                  }
-                }
-              }
+              ...FamilyFields
             }
           }
         }
@@ -206,17 +227,49 @@ query SearchFamilies($searchTerm: String!, $first: Int) {
   ) {
     edges {
       node {
-        id
-        name
-        photos
-        address {
-          basicAddress
-          state
-          district
-        }
-        aryaSamaj {
-          name
-        }
+        ...FamilyFields
+      }
+    }
+  }
+}
+
+fragment MemberWithoutFamily on MemberNotInFamily {
+  id
+  name
+  phoneNumber
+  profileImage
+  addressId
+}
+
+# Get members without family (for family creation)
+query GetMembersWithoutFamily(
+  $searchTerm: String
+  $first: Int
+) {
+  memberNotInFamilyCollection(
+    filter: {
+      or: [
+        { name: { ilike: $searchTerm } }
+        { phoneNumber: { ilike: $searchTerm } }
+      ]
+    }
+    first: $first
+    orderBy: [{ name: AscNullsFirst }]
+  ) {
+    edges {
+      node {
+        ...MemberWithoutFamily
+      }
+    }
+  }
+}
+
+# Get all family member IDs to filter out members who are already in families
+query GetAllFamilyMemberIds {
+  familyMemberCollection {
+    edges {
+      node {
+        memberId
       }
     }
   }

@@ -15,17 +15,21 @@ import org.aryamahasangh.components.ErrorSnackbar
 import org.aryamahasangh.components.InlineErrorMessage
 import org.aryamahasangh.features.activities.toDevanagariNumerals
 import org.aryamahasangh.features.admin.data.AryaSamajViewModel
+import org.aryamahasangh.features.admin.FamilyViewModel
 import org.aryamahasangh.navigation.LocalSnackbarHostState
 
 @Composable
 fun AdminContainerScreen(
   viewModel: AdminViewModel,
   aryaSamajViewModel: AryaSamajViewModel,
+  familyViewModel: FamilyViewModel, // Add family view model
   onNavigateToMemberDetail: (String) -> Unit = {},
   onNavigateToAddMember: () -> Unit = {},
   onNavigateToAddAryaSamaj: () -> Unit = {},
   onNavigateToAryaSamajDetail: (String) -> Unit = {},
-  onEditAryaSamaj: (String) -> Unit = {} // New parameter for editing
+  onEditAryaSamaj: (String) -> Unit = {}, // New parameter for editing
+  onNavigateToCreateFamily: () -> Unit = {}, // Fixed parameter name
+  onNavigateToFamilyDetail: (String) -> Unit = {} // Add navigation for family detail
 ) {
   val membersCount by viewModel.membersCount.collectAsState()
   val membersUiState by viewModel.membersUiState.collectAsState()
@@ -134,7 +138,11 @@ fun AdminContainerScreen(
             onEditAryaSamaj = onEditAryaSamaj // Pass the new handler
           )
         } else if(it == 2){
-          AryaPariwarListScreen()
+          AryaPariwarListScreen(
+            viewModel = familyViewModel,
+            onNavigateToFamilyDetail = onNavigateToFamilyDetail,
+            onNavigateToCreateFamily = onNavigateToCreateFamily
+          )
         } else if(it == 3){
           EkalAryaListScreen()
         }

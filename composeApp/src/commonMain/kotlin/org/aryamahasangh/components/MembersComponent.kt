@@ -3,6 +3,7 @@ package org.aryamahasangh.components
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
@@ -14,18 +15,23 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import kotlinx.coroutines.delay
 import org.aryamahasangh.features.activities.Member
+import org.aryamahasangh.utils.WithTooltip
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyStaggeredGridState
 
@@ -42,7 +48,8 @@ enum class MembersChoiceType {
  */
 enum class MembersEditMode {
   INDIVIDUAL, // Each member edited individually with dropdown menus
-  GROUPED     // All members shown as chips in FlowRow
+  GROUPED,    // All members shown as chips in FlowRow
+  FAMILY_MEMBERS // Special mode for family creation with head selection and relation dropdowns
 }
 
 /**
@@ -65,7 +72,12 @@ data class MembersConfig(
   // NEW: Label for single mode
   val singleModeLabel: String = "सदस्य चुनें",
   // NEW: Button text for single mode
-  val singleModeButtonText: String = "सदस्य चुनें"
+  val singleModeButtonText: String = "सदस्य चुनें",
+  // NEW: Family-specific callbacks
+  val onFamilyHeadChanged: ((String, Boolean) -> Unit)? = null,
+  val onFamilyRelationChanged: ((String, FamilyRelation?) -> Unit)? = null,
+  val getFamilyHead: ((String) -> Boolean)? = null,
+  val getFamilyRelation: ((String) -> FamilyRelation?)? = null
 )
 
 /**
@@ -211,9 +223,18 @@ fun MembersComponent(
             state = state,
             onStateChange = onStateChange,
             config = config,
-            onShowAddDialog = { showAddMemberDialog = true }
+            onShowDialog = { showAddMemberDialog = true }
           )
         }
+      }
+
+      MembersEditMode.FAMILY_MEMBERS -> {
+        FamilyMembersEditor(
+          state = state,
+          onStateChange = onStateChange,
+          config = config,
+          onShowAddDialog = { showAddMemberDialog = true }
+        )
       }
     }
 
@@ -242,21 +263,22 @@ fun MembersComponent(
           Text(
             text = "${state.memberCount} ${if (state.memberCount == 1) "पदाधिकारी जोड़ा गया" else "पदाधिकारी जोड़े गए"}",
             style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.primary
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(top = 4.dp)
           )
         }
       }
     }
+  }
 
-    // Error message
-    error?.let {
-      Text(
-        text = it,
-        color = MaterialTheme.colorScheme.error,
-        style = MaterialTheme.typography.bodySmall,
-        modifier = Modifier.padding(top = 4.dp)
-      )
-    }
+  // Error message
+  error?.let {
+    Text(
+      text = it,
+      color = MaterialTheme.colorScheme.error,
+      style = MaterialTheme.typography.bodySmall,
+      modifier = Modifier.padding(top = 4.dp)
+    )
   }
 
   // Add Member Dialog
@@ -393,7 +415,8 @@ private fun ReorderableGroupedMembersEditor(
       Text(
         text = "${state.memberCount} ${if (state.memberCount == 1) "पदाधिकारी जोड़ा गया" else "पदाधिकारी जोड़े गए"}",
         style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.primary
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(top = 4.dp)
       )
     }
   }
@@ -490,7 +513,8 @@ private fun ReorderableMemberChip(
         Icon(
           Icons.Default.Close,
           contentDescription = "हटाएं",
-          modifier = Modifier.size(20.dp)
+          modifier = Modifier.size(20.dp),
+          tint = MaterialTheme.colorScheme.error
         )
       }
     }
@@ -522,7 +546,7 @@ private fun GroupedMembersEditor(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.Top
           ) {
-            // Member profile image or icon - aligned to top
+            // Member profile image
             if (!member.profileImage.isNullOrEmpty()) {
               AsyncImage(
                 model = ImageRequest.Builder(LocalPlatformContext.current)
@@ -560,23 +584,25 @@ private fun GroupedMembersEditor(
                 label = { Text(config.postLabel) },
                 placeholder = { Text(config.postPlaceholder) },
                 textStyle = MaterialTheme.typography.bodySmall,
-                isError = config.isPostMandatory && text.isBlank()
+                isError = config.isPostMandatory && text.isBlank(),
+                singleLine = true
               )
             }
+          }
 
-            // Remove button - aligned to top
-            IconButton(
-              onClick = {
-                onStateChange(state.removeMember(member))
-              },
-              modifier = Modifier.size(32.dp)
-            ) {
-              Icon(
-                Icons.Default.Close,
-                contentDescription = "हटाएं",
-                modifier = Modifier.size(20.dp)
-              )
-            }
+          // Remove button
+          IconButton(
+            onClick = {
+              onStateChange(state.removeMember(member))
+            },
+            modifier = Modifier.size(32.dp)
+          ) {
+            Icon(
+              Icons.Default.Close,
+              contentDescription = "हटाएं",
+              modifier = Modifier.size(20.dp),
+              tint = MaterialTheme.colorScheme.error
+            )
           }
         },
         modifier = Modifier.padding(2.dp)
@@ -617,7 +643,7 @@ private fun IndividualMembersEditor(
   state: MembersState,
   onStateChange: (MembersState) -> Unit,
   config: MembersConfig,
-  onShowAddDialog: () -> Unit
+  onShowDialog: () -> Unit
 ) {
   // For INDIVIDUAL mode, display members in a different layout
   // This would be similar to how OrganisationDetailsView shows members
@@ -657,7 +683,7 @@ private fun IndividualMembersEditor(
             Text(
               text = member.name,
               style = MaterialTheme.typography.bodyLarge,
-              fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+              fontWeight = FontWeight.Medium
             )
             Text(
               text = postPair.first.ifEmpty { "पद निर्दिष्ट नहीं" },
@@ -679,6 +705,274 @@ private fun IndividualMembersEditor(
             )
           }
         }
+      }
+    }
+  }
+}
+
+@Composable
+private fun FamilyMembersEditor(
+  state: MembersState,
+  onStateChange: (MembersState) -> Unit,
+  config: MembersConfig,
+  onShowAddDialog: () -> Unit
+) {
+  Column {
+    if (state.hasMembers) {
+      // Sort members by age (oldest first) - for now using name as placeholder
+      val sortedMembers = state.getSortedMembers()
+
+      Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+        sortedMembers.forEach { member ->
+          FamilyMemberItem(
+            member = member,
+            isHead = config.getFamilyHead?.invoke(member.id) ?: false,
+            relation = config.getFamilyRelation?.invoke(member.id),
+            onHeadChanged = { isHead ->
+              config.onFamilyHeadChanged?.invoke(member.id, isHead)
+            },
+            onRelationChanged = { relation ->
+              config.onFamilyRelationChanged?.invoke(member.id, relation)
+            },
+            onRemove = {
+              // Remove member from state
+              onStateChange(state.removeMember(member))
+              // Notify parent about family head change if needed
+              config.onFamilyHeadChanged?.invoke(member.id, false)
+            }
+          )
+        }
+      }
+    } else {
+      // Empty state
+      Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+          containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+      ) {
+        Column(
+          modifier = Modifier
+            .fillMaxWidth()
+            .padding(24.dp),
+          horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+          Icon(
+            Icons.Default.Groups,
+            contentDescription = null,
+            modifier = Modifier.size(48.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+          )
+          Spacer(modifier = Modifier.height(8.dp))
+          Text(
+            text = "परिवार के सदस्य जोड़ें",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+          )
+        }
+      }
+    }
+
+    Spacer(modifier = Modifier.height(12.dp))
+
+    // Add member button
+    OutlinedButton(
+      onClick = onShowAddDialog
+    ) {
+      Icon(
+        Icons.Default.PersonAdd,
+        contentDescription = null,
+        modifier = Modifier.size(ButtonDefaults.IconSize),
+        tint = MaterialTheme.colorScheme.primary
+      )
+      Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
+      Text("सदस्य जोड़ें")
+    }
+
+    // Show member count
+    if (config.showMemberCount && state.hasMembers) {
+      Text(
+        text = "${state.memberCount} ${if (state.memberCount == 1) "सदस्य जोड़ा गया" else "सदस्य जोड़े गए"}",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(top = 4.dp)
+      )
+    }
+  }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FamilyMemberItem(
+  member: Member,
+  isHead: Boolean,
+  relation: FamilyRelation?,
+  onHeadChanged: (Boolean) -> Unit,
+  onRelationChanged: (FamilyRelation?) -> Unit,
+  onRemove: () -> Unit
+) {
+  Card(
+    modifier = Modifier.width(500.dp)
+  ) {
+    Row(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(16.dp),
+      verticalAlignment = Alignment.Top,
+      horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+      // Profile Image
+      if (!member.profileImage.isNullOrEmpty()) {
+        AsyncImage(
+          model = ImageRequest.Builder(LocalPlatformContext.current)
+            .data(member.profileImage)
+            .crossfade(true)
+            .build(),
+          contentDescription = "Profile Image",
+          modifier = Modifier.size(48.dp).clip(CircleShape),
+          contentScale = ContentScale.Crop
+        )
+      } else {
+        Surface(
+          modifier = Modifier.size(48.dp),
+          shape = CircleShape,
+          color = MaterialTheme.colorScheme.surfaceVariant
+        ) {
+          Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.fillMaxSize()
+          ) {
+            Icon(
+              Icons.Default.Person,
+              contentDescription = "Profile",
+              tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+          }
+        }
+      }
+
+      // Member info and controls
+      Column(
+        modifier = Modifier.weight(1f)
+      ) {
+        Text(
+          text = member.name,
+          style = MaterialTheme.typography.titleMedium,
+          fontWeight = FontWeight.Medium
+        )
+
+        if (member.phoneNumber.isNotEmpty()) {
+          Text(
+            text = member.phoneNumber,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 2.dp)
+          )
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(
+          horizontalArrangement = Arrangement.spacedBy(16.dp),
+          verticalAlignment = Alignment.CenterVertically
+        ) {
+          // Head selection
+          WithTooltip(tooltip = "परिवार प्रमुख चुनें") {
+            Row(
+              verticalAlignment = Alignment.CenterVertically
+            ) {
+              RadioButton(
+                selected = isHead,
+                onClick = { onHeadChanged(!isHead) }
+              )
+              Text(
+                text = "परिवार प्रमुख",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.clickable { onHeadChanged(!isHead) }
+              )
+            }
+          }
+
+          // Relation dropdown
+          WithTooltip(tooltip = "परिवार प्रमुख के साथ संबंध(वो आपके कौन है?)") {
+            FamilyRelationDropdown(
+              value = relation,
+              onValueChange = onRelationChanged,
+              label = "प्रमुख से संबंध",
+              modifier = Modifier.width(180.dp),
+              enabled = !isHead // Disable if this person is head
+            )
+          }
+        }
+      }
+
+      // Remove button
+      WithTooltip(tooltip = "सदस्य हटाएँ") {
+        IconButton(
+          onClick = onRemove,
+          modifier = Modifier.size(32.dp)
+        ) {
+          Icon(
+            Icons.Default.Close,
+            contentDescription = "हटाएं",
+            modifier = Modifier.size(20.dp),
+            tint = MaterialTheme.colorScheme.error
+          )
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Family relation dropdown
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FamilyRelationDropdown(
+  value: FamilyRelation?,
+  onValueChange: (FamilyRelation?) -> Unit,
+  label: String,
+  modifier: Modifier = Modifier,
+  enabled: Boolean = true
+) {
+  var expanded by remember { mutableStateOf(false) }
+  val focusManager = LocalFocusManager.current
+
+  ExposedDropdownMenuBox(
+    expanded = expanded,
+    onExpandedChange = { if (enabled) expanded = !expanded },
+    modifier = modifier
+  ) {
+    OutlinedTextField(
+      value = value?.toDisplayName() ?: "",
+      onValueChange = { },
+      readOnly = true,
+      enabled = enabled,
+      label = { Text(label) },
+      placeholder = { Text("संबंध चुनें") },
+      trailingIcon = {
+        ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+      },
+      modifier = Modifier.menuAnchor().fillMaxWidth(),
+      isError = false
+    )
+
+    ExposedDropdownMenu(
+      expanded = expanded,
+      onDismissRequest = { expanded = false }
+    ) {
+      FamilyRelation.entries.forEach { relation ->
+        DropdownMenuItem(
+          text = { Text(relation.toDisplayName()) },
+          onClick = {
+            onValueChange(relation)
+            expanded = false
+            focusManager.moveFocus(FocusDirection.Next)
+          }
+        )
       }
     }
   }
@@ -730,7 +1024,7 @@ private fun SingleMemberDisplay(
           Text(
             text = member.name,
             style = MaterialTheme.typography.bodyLarge,
-            fontWeight = androidx.compose.ui.text.font.FontWeight.Medium
+            fontWeight = FontWeight.Medium
           )
         }
 
@@ -795,13 +1089,15 @@ private fun MemberSelectionDialog(
   var isSearching by remember { mutableStateOf(false) }
 
   // Debounced search
-  LaunchedEffect(query) {
-    isSearching = true
-    delay(500)
-
+  LaunchedEffect(query, allMembers) {
     if (query.isBlank()) {
+      // Show all members immediately for empty query
       filteredMembers = allMembers
+      isSearching = false
     } else {
+      isSearching = true
+      delay(500)
+
       // First show local results
       val localResults = allMembers.filter { member ->
         member.name.contains(query, ignoreCase = true) ||
@@ -822,11 +1118,12 @@ private fun MemberSelectionDialog(
       } catch (e: Exception) {
         println("Server search failed: ${e.message}")
       }
+
+      isSearching = false
     }
-    isSearching = false
   }
 
-  androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+  Dialog(onDismissRequest = onDismiss) {
     Surface(
       shape = MaterialTheme.shapes.large,
       modifier = Modifier
@@ -851,7 +1148,7 @@ private fun MemberSelectionDialog(
           placeholder = { Text("आर्य का नाम/दूरभाष") },
           leadingIcon = {
             Icon(
-              androidx.compose.material.icons.Icons.Default.Search,
+              imageVector = Icons.Default.Search,
               contentDescription = null,
               tint = MaterialTheme.colorScheme.primary
             )
@@ -870,7 +1167,7 @@ private fun MemberSelectionDialog(
         Spacer(modifier = Modifier.height(16.dp))
 
         // List of members
-        androidx.compose.foundation.lazy.LazyColumn(
+        LazyColumn(
           modifier = Modifier.weight(1f)
         ) {
           if (filteredMembers.isEmpty() && query.isNotEmpty() && !isSearching) {
@@ -982,7 +1279,7 @@ private fun MemberSelectionItem(
     } else {
       Icon(
         modifier = Modifier.size(48.dp),
-        imageVector = androidx.compose.material.icons.Icons.Filled.Face,
+        imageVector = Icons.Filled.Face,
         contentDescription = "Profile",
         tint = Color.Gray
       )
@@ -997,7 +1294,7 @@ private fun MemberSelectionItem(
       Text(
         text = member.name,
         style = MaterialTheme.typography.bodyMedium,
-        fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
+        fontWeight = FontWeight.Medium,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis
       )

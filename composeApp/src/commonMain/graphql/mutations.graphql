@@ -228,7 +228,6 @@ mutation updateMemberDetails($memberId: String!, $name: String!, $phoneNumber: S
             phoneNumber: $phoneNumber,
             educationalQualification: $educationalQualification,
             email: $email,
-
         }
     ) {
         affectedCount
@@ -519,3 +518,20 @@ mutation updateMemberWithAddress($memberId: String!, $name: String!, $phoneNumbe
   }
 }
 
+# Update member address (preserve tempAddressId)
+mutation UpdateMemberAddress(
+  $memberId: String!
+  $addressId: String!
+) {
+  updateMemberCollection(
+    filter: { id: { eq: $memberId } }
+    set: { addressId: $addressId }
+  ) {
+    affectedCount
+    records {
+      id
+      name
+      addressId
+    }
+  }
+}

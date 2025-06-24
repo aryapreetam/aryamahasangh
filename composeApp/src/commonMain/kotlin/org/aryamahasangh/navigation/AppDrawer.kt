@@ -346,7 +346,9 @@ private fun checkIfSelected(
       currentDestination?.contains("MemberDetail") == true ||
       currentDestination?.contains("AddMemberForm") == true ||
       currentDestination?.contains("AddAryaSamajForm") == true ||
-      currentDestination?.contains("AryaSamajDetail") == true) &&
+      currentDestination?.contains("AryaSamajDetail") == true ||
+    currentDestination?.contains("CreateFamilyForm") == true ||
+    currentDestination?.contains("FamilyDetail") == true) &&
     currentDrawerItem == Screen.AdminSection.toString()
   ) {
     true

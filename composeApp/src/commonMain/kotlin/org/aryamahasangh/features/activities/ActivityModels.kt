@@ -73,6 +73,7 @@ data class Member(
   val district: String = "",
   val state: String = "",
   val pincode: String = "",
+  val addressId: String = ""
 )
 
 data class OrganisationalActivityCollection(

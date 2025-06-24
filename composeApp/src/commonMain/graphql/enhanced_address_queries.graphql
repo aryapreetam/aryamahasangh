@@ -280,3 +280,20 @@ query SearchAddresses(
     }
   }
 }
+
+query GetAddressesByIds($ids: [String!]) {
+  addressCollection(filter: {id: {in: $ids}}) {
+    edges {
+      node {
+        id
+        basicAddress
+        district
+        state
+        vidhansabha
+        latitude
+        longitude
+        pincode
+      }
+    }
+  }
+}
