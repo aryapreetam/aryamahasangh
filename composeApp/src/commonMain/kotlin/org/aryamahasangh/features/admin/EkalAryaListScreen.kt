@@ -5,5 +5,5 @@ import androidx.compose.runtime.Composable
 
 @Composable
 fun EkalAryaListScreen(){
-  Text("Ekal Arya List")
+  Text("Ekal Arya List - Coming Soon")
 }

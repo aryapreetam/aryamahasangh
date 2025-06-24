@@ -129,12 +129,17 @@ sealed class Screen {
   data object AddMemberForm : Screen()
 
   @Serializable
+  data object CreateFamilyForm : Screen()
+
+  @Serializable
+  data class FamilyDetail(val familyId: String) : Screen()
+
+  @Serializable
   data object KshatraTrainingSection : Screen()
   @Serializable
   data object KshatraTrainingHome : Screen()
   @Serializable
   data object ChatraTrainingSection : Screen()
-
   @Serializable
   data object ChatraTrainingHome : Screen()
 }

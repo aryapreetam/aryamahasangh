@@ -19,8 +19,8 @@ import org.aryamahasangh.features.arya_nirman.SatraRegistrationFormScreen
 import org.aryamahasangh.features.arya_nirman.SatraRegistrationViewModel
 import org.aryamahasangh.features.organisations.NewOrganisationFormScreen
 import org.aryamahasangh.features.organisations.OrgDetailScreen
-import org.aryamahasangh.features.organisations.OrganisationsViewModel
 import org.aryamahasangh.features.organisations.OrgsScreen
+import org.aryamahasangh.features.organisations.OrganisationsViewModel
 import org.aryamahasangh.screens.*
 import org.aryamahasangh.viewmodel.AboutUsViewModel
 import org.aryamahasangh.viewmodel.AdmissionsViewModel
@@ -94,6 +94,12 @@ fun RootNavGraph(navController: NavHostController) {
         )
       }
     }
+    navigation<Screen.AryaPariwarSection>(startDestination = Screen.AryaPariwarHome) {
+      composable<Screen.AryaPariwarHome> {
+        val viewModel = koinInject<JoinUsViewModel>()
+        AryaPariwarScreen(viewModel)
+      }
+    }
     composable<Screen.JoinUs> {
       val viewModel = koinInject<JoinUsViewModel>()
       JoinUsScreen(viewModel)
@@ -129,13 +135,110 @@ fun RootNavGraph(navController: NavHostController) {
         BookOrderDetailsScreen(viewModel, id, {})
       }
     }
+    navigation<Screen.AdminSection>(startDestination = Screen.AdminContainer) {
+      composable<Screen.AdminContainer> {
+        val viewModel = koinInject<AdminViewModel>()
+        val aryaSamajViewModel = koinInject<org.aryamahasangh.features.admin.data.AryaSamajViewModel>()
+        val familyViewModel = koinInject<FamilyViewModel>()
+
+        // Navigate to AboutSection if user logs out
+        LaunchedEffect(isLoggedIn) {
+          if (!isLoggedIn) {
+            navController.navigate(Screen.AboutSection) {
+              // Clear the back stack so user can't navigate back to admin
+              popUpTo(0) { inclusive = true }
+            }
+          }
+        }
+
+        AdminContainerScreen(
+          viewModel = viewModel,
+          aryaSamajViewModel = aryaSamajViewModel,
+          familyViewModel = familyViewModel,
+          onNavigateToMemberDetail = { memberId ->
+            navController.navigate(Screen.MemberDetail(memberId))
+          },
+          onNavigateToAddMember = {
+            navController.navigate(Screen.AddMemberForm)
+          },
+          onNavigateToAddAryaSamaj = {
+            navController.navigate(Screen.AddAryaSamajForm)
+          },
+          onNavigateToAryaSamajDetail = { aryaSamajId ->
+            navController.navigate(Screen.AryaSamajDetail(aryaSamajId))
+          },
+          onEditAryaSamaj = { aryaSamajId ->
+            navController.navigate(Screen.EditAryaSamajForm(aryaSamajId))
+          },
+          onNavigateToCreateFamily = {
+            navController.navigate(Screen.CreateFamilyForm)
+          },
+          onNavigateToFamilyDetail = { familyId ->
+            navController.navigate(Screen.FamilyDetail(familyId))
+          }
+        )
+      }
+      composable<Screen.AddMemberForm> {
+        val viewModel = koinInject<AdminViewModel>()
+        AddMemberFormScreen(
+          viewModel = viewModel,
+          onNavigateBack = {
+            navController.popBackStack()
+          }
+        )
+      }
+      composable<Screen.MemberDetail> {
+        val viewModel = koinInject<AdminViewModel>()
+        val memberId = it.toRoute<Screen.MemberDetail>().memberId
+
+        // Navigate to AboutSection if user logs out
+        LaunchedEffect(isLoggedIn) {
+          if (!isLoggedIn) {
+            navController.navigate(Screen.AboutSection) {
+              // Clear the back stack so user can't navigate back to admin
+              popUpTo(0) { inclusive = true }
+            }
+          }
+        }
+
+        MemberDetailScreen(
+          memberId = memberId,
+          viewModel = viewModel,
+          onNavigateBack = {
+            navController.popBackStack()
+          }
+        )
+      }
+      composable<Screen.CreateFamilyForm> {
+        val familyViewModel = koinInject<FamilyViewModel>()
+        CreateAryaParivarFormScreen(
+          viewModel = familyViewModel,
+          onNavigateBack = {
+            navController.popBackStack()
+          },
+          onFamilyCreated = { familyId ->
+            navController.navigate(Screen.FamilyDetail(familyId)) {
+              popUpTo(Screen.AdminContainer)
+            }
+          }
+        )
+      }
+      composable<Screen.FamilyDetail> {
+        val familyId = it.toRoute<Screen.FamilyDetail>().familyId
+        // TODO: Implement FamilyDetailScreen
+        // For now, just navigate back
+        LaunchedEffect(Unit) {
+          navController.popBackStack()
+        }
+      }
+    }
     navigation<Screen.AryaNirmanSection>(startDestination = Screen.AryaNirmanHome) {
       composable<Screen.AryaNirmanHome> {
         val viewModel = koinInject<AryaNirmanViewModel>()
         AryaNirmanHomeScreen(
           viewModel,
           onNavigateToRegistrationForm = { id, capacity ->
-            navController.navigate(Screen.AryaNirmanRegistrationForm(activityId = id, capacity = capacity))
+            navController.navigate(Screen.AryaNirmanRegistrationForm(id, capacity))
           }
         )
       }
@@ -146,14 +249,10 @@ fun RootNavGraph(navController: NavHostController) {
           viewModel = viewModel,
           activityId = args.activityId,
           activityCapacity = args.capacity,
-          onNavigateBack = { navController.popBackStack() }
+          onNavigateBack = {
+            navController.popBackStack()
+          }
         )
-      }
-    }
-    navigation<Screen.AryaPariwarSection>(startDestination = Screen.AryaPariwarHome) {
-      composable<Screen.AryaPariwarHome> {
-        val viewModel = koinInject<JoinUsViewModel>()
-        AryaPariwarScreen(viewModel)
       }
     }
     navigation<Screen.ActivitiesSection>(startDestination = Screen.Activities) {
@@ -534,87 +633,20 @@ fun RootNavGraph(navController: NavHostController) {
         }
       }
     }
-    navigation<Screen.AdminSection>(startDestination = Screen.AdminContainer) {
-      composable<Screen.AdminContainer> {
-        val viewModel = koinInject<AdminViewModel>()
-        val aryaSamajViewModel = koinInject<org.aryamahasangh.features.admin.data.AryaSamajViewModel>()
-
-        // Navigate to AboutSection if user logs out
-        LaunchedEffect(isLoggedIn) {
-          if (!isLoggedIn) {
-            navController.navigate(Screen.AboutSection) {
-              // Clear the back stack so user can't navigate back to admin
-              popUpTo(0) { inclusive = true }
-            }
-          }
-        }
-
-        AdminContainerScreen(
-          viewModel = viewModel,
-          aryaSamajViewModel = aryaSamajViewModel,
-          onNavigateToMemberDetail = { memberId ->
-            navController.navigate(Screen.MemberDetail(memberId))
-          },
-          onNavigateToAddMember = {
-            navController.navigate(Screen.AddMemberForm)
-          },
-          onNavigateToAddAryaSamaj = {
-            navController.navigate(Screen.AddAryaSamajForm)
-          },
-          onNavigateToAryaSamajDetail = { aryaSamajId ->
-            navController.navigate(Screen.AryaSamajDetail(aryaSamajId))
-          },
-          onEditAryaSamaj = { aryaSamajId ->
-            navController.navigate(Screen.EditAryaSamajForm(aryaSamajId))
-          }
-        )
-      }
-      composable<Screen.AddMemberForm> {
-        val viewModel = koinInject<AdminViewModel>()
-        AddMemberFormScreen(
-          viewModel = viewModel,
-          onNavigateBack = {
-            navController.popBackStack()
-          }
-        )
-      }
-      composable<Screen.MemberDetail> {
-        val viewModel = koinInject<AdminViewModel>()
-        val memberId = it.toRoute<Screen.MemberDetail>().memberId
-
-        // Navigate to AboutSection if user logs out
-        LaunchedEffect(isLoggedIn) {
-          if (!isLoggedIn) {
-            navController.navigate(Screen.AboutSection) {
-              // Clear the back stack so user can't navigate back to admin
-              popUpTo(0) { inclusive = true }
-            }
-          }
-        }
-
-        MemberDetailScreen(
-          memberId = memberId,
-          viewModel = viewModel,
-          onNavigateBack = {
-            navController.popBackStack()
-          }
-        )
-      }
-    }
     navigation<Screen.KshatraTrainingSection>(startDestination = Screen.KshatraTrainingHome) {
       composable<Screen.KshatraTrainingHome> {
-        PhysicalTrainingForm(Gender.BOY, {})
+        PhysicalTrainingForm(gender = Gender.BOY, onBack = {})
       }
     }
     navigation<Screen.ChatraTrainingSection>(startDestination = Screen.ChatraTrainingHome) {
       composable<Screen.ChatraTrainingHome> {
-        PhysicalTrainingForm(Gender.GIRL, {})
+        PhysicalTrainingForm(gender = Gender.GIRL, onBack = {})
       }
     }
   }
 }
 
 @Composable
-fun PhysicalTrainingFormGirl(gender: Gender, onBack: () -> Unit) {
-  PhysicalTrainingForm(Gender.GIRL, {})
+fun PhysicalTrainingForm(gender: Gender, onBack: (Map<String, String>) -> Unit) {
+  // Implementation of PhysicalTrainingForm
 }
