@@ -243,7 +243,11 @@ fun dummyRegisterCallback(eventId: String) {
   println("Register clicked for $eventId")
 }
 
-fun dummyDirectionsCallback(latitude: Double, longitude: Double, placeName: String) {
+fun dummyDirectionsCallback(
+  latitude: Double,
+  longitude: Double,
+  placeName: String
+) {
   println("Directions clicked for $placeName at $latitude, $longitude")
 }
 

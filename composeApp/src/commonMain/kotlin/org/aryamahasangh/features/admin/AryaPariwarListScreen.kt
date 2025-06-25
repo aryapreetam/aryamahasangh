@@ -17,16 +17,13 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowWidthSizeClass
 import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.family_add
 import coil3.compose.AsyncImage
-import org.aryamahasangh.features.admin.FamilyShort
 import org.aryamahasangh.navigation.LocalSnackbarHostState
 import org.aryamahasangh.utils.WithTooltip
-import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.vectorResource
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
@@ -34,7 +31,9 @@ import org.jetbrains.compose.resources.vectorResource
 fun AryaPariwarListScreen(
   viewModel: FamilyViewModel,
   onNavigateToFamilyDetail: (String) -> Unit = {},
-  onNavigateToCreateFamily: () -> Unit = {}
+  onNavigateToCreateFamily: () -> Unit = {},
+  onEditFamily: (String) -> Unit = {},
+  onDeleteFamily: (String) -> Unit = {}
 ) {
   val uiState by viewModel.familiesUiState.collectAsState()
   val snackbarHostState = LocalSnackbarHostState.current
@@ -75,12 +74,14 @@ fun AryaPariwarListScreen(
         // Tooltip for IconButton on compact screens
         WithTooltip(tooltip = "नया परिवार जोड़ें") {
           Box(
-            modifier = Modifier
-              .clip(RectangleShape).clickable { onNavigateToCreateFamily() }
+            modifier =
+              Modifier
+                .clip(RectangleShape).clickable { onNavigateToCreateFamily() }
           ) {
             Icon(
-              modifier = Modifier
-                .size(56.dp).padding(8.dp),
+              modifier =
+                Modifier
+                  .size(56.dp).padding(8.dp),
               imageVector = vectorResource(Res.drawable.family_add),
               contentDescription = "नया परिवार जोड़ें"
             )
@@ -92,8 +93,9 @@ fun AryaPariwarListScreen(
           onClick = onNavigateToCreateFamily
         ) {
           Icon(
-            modifier = Modifier
-            .size(24.dp),
+            modifier =
+              Modifier
+                .size(24.dp),
             imageVector = vectorResource(Res.drawable.family_add),
             contentDescription = null
           )
@@ -120,9 +122,10 @@ fun AryaPariwarListScreen(
     uiState.error?.let { error ->
       Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-          containerColor = MaterialTheme.colorScheme.errorContainer
-        )
+        colors =
+          CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+          )
       ) {
         Text(
           text = error,
@@ -134,11 +137,12 @@ fun AryaPariwarListScreen(
     }
 
     // Families List
-    val familiesToShow = if (uiState.searchQuery.isNotBlank()) {
-      uiState.searchResults
-    } else {
-      uiState.families
-    }
+    val familiesToShow =
+      if (uiState.searchQuery.isNotBlank()) {
+        uiState.searchResults
+      } else {
+        uiState.families
+      }
 
     if (familiesToShow.isEmpty()) {
       Box(
@@ -177,6 +181,8 @@ fun AryaPariwarListScreen(
               FamilyItem(
                 family = family,
                 onFamilyClick = { onNavigateToFamilyDetail(family.id) },
+                onEditFamily = { onEditFamily(family.id) },
+                onDeleteFamily = { onDeleteFamily(family.id) },
                 modifier = Modifier.width(450.dp)
               )
             }
@@ -191,12 +197,18 @@ fun AryaPariwarListScreen(
 private fun FamilyItem(
   family: FamilyShort,
   onFamilyClick: () -> Unit,
+  onEditFamily: (String) -> Unit,
+  onDeleteFamily: (String) -> Unit,
   modifier: Modifier = Modifier
 ) {
+  var expanded by remember { mutableStateOf(false) }
+  var showDeleteDialog by remember { mutableStateOf(false) }
+
   ElevatedCard(
-    modifier = modifier
-      .clickable { onFamilyClick() }
-      .width(500.dp),
+    modifier =
+      modifier
+        .clickable { onFamilyClick() }
+        .width(500.dp),
     shape = RoundedCornerShape(8.dp)
   ) {
     Row(
@@ -210,9 +222,10 @@ private fun FamilyItem(
         AsyncImage(
           model = familyPhoto,
           contentDescription = "परिवार फोटो",
-          modifier = Modifier
-            .size(80.dp)
-            .clip(RoundedCornerShape(8.dp)),
+          modifier =
+            Modifier
+              .size(80.dp)
+              .clip(RoundedCornerShape(8.dp)),
           contentScale = ContentScale.Crop
         )
       } else {
@@ -247,7 +260,7 @@ private fun FamilyItem(
           style = MaterialTheme.typography.titleMedium,
           fontWeight = FontWeight.Medium
         )
-        
+
         if (family.address.isNotEmpty()) {
           Text(
             text = family.address,
@@ -256,7 +269,7 @@ private fun FamilyItem(
             modifier = Modifier.padding(top = 4.dp)
           )
         }
-        
+
         if (family.aryaSamajName.isNotEmpty()) {
           Text(
             text = "आर्य समाज: ${family.aryaSamajName}",
@@ -267,12 +280,72 @@ private fun FamilyItem(
         }
       }
 
-      // Arrow to indicate clickable
-      Icon(
-        Icons.Default.ChevronRight,
-        contentDescription = "विवरण देखें",
-        tint = MaterialTheme.colorScheme.onSurfaceVariant
-      )
+      // Overflow menu
+      Box {
+        IconButton(onClick = { expanded = !expanded }) {
+          Icon(Icons.Default.MoreVert, contentDescription = "अधिक क्रियाएँ")
+        }
+
+        DropdownMenu(
+          expanded = expanded,
+          onDismissRequest = { expanded = false }
+        ) {
+          DropdownMenuItem(
+            text = { Text("संपादित करें") },
+            onClick = {
+              expanded = false
+              onEditFamily(family.id)
+            },
+            leadingIcon = {
+              Icon(Icons.Default.Edit, contentDescription = "संपादित करें")
+            }
+          )
+          DropdownMenuItem(
+            text = { Text("हटाएँ") },
+            onClick = {
+              expanded = false
+              showDeleteDialog = true
+            },
+            leadingIcon = {
+              Icon(
+                Icons.Default.Delete,
+                contentDescription = "हटाएँ",
+                tint = MaterialTheme.colorScheme.error
+              )
+            }
+          )
+        }
+      }
     }
+  }
+
+  // Delete confirmation dialog
+  if (showDeleteDialog) {
+    AlertDialog(
+      onDismissRequest = { showDeleteDialog = false },
+      title = { Text("परिवार हटाएँ") },
+      text = {
+        Text("क्या आप वाकई \"${family.name}\" परिवार को हटाना चाहते हैं? यह कार्रवाई पूर्ववत नहीं की जा सकती।")
+      },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            showDeleteDialog = false
+            onDeleteFamily(family.id)
+          },
+          colors =
+            ButtonDefaults.textButtonColors(
+              contentColor = MaterialTheme.colorScheme.error
+            )
+        ) {
+          Text("हटाएँ")
+        }
+      },
+      dismissButton = {
+        TextButton(onClick = { showDeleteDialog = false }) {
+          Text("रद्द करें")
+        }
+      }
+    )
   }
 }

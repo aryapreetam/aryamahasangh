@@ -40,7 +40,7 @@ import sh.calvin.reorderable.rememberReorderableLazyStaggeredGridState
  */
 enum class MembersChoiceType {
   MULTIPLE, // Default - allows multiple member selection
-  SINGLE    // Allows only single member selection
+  SINGLE // Allows only single member selection
 }
 
 /**
@@ -48,7 +48,7 @@ enum class MembersChoiceType {
  */
 enum class MembersEditMode {
   INDIVIDUAL, // Each member edited individually with dropdown menus
-  GROUPED,    // All members shown as chips in FlowRow
+  GROUPED, // All members shown as chips in FlowRow
   FAMILY_MEMBERS // Special mode for family creation with head selection and relation dropdowns
 }
 
@@ -89,7 +89,11 @@ data class MembersState(
   val hasMembers: Boolean get() = members.isNotEmpty()
   val memberCount: Int get() = members.size
 
-  fun addMember(member: Member, post: String = "", priority: Int = members.size): MembersState {
+  fun addMember(
+    member: Member,
+    post: String = "",
+    priority: Int = members.size
+  ): MembersState {
     return copy(members = members + (member to Pair(post, priority)))
   }
 
@@ -97,7 +101,10 @@ data class MembersState(
     return copy(members = members - member)
   }
 
-  fun updateMemberPost(member: Member, post: String): MembersState {
+  fun updateMemberPost(
+    member: Member,
+    post: String
+  ): MembersState {
     val currentPair = members[member]
     return if (currentPair != null) {
       copy(members = members + (member to Pair(post, currentPair.second)))
@@ -106,7 +113,10 @@ data class MembersState(
     }
   }
 
-  fun updateMemberPriority(member: Member, priority: Int): MembersState {
+  fun updateMemberPriority(
+    member: Member,
+    priority: Int
+  ): MembersState {
     val currentPair = members[member]
     return if (currentPair != null) {
       copy(members = members + (member to Pair(currentPair.first, priority)))
@@ -116,14 +126,15 @@ data class MembersState(
   }
 
   fun reorderMembers(reorderedMembers: List<Member>): MembersState {
-    val newMembers = reorderedMembers.mapIndexed { index, member ->
-      val currentPair = members[member]
-      if (currentPair != null) {
-        member to Pair(currentPair.first, index)
-      } else {
-        member to Pair("", index)
-      }
-    }.toMap()
+    val newMembers =
+      reorderedMembers.mapIndexed { index, member ->
+        val currentPair = members[member]
+        if (currentPair != null) {
+          member to Pair(currentPair.first, index)
+        } else {
+          member to Pair("", index)
+        }
+      }.toMap()
     return copy(members = newMembers)
   }
 
@@ -291,9 +302,10 @@ fun MembersComponent(
           if (selectedMembers.isNotEmpty()) {
             val newMember = selectedMembers.first()
             // Clear existing members and add the new one
-            val newState = MembersState(
-              members = mapOf(newMember to Pair("", 0))
-            )
+            val newState =
+              MembersState(
+                members = mapOf(newMember to Pair("", 0))
+              )
             onStateChange(newState)
           }
           showAddMemberDialog = false
@@ -348,9 +360,10 @@ private fun ReorderableGroupedMembersEditor(
   LazyVerticalStaggeredGrid(
     columns = StaggeredGridCells.Adaptive(minSize = 320.dp),
     state = lazyStaggeredGridState,
-    modifier = Modifier
-      .fillMaxWidth()
-      .heightIn(min = 100.dp, max = 600.dp),
+    modifier =
+      Modifier
+        .fillMaxWidth()
+        .heightIn(min = 100.dp, max = 600.dp),
     verticalItemSpacing = 8.dp,
     horizontalArrangement = Arrangement.spacedBy(8.dp),
     userScrollEnabled = false
@@ -377,14 +390,15 @@ private fun ReorderableGroupedMembersEditor(
               onStateChange(state.removeMember(member))
             },
             isDragging = isDragging,
-            modifier = Modifier.draggableHandle(
-              onDragStarted = {
-                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-              },
-              onDragStopped = {
-                hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
-              }
-            )
+            modifier =
+              Modifier.draggableHandle(
+                onDragStarted = {
+                  hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                },
+                onDragStopped = {
+                  hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                }
+              )
           )
         }
       }
@@ -441,12 +455,15 @@ private fun ReorderableMemberChip(
 
   Card(
     modifier = modifier.padding(4.dp),
-    colors = CardDefaults.cardColors(
-      containerColor = if (isDragging)
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
-      else
-        MaterialTheme.colorScheme.surface
-    )
+    colors =
+      CardDefaults.cardColors(
+        containerColor =
+          if (isDragging) {
+            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f)
+          } else {
+            MaterialTheme.colorScheme.surface
+          }
+      )
   ) {
     Row(
       modifier = Modifier.padding(12.dp),
@@ -464,10 +481,11 @@ private fun ReorderableMemberChip(
       // Member profile image or icon
       if (!member.profileImage.isNullOrEmpty()) {
         AsyncImage(
-          model = ImageRequest.Builder(LocalPlatformContext.current)
-            .data(member.profileImage)
-            .crossfade(true)
-            .build(),
+          model =
+            ImageRequest.Builder(LocalPlatformContext.current)
+              .data(member.profileImage)
+              .crossfade(true)
+              .build(),
           contentDescription = "Profile Image",
           modifier = Modifier.size(32.dp).clip(CircleShape),
           contentScale = ContentScale.Crop
@@ -549,10 +567,11 @@ private fun GroupedMembersEditor(
             // Member profile image
             if (!member.profileImage.isNullOrEmpty()) {
               AsyncImage(
-                model = ImageRequest.Builder(LocalPlatformContext.current)
-                  .data(member.profileImage)
-                  .crossfade(true)
-                  .build(),
+                model =
+                  ImageRequest.Builder(LocalPlatformContext.current)
+                    .data(member.profileImage)
+                    .crossfade(true)
+                    .build(),
                 contentDescription = "Profile Image",
                 modifier = Modifier.size(24.dp).clip(CircleShape),
                 contentScale = ContentScale.Crop
@@ -659,10 +678,11 @@ private fun IndividualMembersEditor(
           // Profile image
           if (!member.profileImage.isNullOrEmpty()) {
             AsyncImage(
-              model = ImageRequest.Builder(LocalPlatformContext.current)
-                .data(member.profileImage)
-                .crossfade(true)
-                .build(),
+              model =
+                ImageRequest.Builder(LocalPlatformContext.current)
+                  .data(member.profileImage)
+                  .crossfade(true)
+                  .build(),
               contentDescription = "Profile Image",
               modifier = Modifier.size(48.dp).clip(CircleShape),
               contentScale = ContentScale.Crop
@@ -749,14 +769,16 @@ private fun FamilyMembersEditor(
       // Empty state
       Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-          containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        colors =
+          CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+          )
       ) {
         Column(
-          modifier = Modifier
-            .fillMaxWidth()
-            .padding(24.dp),
+          modifier =
+            Modifier
+              .fillMaxWidth()
+              .padding(24.dp),
           horizontalAlignment = Alignment.CenterHorizontally
         ) {
           Icon(
@@ -817,19 +839,21 @@ private fun FamilyMemberItem(
     modifier = Modifier.width(500.dp)
   ) {
     Row(
-      modifier = Modifier
-        .fillMaxWidth()
-        .padding(16.dp),
+      modifier =
+        Modifier
+          .fillMaxWidth()
+          .padding(16.dp),
       verticalAlignment = Alignment.Top,
       horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
       // Profile Image
       if (!member.profileImage.isNullOrEmpty()) {
         AsyncImage(
-          model = ImageRequest.Builder(LocalPlatformContext.current)
-            .data(member.profileImage)
-            .crossfade(true)
-            .build(),
+          model =
+            ImageRequest.Builder(LocalPlatformContext.current)
+              .data(member.profileImage)
+              .crossfade(true)
+              .build(),
           contentDescription = "Profile Image",
           modifier = Modifier.size(48.dp).clip(CircleShape),
           contentScale = ContentScale.Crop
@@ -1000,10 +1024,11 @@ private fun SingleMemberDisplay(
         // Profile image or icon
         if (!member.profileImage.isNullOrEmpty()) {
           AsyncImage(
-            model = ImageRequest.Builder(LocalPlatformContext.current)
-              .data(member.profileImage)
-              .crossfade(true)
-              .build(),
+            model =
+              ImageRequest.Builder(LocalPlatformContext.current)
+                .data(member.profileImage)
+                .crossfade(true)
+                .build(),
             contentDescription = "Profile Image",
             modifier = Modifier.size(48.dp).clip(CircleShape),
             contentScale = ContentScale.Crop
@@ -1099,11 +1124,12 @@ private fun MemberSelectionDialog(
       delay(500)
 
       // First show local results
-      val localResults = allMembers.filter { member ->
-        member.name.contains(query, ignoreCase = true) ||
-          member.phoneNumber.contains(query, ignoreCase = true) ||
-          member.email.contains(query, ignoreCase = true)
-      }
+      val localResults =
+        allMembers.filter { member ->
+          member.name.contains(query, ignoreCase = true) ||
+            member.phoneNumber.contains(query, ignoreCase = true) ||
+            member.email.contains(query, ignoreCase = true)
+        }
       filteredMembers = localResults
 
       // Trigger server search
@@ -1126,14 +1152,16 @@ private fun MemberSelectionDialog(
   Dialog(onDismissRequest = onDismiss) {
     Surface(
       shape = MaterialTheme.shapes.large,
-      modifier = Modifier
-        .width(400.dp)
-        .height(600.dp)
+      modifier =
+        Modifier
+          .width(400.dp)
+          .height(600.dp)
     ) {
       Column(
-        modifier = Modifier
-          .fillMaxSize()
-          .padding(16.dp)
+        modifier =
+          Modifier
+            .fillMaxSize()
+            .padding(16.dp)
       ) {
         Text(
           text = if (choiceType == MembersChoiceType.SINGLE) "सदस्य चुनें" else "पदाधिकारी चुनें",
@@ -1198,11 +1226,12 @@ private fun MemberSelectionDialog(
                       onDismiss()
                     }
                     MembersChoiceType.MULTIPLE -> {
-                      selectedMembers = if (selectedMembers.contains(member)) {
-                        selectedMembers - member
-                      } else {
-                        selectedMembers + member
-                      }
+                      selectedMembers =
+                        if (selectedMembers.contains(member)) {
+                          selectedMembers - member
+                        } else {
+                          selectedMembers + member
+                        }
                     }
                   }
                 }
@@ -1259,19 +1288,21 @@ private fun MemberSelectionItem(
   onClick: () -> Unit
 ) {
   Row(
-    modifier = Modifier
-      .fillMaxWidth()
-      .clickable { onClick() }
-      .padding(12.dp),
+    modifier =
+      Modifier
+        .fillMaxWidth()
+        .clickable { onClick() }
+        .padding(12.dp),
     verticalAlignment = Alignment.CenterVertically
   ) {
     // Profile image
     if (!member.profileImage.isNullOrEmpty()) {
       AsyncImage(
-        model = ImageRequest.Builder(LocalPlatformContext.current)
-          .data(member.profileImage)
-          .crossfade(true)
-          .build(),
+        model =
+          ImageRequest.Builder(LocalPlatformContext.current)
+            .data(member.profileImage)
+            .crossfade(true)
+            .build(),
         contentDescription = "Profile Image",
         modifier = Modifier.size(48.dp).clip(CircleShape),
         contentScale = ContentScale.Crop
@@ -1287,9 +1318,10 @@ private fun MemberSelectionItem(
 
     // Member info
     Column(
-      modifier = Modifier
-        .weight(1f)
-        .padding(start = 12.dp)
+      modifier =
+        Modifier
+          .weight(1f)
+          .padding(start = 12.dp)
     ) {
       Text(
         text = member.name,

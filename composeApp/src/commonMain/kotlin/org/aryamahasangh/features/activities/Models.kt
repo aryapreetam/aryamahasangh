@@ -75,7 +75,6 @@ enum class GenderAllowed {
   }
 }
 
-
 fun ApolloGenderFilter?.toDomain(): GenderAllowed {
   return when (this) {
     ApolloGenderFilter.MALE -> GenderAllowed.MALE

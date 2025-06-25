@@ -2,22 +2,13 @@ package org.aryamahasangh.features.admin
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.core.PickerMode
@@ -121,54 +112,70 @@ fun AddMemberFormScreen(
     var isValid = true
 
     // Name validation
-    nameError = if (name.isBlank()) {
-      isValid = false
-      "नाम अपेक्षित है"
-    } else null
+    nameError =
+      if (name.isBlank()) {
+        isValid = false
+        "नाम अपेक्षित है"
+      } else {
+        null
+      }
 
     // Phone validation
-    phoneError = if (phoneNumber.isBlank()) {
-      isValid = false
-      "दूरभाष अपेक्षित है"
-    } else if (phoneNumber.length < 10) {
-      isValid = false
-      "दूरभाष कम से कम 10 अंक का होना चाहिए"
-    } else null
+    phoneError =
+      if (phoneNumber.isBlank()) {
+        isValid = false
+        "दूरभाष अपेक्षित है"
+      } else if (phoneNumber.length < 10) {
+        isValid = false
+        "दूरभाष कम से कम 10 अंक का होना चाहिए"
+      } else {
+        null
+      }
 
     // DOB validation
-    dobError = if (dob == null) {
-      isValid = false
-      "जन्मतिथि अपेक्षित है"
-    } else null
+    dobError =
+      if (dob == null) {
+        isValid = false
+        "जन्मतिथि अपेक्षित है"
+      } else {
+        null
+      }
 
     // Gender validation
-    genderError = if (gender == null) {
-      isValid = false
-      "लिंग चुनना अपेक्षित है"
-    } else null
+    genderError =
+      if (gender == null) {
+        isValid = false
+        "लिंग चुनना अपेक्षित है"
+      } else {
+        null
+      }
 
     // Address validation
-    permanentAddressErrors = validateAddressData(
-      permanentAddress,
-      AddressFieldsConfig(),
-      setOf("address", "state", "district")
-    )
+    permanentAddressErrors =
+      validateAddressData(
+        permanentAddress,
+        AddressFieldsConfig(),
+        setOf("address", "state", "district")
+      )
     if (permanentAddressErrors.addressError != null ||
       permanentAddressErrors.stateError != null ||
-      permanentAddressErrors.districtError != null) {
+      permanentAddressErrors.districtError != null
+    ) {
       isValid = false
     }
 
     // Current address validation (if different)
     if (isDifferentCurrentAddress) {
-      currentAddressErrors = validateAddressData(
-        currentAddress,
-        AddressFieldsConfig(),
-        setOf("address", "state", "district")
-      )
+      currentAddressErrors =
+        validateAddressData(
+          currentAddress,
+          AddressFieldsConfig(),
+          setOf("address", "state", "district")
+        )
       if (currentAddressErrors.addressError != null ||
         currentAddressErrors.stateError != null ||
-        currentAddressErrors.districtError != null) {
+        currentAddressErrors.districtError != null
+      ) {
         isValid = false
       }
     }
@@ -192,10 +199,11 @@ fun AddMemberFormScreen(
         // Upload profile image if selected
         if (selectedProfileImage != null && uploadedImageUrl == null) {
           try {
-            val uploadResponse = bucket.upload(
-              path = "profile_${Clock.System.now().epochSeconds}.jpg",
-              data = selectedProfileImage!!.readBytes()
-            )
+            val uploadResponse =
+              bucket.upload(
+                path = "profile_${Clock.System.now().epochSeconds}.jpg",
+                data = selectedProfileImage!!.readBytes()
+              )
             finalImageUrl = bucket.publicUrl(uploadResponse.path)
             uploadedImageUrl = finalImageUrl
           } catch (e: Exception) {
@@ -206,15 +214,16 @@ fun AddMemberFormScreen(
         }
 
         // Create permanent address
-        val permanentAddressId = viewModel.createAddress(
-          basicAddress = permanentAddress.address,
-          state = permanentAddress.state,
-          district = permanentAddress.district,
-          pincode = permanentAddress.pincode,
-          latitude = permanentAddress.location?.latitude,
-          longitude = permanentAddress.location?.longitude,
-          vidhansabha = permanentAddress.vidhansabha
-        )
+        val permanentAddressId =
+          viewModel.createAddress(
+            basicAddress = permanentAddress.address,
+            state = permanentAddress.state,
+            district = permanentAddress.district,
+            pincode = permanentAddress.pincode,
+            latitude = permanentAddress.location?.latitude,
+            longitude = permanentAddress.location?.longitude,
+            vidhansabha = permanentAddress.vidhansabha
+          )
 
         if (permanentAddressId == null) {
           snackbarHostState.showSnackbar("स्थायी पता सहेजने में त्रुटि")
@@ -222,17 +231,20 @@ fun AddMemberFormScreen(
         }
 
         // Create current address if different
-        val currentAddressId = if (isDifferentCurrentAddress) {
-          viewModel.createAddress(
-            basicAddress = currentAddress.address,
-            state = currentAddress.state,
-            district = currentAddress.district,
-            pincode = currentAddress.pincode,
-            latitude = currentAddress.location?.latitude,
-            longitude = currentAddress.location?.longitude,
-            vidhansabha = currentAddress.vidhansabha
-          )
-        } else null
+        val currentAddressId =
+          if (isDifferentCurrentAddress) {
+            viewModel.createAddress(
+              basicAddress = currentAddress.address,
+              state = currentAddress.state,
+              district = currentAddress.district,
+              pincode = currentAddress.pincode,
+              latitude = currentAddress.location?.latitude,
+              longitude = currentAddress.location?.longitude,
+              vidhansabha = currentAddress.vidhansabha
+            )
+          } else {
+            null
+          }
 
         if (isDifferentCurrentAddress && currentAddressId == null) {
           snackbarHostState.showSnackbar("वर्तमान पता सहेजने में त्रुटि")
@@ -256,7 +268,6 @@ fun AddMemberFormScreen(
           referrerId = referrerState.members.keys.firstOrNull()?.id,
           aryaSamajId = selectedAryaSamaj?.id
         )
-
       } catch (e: Exception) {
         snackbarHostState.showSnackbar("Error: ${e.message}")
       }
@@ -297,14 +308,15 @@ fun AddMemberFormScreen(
   }
 
   // Profile image picker
-  val launcher = rememberFilePickerLauncher(
-    type = PickerType.Image,
-    mode = PickerMode.Single,
-    title = "प्रोफ़ाइल फोटो चुनें"
-  ) { file ->
-    selectedProfileImage = file
-    uploadedImageUrl = null
-  }
+  val launcher =
+    rememberFilePickerLauncher(
+      type = PickerType.Image,
+      mode = PickerMode.Single,
+      title = "प्रोफ़ाइल फोटो चुनें"
+    ) { file ->
+      selectedProfileImage = file
+      uploadedImageUrl = null
+    }
 
   // Unsaved changes dialog
   if (showUnsavedChangesDialog) {
@@ -337,7 +349,11 @@ fun AddMemberFormScreen(
     AlertDialog(
       onDismissRequest = { showImageUploadFailureDialog = false },
       title = { Text("फोटो अपलोड असफल") },
-      text = { Text("प्रोफ़ाइल फोटो अपलोड करने में असफल: ${imageUploadError}। क्या आप फोटो के बिना जारी रखना चाहते हैं या पुनः प्रयास करना चाहते हैं?") },
+      text = {
+        Text(
+          "प्रोफ़ाइल फोटो अपलोड करने में असफल: $imageUploadError। क्या आप फोटो के बिना जारी रखना चाहते हैं या पुनः प्रयास करना चाहते हैं?"
+        )
+      },
       confirmButton = {
         TextButton(
           onClick = {
@@ -373,9 +389,10 @@ fun AddMemberFormScreen(
 
     // Form Content
     LazyColumn(
-      modifier = Modifier
-        .fillMaxSize()
-        .padding(16.dp),
+      modifier =
+        Modifier
+          .fillMaxSize()
+          .padding(16.dp),
       verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
       // Profile Image Section
@@ -383,7 +400,7 @@ fun AddMemberFormScreen(
         ProfileImageSection(
           selectedProfileImage = selectedProfileImage,
           onImageSelected = { launcher.launch() },
-          onImageRemoved = { 
+          onImageRemoved = {
             selectedProfileImage = null
             uploadedImageUrl = null
           }
@@ -465,7 +482,7 @@ fun AddMemberFormScreen(
         Spacer(modifier = Modifier.height(24.dp))
         Button(
           onClick = { saveMember() },
-          enabled = !uiState.isUpdating,
+          enabled = !uiState.isUpdating
         ) {
           if (uiState.isUpdating) {
             CircularProgressIndicator(
@@ -475,9 +492,10 @@ fun AddMemberFormScreen(
             Spacer(modifier = Modifier.width(8.dp))
           }
           Text(
-            text ="सहेजें",
-            modifier = Modifier
-              .padding(horizontal = 24.dp)
+            text = "सहेजें",
+            modifier =
+              Modifier
+                .padding(horizontal = 24.dp)
           )
         }
       }

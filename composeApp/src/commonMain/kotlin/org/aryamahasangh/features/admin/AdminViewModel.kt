@@ -16,7 +16,6 @@ import org.aryamahasangh.domain.error.AppError
 import org.aryamahasangh.domain.error.ErrorHandler
 import org.aryamahasangh.domain.error.getUserMessage
 import org.aryamahasangh.features.activities.Member
-import org.aryamahasangh.util.Result
 import org.aryamahasangh.viewmodel.ErrorState
 import org.aryamahasangh.viewmodel.handleResult
 
@@ -53,7 +52,6 @@ data class DeleteMemberState(
 )
 
 class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
-
   private val _membersCount = MutableStateFlow(0L)
   val membersCount: StateFlow<Long> = _membersCount.asStateFlow()
 
@@ -73,27 +71,30 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
       repository.getMembers().collect { result ->
         result.handleResult(
           onLoading = {
-            _membersUiState.value = _membersUiState.value.copy(
-              isLoading = true,
-              error = null,
-              appError = null
-            )
+            _membersUiState.value =
+              _membersUiState.value.copy(
+                isLoading = true,
+                error = null,
+                appError = null
+              )
           },
           onSuccess = { members ->
-            _membersUiState.value = _membersUiState.value.copy(
-              members = members,
-              isLoading = false,
-              error = null,
-              appError = null
-            )
+            _membersUiState.value =
+              _membersUiState.value.copy(
+                members = members,
+                isLoading = false,
+                error = null,
+                appError = null
+              )
           },
           onError = { appError ->
             ErrorHandler.logError(appError, "AdminViewModel.loadMembers")
-            _membersUiState.value = _membersUiState.value.copy(
-              isLoading = false,
-              error = appError.getUserMessage(),
-              appError = appError
-            )
+            _membersUiState.value =
+              _membersUiState.value.copy(
+                isLoading = false,
+                error = appError.getUserMessage(),
+                appError = appError
+              )
           }
         )
       }
@@ -104,40 +105,44 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
     _membersUiState.value = _membersUiState.value.copy(searchQuery = query)
 
     searchJob?.cancel()
-    searchJob = viewModelScope.launch {
-      if (query.isBlank()) {
-        _membersUiState.value = _membersUiState.value.copy(
-          searchResults = emptyList(),
-          isSearching = false
-        )
-        return@launch
-      }
-
-      // Debounce search
-      delay(500)
-
-      repository.searchMembers(query).collect { result ->
-        result.handleResult(
-          onLoading = {
-            _membersUiState.value = _membersUiState.value.copy(isSearching = true)
-          },
-          onSuccess = { searchResults ->
-            _membersUiState.value = _membersUiState.value.copy(
-              searchResults = searchResults,
+    searchJob =
+      viewModelScope.launch {
+        if (query.isBlank()) {
+          _membersUiState.value =
+            _membersUiState.value.copy(
+              searchResults = emptyList(),
               isSearching = false
             )
-          },
-          onError = { appError ->
-            ErrorHandler.logError(appError, "AdminViewModel.searchMembers")
-            _membersUiState.value = _membersUiState.value.copy(
-              isSearching = false,
-              error = appError.getUserMessage(),
-              appError = appError
-            )
-          }
-        )
+          return@launch
+        }
+
+        // Debounce search
+        delay(500)
+
+        repository.searchMembers(query).collect { result ->
+          result.handleResult(
+            onLoading = {
+              _membersUiState.value = _membersUiState.value.copy(isSearching = true)
+            },
+            onSuccess = { searchResults ->
+              _membersUiState.value =
+                _membersUiState.value.copy(
+                  searchResults = searchResults,
+                  isSearching = false
+                )
+            },
+            onError = { appError ->
+              ErrorHandler.logError(appError, "AdminViewModel.searchMembers")
+              _membersUiState.value =
+                _membersUiState.value.copy(
+                  isSearching = false,
+                  error = appError.getUserMessage(),
+                  appError = appError
+                )
+            }
+          )
+        }
       }
-    }
   }
 
   // New method for searching members for selection component
@@ -156,9 +161,10 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
       repository.searchMembersForSelection("").collect { result ->
         result.handleResult(
           onSuccess = { allMembers ->
-            _memberDetailUiState.value = _memberDetailUiState.value.copy(
-              allMembers = allMembers
-            )
+            _memberDetailUiState.value =
+              _memberDetailUiState.value.copy(
+                allMembers = allMembers
+              )
           },
           onError = { appError ->
             ErrorHandler.logError(appError, "AdminViewModel.loadAllMembersForSelection")
@@ -174,9 +180,10 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
       repository.getAllAryaSamajs().collect { result ->
         result.handleResult(
           onSuccess = { allAryaSamajs ->
-            _memberDetailUiState.value = _memberDetailUiState.value.copy(
-              allAryaSamajs = allAryaSamajs
-            )
+            _memberDetailUiState.value =
+              _memberDetailUiState.value.copy(
+                allAryaSamajs = allAryaSamajs
+              )
           },
           onError = { appError ->
             ErrorHandler.logError(appError, "AdminViewModel.loadAllAryaSamajsForSelection")
@@ -206,9 +213,10 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
       repository.searchAryaSamajs(query).collect { result ->
         result.handleResult(
           onSuccess = { searchResults ->
-            _memberDetailUiState.value = _memberDetailUiState.value.copy(
-              searchAryaSamajResults = searchResults
-            )
+            _memberDetailUiState.value =
+              _memberDetailUiState.value.copy(
+                searchAryaSamajResults = searchResults
+              )
           },
           onError = { appError ->
             ErrorHandler.logError(appError, "AdminViewModel.triggerAryaSamajSearch")
@@ -228,9 +236,10 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
       repository.searchMembersForSelection(query).collect { result ->
         result.handleResult(
           onSuccess = { searchResults ->
-            _memberDetailUiState.value = _memberDetailUiState.value.copy(
-              searchMembersResults = searchResults
-            )
+            _memberDetailUiState.value =
+              _memberDetailUiState.value.copy(
+                searchMembersResults = searchResults
+              )
           },
           onError = { appError ->
             ErrorHandler.logError(appError, "AdminViewModel.triggerMemberSearch")
@@ -245,40 +254,47 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
       repository.getMember(memberId).collect { result ->
         result.handleResult(
           onLoading = {
-            _memberDetailUiState.value = _memberDetailUiState.value.copy(
-              isLoading = true,
-              error = null,
-              appError = null
-            )
+            _memberDetailUiState.value =
+              _memberDetailUiState.value.copy(
+                isLoading = true,
+                error = null,
+                appError = null
+              )
           },
           onSuccess = { member ->
-            _memberDetailUiState.value = _memberDetailUiState.value.copy(
-              member = member,
-              isLoading = false,
-              error = null,
-              appError = null
-            )
+            _memberDetailUiState.value =
+              _memberDetailUiState.value.copy(
+                member = member,
+                isLoading = false,
+                error = null,
+                appError = null
+              )
           },
           onError = { appError ->
             ErrorHandler.logError(appError, "AdminViewModel.loadMemberDetail")
-            _memberDetailUiState.value = _memberDetailUiState.value.copy(
-              isLoading = false,
-              error = appError.getUserMessage(),
-              appError = appError
-            )
+            _memberDetailUiState.value =
+              _memberDetailUiState.value.copy(
+                isLoading = false,
+                error = appError.getUserMessage(),
+                appError = appError
+              )
           }
         )
       }
     }
   }
 
-  fun deleteMember(memberId: String, memberName: String) {
+  fun deleteMember(
+    memberId: String,
+    memberName: String
+  ) {
     viewModelScope.launch {
-      _deleteMemberState.value = _deleteMemberState.value.copy(
-        isDeleting = true,
-        deleteError = null,
-        deleteAppError = null
-      )
+      _deleteMemberState.value =
+        _deleteMemberState.value.copy(
+          isDeleting = true,
+          deleteError = null,
+          deleteAppError = null
+        )
 
       repository.deleteMember(memberId).collect { result ->
         result.handleResult(
@@ -286,23 +302,25 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
             // Already handled above
           },
           onSuccess = { _ ->
-            _deleteMemberState.value = _deleteMemberState.value.copy(
-              isDeleting = false,
-              deleteSuccess = true,
-              deleteError = null,
-              deleteAppError = null
-            )
+            _deleteMemberState.value =
+              _deleteMemberState.value.copy(
+                isDeleting = false,
+                deleteSuccess = true,
+                deleteError = null,
+                deleteAppError = null
+              )
             // Refresh members list
             loadMembers()
             getMembersCount()
           },
           onError = { appError ->
             ErrorHandler.logError(appError, "AdminViewModel.deleteMember")
-            _deleteMemberState.value = _deleteMemberState.value.copy(
-              isDeleting = false,
-              deleteError = appError.getUserMessage(),
-              deleteAppError = appError
-            )
+            _deleteMemberState.value =
+              _deleteMemberState.value.copy(
+                isDeleting = false,
+                deleteError = appError.getUserMessage(),
+                deleteAppError = appError
+              )
           }
         )
       }
@@ -332,7 +350,10 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
       _memberDetailUiState.value = _memberDetailUiState.value.copy(isUpdating = true)
 
       repository.updateMemberDetails(
-        memberId, name, phoneNumber, educationalQualification,
+        memberId,
+        name,
+        phoneNumber,
+        educationalQualification,
         email
       ).collect { result ->
         result.handleResult(
@@ -340,28 +361,33 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
             // Already handled above
           },
           onSuccess = { _ ->
-            _memberDetailUiState.value = _memberDetailUiState.value.copy(
-              isUpdating = false,
-              updateSuccess = true,
-              isEditingDetails = false
-            )
+            _memberDetailUiState.value =
+              _memberDetailUiState.value.copy(
+                isUpdating = false,
+                updateSuccess = true,
+                isEditingDetails = false
+              )
             // Reload member details
             loadMemberDetail(memberId)
           },
           onError = { appError ->
             ErrorHandler.logError(appError, "AdminViewModel.updateMemberDetails")
-            _memberDetailUiState.value = _memberDetailUiState.value.copy(
-              isUpdating = false,
-              error = appError.getUserMessage(),
-              appError = appError
-            )
+            _memberDetailUiState.value =
+              _memberDetailUiState.value.copy(
+                isUpdating = false,
+                error = appError.getUserMessage(),
+                appError = appError
+              )
           }
         )
       }
     }
   }
 
-  fun updateMemberPhoto(memberId: String, photoUrl: String) {
+  fun updateMemberPhoto(
+    memberId: String,
+    photoUrl: String
+  ) {
     viewModelScope.launch {
       _memberDetailUiState.value = _memberDetailUiState.value.copy(isUpdating = true)
 
@@ -371,21 +397,23 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
             // Already handled above
           },
           onSuccess = { _ ->
-            _memberDetailUiState.value = _memberDetailUiState.value.copy(
-              isUpdating = false,
-              updateSuccess = true,
-              isEditingProfile = false
-            )
+            _memberDetailUiState.value =
+              _memberDetailUiState.value.copy(
+                isUpdating = false,
+                updateSuccess = true,
+                isEditingProfile = false
+              )
             // Reload member details
             loadMemberDetail(memberId)
           },
           onError = { appError ->
             ErrorHandler.logError(appError, "AdminViewModel.updateMemberPhoto")
-            _memberDetailUiState.value = _memberDetailUiState.value.copy(
-              isUpdating = false,
-              error = appError.getUserMessage(),
-              appError = appError
-            )
+            _memberDetailUiState.value =
+              _memberDetailUiState.value.copy(
+                isUpdating = false,
+                error = appError.getUserMessage(),
+                appError = appError
+              )
           }
         )
       }
@@ -432,21 +460,23 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
             // Already handled above
           },
           onSuccess = { _ ->
-            _memberDetailUiState.value = _memberDetailUiState.value.copy(
-              isUpdating = false,
-              updateSuccess = true
-            )
+            _memberDetailUiState.value =
+              _memberDetailUiState.value.copy(
+                isUpdating = false,
+                updateSuccess = true
+              )
             // Refresh members list
             loadMembers()
             getMembersCount()
           },
           onError = { appError ->
             ErrorHandler.logError(appError, "AdminViewModel.createMember")
-            _memberDetailUiState.value = _memberDetailUiState.value.copy(
-              isUpdating = false,
-              error = appError.getUserMessage(),
-              appError = appError
-            )
+            _memberDetailUiState.value =
+              _memberDetailUiState.value.copy(
+                isUpdating = false,
+                error = appError.getUserMessage(),
+                appError = appError
+              )
           }
         )
       }
@@ -465,7 +495,13 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
   ): String? {
     var addressId: String? = null
     repository.createAddress(
-      basicAddress, state, district, pincode, latitude, longitude, vidhansabha
+      basicAddress,
+      state,
+      district,
+      pincode,
+      latitude,
+      longitude,
+      vidhansabha
     ).collect { result ->
       result.handleResult(
         onSuccess = { id ->
@@ -473,10 +509,11 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
         },
         onError = { appError ->
           ErrorHandler.logError(appError, "AdminViewModel.createAddress")
-          _memberDetailUiState.value = _memberDetailUiState.value.copy(
-            error = appError.getUserMessage(),
-            appError = appError
-          )
+          _memberDetailUiState.value =
+            _memberDetailUiState.value.copy(
+              error = appError.getUserMessage(),
+              appError = appError
+            )
         }
       )
     }
@@ -484,11 +521,12 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
   }
 
   fun resetUpdateState() {
-    _memberDetailUiState.value = _memberDetailUiState.value.copy(
-      updateSuccess = false,
-      error = null,
-      appError = null
-    )
+    _memberDetailUiState.value =
+      _memberDetailUiState.value.copy(
+        updateSuccess = false,
+        error = null,
+        appError = null
+      )
   }
 
   fun getMembersCount() {

@@ -4,7 +4,6 @@ package org.aryamahasangh.util
  * Network utility functions for detecting connectivity issues
  */
 object NetworkUtils {
-
   /**
    * Check if an error message indicates a network connectivity issue
    */
@@ -57,7 +56,10 @@ object NetworkUtils {
   /**
    * Get a user-friendly network error message
    */
-  fun getNetworkErrorMessage(error: String?, exception: Throwable?): String {
+  fun getNetworkErrorMessage(
+    error: String?,
+    exception: Throwable?
+  ): String {
     return when {
       isNetworkException(exception) || isNetworkError(error) -> {
         "Please check your internet connection and try again"
@@ -69,7 +71,10 @@ object NetworkUtils {
   /**
    * Check if error is likely a network issue disguised as something else
    */
-  fun isLikelyNetworkIssue(error: String?, exception: Throwable?): Boolean {
+  fun isLikelyNetworkIssue(
+    error: String?,
+    exception: Throwable?
+  ): Boolean {
     // Even if the error message says "not found" or similar,
     // if we have network indicators, it's probably a network issue
     val message = error?.lowercase() ?: ""
@@ -77,7 +82,9 @@ object NetworkUtils {
     return isNetworkException(exception) ||
       isNetworkError(error) ||
       // Common patterns when network issues are disguised
-      (message.contains("not found") &&
-        (message.contains("organisation") || message.contains("data") || message.contains("resource")))
+      (
+        message.contains("not found") &&
+          (message.contains("organisation") || message.contains("data") || message.contains("resource"))
+      )
   }
 }

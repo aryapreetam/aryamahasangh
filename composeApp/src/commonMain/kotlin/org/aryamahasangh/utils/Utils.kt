@@ -12,14 +12,18 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
 val logger = logging()
+
 @Composable
-fun TBD(){
+fun TBD() {
   Text("निर्माणाधीन", modifier = Modifier.padding(16.dp))
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun WithTooltip(tooltip: String, content: @Composable () -> Unit) {
+fun WithTooltip(
+  tooltip: String,
+  content: @Composable () -> Unit
+) {
   TooltipBox(
     positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
     tooltip = { PlainTooltip { Text(tooltip) } },

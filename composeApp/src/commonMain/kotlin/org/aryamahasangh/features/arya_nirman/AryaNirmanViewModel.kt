@@ -63,15 +63,16 @@ class AryaNirmanViewModel(
     // Cancel any existing subscription
     stopListeningToRegistrationCounts()
 
-    registrationCountsJob = viewModelScope.launch {
-      try {
-        aryaNirmanRepository.getRegistrationCounts().collect { result ->
-          _registrationCounts.value = result
+    registrationCountsJob =
+      viewModelScope.launch {
+        try {
+          aryaNirmanRepository.getRegistrationCounts().collect { result ->
+            _registrationCounts.value = result
+          }
+        } catch (e: Exception) {
+          println("Error in registration counts listener: ${e.message}")
         }
-      } catch (e: Exception) {
-        println("Error in registration counts listener: ${e.message}")
       }
-    }
   }
 
   /**

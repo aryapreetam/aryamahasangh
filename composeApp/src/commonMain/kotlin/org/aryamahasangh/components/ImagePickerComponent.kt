@@ -29,9 +29,9 @@ import io.github.vinceglb.filekit.core.PlatformFile
  * Type of picker - determines behavior and UI
  */
 enum class ImagePickerType {
-  IMAGE,               // Only images (jpg, png, etc.)
-  IMAGE_AND_DOCUMENT,  // Images and documents (pdf, doc, etc.)
-  PROFILE_PHOTO        // Single profile photo with circular preview
+  IMAGE, // Only images (jpg, png, etc.)
+  IMAGE_AND_DOCUMENT, // Images and documents (pdf, doc, etc.)
+  PROFILE_PHOTO // Single profile photo with circular preview
 }
 
 /**
@@ -57,11 +57,12 @@ data class ImagePickerConfig(
     get() = if (type == ImagePickerType.PROFILE_PHOTO) 1 else maxImages
 
   val effectiveSupportedFormats: List<String>
-    get() = supportedFormats ?: when (type) {
-      ImagePickerType.IMAGE -> listOf("jpg", "jpeg", "png", "gif", "webp")
-      ImagePickerType.IMAGE_AND_DOCUMENT -> listOf("jpg", "jpeg", "png", "gif", "webp", "pdf", "doc", "docx")
-      ImagePickerType.PROFILE_PHOTO -> listOf("jpg", "jpeg", "png")
-    }
+    get() =
+      supportedFormats ?: when (type) {
+        ImagePickerType.IMAGE -> listOf("jpg", "jpeg", "png", "gif", "webp")
+        ImagePickerType.IMAGE_AND_DOCUMENT -> listOf("jpg", "jpeg", "png", "gif", "webp", "pdf", "doc", "docx")
+        ImagePickerType.PROFILE_PHOTO -> listOf("jpg", "jpeg", "png")
+      }
 }
 
 /**
@@ -108,47 +109,52 @@ fun ImagePickerComponent(
   error: String? = null,
   modifier: Modifier = Modifier
 ) {
-  val pickerMode = if (config.effectiveAllowMultiple) {
-    PickerMode.Multiple()
-  } else {
-    PickerMode.Single
-  }
-
-  val pickerType = when (config.type) {
-    ImagePickerType.IMAGE, ImagePickerType.PROFILE_PHOTO -> PickerType.Image
-    ImagePickerType.IMAGE_AND_DOCUMENT -> PickerType.ImageAndVideo // Using this as a proxy for all files
-  }
-
-  val imagePickerLauncher = rememberFilePickerLauncher(
-    type = pickerType,
-    mode = pickerMode,
-    title = config.label
-  ) { files ->
-    if (files != null) {
-      val filesToAdd = when (files) {
-        is List<*> -> files.filterIsInstance<PlatformFile>()
-        is PlatformFile -> listOf(files)
-        else -> emptyList()
-      }
-
-      // Filter by supported formats
-      val validFiles = filesToAdd.filter { file ->
-        val extension = file.name.substringAfterLast('.', "").lowercase()
-        extension in config.effectiveSupportedFormats
-      }
-
-      // Ensure we don't exceed max images
-      val currentTotal = state.totalImages
-      val availableSlots = config.effectiveMaxImages - currentTotal
-      val filesToKeep = validFiles.take(availableSlots)
-
-      onStateChange(
-        state.copy(
-          newImages = (state.newImages + filesToKeep).distinct()
-        )
-      )
+  val pickerMode =
+    if (config.effectiveAllowMultiple) {
+      PickerMode.Multiple()
+    } else {
+      PickerMode.Single
     }
-  }
+
+  val pickerType =
+    when (config.type) {
+      ImagePickerType.IMAGE, ImagePickerType.PROFILE_PHOTO -> PickerType.Image
+      ImagePickerType.IMAGE_AND_DOCUMENT -> PickerType.ImageAndVideo // Using this as a proxy for all files
+    }
+
+  val imagePickerLauncher =
+    rememberFilePickerLauncher(
+      type = pickerType,
+      mode = pickerMode,
+      title = config.label
+    ) { files ->
+      if (files != null) {
+        val filesToAdd =
+          when (files) {
+            is List<*> -> files.filterIsInstance<PlatformFile>()
+            is PlatformFile -> listOf(files)
+            else -> emptyList()
+          }
+
+        // Filter by supported formats
+        val validFiles =
+          filesToAdd.filter { file ->
+            val extension = file.name.substringAfterLast('.', "").lowercase()
+            extension in config.effectiveSupportedFormats
+          }
+
+        // Ensure we don't exceed max images
+        val currentTotal = state.totalImages
+        val availableSlots = config.effectiveMaxImages - currentTotal
+        val filesToKeep = validFiles.take(availableSlots)
+
+        onStateChange(
+          state.copy(
+            newImages = (state.newImages + filesToKeep).distinct()
+          )
+        )
+      }
+    }
 
   Column(
     modifier = modifier,
@@ -190,13 +196,14 @@ private fun ProfilePhotoPickerContent(
   ) {
     // Profile photo with overlay
     Box(
-      modifier = Modifier
-        .size(150.dp)
-        .clickable {
-          if (state.totalImages == 0) {
-            onPickerLaunch()
-          }
-        },
+      modifier =
+        Modifier
+          .size(150.dp)
+          .clickable {
+            if (state.totalImages == 0) {
+              onPickerLaunch()
+            }
+          },
       contentAlignment = Alignment.Center
     ) {
       when {
@@ -205,9 +212,10 @@ private fun ProfilePhotoPickerContent(
           AsyncImage(
             model = state.existingImageUrls.first(),
             contentDescription = "Profile Photo",
-            modifier = Modifier
-              .size(150.dp)
-              .clip(RoundedCornerShape(12.dp)),
+            modifier =
+              Modifier
+                .size(150.dp)
+                .clip(RoundedCornerShape(12.dp)),
             contentScale = ContentScale.Crop
           )
         }
@@ -225,9 +233,10 @@ private fun ProfilePhotoPickerContent(
             AsyncImage(
               model = it,
               contentDescription = "Profile Photo",
-              modifier = Modifier
-                .size(150.dp)
-                .clip(RoundedCornerShape(12.dp)),
+              modifier =
+                Modifier
+                  .size(150.dp)
+                  .clip(RoundedCornerShape(12.dp)),
               contentScale = ContentScale.Crop
             )
           }
@@ -237,26 +246,29 @@ private fun ProfilePhotoPickerContent(
           AsyncImage(
             model = null,
             contentDescription = "Profile Photo Placeholder",
-            modifier = Modifier
-              .size(150.dp)
-              .clip(RoundedCornerShape(12.dp)),
+            modifier =
+              Modifier
+                .size(150.dp)
+                .clip(RoundedCornerShape(12.dp)),
             contentScale = ContentScale.Crop,
-            placeholder = BrushPainter(
-              Brush.linearGradient(
-                listOf(
-                  Color(0xFFFFFFFF),
-                  Color(0xFFDDDDDD)
+            placeholder =
+              BrushPainter(
+                Brush.linearGradient(
+                  listOf(
+                    Color(0xFFFFFFFF),
+                    Color(0xFFDDDDDD)
+                  )
                 )
               )
-            )
           )
 
           // Overlay for adding photo
           Box(
-            modifier = Modifier
-              .size(150.dp)
-              .clip(RoundedCornerShape(12.dp))
-              .background(Color.Black.copy(alpha = 0.3f)),
+            modifier =
+              Modifier
+                .size(150.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(Color.Black.copy(alpha = 0.3f)),
             contentAlignment = Alignment.Center
           ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -279,21 +291,22 @@ private fun ProfilePhotoPickerContent(
       // Remove button for profile photo
       if (state.totalImages > 0) {
         Surface(
-          modifier = Modifier
-            .align(Alignment.TopEnd)
-            .padding(4.dp)
-            .size(32.dp)
-            .clickable {
-              if (state.newImages.isNotEmpty()) {
-                onStateChange(state.copy(newImages = emptyList()))
-              } else if (state.existingImageUrls.isNotEmpty()) {
-                onStateChange(
-                  state.copy(
-                    deletedImageUrls = state.deletedImageUrls + state.existingImageUrls.first()
+          modifier =
+            Modifier
+              .align(Alignment.TopEnd)
+              .padding(4.dp)
+              .size(32.dp)
+              .clickable {
+                if (state.newImages.isNotEmpty()) {
+                  onStateChange(state.copy(newImages = emptyList()))
+                } else if (state.existingImageUrls.isNotEmpty()) {
+                  onStateChange(
+                    state.copy(
+                      deletedImageUrls = state.deletedImageUrls + state.existingImageUrls.first()
+                    )
                   )
-                )
-              }
-            },
+                }
+              },
           shape = CircleShape,
           color = MaterialTheme.colorScheme.error
         ) {
@@ -405,17 +418,20 @@ private fun RegularPickerContent(
     if (state.totalImages == 0) {
       // Empty state
       Card(
-        modifier = Modifier
-          .fillMaxWidth()
-          .height(120.dp)
-          .clickable { onPickerLaunch() },
-        colors = CardDefaults.cardColors(
-          containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        border = BorderStroke(
-          width = 1.dp,
-          color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-        )
+        modifier =
+          Modifier
+            .fillMaxWidth()
+            .height(120.dp)
+            .clickable { onPickerLaunch() },
+        colors =
+          CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+          ),
+        border =
+          BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+          )
       ) {
         Column(
           modifier = Modifier.fillMaxSize(),
@@ -430,11 +446,12 @@ private fun RegularPickerContent(
           )
           Spacer(modifier = Modifier.height(8.dp))
           Text(
-            text = if (config.isMandatory) {
-              "${if (config.type == ImagePickerType.IMAGE_AND_DOCUMENT) "प्रलेख" else "चित्र"} चुनना अपेक्षित है"
-            } else {
-              "${if (config.type == ImagePickerType.IMAGE_AND_DOCUMENT) "प्रलेख" else "चित्र"} चुनने के लिए यहाँ क्लिक करें"
-            },
+            text =
+              if (config.isMandatory) {
+                "${if (config.type == ImagePickerType.IMAGE_AND_DOCUMENT) "प्रलेख" else "चित्र"} चुनना अपेक्षित है"
+              } else {
+                "${if (config.type == ImagePickerType.IMAGE_AND_DOCUMENT) "प्रलेख" else "चित्र"} चुनने के लिए यहाँ क्लिक करें"
+              },
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
           )
@@ -460,8 +477,9 @@ private fun RegularPickerContent(
               )
             },
             showDeletedOverlay = false,
-            isDocument = config.type == ImagePickerType.IMAGE_AND_DOCUMENT &&
-              url.substringAfterLast('.').lowercase() in listOf("pdf", "doc", "docx")
+            isDocument =
+              config.type == ImagePickerType.IMAGE_AND_DOCUMENT &&
+                url.substringAfterLast('.').lowercase() in listOf("pdf", "doc", "docx")
           )
         }
 
@@ -478,8 +496,9 @@ private fun RegularPickerContent(
               )
             },
             showDeletedOverlay = false,
-            isDocument = config.type == ImagePickerType.IMAGE_AND_DOCUMENT &&
-              file.name.substringAfterLast('.').lowercase() in listOf("pdf", "doc", "docx")
+            isDocument =
+              config.type == ImagePickerType.IMAGE_AND_DOCUMENT &&
+                file.name.substringAfterLast('.').lowercase() in listOf("pdf", "doc", "docx")
           )
         }
 
@@ -544,9 +563,10 @@ private fun ImageThumbnail(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
               )
               Text(
-                text = file?.name?.substringAfterLast('.')?.uppercase()
-                  ?: imageUrl?.substringAfterLast('.')?.uppercase()
-                  ?: "DOC",
+                text =
+                  file?.name?.substringAfterLast('.')?.uppercase()
+                    ?: imageUrl?.substringAfterLast('.')?.uppercase()
+                    ?: "DOC",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
               )
@@ -604,11 +624,12 @@ private fun ImageThumbnail(
 
     // Single remove button - no duplicate from PhotoItem
     Surface(
-      modifier = Modifier
-        .align(Alignment.TopEnd)
-        .padding(4.dp)
-        .size(24.dp)
-        .clickable { onRemove() },
+      modifier =
+        Modifier
+          .align(Alignment.TopEnd)
+          .padding(4.dp)
+          .size(24.dp)
+          .clickable { onRemove() },
       shape = CircleShape,
       color = MaterialTheme.colorScheme.error.copy(alpha = 0.9f)
     ) {
@@ -636,15 +657,17 @@ private fun AddImageButton(
   onClick: () -> Unit
 ) {
   Surface(
-    modifier = Modifier
-      .size(size.dp)
-      .clickable { onClick() },
+    modifier =
+      Modifier
+        .size(size.dp)
+        .clickable { onClick() },
     shape = RoundedCornerShape(8.dp),
     color = MaterialTheme.colorScheme.surfaceVariant,
-    border = BorderStroke(
-      width = 2.dp,
-      color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-    )
+    border =
+      BorderStroke(
+        width = 2.dp,
+        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+      )
   ) {
     Column(
       modifier = Modifier.fillMaxSize(),

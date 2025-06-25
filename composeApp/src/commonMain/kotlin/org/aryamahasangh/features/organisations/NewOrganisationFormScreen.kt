@@ -81,37 +81,42 @@ fun NewOrganisationFormScreen(
   }
 
   fun validateForm(): Boolean {
-    val nameError = when {
-      formData.name.isBlank() -> "संस्था का नाम आवश्यक है"
-      formData.name.length > 100 -> "संस्था का नाम 100 अक्षरों से अधिक नहीं हो सकता"
-      else -> null
-    }
+    val nameError =
+      when {
+        formData.name.isBlank() -> "संस्था का नाम आवश्यक है"
+        formData.name.length > 100 -> "संस्था का नाम 100 अक्षरों से अधिक नहीं हो सकता"
+        else -> null
+      }
 
-    val descriptionError = when {
-      formData.description.isBlank() -> "विवरण आवश्यक है"
-      formData.description.length > 1500 -> "विवरण 1500 अक्षरों से अधिक नहीं हो सकता"
-      else -> null
-    }
+    val descriptionError =
+      when {
+        formData.description.isBlank() -> "विवरण आवश्यक है"
+        formData.description.length > 1500 -> "विवरण 1500 अक्षरों से अधिक नहीं हो सकता"
+        else -> null
+      }
 
-    val logoConfig = ImagePickerConfig(
-      type = ImagePickerType.PROFILE_PHOTO,
-      isMandatory = true,
-      allowMultiple = false
-    )
+    val logoConfig =
+      ImagePickerConfig(
+        type = ImagePickerType.PROFILE_PHOTO,
+        isMandatory = true,
+        allowMultiple = false
+      )
     val logoError = validateImagePickerState(formData.logo, logoConfig)
 
-    val membersConfig = MembersConfig(
-      isMandatory = true,
-      isPostMandatory = true
-    )
+    val membersConfig =
+      MembersConfig(
+        isMandatory = true,
+        isPostMandatory = true
+      )
     val membersError = validateMembers(formData.members, membersConfig)
 
-    errors = OrganisationFormErrors(
-      nameError = nameError,
-      descriptionError = descriptionError,
-      logoError = logoError,
-      membersError = membersError
-    )
+    errors =
+      OrganisationFormErrors(
+        nameError = nameError,
+        descriptionError = descriptionError,
+        logoError = logoError,
+        membersError = membersError
+      )
 
     return nameError == null && descriptionError == null && logoError == null && membersError == null
   }
@@ -133,22 +138,25 @@ fun NewOrganisationFormScreen(
     scope.launch {
       try {
         // Upload logo first if there's a new image
-        val logoUrl = if (formData.logo.newImages.isNotEmpty()) {
-          val file = formData.logo.newImages.first()
-          val uploadResponse = org.aryamahasangh.network.bucket.upload(
-            path = "org_logo_${Clock.System.now().epochSeconds}.jpg",
-            data = file.readBytes()
-          )
-          org.aryamahasangh.network.bucket.publicUrl(uploadResponse.path)
-        } else {
-          // Use existing URL if available
-          formData.logo.existingImageUrls.firstOrNull() ?: ""
-        }
+        val logoUrl =
+          if (formData.logo.newImages.isNotEmpty()) {
+            val file = formData.logo.newImages.first()
+            val uploadResponse =
+              org.aryamahasangh.network.bucket.upload(
+                path = "org_logo_${Clock.System.now().epochSeconds}.jpg",
+                data = file.readBytes()
+              )
+            org.aryamahasangh.network.bucket.publicUrl(uploadResponse.path)
+          } else {
+            // Use existing URL if available
+            formData.logo.existingImageUrls.firstOrNull() ?: ""
+          }
 
         // Prepare members list with proper priority assignment
-        val membersList = formData.members.members.map { (member, pair) ->
-          Triple(member, pair.first, pair.second)
-        }
+        val membersList =
+          formData.members.members.map { (member, pair) ->
+            Triple(member, pair.first, pair.second)
+          }
 
         // Call ViewModel to create organisation
         viewModel.createOrganisation(
@@ -180,10 +188,11 @@ fun NewOrganisationFormScreen(
   }
 
   Column(
-    modifier = Modifier
-      .fillMaxSize()
-      .padding(16.dp)
-      .verticalScroll(rememberScrollState())
+    modifier =
+      Modifier
+        .fillMaxSize()
+        .padding(16.dp)
+        .verticalScroll(rememberScrollState())
   ) {
     // Header
     Row(
@@ -220,12 +229,13 @@ fun NewOrganisationFormScreen(
     ImagePickerComponent(
       state = formData.logo,
       onStateChange = { formData = formData.copy(logo = it) },
-      config = ImagePickerConfig(
-        label = "चित्र चुनिए",
-        type = ImagePickerType.PROFILE_PHOTO,
-        isMandatory = true,
-        allowMultiple = false
-      ),
+      config =
+        ImagePickerConfig(
+          label = "चित्र चुनिए",
+          type = ImagePickerType.PROFILE_PHOTO,
+          isMandatory = true,
+          allowMultiple = false
+        ),
       error = errors.logoError,
       modifier = Modifier.fillMaxWidth()
     )
@@ -281,17 +291,17 @@ fun NewOrganisationFormScreen(
     Column(
       modifier = Modifier.fillMaxWidth()
     ) {
-
       MembersComponent(
         modifier = Modifier.fillMaxWidth(),
         state = formData.members,
         onStateChange = { formData = formData.copy(members = it) },
-        config = MembersConfig(
-          isMandatory = true,
-          isPostMandatory = true,
-          enableReordering = true,
-          reorderingHint = "पदाधिकारियों का क्रम सुनिश्चित करें"
-        ),
+        config =
+          MembersConfig(
+            isMandatory = true,
+            isPostMandatory = true,
+            enableReordering = true,
+            reorderingHint = "पदाधिकारियों का क्रम सुनिश्चित करें"
+          ),
         error = errors.membersError,
         searchMembers = searchMembers,
         allMembers = allMembers,
@@ -320,18 +330,20 @@ fun NewOrganisationFormScreen(
       )
 
       // Calculate canSubmit before UI
-      val canSubmit = formData.name.isNotBlank() &&
-        formData.description.isNotBlank() &&
-        formData.logo.newImages.isNotEmpty() &&
-        formData.members.hasMembers
+      val canSubmit =
+        formData.name.isNotBlank() &&
+          formData.description.isNotBlank() &&
+          formData.logo.newImages.isNotEmpty() &&
+          formData.members.hasMembers
 
       // Form completion status - show only when form is incomplete
       if (!canSubmit && !vmCreateState.isCreating) {
         Card(
           modifier = Modifier.padding(bottom = 16.dp).width(500.dp),
-          colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
-          )
+          colors =
+            CardDefaults.cardColors(
+              containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+            )
         ) {
           Column(
             modifier = Modifier.padding(16.dp)
@@ -364,7 +376,7 @@ fun NewOrganisationFormScreen(
       // Submit Button
       Button(
         onClick = { submitForm() },
-        enabled = !vmCreateState.isCreating && canSubmit,
+        enabled = !vmCreateState.isCreating && canSubmit
       ) {
         if (vmCreateState.isCreating) {
           CircularProgressIndicator(

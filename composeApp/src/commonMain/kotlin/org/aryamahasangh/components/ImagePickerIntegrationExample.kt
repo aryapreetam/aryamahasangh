@@ -33,28 +33,33 @@ fun ActivityFormImagePickerIntegration() {
   val snackbarHostState = remember { SnackbarHostState() }
 
   // Configuration for activity images
-  val imageConfig = ImagePickerConfig(
-    label = "संबधित चित्र एवं पत्रिकाएं", // Matches the existing label
-    type = ImagePickerType.IMAGE,
-    allowMultiple = true,
-    maxImages = 10,
-    isMandatory = false, // Images are optional for activities
-  )
+  val imageConfig =
+    ImagePickerConfig(
+      label = "संबधित चित्र एवं पत्रिकाएं", // Matches the existing label
+      type = ImagePickerType.IMAGE,
+      allowMultiple = true,
+      maxImages = 10,
+      isMandatory = false // Images are optional for activities
+    )
 
   // Validation
-  val imageError = if (showErrors) {
-    validateImagePickerState(imageState, imageConfig)
-  } else null
+  val imageError =
+    if (showErrors) {
+      validateImagePickerState(imageState, imageConfig)
+    } else {
+      null
+    }
 
   Scaffold(
     snackbarHost = { SnackbarHost(snackbarHostState) }
   ) { paddingValues ->
     Column(
-      modifier = Modifier
-        .fillMaxSize()
-        .padding(paddingValues)
-        .padding(16.dp)
-        .verticalScroll(rememberScrollState()),
+      modifier =
+        Modifier
+          .fillMaxSize()
+          .padding(paddingValues)
+          .padding(16.dp)
+          .verticalScroll(rememberScrollState()),
       verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
       Text(
@@ -164,11 +169,12 @@ fun DifferentImagePickerConfigurations() {
     ImagePickerComponent(
       state = studentPhotoState,
       onStateChange = { studentPhotoState = it },
-      config = ImagePickerConfig(
-        label = "छात्र की फोटो",
-        type = ImagePickerType.PROFILE_PHOTO,
-        isMandatory = true
-      )
+      config =
+        ImagePickerConfig(
+          label = "छात्र की फोटो",
+          type = ImagePickerType.PROFILE_PHOTO,
+          isMandatory = true
+        )
     )
 
     HorizontalDivider()
@@ -179,15 +185,16 @@ fun DifferentImagePickerConfigurations() {
     ImagePickerComponent(
       state = documentsState,
       onStateChange = { documentsState = it },
-      config = ImagePickerConfig(
-        label = "दस्तावेज़ संलग्न करें",
-        type = ImagePickerType.IMAGE_AND_DOCUMENT,
-        allowMultiple = true,
-        maxImages = 5,
-        isMandatory = true,
-        minImages = 2,
-        supportedFormats = listOf("jpg", "jpeg", "png", "pdf")
-      )
+      config =
+        ImagePickerConfig(
+          label = "दस्तावेज़ संलग्न करें",
+          type = ImagePickerType.IMAGE_AND_DOCUMENT,
+          allowMultiple = true,
+          maxImages = 5,
+          isMandatory = true,
+          minImages = 2,
+          supportedFormats = listOf("jpg", "jpeg", "png", "pdf")
+        )
     )
 
     HorizontalDivider()
@@ -198,14 +205,15 @@ fun DifferentImagePickerConfigurations() {
     ImagePickerComponent(
       state = galleryState,
       onStateChange = { galleryState = it },
-      config = ImagePickerConfig(
-        label = "छायाचित्र",
-        type = ImagePickerType.IMAGE,
-        allowMultiple = true,
-        maxImages = 20,
-        isMandatory = false,
-        previewSize = 150
-      )
+      config =
+        ImagePickerConfig(
+          label = "छायाचित्र",
+          type = ImagePickerType.IMAGE,
+          allowMultiple = true,
+          maxImages = 20,
+          isMandatory = false,
+          previewSize = 150
+        )
     )
 
     HorizontalDivider()
@@ -216,14 +224,15 @@ fun DifferentImagePickerConfigurations() {
     ImagePickerComponent(
       state = certificatesState,
       onStateChange = { certificatesState = it },
-      config = ImagePickerConfig(
-        label = "चित्र/पत्रिकाएं जोड़ें",
-        type = ImagePickerType.IMAGE_AND_DOCUMENT,
-        allowMultiple = true,
-        maxImages = 8,
-        isMandatory = false,
-        previewSize = 100
-      )
+      config =
+        ImagePickerConfig(
+          label = "चित्र/पत्रिकाएं जोड़ें",
+          type = ImagePickerType.IMAGE_AND_DOCUMENT,
+          allowMultiple = true,
+          maxImages = 8,
+          isMandatory = false,
+          previewSize = 100
+        )
     )
   }
 }

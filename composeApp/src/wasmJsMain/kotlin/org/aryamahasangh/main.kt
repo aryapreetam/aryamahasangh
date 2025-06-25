@@ -36,7 +36,6 @@ fun main() {
     quoteContainer?.remove()
 
     CompositionLocalProvider(LocalLayerContainer provides document.getElementById("components")!!) {
-
       val fontDevanagari by preloadFont(Res.font.noto_sans_devanagari)
       if (fontDevanagari != null) {
         println("font devanagari is ready")

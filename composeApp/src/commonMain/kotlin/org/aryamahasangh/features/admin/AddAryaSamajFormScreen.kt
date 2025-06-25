@@ -7,7 +7,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -15,7 +14,6 @@ import androidx.compose.ui.unit.dp
 import org.aryamahasangh.LocalIsAuthenticated
 import org.aryamahasangh.components.*
 import org.aryamahasangh.features.activities.Member
-import org.aryamahasangh.features.admin.data.AryaSamajFormData
 import org.aryamahasangh.features.admin.data.AryaSamajViewModel
 import org.aryamahasangh.navigation.LocalSnackbarHostState
 
@@ -65,10 +63,11 @@ fun AddAryaSamajFormScreen(
   val currentFormData = formUiState.formData
 
   Column(
-    modifier = Modifier
-      .fillMaxSize()
-      .padding(16.dp)
-      .verticalScroll(rememberScrollState())
+    modifier =
+      Modifier
+        .fillMaxSize()
+        .padding(16.dp)
+        .verticalScroll(rememberScrollState())
   ) {
     // Header
     Row(
@@ -132,12 +131,13 @@ fun AddAryaSamajFormScreen(
       onStateChange = { newImagePickerState ->
         viewModel.updateFormData(currentFormData.copy(imagePickerState = newImagePickerState))
       },
-      config = ImagePickerConfig(
-        label = "आर्य समाज के चित्र",
-        allowMultiple = true,
-        maxImages = 10,
-        isMandatory = false
-      )
+      config =
+        ImagePickerConfig(
+          label = "आर्य समाज के चित्र",
+          allowMultiple = true,
+          maxImages = 10,
+          isMandatory = false
+        )
     )
 
     Spacer(modifier = Modifier.height(24.dp))
@@ -155,20 +155,22 @@ fun AddAryaSamajFormScreen(
       onAddressChange = { newAddressData ->
         viewModel.updateFormData(currentFormData.copy(addressData = newAddressData))
       },
-      fieldsConfig = AddressFieldsConfig(
-        showLocation = true,
-        showAddress = true,
-        showState = true,
-        showDistrict = true,
-        showVidhansabha = true,
-        showPincode = true,
-      ),
-      errors = AddressErrors(
-        locationError = formUiState.validationErrors["location"],
-        addressError = formUiState.validationErrors["address"],
-        stateError = formUiState.validationErrors["state"],
-        districtError = formUiState.validationErrors["district"]
-      )
+      fieldsConfig =
+        AddressFieldsConfig(
+          showLocation = true,
+          showAddress = true,
+          showState = true,
+          showDistrict = true,
+          showVidhansabha = true,
+          showPincode = true
+        ),
+      errors =
+        AddressErrors(
+          locationError = formUiState.validationErrors["location"],
+          addressError = formUiState.validationErrors["address"],
+          stateError = formUiState.validationErrors["state"],
+          districtError = formUiState.validationErrors["district"]
+        )
     )
 
     Spacer(modifier = Modifier.height(24.dp))
@@ -179,16 +181,17 @@ fun AddAryaSamajFormScreen(
       onStateChange = { newMembersState ->
         viewModel.updateFormData(currentFormData.copy(membersState = newMembersState))
       },
-      config = MembersConfig(
-        label = "कार्यकारिणी/पदाधिकारी",
-        addButtonText = "पदाधिकारी जोड़ें",
-        postLabel = "पद",
-        postPlaceholder = "संयोजक, कोषाध्यक्ष इत्यादि",
-        isPostMandatory = false,
-        isMandatory = false,
-        editMode = MembersEditMode.GROUPED,
-        enableReordering = true
-      ),
+      config =
+        MembersConfig(
+          label = "कार्यकारिणी/पदाधिकारी",
+          addButtonText = "पदाधिकारी जोड़ें",
+          postLabel = "पद",
+          postPlaceholder = "संयोजक, कोषाध्यक्ष इत्यादि",
+          isPostMandatory = false,
+          isMandatory = false,
+          editMode = MembersEditMode.GROUPED,
+          enableReordering = true
+        ),
       searchMembers = searchMembers,
       allMembers = allMembers,
       onTriggerSearch = onTriggerSearch

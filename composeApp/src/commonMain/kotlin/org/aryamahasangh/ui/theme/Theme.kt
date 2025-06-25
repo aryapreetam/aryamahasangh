@@ -271,7 +271,7 @@ fun AppTheme(
   // TODO only focus on light theme right now
   val colorScheme =
     when {
-      //darkTheme -> darkScheme
+      // darkTheme -> darkScheme
       else -> lightScheme
     }
 
@@ -280,7 +280,7 @@ fun AppTheme(
   ) {
     val isDark by isDarkState
     MaterialExpressiveTheme(
-      colorScheme = colorScheme, //if (isDark) darkScheme else lightScheme,
+      colorScheme = colorScheme, // if (isDark) darkScheme else lightScheme,
       motionScheme = MotionScheme.expressive(),
       typography = AppTypography(),
       content = content

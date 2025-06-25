@@ -6,7 +6,7 @@ data class MemberShort(
   val id: String,
   val name: String,
   val profileImage: String,
-  val place: String = "",
+  val place: String = ""
 )
 
 data class MemberDetail(

@@ -15,17 +15,17 @@ import org.koin.dsl.module
  * This ensures tests don't fail due to missing dependencies.
  */
 @Composable
-fun TestWrapper(
-  content: @Composable () -> Unit
-) {
+fun TestWrapper(content: @Composable () -> Unit) {
   // Create instances of all required dependencies
   val snackbarHostState = SnackbarHostState()
 
   // Wrap in KoinApplication for test isolation
   KoinApplication(application = {
-    modules(module {
-      // Add any test-specific dependencies here
-    })
+    modules(
+      module {
+        // Add any test-specific dependencies here
+      }
+    )
   }) {
     // Provide all CompositionLocals that might be needed
     CompositionLocalProvider(
@@ -40,12 +40,8 @@ fun TestWrapper(
  * Simple test runner that uses runComposeUiTest
  */
 @OptIn(ExperimentalTestApi::class)
-inline fun runUiTest(
-  crossinline testBody: ComposeUiTest.() -> Unit
-) {
+inline fun runUiTest(crossinline testBody: ComposeUiTest.() -> Unit) {
   runComposeUiTest {
     testBody()
   }
 }
-
-

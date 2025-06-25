@@ -24,7 +24,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.event_upcoming
-import kotlinx.datetime.offsetIn
 import org.aryamahasangh.LocalIsAuthenticated
 import org.aryamahasangh.features.activities.ActivityStatus
 import org.aryamahasangh.features.activities.getStatus
@@ -36,7 +35,6 @@ import org.aryamahasangh.type.ActivityType
 import org.aryamahasangh.utils.WithTooltip
 import org.aryamahasangh.utils.formatShort
 import org.jetbrains.compose.resources.painterResource
-
 
 val activityTypeData = ActivityType.entries.associateWith { it.toDisplayName() }
 
@@ -106,7 +104,7 @@ fun ActivityListItem(
                 expanded = showMenu,
                 onDismissRequest = { showMenu = false }
               ) {
-                if(activityStatus != ActivityStatus.PAST) {
+                if (activityStatus != ActivityStatus.PAST) {
                   DropdownMenuItem(
                     text = { Text("सम्पादित करें") },
                     onClick = {
@@ -156,7 +154,11 @@ fun ActivityListItem(
           Text(
             text =
               buildAnnotatedString {
-                val (dateRange, timeRange) = convertDates(activity.startDatetime.toLocalDateTime(), activity.endDatetime.toLocalDateTime())
+                val (dateRange, timeRange) =
+                  convertDates(
+                    activity.startDatetime.toLocalDateTime(),
+                    activity.endDatetime.toLocalDateTime()
+                  )
                 withStyle(
                   style =
                     SpanStyle(
@@ -189,10 +191,10 @@ fun ActivityListItem(
             Spacer(modifier = Modifier.width(4.dp))
             Text(
               text = "${activity.district}, ${activity.state}",
-              style = MaterialTheme.typography.bodySmall,
+              style = MaterialTheme.typography.bodySmall
             )
           }
-          WithTooltip(activityStatus.toDisplayName()){
+          WithTooltip(activityStatus.toDisplayName()) {
             // Activity status indicator
             StatusChip(status = activityStatus)
           }
@@ -250,9 +252,11 @@ fun PastIcon(modifier: Modifier = Modifier) {
   )
 }
 
-
 @Composable
-fun OngoingIcon(modifier: Modifier = Modifier, color: Color = MaterialTheme.colorScheme.primary) {
+fun OngoingIcon(
+  modifier: Modifier = Modifier,
+  color: Color = MaterialTheme.colorScheme.primary
+) {
   val rippleRadius = remember { Animatable(0f) }
 
   LaunchedEffect(Unit) {
@@ -298,10 +302,11 @@ fun FutureIcon(modifier: Modifier = Modifier) {
   LaunchedEffect(Unit) {
     bounceAnim.animateTo(
       targetValue = 1f,
-      animationSpec = spring(
-        dampingRatio = Spring.DampingRatioMediumBouncy,
-        stiffness = Spring.StiffnessLow
-      )
+      animationSpec =
+        spring(
+          dampingRatio = Spring.DampingRatioMediumBouncy,
+          stiffness = Spring.StiffnessLow
+        )
     )
   }
 

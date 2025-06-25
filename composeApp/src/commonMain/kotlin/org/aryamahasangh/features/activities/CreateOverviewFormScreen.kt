@@ -63,11 +63,12 @@ fun CreateOverviewFormScreen(
   fun handleBackPress() {
     if (hasUnsavedChanges) {
       scope.launch {
-        val result = snackbarHostState.showSnackbar(
-          message = "आपके परिवर्तन असंचयित है। क्या आप वापस जाना चाहते हैं?",
-          actionLabel = "हां",
-          withDismissAction = true
-        )
+        val result =
+          snackbarHostState.showSnackbar(
+            message = "आपके परिवर्तन असंचयित है। क्या आप वापस जाना चाहते हैं?",
+            actionLabel = "हां",
+            withDismissAction = true
+          )
         if (result == SnackbarResult.ActionPerformed) {
           onNavigateBack()
         }
@@ -90,10 +91,11 @@ fun CreateOverviewFormScreen(
     }
 
     // Validate images
-    val imagePickerConfig = ImagePickerConfig(
-      isMandatory = true,
-      minImages = 1
-    )
+    val imagePickerConfig =
+      ImagePickerConfig(
+        isMandatory = true,
+        minImages = 1
+      )
     val imageValidationError = validateImagePickerState(imagePickerState, imagePickerConfig)
     imageError = imageValidationError
     if (imageValidationError != null) {
@@ -205,11 +207,12 @@ fun CreateOverviewFormScreen(
     }
   ) { paddingValues ->
     Column(
-      modifier = Modifier
-        .fillMaxSize()
-        .padding(paddingValues)
-        .verticalScroll(rememberScrollState())
-        .padding(16.dp),
+      modifier =
+        Modifier
+          .fillMaxSize()
+          .padding(paddingValues)
+          .verticalScroll(rememberScrollState())
+          .padding(16.dp),
       verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
       // Description field
@@ -225,12 +228,14 @@ fun CreateOverviewFormScreen(
         placeholder = { Text("गतिविधि के बारे में विस्तृत अवलोकन लिखें...") },
         isError = descriptionError != null,
         supportingText = descriptionError?.let { { Text(it) } },
-        keyboardOptions = KeyboardOptions(
-          capitalization = KeyboardCapitalization.Sentences
-        ),
-        modifier = Modifier
-          .fillMaxWidth()
-          .heightIn(min = 150.dp),
+        keyboardOptions =
+          KeyboardOptions(
+            capitalization = KeyboardCapitalization.Sentences
+          ),
+        modifier =
+          Modifier
+            .fillMaxWidth()
+            .heightIn(min = 150.dp),
         minLines = 6,
         maxLines = 10
       )
@@ -250,13 +255,14 @@ fun CreateOverviewFormScreen(
                 imageError = null
               }
             },
-            config = ImagePickerConfig(
-              label = "अवलोकन चित्र",
-              isMandatory = true,
-              minImages = 1,
-              maxImages = 5,
-              allowMultiple = true
-            ),
+            config =
+              ImagePickerConfig(
+                label = "अवलोकन चित्र",
+                isMandatory = true,
+                minImages = 1,
+                maxImages = 5,
+                allowMultiple = true
+              ),
             error = imageError
           )
         }
@@ -278,17 +284,22 @@ fun CreateOverviewFormScreen(
           Spacer(modifier = Modifier.width(8.dp))
         }
         Text(
-          if (isSubmitting) "अद्यतन किया जा रहा है..."
-          else if (existingOverview != null) "अवलोकन अद्यतन करें"
-          else "अवलोकन अद्यतन करें"
+          if (isSubmitting) {
+            "अद्यतन किया जा रहा है..."
+          } else if (existingOverview != null) {
+            "अवलोकन अद्यतन करें"
+          } else {
+            "अवलोकन अद्यतन करें"
+          }
         )
       }
 
       // Help text
       Card(
-        colors = CardDefaults.cardColors(
-          containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        colors =
+          CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+          )
       ) {
         Column(
           modifier = Modifier.padding(16.dp)

@@ -3,7 +3,6 @@ package org.aryamahasangh.features.arya_nirman
 import org.aryamahasangh.util.Result
 import org.aryamahasangh.viewmodel.BaseViewModel
 
-
 // Make `data` nullable to represent an event that can be consumed
 data class RegistrationUiState(
   val isLoading: Boolean = false,
@@ -15,7 +14,6 @@ data class RegistrationUiState(
 class SatraRegistrationViewModel(
   private val aryaNirmanRepository: AryaNirmanRepository
 ) : BaseViewModel<RegistrationUiState>(RegistrationUiState()) {
-
   fun createRegistration(
     activityId: String,
     data: RegistrationData,

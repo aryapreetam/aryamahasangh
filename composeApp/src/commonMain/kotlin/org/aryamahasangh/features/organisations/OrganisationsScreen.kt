@@ -130,8 +130,9 @@ fun OrgsScreen(
     if (isLoggedIn) {
       FloatingActionButton(
         onClick = { onNavigateToCreateOrganisation(uiState.organisations.size + 1) },
-        modifier = Modifier
-          .align(Alignment.BottomEnd).padding(16.dp)
+        modifier =
+          Modifier
+            .align(Alignment.BottomEnd).padding(16.dp)
       ) {
         WithTooltip("नयी संस्था जोड़ें") {
           Icon(

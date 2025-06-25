@@ -54,16 +54,17 @@ class AboutUsViewModel(
           }
           is Result.Error -> {
             // Enhanced error handling with better network detection
-            val appError = when {
-              NetworkUtils.isLikelyNetworkIssue(result.message, result.exception) ->
-                AppError.NetworkError.NoConnection
+            val appError =
+              when {
+                NetworkUtils.isLikelyNetworkIssue(result.message, result.exception) ->
+                  AppError.NetworkError.NoConnection
 
-              result.exception != null ->
-                result.exception.toAppError()
+                result.exception != null ->
+                  result.exception.toAppError()
 
-              else ->
-                AppError.UnknownError(result.message)
-            }
+                else ->
+                  AppError.UnknownError(result.message)
+              }
 
             ErrorHandler.logError(appError, "AboutUsViewModel.loadOrganisationDetails")
 

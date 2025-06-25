@@ -3,7 +3,6 @@ package org.aryamahasangh.utils
 import androidx.compose.ui.platform.UriHandler
 import org.aryamahasangh.isAndroid
 import org.aryamahasangh.isIos
-import org.aryamahasangh.isWeb
 
 /**
  * Opens navigation/directions in maps application
@@ -20,13 +19,14 @@ fun openDirections(
 ) {
   // Create a universal maps URL that works across platforms
   // This format is supported by Google Maps on all platforms
-  val mapsUrl = buildString {
-    append("https://www.google.com/maps/dir/?api=1")
-    append("&destination=$latitude,$longitude")
-    if (placeName.isNotEmpty()) {
-      append("&destination_place_id=$placeName")
-    }
-    append("&travelmode=driving") // Can be: driving, walking, transit, bicycling
+  val mapsUrl =
+    buildString {
+      append("https://www.google.com/maps/dir/?api=1")
+      append("&destination=$latitude,$longitude")
+      if (placeName.isNotEmpty()) {
+        append("&destination_place_id=$placeName")
+      }
+      append("&travelmode=driving") // Can be: driving, walking, transit, bicycling
     }
 
   // Platform-specific handling
@@ -57,5 +57,5 @@ fun openDirections(
       // For web and desktop, use Google Maps web URL
       uriHandler.openUri(mapsUrl)
     }
-    }
+  }
 }

@@ -29,9 +29,8 @@ fun LearningScreen(
   onNavigateToActivityDetails: (String) -> Unit,
   viewModel: LearningViewModel = koinInject()
 ) {
-
   // FIXME
-  if(true){
+  if (true) {
     TBD()
     return
   }

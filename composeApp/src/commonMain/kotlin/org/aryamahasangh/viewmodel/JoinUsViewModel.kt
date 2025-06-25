@@ -50,13 +50,14 @@ class JoinUsViewModel(
           onSuccess = { label ->
             updateState {
               it.copy(
-                labelState = LabelState(
-                  label = label,
-                  isUpdating = false,
-                  error = null,
-                  appError = null,
-                  editMode = false
-                ),
+                labelState =
+                  LabelState(
+                    label = label,
+                    isUpdating = false,
+                    error = null,
+                    appError = null,
+                    editMode = false
+                  ),
                 isLoading = false,
                 error = null,
                 appError = null
@@ -67,12 +68,13 @@ class JoinUsViewModel(
             ErrorHandler.logError(appError, "JoinUsViewModel.loadJoinUsLabel")
             updateState {
               it.copy(
-                labelState = it.labelState.copy(
-                  isUpdating = false,
-                  error = appError.getUserMessage(),
-                  appError = appError,
-                  editMode = false
-                )
+                labelState =
+                  it.labelState.copy(
+                    isUpdating = false,
+                    error = appError.getUserMessage(),
+                    appError = appError,
+                    editMode = false
+                  )
               )
             }
           }
@@ -101,12 +103,13 @@ class JoinUsViewModel(
             ErrorHandler.logError(appError, "JoinUsViewModel.updateJoinUsLabel")
             updateState {
               it.copy(
-                labelState = it.labelState.copy(
-                  isUpdating = false,
-                  error = appError.getUserMessage(),
-                  appError = appError,
-                  editMode = true
-                )
+                labelState =
+                  it.labelState.copy(
+                    isUpdating = false,
+                    error = appError.getUserMessage(),
+                    appError = appError,
+                    editMode = true
+                  )
               )
             }
           }

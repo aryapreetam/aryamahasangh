@@ -26,9 +26,10 @@ fun ErrorContent(
 ) {
   Card(
     modifier = modifier.fillMaxWidth(),
-    colors = CardDefaults.cardColors(
-      containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-    ),
+    colors =
+      CardDefaults.cardColors(
+        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+      ),
     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
   ) {
     Column(
@@ -62,9 +63,10 @@ fun ErrorContent(
 
       if (errorInfo.suggestions.isNotEmpty()) {
         Card(
-          colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-          )
+          colors =
+            CardDefaults.cardColors(
+              containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+            )
         ) {
           Column(
             modifier = Modifier.padding(16.dp),
@@ -131,9 +133,10 @@ fun InlineErrorMessage(
 
   Card(
     modifier = modifier.fillMaxWidth(),
-    colors = CardDefaults.cardColors(
-      containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-    ),
+    colors =
+      CardDefaults.cardColors(
+        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+      ),
     elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
   ) {
     Row(
@@ -194,11 +197,12 @@ fun ErrorSnackbar(
     val errorInfo = getErrorInfo(it)
 
     LaunchedEffect(error) {
-      val result = snackbarHostState.showSnackbar(
-        message = "${errorInfo.title}: ${errorInfo.description}",
-        actionLabel = if (onRetry != null) "Retry" else null,
-        duration = SnackbarDuration.Long
-      )
+      val result =
+        snackbarHostState.showSnackbar(
+          message = "${errorInfo.title}: ${errorInfo.description}",
+          actionLabel = if (onRetry != null) "Retry" else null,
+          duration = SnackbarDuration.Long
+        )
 
       when (result) {
         SnackbarResult.ActionPerformed -> onRetry?.invoke()
@@ -265,108 +269,127 @@ private data class ErrorInfo(
 
 private fun getErrorInfo(error: AppError?): ErrorInfo {
   return when (error) {
-    is AppError.NetworkError.NoConnection -> ErrorInfo(
-      title = "No Internet Connection",
-      description = "It looks like you're not connected to the internet.",
-      suggestions = listOf(
-        "📶 Check if Wi-Fi or mobile data is turned on",
-        "🔄 Try switching between Wi-Fi and mobile data",
-        "📍 Move to an area with better signal",
-        "🔌 Restart your router or reconnect to Wi-Fi"
-      ),
-      icon = Icons.Default.SignalWifiOff
-    )
+    is AppError.NetworkError.NoConnection ->
+      ErrorInfo(
+        title = "No Internet Connection",
+        description = "It looks like you're not connected to the internet.",
+        suggestions =
+          listOf(
+            "📶 Check if Wi-Fi or mobile data is turned on",
+            "🔄 Try switching between Wi-Fi and mobile data",
+            "📍 Move to an area with better signal",
+            "🔌 Restart your router or reconnect to Wi-Fi"
+          ),
+        icon = Icons.Default.SignalWifiOff
+      )
 
-    is AppError.NetworkError.Timeout -> ErrorInfo(
-      title = "Taking Longer Than Expected",
-      description = "The connection is slow or the server is busy.",
-      suggestions = listOf(
-        "⏱️ Wait a moment and try again",
-        "📶 Check your internet speed",
-        "🔄 Switch to a faster network if available",
-        "📱 Close other apps using the internet"
-      ),
-      icon = Icons.Default.CloudOff
-    )
+    is AppError.NetworkError.Timeout ->
+      ErrorInfo(
+        title = "Taking Longer Than Expected",
+        description = "The connection is slow or the server is busy.",
+        suggestions =
+          listOf(
+            "⏱️ Wait a moment and try again",
+            "📶 Check your internet speed",
+            "🔄 Switch to a faster network if available",
+            "📱 Close other apps using the internet"
+          ),
+        icon = Icons.Default.CloudOff
+      )
 
-    is AppError.NetworkError.ServerError -> ErrorInfo(
-      title = "Service Temporarily Unavailable",
-      description = "Our servers are experiencing some issues right now.",
-      suggestions = listOf(
-        "⏰ Please try again in a few minutes",
-        "🔔 We're working to fix this quickly",
-        "📞 Contact support if this continues",
-        "📱 Check our social media for updates"
-      ),
-      icon = Icons.Default.CloudOff
-    )
+    is AppError.NetworkError.ServerError ->
+      ErrorInfo(
+        title = "Service Temporarily Unavailable",
+        description = "Our servers are experiencing some issues right now.",
+        suggestions =
+          listOf(
+            "⏰ Please try again in a few minutes",
+            "🔔 We're working to fix this quickly",
+            "📞 Contact support if this continues",
+            "📱 Check our social media for updates"
+          ),
+        icon = Icons.Default.CloudOff
+      )
 
-    is AppError.NetworkError.HttpError -> ErrorInfo(
-      title = when (error.code) {
-        404 -> "Content Not Found"
-        500, 502, 503 -> "Service Temporarily Down"
-        else -> "Service Error"
-      },
-      description = when (error.code) {
-        404 -> "The information you're looking for is not available."
-        500, 502, 503 -> "Our servers are having trouble right now."
-        else -> "Something went wrong on our end."
-      },
-      suggestions = when (error.code) {
-        404 -> listOf("🔍 Try searching for something else", "🏠 Go back to the main page")
-        500, 502, 503 -> listOf(
-          "⏰ Please try again in a few minutes",
-          "🔄 Refresh the page",
-          "📞 Contact support if this persists"
-        )
-        else -> listOf("🔄 Please try again", "📞 Contact support if needed")
-      },
-      icon = Icons.Default.Info
-    )
+    is AppError.NetworkError.HttpError ->
+      ErrorInfo(
+        title =
+          when (error.code) {
+            404 -> "Content Not Found"
+            500, 502, 503 -> "Service Temporarily Down"
+            else -> "Service Error"
+          },
+        description =
+          when (error.code) {
+            404 -> "The information you're looking for is not available."
+            500, 502, 503 -> "Our servers are having trouble right now."
+            else -> "Something went wrong on our end."
+          },
+        suggestions =
+          when (error.code) {
+            404 -> listOf("🔍 Try searching for something else", "🏠 Go back to the main page")
+            500, 502, 503 ->
+              listOf(
+                "⏰ Please try again in a few minutes",
+                "🔄 Refresh the page",
+                "📞 Contact support if this persists"
+              )
+            else -> listOf("🔄 Please try again", "📞 Contact support if needed")
+          },
+        icon = Icons.Default.Info
+      )
 
-    is AppError.ValidationError -> ErrorInfo(
-      title = "Input Issue",
-      description = error.message,
-      suggestions = listOf("✏️ Please check your input and try again"),
-      icon = Icons.Default.Info
-    )
+    is AppError.ValidationError ->
+      ErrorInfo(
+        title = "Input Issue",
+        description = error.message,
+        suggestions = listOf("✏️ Please check your input and try again"),
+        icon = Icons.Default.Info
+      )
 
-    is AppError.AuthError -> ErrorInfo(
-      title = "Authentication Required",
-      description = error.message,
-      suggestions = when (error) {
-        is AppError.AuthError.NotAuthenticated -> listOf("🔑 Please log in to continue")
-        is AppError.AuthError.SessionExpired -> listOf("🔄 Please log in again")
-        else -> listOf("🔑 Please check your login details")
-      },
-      icon = Icons.Default.Info
-    )
+    is AppError.AuthError ->
+      ErrorInfo(
+        title = "Authentication Required",
+        description = error.message,
+        suggestions =
+          when (error) {
+            is AppError.AuthError.NotAuthenticated -> listOf("🔑 Please log in to continue")
+            is AppError.AuthError.SessionExpired -> listOf("🔄 Please log in again")
+            else -> listOf("🔑 Please check your login details")
+          },
+        icon = Icons.Default.Info
+      )
 
-    is AppError.DataError -> ErrorInfo(
-      title = "Data Issue",
-      description = error.message,
-      suggestions = listOf(
-        "🔄 Please try again",
-        "📞 Contact support if this continues"
-      ),
-      icon = Icons.Default.Warning
-    )
+    is AppError.DataError ->
+      ErrorInfo(
+        title = "Data Issue",
+        description = error.message,
+        suggestions =
+          listOf(
+            "🔄 Please try again",
+            "📞 Contact support if this continues"
+          ),
+        icon = Icons.Default.Warning
+      )
 
-    is AppError.BusinessError -> ErrorInfo(
-      title = "Action Not Allowed",
-      description = error.message,
-      suggestions = listOf("ℹ️ Please check your permissions"),
-      icon = Icons.Default.Info
-    )
+    is AppError.BusinessError ->
+      ErrorInfo(
+        title = "Action Not Allowed",
+        description = error.message,
+        suggestions = listOf("ℹ️ Please check your permissions"),
+        icon = Icons.Default.Info
+      )
 
-    else -> ErrorInfo(
-      title = "Something Went Wrong",
-      description = error?.message ?: "An unexpected issue occurred.",
-      suggestions = listOf(
-        "🔄 Please try again",
-        "📞 Contact support if this continues"
-      ),
-      icon = Icons.Default.Info
-    )
+    else ->
+      ErrorInfo(
+        title = "Something Went Wrong",
+        description = error?.message ?: "An unexpected issue occurred.",
+        suggestions =
+          listOf(
+            "🔄 Please try again",
+            "📞 Contact support if this continues"
+          ),
+        icon = Icons.Default.Info
+      )
   }
 }

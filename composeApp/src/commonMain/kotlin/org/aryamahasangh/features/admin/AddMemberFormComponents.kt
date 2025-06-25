@@ -18,7 +18,6 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -56,11 +55,12 @@ fun ProfileImageSection(
       } else {
         // Show placeholder with upload option
         Box(
-          modifier = Modifier
-            .size(100.dp)
-            .clip(CircleShape)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
-            .clickable { onImageSelected() },
+          modifier =
+            Modifier
+              .size(100.dp)
+              .clip(CircleShape)
+              .background(MaterialTheme.colorScheme.surfaceVariant)
+              .clickable { onImageSelected() },
           contentAlignment = Alignment.Center
         ) {
           Column(
@@ -122,15 +122,17 @@ fun PersonalDetailsSection(
       value = name,
       onValueChange = onNameChange,
       label = { Text("नाम *") },
-      modifier = Modifier
-        .widthIn(max = 500.dp)
-        .focusRequester(nameFocusRequester),
+      modifier =
+        Modifier
+          .widthIn(max = 500.dp)
+          .focusRequester(nameFocusRequester),
       isError = nameError != null,
       supportingText = { nameError?.let { Text(it) } },
       keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-      keyboardActions = KeyboardActions(
-        onNext = { phoneFocusRequester.requestFocus() }
-      )
+      keyboardActions =
+        KeyboardActions(
+          onNext = { phoneFocusRequester.requestFocus() }
+        )
     )
 
     // Phone number field
@@ -138,18 +140,21 @@ fun PersonalDetailsSection(
       value = phoneNumber,
       onValueChange = { if (it.all { char -> char.isDigit() } && it.length <= 15) onPhoneNumberChange(it) },
       label = { Text("दूरभाष *") },
-      modifier = Modifier
-        .widthIn(max = 500.dp)
-        .focusRequester(phoneFocusRequester),
+      modifier =
+        Modifier
+          .widthIn(max = 500.dp)
+          .focusRequester(phoneFocusRequester),
       isError = phoneError != null,
       supportingText = { phoneError?.let { Text(it) } },
-      keyboardOptions = KeyboardOptions(
-        keyboardType = KeyboardType.Phone,
-        imeAction = ImeAction.Next
-      ),
-      keyboardActions = KeyboardActions(
-        onNext = { focusManager.moveFocus(FocusDirection.Next) }
-      )
+      keyboardOptions =
+        KeyboardOptions(
+          keyboardType = KeyboardType.Phone,
+          imeAction = ImeAction.Next
+        ),
+      keyboardActions =
+        KeyboardActions(
+          onNext = { focusManager.moveFocus(FocusDirection.Next) }
+        )
     )
 
     // DOB and Gender in a row for adaptive layout
@@ -185,16 +190,19 @@ fun PersonalDetailsSection(
       value = email,
       onValueChange = onEmailChange,
       label = { Text("ईमेल") },
-      modifier = Modifier
-        .widthIn(max = 500.dp)
-        .focusRequester(emailFocusRequester),
-      keyboardOptions = KeyboardOptions(
-        keyboardType = KeyboardType.Email,
-        imeAction = ImeAction.Next
-      ),
-      keyboardActions = KeyboardActions(
-        onNext = { educationFocusRequester.requestFocus() }
-      )
+      modifier =
+        Modifier
+          .widthIn(max = 500.dp)
+          .focusRequester(emailFocusRequester),
+      keyboardOptions =
+        KeyboardOptions(
+          keyboardType = KeyboardType.Email,
+          imeAction = ImeAction.Next
+        ),
+      keyboardActions =
+        KeyboardActions(
+          onNext = { educationFocusRequester.requestFocus() }
+        )
     )
 
     // Education and Occupation in a row for adaptive layout
@@ -207,13 +215,15 @@ fun PersonalDetailsSection(
         value = educationalQualification,
         onValueChange = onEducationalQualificationChange,
         label = { Text("शैक्षणिक योग्यता") },
-        modifier = Modifier
-          .width(250.dp)
-          .focusRequester(educationFocusRequester),
+        modifier =
+          Modifier
+            .width(250.dp)
+            .focusRequester(educationFocusRequester),
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-        keyboardActions = KeyboardActions(
-          onNext = { occupationFocusRequester.requestFocus() }
-        )
+        keyboardActions =
+          KeyboardActions(
+            onNext = { occupationFocusRequester.requestFocus() }
+          )
       )
 
       // Occupation field
@@ -221,13 +231,15 @@ fun PersonalDetailsSection(
         value = occupation,
         onValueChange = onOccupationChange,
         label = { Text("व्यवसाय") },
-        modifier = Modifier
-          .width(200.dp)
-          .focusRequester(occupationFocusRequester),
+        modifier =
+          Modifier
+            .width(200.dp)
+            .focusRequester(occupationFocusRequester),
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-        keyboardActions = KeyboardActions(
-          onNext = { focusManager.moveFocus(FocusDirection.Next) }
-        )
+        keyboardActions =
+          KeyboardActions(
+            onNext = { focusManager.moveFocus(FocusDirection.Next) }
+          )
       )
     }
   }
@@ -277,15 +289,16 @@ fun OrganizationDetailsSection(
     MembersComponent(
       state = referrerState,
       onStateChange = onReferrerStateChange,
-      config = MembersConfig(
-        label = "सन्दर्भकः",
-        addButtonText = "सदस्य चुनें",
-        choiceType = MembersChoiceType.SINGLE,
-        singleModeLabel = "सन्दर्भकः",
-        singleModeButtonText = "सदस्य चुनें",
-        editMode = MembersEditMode.INDIVIDUAL,
-        showMemberCount = false
-      ),
+      config =
+        MembersConfig(
+          label = "सन्दर्भकः",
+          addButtonText = "सदस्य चुनें",
+          choiceType = MembersChoiceType.SINGLE,
+          singleModeLabel = "सन्दर्भकः",
+          singleModeButtonText = "सदस्य चुनें",
+          editMode = MembersEditMode.INDIVIDUAL,
+          showMemberCount = false
+        ),
       error = referrerError,
       searchMembers = searchMembers,
       allMembers = allMembers,
@@ -391,18 +404,20 @@ fun IntroductionSection(
       onValueChange = { if (it.length <= 500) onIntroductionChange(it) },
       label = { Text("संक्षिप्त परिचय") },
       placeholder = { Text("अपने बारे में कुछ लिखें...") },
-      modifier = Modifier
-        .width(500.dp)
-        .focusRequester(introductionFocusRequester),
+      modifier =
+        Modifier
+          .width(500.dp)
+          .focusRequester(introductionFocusRequester),
       minLines = 3,
       maxLines = 5,
       supportingText = {
         Text("${introduction.length}/500 characters")
       },
       keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-      keyboardActions = KeyboardActions(
-        onDone = { /* Focus manager will handle clearing focus */ }
-      )
+      keyboardActions =
+        KeyboardActions(
+          onDone = { /* Focus manager will handle clearing focus */ }
+        )
     )
   }
 }
@@ -427,30 +442,31 @@ private fun AddMemberProfilePhotoItem(
   var bytes by remember(file) { mutableStateOf<ByteArray?>(null) }
 
   LaunchedEffect(file) {
-    bytes = if (file.supportsStreams()) {
-      val size = file.getSize()
-      if (size != null && size > 0L) {
-        val buffer = ByteArray(size.toInt())
-        val tmpBuffer = ByteArray(1000)
-        var totalBytesRead = 0
-        file.getStream().use {
-          while (it.hasBytesAvailable()) {
-            val numRead = it.readInto(tmpBuffer, 1000)
-            tmpBuffer.copyInto(
-              buffer,
-              destinationOffset = totalBytesRead,
-              endIndex = numRead
-            )
-            totalBytesRead += numRead
+    bytes =
+      if (file.supportsStreams()) {
+        val size = file.getSize()
+        if (size != null && size > 0L) {
+          val buffer = ByteArray(size.toInt())
+          val tmpBuffer = ByteArray(1000)
+          var totalBytesRead = 0
+          file.getStream().use {
+            while (it.hasBytesAvailable()) {
+              val numRead = it.readInto(tmpBuffer, 1000)
+              tmpBuffer.copyInto(
+                buffer,
+                destinationOffset = totalBytesRead,
+                endIndex = numRead
+              )
+              totalBytesRead += numRead
+            }
           }
+          buffer
+        } else {
+          file.readBytes()
         }
-        buffer
       } else {
         file.readBytes()
       }
-    } else {
-      file.readBytes()
-    }
   }
 
   Box(modifier = modifier) {
@@ -460,9 +476,10 @@ private fun AddMemberProfilePhotoItem(
           model = imageBytes,
           contentDescription = "Profile Image",
           contentScale = ContentScale.Crop,
-          modifier = Modifier
-            .fillMaxSize()
-            .clip(CircleShape)
+          modifier =
+            Modifier
+              .fillMaxSize()
+              .clip(CircleShape)
         )
       }
     }
@@ -471,9 +488,10 @@ private fun AddMemberProfilePhotoItem(
     Surface(
       color = MaterialTheme.colorScheme.errorContainer,
       shape = CircleShape,
-      modifier = Modifier
-        .align(Alignment.TopEnd)
-        .size(28.dp)
+      modifier =
+        Modifier
+          .align(Alignment.TopEnd)
+          .size(28.dp)
     ) {
       IconButton(
         onClick = onRemoveFile,

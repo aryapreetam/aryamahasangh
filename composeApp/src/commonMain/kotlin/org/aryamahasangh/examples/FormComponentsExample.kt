@@ -27,18 +27,19 @@ data class PersonFormData(
 )
 
 // Mock data for AryaSamaj
-private val mockAryaSamajList = listOf(
-  AryaSamaj("1", "आर्य समाज मुख्य मंदिर", "दयानंद मार्ग, दिल्ली", "दिल्ली"),
-  AryaSamaj("2", "आर्य समाज गुड़गांव", "सेक्टर 14, गुड़गांव", "गुड़गांव"),
-  AryaSamaj("3", "आर्य समाज फरीदाबाद", "न्यू टाउन, फरीदाबाद", "फरीदाबाद"),
-  AryaSamaj("4", "आर्य समाज नोएडा", "सेक्टर 62, नोएडा", "गौतम बुद्ध नगर"),
-  AryaSamaj("5", "आर्य समाज गाज़ियाबाद", "राज नगर, गाज़ियाबाद", "गाज़ियाबाद"),
-  AryaSamaj("6", "आर्य समाज मेरठ", "पल टन बाज़ार, मेरठ", "मेरठ"),
-  AryaSamaj("7", "आर्य समाज आगरा", "दयानंद नगर, आगरा", "आगरा"),
-  AryaSamaj("8", "आर्य समाज कानपुर", "मॉल रोड, कानपुर", "कानपुर"),
-  AryaSamaj("9", "आर्य समाज लखनऊ", "गोमती नगर, लखनऊ", "लखनऊ"),
-  AryaSamaj("10", "आर्य समाज वाराणसी", "लंका, वाराणसी", "वाराणसी")
-)
+private val mockAryaSamajList =
+  listOf(
+    AryaSamaj("1", "आर्य समाज मुख्य मंदिर", "दयानंद मार्ग, दिल्ली", "दिल्ली"),
+    AryaSamaj("2", "आर्य समाज गुड़गांव", "सेक्टर 14, गुड़गांव", "गुड़गांव"),
+    AryaSamaj("3", "आर्य समाज फरीदाबाद", "न्यू टाउन, फरीदाबाद", "फरीदाबाद"),
+    AryaSamaj("4", "आर्य समाज नोएडा", "सेक्टर 62, नोएडा", "गौतम बुद्ध नगर"),
+    AryaSamaj("5", "आर्य समाज गाज़ियाबाद", "राज नगर, गाज़ियाबाद", "गाज़ियाबाद"),
+    AryaSamaj("6", "आर्य समाज मेरठ", "पल टन बाज़ार, मेरठ", "मेरठ"),
+    AryaSamaj("7", "आर्य समाज आगरा", "दयानंद नगर, आगरा", "आगरा"),
+    AryaSamaj("8", "आर्य समाज कानपुर", "मॉल रोड, कानपुर", "कानपुर"),
+    AryaSamaj("9", "आर्य समाज लखनऊ", "गोमती नगर, लखनऊ", "लखनऊ"),
+    AryaSamaj("10", "आर्य समाज वाराणसी", "लंका, वाराणसी", "वाराणसी")
+  )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,29 +64,31 @@ fun FormComponentsExample() {
   val coroutineScope = rememberCoroutineScope()
 
   // Referrer using MembersComponent in SINGLE mode
-  val referrerMembersState = remember(formData.referrer) {
-    if (formData.referrer != null) {
-      MembersState(members = mapOf(formData.referrer!! to Pair("", 0)))
-    } else {
-      MembersState()
+  val referrerMembersState =
+    remember(formData.referrer) {
+      if (formData.referrer != null) {
+        MembersState(members = mapOf(formData.referrer!! to Pair("", 0)))
+      } else {
+        MembersState()
+      }
     }
-  }
 
   // Mock members for the referrer field
-  val mockMembers = mockAryaSamajList.map {
-    Member(
-      id = it.id,
-      name = it.name,
-      educationalQualification = "स्नातक",
-      profileImage = "",
-      phoneNumber = "9876543210",
-      email = "${it.name.replace(" ", ".").lowercase()}@example.com",
-      address = it.address,
-      district = it.district,
-      state = "दिल्ली",
-      pincode = "110001"
-    )
-  }
+  val mockMembers =
+    mockAryaSamajList.map {
+      Member(
+        id = it.id,
+        name = it.name,
+        educationalQualification = "स्नातक",
+        profileImage = "",
+        phoneNumber = "9876543210",
+        email = "${it.name.replace(" ", ".").lowercase()}@example.com",
+        address = it.address,
+        district = it.district,
+        state = "दिल्ली",
+        pincode = "110001"
+      )
+    }
 
   // Mock search function
   fun searchAryaSamaj(query: String): List<AryaSamaj> {
@@ -203,26 +206,29 @@ fun FormComponentsExample() {
     topBar = {
       TopAppBar(
         title = { Text("फॉर्म कम्पोनेन्ट उदाहरण") },
-        colors = TopAppBarDefaults.topAppBarColors(
-          containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
+        colors =
+          TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+          )
       )
     },
     snackbarHost = { SnackbarHost(snackbarHostState) }
   ) { paddingValues ->
     Column(
-      modifier = Modifier
-        .padding(paddingValues)
-        .verticalScroll(scrollState)
-        .padding(16.dp)
-        .widthIn(max = 600.dp) // Max width for better tablet/desktop experience
+      modifier =
+        Modifier
+          .padding(paddingValues)
+          .verticalScroll(scrollState)
+          .padding(16.dp)
+          .widthIn(max = 600.dp) // Max width for better tablet/desktop experience
     ) {
       // Form Header
       Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-          containerColor = MaterialTheme.colorScheme.secondaryContainer
-        )
+        colors =
+          CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer
+          )
       ) {
         Row(
           modifier = Modifier.padding(16.dp),
@@ -369,9 +375,10 @@ fun FormComponentsExample() {
       // Test section for MembersComponent
       Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-          containerColor = MaterialTheme.colorScheme.tertiaryContainer
-        )
+        colors =
+          CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+          )
       ) {
         Column(modifier = Modifier.padding(16.dp)) {
           Text(
@@ -399,16 +406,17 @@ fun FormComponentsExample() {
           formData = formData.copy(referrer = member)
           if (referrerError != null) validateReferrer()
         },
-        config = MembersConfig(
-          label = "संदर्भक (Referrer)",
-          addButtonText = "संदर्भक चुनें",
-          choiceType = MembersChoiceType.SINGLE,
-          singleModeLabel = "संदर्भक (Referrer)",
-          singleModeButtonText = "संदर्भक चुनें",
-          editMode = MembersEditMode.INDIVIDUAL, // Changed to INDIVIDUAL to show button
-          isMandatory = true,
-          showMemberCount = false
-        ),
+        config =
+          MembersConfig(
+            label = "संदर्भक (Referrer)",
+            addButtonText = "संदर्भक चुनें",
+            choiceType = MembersChoiceType.SINGLE,
+            singleModeLabel = "संदर्भक (Referrer)",
+            singleModeButtonText = "संदर्भक चुनें",
+            editMode = MembersEditMode.INDIVIDUAL, // Changed to INDIVIDUAL to show button
+            isMandatory = true,
+            showMemberCount = false
+          ),
         error = referrerError,
         searchMembers = { query ->
           // Mock search - filter mock members by name
@@ -430,14 +438,15 @@ fun FormComponentsExample() {
         onStateChange = { newState ->
           // This is just a test - no actual data binding needed
         },
-        config = MembersConfig(
-          label = "कई सदस्य (Multiple Members)",
-          addButtonText = "सदस्य जोड़ें",
-          choiceType = MembersChoiceType.MULTIPLE,
-          editMode = MembersEditMode.INDIVIDUAL, // Show individual buttons
-          isMandatory = false,
-          showMemberCount = true
-        ),
+        config =
+          MembersConfig(
+            label = "कई सदस्य (Multiple Members)",
+            addButtonText = "सदस्य जोड़ें",
+            choiceType = MembersChoiceType.MULTIPLE,
+            editMode = MembersEditMode.INDIVIDUAL, // Show individual buttons
+            isMandatory = false,
+            showMemberCount = true
+          ),
         error = null,
         searchMembers = { query ->
           // Mock search - filter mock members by name
@@ -479,9 +488,10 @@ fun FormComponentsExample() {
       // Debug Info Card (for development)
       Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-          containerColor = MaterialTheme.colorScheme.surfaceContainer
-        )
+        colors =
+          CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainer
+          )
       ) {
         Column(
           modifier = Modifier.padding(16.dp)
@@ -494,24 +504,25 @@ fun FormComponentsExample() {
           )
           Spacer(modifier = Modifier.height(8.dp))
 
-          val debugInfo = buildString {
-            appendLine("नाम: ${formData.fullName.ifBlank { "खाली" }}")
-            appendLine("जन्म तिथि: ${formData.dateOfBirth?.toString() ?: "चुना नहीं गया"}")
-            appendLine("लिंग: ${formData.gender?.toDisplayName() ?: "चुना नहीं गया"}")
-            appendLine("पारिवारिक सम्बन्ध: ${formData.familyRelation?.toDisplayName() ?: "चुना नहीं गया"}")
-            appendLine("आर्य समाज: ${formData.selectedAryaSamaj?.name ?: "चुना नहीं गया"}")
-            val selectedSamaj = formData.selectedAryaSamaj
-            if (selectedSamaj != null) {
-              appendLine("पता: ${selectedSamaj.address}")
-              appendLine("जिला: ${selectedSamaj.district}")
+          val debugInfo =
+            buildString {
+              appendLine("नाम: ${formData.fullName.ifBlank { "खाली" }}")
+              appendLine("जन्म तिथि: ${formData.dateOfBirth?.toString() ?: "चुना नहीं गया"}")
+              appendLine("लिंग: ${formData.gender?.toDisplayName() ?: "चुना नहीं गया"}")
+              appendLine("पारिवारिक सम्बन्ध: ${formData.familyRelation?.toDisplayName() ?: "चुना नहीं गया"}")
+              appendLine("आर्य समाज: ${formData.selectedAryaSamaj?.name ?: "चुना नहीं गया"}")
+              val selectedSamaj = formData.selectedAryaSamaj
+              if (selectedSamaj != null) {
+                appendLine("पता: ${selectedSamaj.address}")
+                appendLine("जिला: ${selectedSamaj.district}")
+              }
+              appendLine("संदर्भक: ${formData.referrer?.name ?: "चुना नहीं गया"}")
+              val selectedReferrer = formData.referrer
+              if (selectedReferrer != null) {
+                appendLine("संदर्भक पता: ${selectedReferrer.address}")
+                appendLine("संदर्भक दूरभाष: ${selectedReferrer.phoneNumber}")
+              }
             }
-            appendLine("संदर्भक: ${formData.referrer?.name ?: "चुना नहीं गया"}")
-            val selectedReferrer = formData.referrer
-            if (selectedReferrer != null) {
-              appendLine("संदर्भक पता: ${selectedReferrer.address}")
-              appendLine("संदर्भक दूरभाष: ${selectedReferrer.phoneNumber}")
-            }
-          }
 
           Text(
             debugInfo,

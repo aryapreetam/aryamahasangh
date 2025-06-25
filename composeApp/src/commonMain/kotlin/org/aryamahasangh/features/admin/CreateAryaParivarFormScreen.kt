@@ -1,12 +1,9 @@
 package org.aryamahasangh.features.admin
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -22,7 +19,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
@@ -30,25 +26,36 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import kotlinx.datetime.*
 import org.aryamahasangh.components.*
-import org.aryamahasangh.features.activities.Member
-import org.aryamahasangh.utils.WithTooltip
-import org.aryamahasangh.navigation.LocalSnackbarHostState
+import org.aryamahasangh.components.MembersChoiceType
 import org.aryamahasangh.components.MembersComponent
-import org.aryamahasangh.components.MembersState
 import org.aryamahasangh.components.MembersConfig
 import org.aryamahasangh.components.MembersEditMode
-import org.aryamahasangh.components.MembersChoiceType
+import org.aryamahasangh.components.MembersState
+import org.aryamahasangh.navigation.LocalSnackbarHostState
+import org.aryamahasangh.utils.WithTooltip
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CreateAryaParivarFormScreen(
   viewModel: FamilyViewModel,
   onNavigateBack: () -> Unit,
-  onFamilyCreated: (String) -> Unit = {} // Navigate to family detail
+  onFamilyCreated: (String) -> Unit = {}, // Navigate to family detail
+  editingFamilyId: String? = null
 ) {
   val uiState by viewModel.createFamilyUiState.collectAsState()
   val snackbarHostState = LocalSnackbarHostState.current
   val focusManager = LocalFocusManager.current
+
+  // Check if we're in edit mode
+  val isEditMode = editingFamilyId != null
+
+  // Load family data for editing
+  LaunchedEffect(editingFamilyId) {
+    if (editingFamilyId != null) {
+      // Load family detail for editing
+      viewModel.loadFamilyForEditing(editingFamilyId)
+    }
+  }
 
   // Form validation states
   var familyNameError by rememberSaveable { mutableStateOf<String?>(null) }
@@ -56,17 +63,22 @@ fun CreateAryaParivarFormScreen(
   var addressError by rememberSaveable { mutableStateOf<String?>(null) }
 
   // Track if form has been modified for unsaved changes
-  val hasUnsavedChanges = uiState.familyName.isNotBlank() ||
-    uiState.selectedAryaSamaj != null ||
-    uiState.imagePickerState.hasImages ||
-    uiState.familyMembers.isNotEmpty() ||
-    uiState.addressData.address.isNotBlank()
+  val hasUnsavedChanges =
+    uiState.familyName.isNotBlank() ||
+      uiState.selectedAryaSamaj != null ||
+      uiState.imagePickerState.hasImages ||
+      uiState.familyMembers.isNotEmpty() ||
+      uiState.addressData.address.isNotBlank()
 
   // Handle success
   LaunchedEffect(uiState.submitSuccess) {
     if (uiState.submitSuccess) {
       viewModel.clearCreateFamilyState()
-      onNavigateBack()
+      if (isEditMode) {
+        onFamilyCreated(editingFamilyId!!)
+      } else {
+        onFamilyCreated(uiState.familyId)
+      }
     }
   }
 
@@ -97,9 +109,10 @@ fun CreateAryaParivarFormScreen(
   }
 
   // Sort family members by age (descending)
-  val sortedFamilyMembers = uiState.familyMembers.sortedByDescending {
-    calculateAge(parseDate(it.member.address)) // Assuming DOB is stored somewhere
-  }
+  val sortedFamilyMembers =
+    uiState.familyMembers.sortedByDescending {
+      calculateAge(parseDate(it.member.address)) // Assuming DOB is stored somewhere
+    }
 
   fun validateForm(): Boolean {
     var isValid = true
@@ -138,13 +151,14 @@ fun CreateAryaParivarFormScreen(
   }
 
   Column(
-    modifier = Modifier
-      .fillMaxSize()
-      .padding(16.dp)
+    modifier =
+      Modifier
+        .fillMaxSize()
+        .padding(16.dp)
   ) {
     // Header
     Text(
-      text = "नया परिवार जोड़ें",
+      text = if (isEditMode) "परिवार का संपादन करें" else "नया परिवार जोड़ें",
       style = MaterialTheme.typography.headlineSmall,
       fontWeight = FontWeight.Bold,
       modifier = Modifier.padding(bottom = 24.dp)
@@ -158,7 +172,7 @@ fun CreateAryaParivarFormScreen(
       item {
         OutlinedTextField(
           value = uiState.familyName,
-          onValueChange = { 
+          onValueChange = {
             viewModel.updateFamilyName(it)
             familyNameError = null
           },
@@ -169,9 +183,10 @@ fun CreateAryaParivarFormScreen(
           isError = familyNameError != null,
           supportingText = familyNameError?.let { { Text(it) } },
           keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-          keyboardActions = KeyboardActions(
-            onNext = { focusManager.moveFocus(FocusDirection.Next) }
-          )
+          keyboardActions =
+            KeyboardActions(
+              onNext = { focusManager.moveFocus(FocusDirection.Next) }
+            )
         )
       }
 
@@ -182,7 +197,7 @@ fun CreateAryaParivarFormScreen(
           onAryaSamajSelected = viewModel::updateSelectedAryaSamaj,
           label = "आर्य समाज",
           modifier = Modifier.width(400.dp),
-          searchAryaSamaj = { query -> 
+          searchAryaSamaj = { query ->
             // Search implementation would go here
             emptyList()
           },
@@ -198,13 +213,14 @@ fun CreateAryaParivarFormScreen(
         ImagePickerComponent(
           state = uiState.imagePickerState,
           onStateChange = viewModel::updateImagePickerState,
-          config = ImagePickerConfig(
-            label = "परिवार के चित्र",
-            allowMultiple = true,
-            maxImages = 5,
-            showPreview = true,
-            type = ImagePickerType.IMAGE
-          ),
+          config =
+            ImagePickerConfig(
+              label = "परिवार के चित्र",
+              allowMultiple = true,
+              maxImages = 5,
+              showPreview = true,
+              type = ImagePickerType.IMAGE
+            ),
           modifier = Modifier.fillMaxWidth()
         )
       }
@@ -212,51 +228,55 @@ fun CreateAryaParivarFormScreen(
       // Family Members Section
       item {
         // Convert FamilyMemberForCreation to MembersState for MembersComponent
-        val membersState = remember(uiState.familyMembers) {
-          MembersState(
-            members = uiState.familyMembers.associate { familyMember ->
-              familyMember.member to Pair("", 0) // No posts needed for family members
-            }
-          )
-        }
+        val membersState =
+          remember(uiState.familyMembers) {
+            MembersState(
+              members =
+                uiState.familyMembers.associate { familyMember ->
+                  familyMember.member to Pair("", 0) // No posts needed for family members
+                }
+            )
+          }
 
         MembersComponent(
           state = membersState,
           onStateChange = { newState ->
             // Convert MembersState back to FamilyMemberForCreation
-            val newFamilyMembers = newState.members.keys.map { member ->
-              // Find existing family member data or create new
-              val existingFamilyMember = uiState.familyMembers.find { it.member.id == member.id }
-              FamilyMemberForCreation(
-                member = member,
-                isHead = existingFamilyMember?.isHead ?: false,
-                relationToHead = existingFamilyMember?.relationToHead
-              )
-            }
+            val newFamilyMembers =
+              newState.members.keys.map { member ->
+                // Find existing family member data or create new
+                val existingFamilyMember = uiState.familyMembers.find { it.member.id == member.id }
+                FamilyMemberForCreation(
+                  member = member,
+                  isHead = existingFamilyMember?.isHead ?: false,
+                  relationToHead = existingFamilyMember?.relationToHead
+                )
+              }
             viewModel.updateFamilyMembers(newFamilyMembers)
           },
-          config = MembersConfig(
-            label = "परिवार के सदस्य *",
-            addButtonText = "सदस्य जोड़ें",
-            isMandatory = true,
-            minMembers = 1,
-            showMemberCount = true,
-            editMode = MembersEditMode.FAMILY_MEMBERS,
-            choiceType = MembersChoiceType.MULTIPLE,
-            // Family-specific callbacks
-            onFamilyHeadChanged = { memberId, isHead ->
-              viewModel.updateMemberHead(memberId, isHead)
-            },
-            onFamilyRelationChanged = { memberId, relation ->
-              viewModel.updateMemberRelation(memberId, relation)
-            },
-            getFamilyHead = { memberId ->
-              uiState.familyMembers.find { it.member.id == memberId }?.isHead ?: false
-            },
-            getFamilyRelation = { memberId ->
-              uiState.familyMembers.find { it.member.id == memberId }?.relationToHead
-            }
-          ),
+          config =
+            MembersConfig(
+              label = "परिवार के सदस्य *",
+              addButtonText = "सदस्य जोड़ें",
+              isMandatory = true,
+              minMembers = 1,
+              showMemberCount = true,
+              editMode = MembersEditMode.FAMILY_MEMBERS,
+              choiceType = MembersChoiceType.MULTIPLE,
+              // Family-specific callbacks
+              onFamilyHeadChanged = { memberId, isHead ->
+                viewModel.updateMemberHead(memberId, isHead)
+              },
+              onFamilyRelationChanged = { memberId, relation ->
+                viewModel.updateMemberRelation(memberId, relation)
+              },
+              getFamilyHead = { memberId ->
+                uiState.familyMembers.find { it.member.id == memberId }?.isHead ?: false
+              },
+              getFamilyRelation = { memberId ->
+                uiState.familyMembers.find { it.member.id == memberId }?.relationToHead
+              }
+            ),
           error = membersError,
           searchMembers = { query ->
             // Return the current available members since search is async
@@ -288,7 +308,11 @@ fun CreateAryaParivarFormScreen(
     Button(
       onClick = {
         if (validateForm()) {
-          viewModel.createFamily()
+          if (isEditMode) {
+            viewModel.updateFamily(editingFamilyId!!)
+          } else {
+            viewModel.createFamily()
+          }
         }
       },
       modifier = Modifier.fillMaxWidth(),
@@ -303,7 +327,59 @@ fun CreateAryaParivarFormScreen(
         Spacer(modifier = Modifier.width(8.dp))
         Text("परिवार बनाया जा रहा है...")
       } else {
-        Text("परिवार बनाएं")
+        Text(if (isEditMode) "परिवार अद्यतन करें" else "परिवार बनाएं")
+      }
+    }
+  }
+}
+
+@Composable
+private fun AddressSelectionItem(
+  address: AddressWithMemberId?,
+  isSelected: Boolean,
+  onSelect: () -> Unit,
+  isNewAddressOption: Boolean = false
+) {
+  Row(
+    modifier =
+      Modifier
+        .fillMaxWidth()
+        .clickable { onSelect() }
+        .padding(8.dp),
+    verticalAlignment = Alignment.CenterVertically
+  ) {
+    RadioButton(
+      selected = isSelected,
+      onClick = onSelect
+    )
+
+    Spacer(modifier = Modifier.width(8.dp))
+
+    if (isNewAddressOption) {
+      Text(
+        text = "इनमे से कोई नहीं (पता नए से लिखना है)",
+        style = MaterialTheme.typography.bodyMedium,
+        fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
+      )
+    } else {
+      Column {
+        Text(
+          text = address?.addressData?.address ?: "",
+          style = MaterialTheme.typography.bodyMedium,
+          fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
+        )
+        Text(
+          text = "${address?.addressData?.district ?: ""}, ${address?.addressData?.state ?: ""}",
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        if (address != null && address.memberIds.isNotEmpty()) {
+          Text(
+            text = "सदस्य: ${address.memberIds.size}",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.secondary
+          )
+        }
       }
     }
   }
@@ -342,19 +418,21 @@ private fun FamilyMemberItem(
     modifier = Modifier.fillMaxWidth()
   ) {
     Row(
-      modifier = Modifier
-        .fillMaxWidth()
-        .padding(16.dp),
+      modifier =
+        Modifier
+          .fillMaxWidth()
+          .padding(16.dp),
       verticalAlignment = Alignment.Top,
       horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
       // Profile Image
       if (familyMember.member.profileImage.isNotEmpty()) {
         AsyncImage(
-          model = ImageRequest.Builder(LocalPlatformContext.current)
-            .data(familyMember.member.profileImage)
-            .crossfade(true)
-            .build(),
+          model =
+            ImageRequest.Builder(LocalPlatformContext.current)
+              .data(familyMember.member.profileImage)
+              .crossfade(true)
+              .build(),
           contentDescription = "Profile Image",
           modifier = Modifier.size(48.dp).clip(CircleShape),
           contentScale = ContentScale.Crop
@@ -515,69 +593,20 @@ private fun AddressSelectionSection(
       AddressComponent(
         addressData = addressData,
         onAddressChange = onAddressDataChange,
-        fieldsConfig = AddressFieldsConfig(
-          showLocation = true,
-          showAddress = true,
-          showState = true,
-          showDistrict = true,
-          showVidhansabha = true,
-          showPincode = true
-        ),
-        errors = AddressErrors(
-          addressError = addressError
-        )
-      )
-    }
-  }
-}
-
-@Composable
-private fun AddressSelectionItem(
-  address: AddressWithMemberId?,
-  isSelected: Boolean,
-  onSelect: () -> Unit,
-  isNewAddressOption: Boolean = false
-) {
-  Row(
-    modifier = Modifier
-      .fillMaxWidth()
-      .clickable { onSelect() }
-      .padding(8.dp),
-    verticalAlignment = Alignment.CenterVertically
-  ) {
-    RadioButton(
-      selected = isSelected,
-      onClick = onSelect
-    )
-
-    Spacer(modifier = Modifier.width(8.dp))
-
-    if (isNewAddressOption) {
-      Text(
-        text = "इनमे से कोई नहीं (पता नए से लिखना है)",
-        style = MaterialTheme.typography.bodyMedium,
-        fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
-      )
-    } else {
-      Column {
-        Text(
-          text = address?.addressData?.address ?: "",
-          style = MaterialTheme.typography.bodyMedium,
-          fontWeight = if (isSelected) FontWeight.Medium else FontWeight.Normal
-        )
-        Text(
-          text = "${address?.addressData?.district ?: ""}, ${address?.addressData?.state ?: ""}",
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        if (address != null && address.memberIds.isNotEmpty()) {
-          Text(
-            text = "सदस्य: ${address.memberIds.size}",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.secondary
+        fieldsConfig =
+          AddressFieldsConfig(
+            showLocation = true,
+            showAddress = true,
+            showState = true,
+            showDistrict = true,
+            showVidhansabha = true,
+            showPincode = true
+          ),
+        errors =
+          AddressErrors(
+            addressError = addressError
           )
-        }
-      }
+      )
     }
   }
 }
