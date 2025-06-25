@@ -13,7 +13,6 @@ import org.aryamahasangh.domain.error.AppError
 import org.aryamahasangh.domain.error.ErrorHandler
 import org.aryamahasangh.domain.error.getUserMessage
 import org.aryamahasangh.features.activities.Member
-import org.aryamahasangh.util.Result
 import org.aryamahasangh.viewmodel.ErrorState
 import org.aryamahasangh.viewmodel.handleResult
 
@@ -53,7 +52,6 @@ data class AryaSamajFormUiState(
 }
 
 class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewModel() {
-
   private val _listUiState = MutableStateFlow(AryaSamajListUiState())
   val listUiState: StateFlow<AryaSamajListUiState> = _listUiState.asStateFlow()
 
@@ -69,27 +67,30 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
       repository.getAryaSamajs().collect { result ->
         result.handleResult(
           onLoading = {
-            _listUiState.value = _listUiState.value.copy(
-              isLoading = true,
-              error = null,
-              appError = null
-            )
+            _listUiState.value =
+              _listUiState.value.copy(
+                isLoading = true,
+                error = null,
+                appError = null
+              )
           },
           onSuccess = { aryaSamajs ->
-            _listUiState.value = _listUiState.value.copy(
-              aryaSamajs = aryaSamajs,
-              isLoading = false,
-              error = null,
-              appError = null
-            )
+            _listUiState.value =
+              _listUiState.value.copy(
+                aryaSamajs = aryaSamajs,
+                isLoading = false,
+                error = null,
+                appError = null
+              )
           },
           onError = { appError ->
             ErrorHandler.logError(appError, "AryaSamajViewModel.loadAryaSamajs")
-            _listUiState.value = _listUiState.value.copy(
-              isLoading = false,
-              error = appError.getUserMessage(),
-              appError = appError
-            )
+            _listUiState.value =
+              _listUiState.value.copy(
+                isLoading = false,
+                error = appError.getUserMessage(),
+                appError = appError
+              )
           }
         )
       }
@@ -113,10 +114,11 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
           },
           onError = { appError ->
             ErrorHandler.logError(appError, "AryaSamajViewModel.deleteAryaSamaj")
-            _listUiState.value = _listUiState.value.copy(
-              error = appError.getUserMessage(),
-              appError = appError
-            )
+            _listUiState.value =
+              _listUiState.value.copy(
+                error = appError.getUserMessage(),
+                appError = appError
+              )
           }
         )
       }
@@ -129,27 +131,30 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
       repository.getAryaSamajDetail(id).collect { result ->
         result.handleResult(
           onLoading = {
-            _detailUiState.value = _detailUiState.value.copy(
-              isLoading = true,
-              error = null,
-              appError = null
-            )
+            _detailUiState.value =
+              _detailUiState.value.copy(
+                isLoading = true,
+                error = null,
+                appError = null
+              )
           },
           onSuccess = { aryaSamaj ->
-            _detailUiState.value = _detailUiState.value.copy(
-              aryaSamaj = aryaSamaj,
-              isLoading = false,
-              error = null,
-              appError = null
-            )
+            _detailUiState.value =
+              _detailUiState.value.copy(
+                aryaSamaj = aryaSamaj,
+                isLoading = false,
+                error = null,
+                appError = null
+              )
           },
           onError = { appError ->
             ErrorHandler.logError(appError, "AryaSamajViewModel.loadAryaSamajDetail")
-            _detailUiState.value = _detailUiState.value.copy(
-              isLoading = false,
-              error = appError.getUserMessage(),
-              appError = appError
-            )
+            _detailUiState.value =
+              _detailUiState.value.copy(
+                isLoading = false,
+                error = appError.getUserMessage(),
+                appError = appError
+              )
           }
         )
       }
@@ -158,9 +163,10 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
 
   // Form operations
   fun updateFormData(formData: AryaSamajFormData) {
-    _formUiState.value = _formUiState.value.copy(
-      formData = formData
-    ).updateHasUnsavedChanges()
+    _formUiState.value =
+      _formUiState.value.copy(
+        formData = formData
+      ).updateHasUnsavedChanges()
   }
 
   fun loadAryaSamajForEdit(aryaSamajId: String) {
@@ -168,48 +174,56 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
       repository.getAryaSamajDetail(aryaSamajId).collect { result ->
         result.handleResult(
           onLoading = {
-            _formUiState.value = _formUiState.value.copy(
-              isSubmitting = true
-            )
+            _formUiState.value =
+              _formUiState.value.copy(
+                isSubmitting = true
+              )
           },
           onSuccess = { aryaSamajDetail ->
             // Convert AryaSamajDetail to AryaSamajFormData
-            val formData = AryaSamajFormData(
-              name = aryaSamajDetail.name,
-              description = aryaSamajDetail.description,
-              imagePickerState = ImagePickerState(
-                existingImageUrls = aryaSamajDetail.mediaUrls
-              ),
-              addressData = aryaSamajDetail.address,
-              membersState = MembersState(
-                members = aryaSamajDetail.members.associate { member ->
-                  // Convert AryaSamajMember to Member and post/priority pair
-                  val memberObj = Member(
-                    id = member.memberId,
-                    name = member.memberName,
-                    profileImage = member.memberProfileImage ?: "",
-                    phoneNumber = member.memberPhoneNumber ?: "",
-                    educationalQualification = "", // Not available in AryaSamajMember
-                    email = "" // Not available in AryaSamajMember
+            val formData =
+              AryaSamajFormData(
+                name = aryaSamajDetail.name,
+                description = aryaSamajDetail.description,
+                imagePickerState =
+                  ImagePickerState(
+                    existingImageUrls = aryaSamajDetail.mediaUrls
+                  ),
+                addressData = aryaSamajDetail.address,
+                membersState =
+                  MembersState(
+                    members =
+                      aryaSamajDetail.members.associate { member ->
+                        // Convert AryaSamajMember to Member and post/priority pair
+                        val memberObj =
+                          Member(
+                            id = member.memberId,
+                            name = member.memberName,
+                            profileImage = member.memberProfileImage ?: "",
+                            phoneNumber = member.memberPhoneNumber ?: "",
+                            educationalQualification = "", // Not available in AryaSamajMember
+                            email = "" // Not available in AryaSamajMember
+                          )
+                        memberObj to (member.post to member.priority)
+                      }.toMutableMap()
                   )
-                  memberObj to (member.post to member.priority)
-                }.toMutableMap()
               )
-            )
-            
-            _formUiState.value = _formUiState.value.copy(
-              formData = formData,
-              isSubmitting = false,
-              editingAryaSamajId = aryaSamajId,
-              originalFormData = formData
-            )
+
+            _formUiState.value =
+              _formUiState.value.copy(
+                formData = formData,
+                isSubmitting = false,
+                editingAryaSamajId = aryaSamajId,
+                originalFormData = formData
+              )
           },
           onError = { appError ->
             ErrorHandler.logError(appError, "AryaSamajViewModel.loadAryaSamajForEdit")
-            _formUiState.value = _formUiState.value.copy(
-              isSubmitting = false,
-              submitError = appError.getUserMessage()
-            )
+            _formUiState.value =
+              _formUiState.value.copy(
+                isSubmitting = false,
+                submitError = appError.getUserMessage()
+              )
           }
         )
       }
@@ -234,18 +248,20 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
     println("DEBUG: Validation errors: $validationErrors")
 
     if (validationErrors.isNotEmpty()) {
-      _formUiState.value = currentState.copy(
-        validationErrors = validationErrors
-      )
+      _formUiState.value =
+        currentState.copy(
+          validationErrors = validationErrors
+        )
       return
     }
 
     viewModelScope.launch {
-      _formUiState.value = currentState.copy(
-        isSubmitting = true,
-        submitError = null,
-        validationErrors = emptyMap()
-      )
+      _formUiState.value =
+        currentState.copy(
+          isSubmitting = true,
+          submitError = null,
+          validationErrors = emptyMap()
+        )
 
       try {
         // Step 1: Upload new images first if there are any
@@ -264,10 +280,11 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
             // Simple random number for file naming
             val randomNum = Clock.System.now().epochSeconds
             val fileType = file.name.substringAfterLast('.')
-            val uploadResponse = org.aryamahasangh.network.bucket.upload(
-              path = "arya_samaj_${randomNum}.${fileType}",
-              data = file.readBytes()
-            )
+            val uploadResponse =
+              org.aryamahasangh.network.bucket.upload(
+                path = "arya_samaj_$randomNum.$fileType",
+                data = file.readBytes()
+              )
             val publicUrl = org.aryamahasangh.network.bucket.publicUrl(uploadResponse.path)
             uploadedImageUrls.add(publicUrl)
             println("DEBUG: Successfully uploaded image: $publicUrl")
@@ -280,12 +297,14 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
         println("DEBUG: Final uploaded image URLs: $uploadedImageUrls")
 
         // Step 2: Create/Update AryaSamaj with uploaded image URLs
-        val updatedFormData = formData.copy(
-          imagePickerState = formData.imagePickerState.copy(
-            existingImageUrls = uploadedImageUrls,
-            newImages = emptyList() // Clear new images since they're now uploaded
+        val updatedFormData =
+          formData.copy(
+            imagePickerState =
+              formData.imagePickerState.copy(
+                existingImageUrls = uploadedImageUrls,
+                newImages = emptyList() // Clear new images since they're now uploaded
+              )
           )
-        )
 
         if (currentState.editingAryaSamajId != null) {
           // Update existing AryaSamaj
@@ -295,22 +314,24 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
                 // Already handled above
               },
               onSuccess = { _ ->
-                _formUiState.value = _formUiState.value.copy(
-                  isSubmitting = false,
-                  submitSuccess = true,
-                  hasUnsavedChanges = false,
-                  editingAryaSamajId = null,
-                  originalFormData = null
-                )
+                _formUiState.value =
+                  _formUiState.value.copy(
+                    isSubmitting = false,
+                    submitSuccess = true,
+                    hasUnsavedChanges = false,
+                    editingAryaSamajId = null,
+                    originalFormData = null
+                  )
                 // Refresh the list
                 loadAryaSamajs()
               },
               onError = { appError ->
                 ErrorHandler.logError(appError, "AryaSamajViewModel.submitForm")
-                _formUiState.value = _formUiState.value.copy(
-                  isSubmitting = false,
-                  submitError = appError.getUserMessage()
-                )
+                _formUiState.value =
+                  _formUiState.value.copy(
+                    isSubmitting = false,
+                    submitError = appError.getUserMessage()
+                  )
               }
             )
           }
@@ -322,32 +343,35 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
                 // Already handled above
               },
               onSuccess = { _ ->
-                _formUiState.value = _formUiState.value.copy(
-                  isSubmitting = false,
-                  submitSuccess = true,
-                  hasUnsavedChanges = false,
-                  editingAryaSamajId = null,
-                  originalFormData = null
-                )
+                _formUiState.value =
+                  _formUiState.value.copy(
+                    isSubmitting = false,
+                    submitSuccess = true,
+                    hasUnsavedChanges = false,
+                    editingAryaSamajId = null,
+                    originalFormData = null
+                  )
                 // Refresh the list
                 loadAryaSamajs()
               },
               onError = { appError ->
                 ErrorHandler.logError(appError, "AryaSamajViewModel.submitForm")
-                _formUiState.value = _formUiState.value.copy(
-                  isSubmitting = false,
-                  submitError = appError.getUserMessage()
-                )
+                _formUiState.value =
+                  _formUiState.value.copy(
+                    isSubmitting = false,
+                    submitError = appError.getUserMessage()
+                  )
               }
             )
           }
         }
       } catch (e: Exception) {
         println("DEBUG: Exception in submitForm: ${e.message}")
-        _formUiState.value = _formUiState.value.copy(
-          isSubmitting = false,
-          submitError = e.message ?: "अज्ञात त्रुटि हुई"
-        )
+        _formUiState.value =
+          _formUiState.value.copy(
+            isSubmitting = false,
+            submitError = e.message ?: "अज्ञात त्रुटि हुई"
+          )
       }
     }
   }

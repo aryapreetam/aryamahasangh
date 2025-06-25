@@ -119,21 +119,22 @@ fun DrawerContent(
           .verticalScroll(rememberScrollState())
     ) {
       Row(
-        modifier = Modifier.fillMaxWidth().clickable {
-          // Navigate to AboutUs page
-          navController.navigate(Screen.AboutSection) {
-            // Clear back stack to root when navigating to AboutSection
-            popUpTo(Screen.AboutSection) {
-              inclusive = true
-              saveState = false
+        modifier =
+          Modifier.fillMaxWidth().clickable {
+            // Navigate to AboutUs page
+            navController.navigate(Screen.AboutSection) {
+              // Clear back stack to root when navigating to AboutSection
+              popUpTo(Screen.AboutSection) {
+                inclusive = true
+                saveState = false
+              }
+              launchSingleTop = true
+              restoreState = false
             }
-            launchSingleTop = true
-            restoreState = false
-          }
-          scope.launch {
-            drawerState.close()
-          }
-        },
+            scope.launch {
+              drawerState.close()
+            }
+          },
         horizontalArrangement = Arrangement.spacedBy(8.dp)
       ) {
         Image(
@@ -166,27 +167,28 @@ fun DrawerContent(
           onClick = {
             navController.navigate(option.route) {
               // Clear back stack to root start destination when navigating to section start destinations
-              val isStartDestination = when (option.route) {
-                Screen.AboutSection -> true
-                Screen.ActivitiesSection -> true
-                Screen.OrgsSection -> true
-                Screen.LearningSection -> true
-                Screen.BookSection -> true
-                Screen.AryaNirmanSection -> true
-                Screen.AryaPariwarSection -> true
-                Screen.AryaSamajSection -> true
-                Screen.AryaGurukulSection -> true
-                Screen.AryaaGurukulSection -> true
-                Screen.JoinUs -> true
-                Screen.KshatraTrainingSection -> true
-                Screen.ChatraTrainingSection -> true
-                else -> false
-              }
+              val isStartDestination =
+                when (option.route) {
+                  Screen.AboutSection -> true
+                  Screen.ActivitiesSection -> true
+                  Screen.OrgsSection -> true
+                  Screen.LearningSection -> true
+                  Screen.BookSection -> true
+                  Screen.AryaNirmanSection -> true
+                  Screen.AryaPariwarSection -> true
+                  Screen.AryaSamajSection -> true
+                  Screen.AryaGurukulSection -> true
+                  Screen.AryaaGurukulSection -> true
+                  Screen.JoinUs -> true
+                  Screen.KshatraTrainingSection -> true
+                  Screen.ChatraTrainingSection -> true
+                  else -> false
+                }
 
               if (isStartDestination) {
                 // For section start destinations, clear back stack completely to root
                 popUpTo(Screen.AboutSection) {
-                  inclusive = true  // Include AboutSection in the pop
+                  inclusive = true // Include AboutSection in the pop
                   saveState = false // Don't save state to ensure clean back stack
                 }
               } else {
@@ -278,33 +280,43 @@ private fun checkIfSelected(
   return if ((currentDestination?.contains("AboutUs") == true || currentDestination?.contains("AboutUsDetails") == true) && currentDrawerItem == Screen.AboutSection.toString()) {
     true
   } else if (
-    (currentDestination?.contains("Activities") == true ||
+    (
+      currentDestination?.contains("Activities") == true ||
         currentDestination?.contains("ActivityDetails") == true ||
-        currentDestination?.contains("EditActivity") == true) &&
-      currentDrawerItem == Screen.ActivitiesSection.toString()
+        currentDestination?.contains("EditActivity") == true
+    ) &&
+    currentDrawerItem == Screen.ActivitiesSection.toString()
   ) {
     true
   } else if (
-    (currentDestination?.contains("Orgs") == true ||
-      currentDestination?.contains("OrgDetails") == true) &&
+    (
+      currentDestination?.contains("Orgs") == true ||
+        currentDestination?.contains("OrgDetails") == true
+    ) &&
     currentDrawerItem == Screen.OrgsSection.toString()
   ) {
     true
   } else if (
-    (currentDestination?.contains("Learning") == true ||
-      currentDestination?.contains("VideoDetails") == true) &&
+    (
+      currentDestination?.contains("Learning") == true ||
+        currentDestination?.contains("VideoDetails") == true
+    ) &&
     currentDrawerItem == Screen.LearningSection.toString()
   ) {
     true
   } else if (
-    (currentDestination?.contains("BookOrderForm") == true ||
-      currentDestination?.contains("BookOrderDetails") == true) &&
+    (
+      currentDestination?.contains("BookOrderForm") == true ||
+        currentDestination?.contains("BookOrderDetails") == true
+    ) &&
     currentDrawerItem == Screen.BookSection.toString()
   ) {
     true
   } else if (
-    (currentDestination?.contains("AryaNirmanHome") == true ||
-      currentDestination?.contains("AryaNirmanRegistrationForm") == true) &&
+    (
+      currentDestination?.contains("AryaNirmanHome") == true ||
+        currentDestination?.contains("AryaNirmanRegistrationForm") == true
+    ) &&
     currentDrawerItem == Screen.AryaNirmanSection.toString()
   ) {
     true
@@ -333,26 +345,28 @@ private fun checkIfSelected(
     currentDrawerItem == Screen.AryaGurukulSection.toString()
   ) {
     true
-
   } else if (
-    (currentDestination?.contains("AryaaGurukulCollege") == true ||
-      currentDestination?.contains("AdmissionForm") == true) &&
+    (
+      currentDestination?.contains("AryaaGurukulCollege") == true ||
+        currentDestination?.contains("AdmissionForm") == true
+    ) &&
     currentDrawerItem == Screen.AryaaGurukulSection.toString()
   ) {
     true
-
   } else if (
-    (currentDestination?.contains("AdminContainer") == true ||
-      currentDestination?.contains("MemberDetail") == true ||
-      currentDestination?.contains("AddMemberForm") == true ||
-      currentDestination?.contains("AddAryaSamajForm") == true ||
-      currentDestination?.contains("AryaSamajDetail") == true ||
-    currentDestination?.contains("CreateFamilyForm") == true ||
-    currentDestination?.contains("FamilyDetail") == true) &&
+    (
+      currentDestination?.contains("AdminContainer") == true ||
+        currentDestination?.contains("MemberDetail") == true ||
+        currentDestination?.contains("AddMemberForm") == true ||
+        currentDestination?.contains("AddAryaSamajForm") == true ||
+        currentDestination?.contains("AryaSamajDetail") == true ||
+        currentDestination?.contains("CreateFamilyForm") == true ||
+        currentDestination?.contains("EditFamilyForm") == true ||
+        currentDestination?.contains("FamilyDetail") == true
+    ) &&
     currentDrawerItem == Screen.AdminSection.toString()
   ) {
     true
-
   } else if (currentDestination?.contains(currentDrawerItem) == true) {
     true
   } else {
@@ -477,7 +491,10 @@ fun MainContent(
               "MemberDetail",
               "AddMemberForm",
               "AddAryaSamajForm",
-              "AryaSamajDetail"
+              "AryaSamajDetail",
+              "CreateFamilyForm",
+              "EditFamilyForm",
+              "FamilyDetail"
             ).any {
               currentScreen?.startsWith(it) == true
             }

@@ -156,7 +156,7 @@ fun SatraRegistrationFormScreen(
       InspirationType.NEWSPAPER,
       InspirationType.NEWS_CHANNEL,
       InspirationType.SOCIAL_MEDIA
-        -> {
+      -> {
         if (otherSourceName.isBlank()) { // Only focus if empty, or always focus
           otherSourceFocusRequester.requestFocus()
         }
@@ -279,7 +279,7 @@ fun SatraRegistrationFormScreen(
         }
       }
 
-      null -> { /* Should be caught by validateInspirationSourceSelection */
+      null -> { // Should be caught by validateInspirationSourceSelection
       }
     }
     return isValid
@@ -684,7 +684,7 @@ fun SatraRegistrationFormScreen(
           )
         }
 
-        null -> { /* No fields to show, or placeholder if needed */
+        null -> { // No fields to show, or placeholder if needed
         }
       }
       if (selectedInspirationSource != null) Spacer(modifier = Modifier.height(8.dp))

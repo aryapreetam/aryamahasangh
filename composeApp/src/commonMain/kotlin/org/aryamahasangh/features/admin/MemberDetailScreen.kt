@@ -1,7 +1,5 @@
 package org.aryamahasangh.features.admin
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
@@ -14,9 +12,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.painter.BrushPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -32,7 +27,6 @@ import io.github.vinceglb.filekit.core.PlatformFile
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import org.aryamahasangh.features.arya_nirman.convertDates
-import org.aryamahasangh.navigation.LocalSetBackHandler
 import org.aryamahasangh.navigation.LocalSnackbarHostState
 import org.aryamahasangh.network.bucket
 import org.aryamahasangh.screens.DistrictDropdown
@@ -136,7 +130,10 @@ fun MemberDetailScreen(
         onEmailChange = { editableEmail = it },
         onEducationalQualificationChange = { editableEducationalQualification = it },
         onAddressChange = { editableAddress = it },
-        onStateChange = { editableState = it; editableDistrict = "" },
+        onStateChange = {
+          editableState = it
+          editableDistrict = ""
+        },
         onDistrictChange = { editableDistrict = it },
         onPincodeChange = { editablePincode = it },
         onEditClick = { viewModel.setEditingDetails(true) },
@@ -224,9 +221,10 @@ fun ProfilePhotoItem(
           model = imageBytes,
           contentDescription = "Profile Image",
           contentScale = ContentScale.Crop,
-          modifier = Modifier
-            .fillMaxSize()
-            .clip(CircleShape)
+          modifier =
+            Modifier
+              .fillMaxSize()
+              .clip(CircleShape)
         )
       }
     }
@@ -235,9 +233,10 @@ fun ProfilePhotoItem(
     Surface(
       color = MaterialTheme.colorScheme.errorContainer,
       shape = CircleShape,
-      modifier = Modifier
-        .align(Alignment.TopEnd)
-        .size(28.dp)
+      modifier =
+        Modifier
+          .align(Alignment.TopEnd)
+          .size(28.dp)
     ) {
       IconButton(
         onClick = onRemoveFile,
@@ -264,46 +263,49 @@ private fun ProfileSection(
 ) {
   val scope = rememberCoroutineScope()
   val snackbarHostState = LocalSnackbarHostState.current
-  val launcher = rememberFilePickerLauncher(
-    type = PickerType.Image,
-    mode = PickerMode.Single,
-    title = "Select profile photo"
-  ) { file ->
-    if (file != null) {
-      scope.launch {
-        try {
-          // Show immediate upload feedback
-          val snackbarJob = launch {
+  val launcher =
+    rememberFilePickerLauncher(
+      type = PickerType.Image,
+      mode = PickerMode.Single,
+      title = "Select profile photo"
+    ) { file ->
+      if (file != null) {
+        scope.launch {
+          try {
+            // Show immediate upload feedback
+            val snackbarJob =
+              launch {
+                snackbarHostState.showSnackbar(
+                  message = "🔄 Uploading profile photo...",
+                  duration = SnackbarDuration.Indefinite
+                )
+              }
+
+            val uploadResponse =
+              bucket.upload(
+                path = "profile_${Clock.System.now().epochSeconds}.jpg",
+                data = file.readBytes()
+              )
+            val imageUrl = bucket.publicUrl(uploadResponse.path)
+
+            // Cancel the upload progress snackbar
+            snackbarJob.cancel()
+            snackbarHostState.currentSnackbarData?.dismiss()
+
+            // Update the photo
+            onPhotoUpdate(imageUrl)
+
+            snackbarHostState.showSnackbar("✅ Profile photo updated successfully")
+          } catch (e: Exception) {
             snackbarHostState.showSnackbar(
-              message = "🔄 Uploading profile photo...",
-              duration = SnackbarDuration.Indefinite
+              message = "❌ Failed to upload photo: ${e.message}",
+              actionLabel = "Close"
             )
+            println("error uploading photo: $e")
           }
-
-          val uploadResponse = bucket.upload(
-            path = "profile_${Clock.System.now().epochSeconds}.jpg",
-            data = file.readBytes()
-          )
-          val imageUrl = bucket.publicUrl(uploadResponse.path)
-
-          // Cancel the upload progress snackbar
-          snackbarJob.cancel()
-          snackbarHostState.currentSnackbarData?.dismiss()
-
-          // Update the photo
-          onPhotoUpdate(imageUrl)
-
-          snackbarHostState.showSnackbar("✅ Profile photo updated successfully")
-        } catch (e: Exception) {
-          snackbarHostState.showSnackbar(
-            message = "❌ Failed to upload photo: ${e.message}",
-            actionLabel = "Close"
-          )
-          println("error uploading photo: $e")
         }
       }
     }
-  }
 
   Card(
     modifier = Modifier.fillMaxWidth(),
@@ -315,12 +317,14 @@ private fun ProfileSection(
     ) {
       // Profile Image
       AsyncImage(
-        model = member?.profileImage?.ifEmpty { "https://via.placeholder.com/100" }
-          ?: "https://via.placeholder.com/100",
+        model =
+          member?.profileImage?.ifEmpty { "https://via.placeholder.com/100" }
+            ?: "https://via.placeholder.com/100",
         contentDescription = "Profile Image",
-        modifier = Modifier
-          .size(100.dp)
-          .clip(CircleShape)
+        modifier =
+          Modifier
+            .size(100.dp)
+            .clip(CircleShape)
       )
 
       Spacer(modifier = Modifier.width(16.dp))
@@ -333,21 +337,22 @@ private fun ProfileSection(
           fontWeight = FontWeight.Bold
         )
         if (member != null) {
-          val address = buildString {
-            if (member.address.isNotEmpty()) append(member.address)
-            if (member.district.isNotEmpty()) {
-              if (isNotEmpty()) append(", ")
-              append(member.district)
+          val address =
+            buildString {
+              if (member.address.isNotEmpty()) append(member.address)
+              if (member.district.isNotEmpty()) {
+                if (isNotEmpty()) append(", ")
+                append(member.district)
+              }
+              if (member.state.isNotEmpty()) {
+                if (isNotEmpty()) append(", ")
+                append(member.state)
+              }
+              if (member.pincode.isNotEmpty()) {
+                if (isNotEmpty()) append(" - ")
+                append(member.pincode)
+              }
             }
-            if (member.state.isNotEmpty()) {
-              if (isNotEmpty()) append(", ")
-              append(member.state)
-            }
-            if (member.pincode.isNotEmpty()) {
-              if (isNotEmpty()) append(" - ")
-              append(member.pincode)
-            }
-          }
           if (address.isNotEmpty()) {
             Text(
               text = address,
@@ -552,7 +557,10 @@ private fun DetailsSection(
 }
 
 @Composable
-private fun DetailItem(label: String, value: String) {
+private fun DetailItem(
+  label: String,
+  value: String
+) {
   if (value.isNotEmpty()) {
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
       Text(

@@ -64,7 +64,7 @@ class LearningRepositoryImpl(private val apolloClient: ApolloClient) : LearningR
       emit(result)
     }
 
-  override  fun getLearningItemDetail(id: String): Flow<Result<LearningItem>> =
+  override fun getLearningItemDetail(id: String): Flow<Result<LearningItem>> =
     flow {
       emit(Result.Loading)
 

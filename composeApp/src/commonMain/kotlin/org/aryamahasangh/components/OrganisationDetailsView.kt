@@ -116,12 +116,14 @@ fun OrganisationDetail(
 
   // Reorderable staggered grid state for priority editing
   val lazyStaggeredGridState = rememberLazyStaggeredGridState()
-  val reorderableLazyStaggeredGridState = rememberReorderableLazyStaggeredGridState(lazyStaggeredGridState) { from, to ->
-    membersList = membersList.toMutableList().apply {
-      add(to.index, removeAt(from.index))
+  val reorderableLazyStaggeredGridState =
+    rememberReorderableLazyStaggeredGridState(lazyStaggeredGridState) { from, to ->
+      membersList =
+        membersList.toMutableList().apply {
+          add(to.index, removeAt(from.index))
+        }
+      hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
     }
-    hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
-  }
 
   // Update local list when keyPeople changes (from API updates)
   LaunchedEffect(keyPeople) {
@@ -190,12 +192,13 @@ fun OrganisationDetail(
                       scope.launch {
                         try {
                           // Show immediate upload feedback
-                          val snackbarJob = launch {
-                            snackbarHostState.showSnackbar(
-                              message = "🔄 Uploading new logo...",
-                              duration = SnackbarDuration.Indefinite
-                            )
-                          }
+                          val snackbarJob =
+                            launch {
+                              snackbarHostState.showSnackbar(
+                                message = "🔄 Uploading new logo...",
+                                duration = SnackbarDuration.Indefinite
+                              )
+                            }
 
                           val uploadResponse =
                             bucket.upload(
@@ -244,9 +247,10 @@ fun OrganisationDetail(
                   // Show loading indicator while logo is updating
                   if (organisationLogoState.isUpdating) {
                     Box(
-                      modifier = Modifier
-                        .size(150.dp)
-                        .background(Color.Black.copy(alpha = 0.5f)),
+                      modifier =
+                        Modifier
+                          .size(150.dp)
+                          .background(Color.Black.copy(alpha = 0.5f)),
                       contentAlignment = Alignment.Center
                     ) {
                       CircularProgressIndicator(
@@ -375,9 +379,11 @@ fun OrganisationDetail(
           LazyVerticalStaggeredGrid(
             columns = StaggeredGridCells.Adaptive(minSize = 300.dp),
             state = lazyStaggeredGridState,
-            modifier = Modifier
-              .fillMaxWidth()
-              .heightIn(min = 100.dp, max = 800.dp), // Constrain height but allow flexibility
+            modifier =
+              Modifier
+                .fillMaxWidth()
+                .heightIn(min = 100.dp, max = 800.dp),
+            // Constrain height but allow flexibility
             verticalItemSpacing = 8.dp,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             userScrollEnabled = false // Disable scrolling since we're in a LazyColumn
@@ -407,14 +413,15 @@ fun OrganisationDetail(
                       isUpdatingPost = memberManagementState.isUpdatingPost,
                       isRemoving = memberManagementState.isRemovingMember,
                       isDragHandle = true,
-                      modifier = Modifier.draggableHandle(
-                        onDragStarted = {
-                          hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                        },
-                        onDragStopped = {
-                          hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
-                        }
-                      )
+                      modifier =
+                        Modifier.draggableHandle(
+                          onDragStarted = {
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+                          },
+                          onDragStopped = {
+                            hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
+                          }
+                        )
                     )
                   }
                 }
@@ -444,9 +451,10 @@ fun OrganisationDetail(
                   member = member,
                   post = post,
                   onPostChange = { newPost ->
-                    newMembersWithPosts = newMembersWithPosts.toMutableMap().apply {
-                      this[member] = newPost
-                    }
+                    newMembersWithPosts =
+                      newMembersWithPosts.toMutableMap().apply {
+                        this[member] = newPost
+                      }
                   },
                   onConfirm = {
                     if (post.isNotBlank()) {
@@ -567,26 +575,29 @@ fun KeyPersonItem(
   var showOptionsMenu by remember { mutableStateOf(false) }
 
   Row(
-    modifier = Modifier
-      .padding(8.dp)
-      .then(modifier),
+    modifier =
+      Modifier
+        .padding(8.dp)
+        .then(modifier),
     verticalAlignment = Alignment.CenterVertically
   ) {
     AsyncImage(
       model = member.member.profileImage ?: "",
       contentDescription = "profile image ${member.member.name}",
       contentScale = ContentScale.Crop,
-      modifier = Modifier
-        .clip(CircleShape)
-        .size(80.dp),
-      placeholder = BrushPainter(
-        Brush.linearGradient(
-          listOf(
-            Color(color = 0xFFFFFFFF),
-            Color(color = 0xFFDDDDDD)
+      modifier =
+        Modifier
+          .clip(CircleShape)
+          .size(80.dp),
+      placeholder =
+        BrushPainter(
+          Brush.linearGradient(
+            listOf(
+              Color(color = 0xFFFFFFFF),
+              Color(color = 0xFFDDDDDD)
+            )
           )
-        )
-      ),
+        ),
       fallback = painterResource(Res.drawable.error_profile_image),
       error = painterResource(Res.drawable.error_profile_image)
     )
@@ -785,11 +796,12 @@ fun AddMemberDialog(
       filteredMembers = allMembers
     } else {
       // First show local results immediately for fast UX
-      val localResults = allMembers.filter { member ->
-        member.name.contains(query, ignoreCase = true) ||
-          member.phoneNumber.contains(query, ignoreCase = true) ||
-          member.email.contains(query, ignoreCase = true)
-      }
+      val localResults =
+        allMembers.filter { member ->
+          member.name.contains(query, ignoreCase = true) ||
+            member.phoneNumber.contains(query, ignoreCase = true) ||
+            member.email.contains(query, ignoreCase = true)
+        }
       filteredMembers = localResults
 
       // Trigger server search for fresh results
@@ -819,14 +831,16 @@ fun AddMemberDialog(
   Dialog(onDismissRequest = onDismiss) {
     Surface(
       shape = MaterialTheme.shapes.large,
-      modifier = Modifier
-        .width(400.dp)
-        .height(600.dp)
+      modifier =
+        Modifier
+          .width(400.dp)
+          .height(600.dp)
     ) {
       Column(
-        modifier = Modifier
-          .fillMaxSize()
-          .padding(16.dp)
+        modifier =
+          Modifier
+            .fillMaxSize()
+            .padding(16.dp)
       ) {
         Text(
           text = "नए पदाधिकारी जोड़ें",
@@ -840,10 +854,12 @@ fun AddMemberDialog(
           onValueChange = { query = it },
           placeholder = { Text("आर्य का नाम/दूरभाष") },
           leadingIcon = {
-            Icon(Icons.Default.Search,
+            Icon(
+              Icons.Default.Search,
               contentDescription = null,
               tint = MaterialTheme.colorScheme.primary
-            ) },
+            )
+          },
           trailingIcon = {
             if (isSearching) {
               CircularProgressIndicator(
@@ -881,11 +897,12 @@ fun AddMemberDialog(
                 member = member,
                 selected = selectedMembers.contains(member),
                 onClick = {
-                  selectedMembers = if (selectedMembers.contains(member)) {
-                    selectedMembers - member
-                  } else {
-                    selectedMembers + member
-                  }
+                  selectedMembers =
+                    if (selectedMembers.contains(member)) {
+                      selectedMembers - member
+                    } else {
+                      selectedMembers + member
+                    }
                 }
               )
             }
@@ -923,37 +940,41 @@ fun MemberListItem(
   onClick: () -> Unit
 ) {
   Row(
-    modifier = Modifier
-      .fillMaxWidth()
-      .clickable { onClick() }
-      .padding(12.dp),
+    modifier =
+      Modifier
+        .fillMaxWidth()
+        .clickable { onClick() }
+        .padding(12.dp),
     verticalAlignment = Alignment.CenterVertically
   ) {
     // Profile image on the left
     AsyncImage(
       model = member.profileImage.ifEmpty { null },
       contentDescription = "Profile image of ${member.name}",
-      modifier = Modifier
-        .size(48.dp)
-        .clip(CircleShape),
+      modifier =
+        Modifier
+          .size(48.dp)
+          .clip(CircleShape),
       contentScale = ContentScale.Crop,
-      placeholder = BrushPainter(
-        Brush.linearGradient(
-          listOf(
-            Color(color = 0xFFFFFFFF),
-            Color(color = 0xFFDDDDDD)
+      placeholder =
+        BrushPainter(
+          Brush.linearGradient(
+            listOf(
+              Color(color = 0xFFFFFFFF),
+              Color(color = 0xFFDDDDDD)
+            )
           )
-        )
-      ),
+        ),
       fallback = painterResource(Res.drawable.error_profile_image),
       error = painterResource(Res.drawable.error_profile_image)
     )
 
     // Member info in the middle
     Column(
-      modifier = Modifier
-        .weight(1f)
-        .padding(start = 12.dp)
+      modifier =
+        Modifier
+          .weight(1f)
+          .padding(start = 12.dp)
     ) {
       Text(
         text = member.name,
@@ -1004,25 +1025,28 @@ fun NewMemberPostInput(
           model = member.profileImage ?: "",
           contentDescription = "profile image ${member.name}",
           contentScale = ContentScale.Crop,
-          modifier = Modifier
-            .clip(CircleShape)
-            .size(48.dp),
-          placeholder = BrushPainter(
-            Brush.linearGradient(
-              listOf(
-                Color(color = 0xFFFFFFFF),
-                Color(color = 0xFFDDDDDD)
+          modifier =
+            Modifier
+              .clip(CircleShape)
+              .size(48.dp),
+          placeholder =
+            BrushPainter(
+              Brush.linearGradient(
+                listOf(
+                  Color(color = 0xFFFFFFFF),
+                  Color(color = 0xFFDDDDDD)
+                )
               )
-            )
-          ),
+            ),
           fallback = painterResource(Res.drawable.error_profile_image),
           error = painterResource(Res.drawable.error_profile_image)
         )
 
         Column(
-          modifier = Modifier
-            .weight(1f)
-            .padding(start = 12.dp)
+          modifier =
+            Modifier
+              .weight(1f)
+              .padding(start = 12.dp)
         ) {
           Text(
             text = member.name,

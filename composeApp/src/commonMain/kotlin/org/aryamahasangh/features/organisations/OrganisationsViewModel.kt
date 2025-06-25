@@ -151,12 +151,13 @@ class OrganisationsViewModel(
                 error = null
               )
             // Initialize description state with current description
-            _organisationDescriptionState.value = OrganisationDescriptionState(
-              description = result.data?.description ?: "",
-              isUpdating = false,
-              error = null,
-              editMode = false
-            )
+            _organisationDescriptionState.value =
+              OrganisationDescriptionState(
+                description = result.data?.description ?: "",
+                isUpdating = false,
+                error = null,
+                editMode = false
+              )
           }
 
           is Result.Error -> {
@@ -175,19 +176,21 @@ class OrganisationsViewModel(
    * Set edit mode for organization description
    */
   fun setDescriptionEditMode(editMode: Boolean) {
-    _organisationDescriptionState.value = _organisationDescriptionState.value.copy(
-      editMode = editMode,
-      error = null
-    )
+    _organisationDescriptionState.value =
+      _organisationDescriptionState.value.copy(
+        editMode = editMode,
+        error = null
+      )
   }
 
   /**
    * Clear logo update success message
    */
   fun clearLogoSuccessMessage() {
-    _organisationLogoState.value = _organisationLogoState.value.copy(
-      successMessage = null
-    )
+    _organisationLogoState.value =
+      _organisationLogoState.value.copy(
+        successMessage = null
+      )
   }
 
   /**
@@ -203,11 +206,12 @@ class OrganisationsViewModel(
   ) {
     launch {
       // Set updating state for logo only
-      _organisationLogoState.value = _organisationLogoState.value.copy(
-        isUpdating = true,
-        error = null,
-        successMessage = null
-      )
+      _organisationLogoState.value =
+        _organisationLogoState.value.copy(
+          isUpdating = true,
+          error = null,
+          successMessage = null
+        )
 
       // Call the repository to update the logo
       organisationsRepository.updateOrganisationLogo(orgId, imageUrl).collect { result ->
@@ -221,29 +225,33 @@ class OrganisationsViewModel(
               // If update was successful, update the current organisation logo in state
               val currentOrg = _organisationDetailUiState.value.organisation
               if (currentOrg != null) {
-                _organisationDetailUiState.value = _organisationDetailUiState.value.copy(
-                  organisation = currentOrg.copy(logo = imageUrl)
-                )
+                _organisationDetailUiState.value =
+                  _organisationDetailUiState.value.copy(
+                    organisation = currentOrg.copy(logo = imageUrl)
+                  )
               }
-              _organisationLogoState.value = _organisationLogoState.value.copy(
-                isUpdating = false,
-                successMessage = "✅ Logo updated successfully"
-              )
+              _organisationLogoState.value =
+                _organisationLogoState.value.copy(
+                  isUpdating = false,
+                  successMessage = "✅ Logo updated successfully"
+                )
             } else {
               // If update failed but didn't throw an exception
-              _organisationLogoState.value = _organisationLogoState.value.copy(
-                isUpdating = false,
-                error = "Failed to update organisation logo"
-              )
+              _organisationLogoState.value =
+                _organisationLogoState.value.copy(
+                  isUpdating = false,
+                  error = "Failed to update organisation logo"
+                )
             }
           }
 
           is Result.Error -> {
             // If there was an error, update the logo state
-            _organisationLogoState.value = _organisationLogoState.value.copy(
-              isUpdating = false,
-              error = result.message
-            )
+            _organisationLogoState.value =
+              _organisationLogoState.value.copy(
+                isUpdating = false,
+                error = result.message
+              )
           }
         }
       }
@@ -256,10 +264,11 @@ class OrganisationsViewModel(
   ) {
     launch {
       // Set updating state for description only
-      _organisationDescriptionState.value = _organisationDescriptionState.value.copy(
-        isUpdating = true,
-        error = null
-      )
+      _organisationDescriptionState.value =
+        _organisationDescriptionState.value.copy(
+          isUpdating = true,
+          error = null
+        )
 
       // Call the repository to update the description
       organisationsRepository.updateOrganisationDescription(orgId = orgId, description = description)
@@ -274,32 +283,36 @@ class OrganisationsViewModel(
                 // If update was successful, update the current organisation in state
                 val currentOrg = _organisationDetailUiState.value.organisation
                 if (currentOrg != null) {
-                  _organisationDetailUiState.value = _organisationDetailUiState.value.copy(
-                    organisation = currentOrg.copy(description = description)
-                  )
+                  _organisationDetailUiState.value =
+                    _organisationDetailUiState.value.copy(
+                      organisation = currentOrg.copy(description = description)
+                    )
                 }
                 // Reset description state
-                _organisationDescriptionState.value = _organisationDescriptionState.value.copy(
-                  description = description,
-                  isUpdating = false,
-                  editMode = false,
-                  error = null
-                )
+                _organisationDescriptionState.value =
+                  _organisationDescriptionState.value.copy(
+                    description = description,
+                    isUpdating = false,
+                    editMode = false,
+                    error = null
+                  )
               } else {
                 // If update failed but didn't throw an exception
-                _organisationDescriptionState.value = _organisationDescriptionState.value.copy(
-                  isUpdating = false,
-                  error = "Failed to update organisation description"
-                )
+                _organisationDescriptionState.value =
+                  _organisationDescriptionState.value.copy(
+                    isUpdating = false,
+                    error = "Failed to update organisation description"
+                  )
               }
             }
 
             is Result.Error -> {
               // If there was an error, update the description state
-              _organisationDescriptionState.value = _organisationDescriptionState.value.copy(
-                isUpdating = false,
-                error = result.message
-              )
+              _organisationDescriptionState.value =
+                _organisationDescriptionState.value.copy(
+                  isUpdating = false,
+                  error = result.message
+                )
             }
           }
         }
@@ -309,13 +322,18 @@ class OrganisationsViewModel(
   /**
    * Remove a member from the organisation
    */
-  fun removeMemberFromOrganisation(organisationalMemberId: String, memberName: String, orgId: String) {
+  fun removeMemberFromOrganisation(
+    organisationalMemberId: String,
+    memberName: String,
+    orgId: String
+  ) {
     launch {
-      _memberManagementState.value = _memberManagementState.value.copy(
-        isRemovingMember = true,
-        removeError = null,
-        successMessage = null
-      )
+      _memberManagementState.value =
+        _memberManagementState.value.copy(
+          isRemovingMember = true,
+          removeError = null,
+          successMessage = null
+        )
 
       organisationsRepository.removeMemberFromOrganisation(organisationalMemberId).collect { result ->
         when (result) {
@@ -325,25 +343,28 @@ class OrganisationsViewModel(
 
           is Result.Success -> {
             if (result.data) {
-              _memberManagementState.value = _memberManagementState.value.copy(
-                isRemovingMember = false,
-                successMessage = "User removed successfully"
-              )
+              _memberManagementState.value =
+                _memberManagementState.value.copy(
+                  isRemovingMember = false,
+                  successMessage = "User removed successfully"
+                )
               // Reload organisation details to refresh the member list
               loadOrganisationDetail(orgId)
             } else {
-              _memberManagementState.value = _memberManagementState.value.copy(
-                isRemovingMember = false,
-                removeError = "Failed to remove member from organisation"
-              )
+              _memberManagementState.value =
+                _memberManagementState.value.copy(
+                  isRemovingMember = false,
+                  removeError = "Failed to remove member from organisation"
+                )
             }
           }
 
           is Result.Error -> {
-            _memberManagementState.value = _memberManagementState.value.copy(
-              isRemovingMember = false,
-              removeError = result.message
-            )
+            _memberManagementState.value =
+              _memberManagementState.value.copy(
+                isRemovingMember = false,
+                removeError = result.message
+              )
           }
         }
       }
@@ -353,7 +374,11 @@ class OrganisationsViewModel(
   /**
    * Update a member's post in an organisation
    */
-  fun updateMemberPost(organisationalMemberId: String, post: String, organisationId: String) {
+  fun updateMemberPost(
+    organisationalMemberId: String,
+    post: String,
+    organisationId: String
+  ) {
     launch {
       _memberManagementState.value = _memberManagementState.value.copy(isUpdatingPost = true)
 
@@ -364,19 +389,21 @@ class OrganisationsViewModel(
           }
 
           is Result.Success -> {
-            _memberManagementState.value = _memberManagementState.value.copy(
-              isUpdatingPost = false,
-              successMessage = "पद सफलतापूर्वक अद्यतन किया गया"
-            )
+            _memberManagementState.value =
+              _memberManagementState.value.copy(
+                isUpdatingPost = false,
+                successMessage = "पद सफलतापूर्वक अद्यतन किया गया"
+              )
             // Reload organisation details to reflect changes
             loadOrganisationDetail(organisationId)
           }
 
           is Result.Error -> {
-            _memberManagementState.value = _memberManagementState.value.copy(
-              isUpdatingPost = false,
-              updatePostError = result.message
-            )
+            _memberManagementState.value =
+              _memberManagementState.value.copy(
+                isUpdatingPost = false,
+                updatePostError = result.message
+              )
           }
         }
       }
@@ -386,7 +413,10 @@ class OrganisationsViewModel(
   /**
    * Update a member's priority in an organisation
    */
-  fun updateMemberPriority(organisationalMemberId: String, priority: Int) {
+  fun updateMemberPriority(
+    organisationalMemberId: String,
+    priority: Int
+  ) {
     launch {
       organisationsRepository.updateMemberPriority(organisationalMemberId, priority).collect { result ->
         when (result) {
@@ -402,9 +432,10 @@ class OrganisationsViewModel(
           }
 
           is Result.Error -> {
-            _memberManagementState.value = _memberManagementState.value.copy(
-              updatePostError = "प्राथमिकता अद्यतन करने में त्रुटि: ${result.message}"
-            )
+            _memberManagementState.value =
+              _memberManagementState.value.copy(
+                updatePostError = "प्राथमिकता अद्यतन करने में त्रुटि: ${result.message}"
+              )
           }
         }
       }
@@ -430,9 +461,10 @@ class OrganisationsViewModel(
           }
 
           is Result.Error -> {
-            _memberManagementState.value = _memberManagementState.value.copy(
-              updatePostError = "प्राथमिकताएं अद्यतन करने में त्रुटि: ${result.message}"
-            )
+            _memberManagementState.value =
+              _memberManagementState.value.copy(
+                updatePostError = "प्राथमिकताएं अद्यतन करने में त्रुटि: ${result.message}"
+              )
           }
         }
       }
@@ -443,24 +475,31 @@ class OrganisationsViewModel(
    * Clear member management success message
    */
   fun clearMemberManagementMessage() {
-    _memberManagementState.value = _memberManagementState.value.copy(
-      successMessage = null,
-      removeError = null,
-      updatePostError = null,
-      addMemberError = null
-    )
+    _memberManagementState.value =
+      _memberManagementState.value.copy(
+        successMessage = null,
+        removeError = null,
+        updatePostError = null,
+        addMemberError = null
+      )
   }
 
   /**
    * Add a member to the organisation
    */
-  fun addMemberToOrganisation(memberId: String, post: String, orgId: String, priority: Int) {
+  fun addMemberToOrganisation(
+    memberId: String,
+    post: String,
+    orgId: String,
+    priority: Int
+  ) {
     launch {
-      _memberManagementState.value = _memberManagementState.value.copy(
-        isAddingMember = true,
-        addMemberError = null,
-        successMessage = null
-      )
+      _memberManagementState.value =
+        _memberManagementState.value.copy(
+          isAddingMember = true,
+          addMemberError = null,
+          successMessage = null
+        )
 
       organisationsRepository.addMemberToOrganisation(memberId, orgId, post, priority).collect { result ->
         when (result) {
@@ -470,25 +509,28 @@ class OrganisationsViewModel(
 
           is Result.Success -> {
             if (result.data) {
-              _memberManagementState.value = _memberManagementState.value.copy(
-                isAddingMember = false,
-                successMessage = "Member added successfully"
-              )
+              _memberManagementState.value =
+                _memberManagementState.value.copy(
+                  isAddingMember = false,
+                  successMessage = "Member added successfully"
+                )
               // Reload organisation details to refresh the member list
               loadOrganisationDetail(orgId)
             } else {
-              _memberManagementState.value = _memberManagementState.value.copy(
-                isAddingMember = false,
-                addMemberError = "Failed to add member to organisation"
-              )
+              _memberManagementState.value =
+                _memberManagementState.value.copy(
+                  isAddingMember = false,
+                  addMemberError = "Failed to add member to organisation"
+                )
             }
           }
 
           is Result.Error -> {
-            _memberManagementState.value = _memberManagementState.value.copy(
-              isAddingMember = false,
-              addMemberError = result.message
-            )
+            _memberManagementState.value =
+              _memberManagementState.value.copy(
+                isAddingMember = false,
+                addMemberError = result.message
+              )
           }
         }
       }
@@ -510,12 +552,13 @@ class OrganisationsViewModel(
     members: List<Triple<Member, String, Int>>
   ) {
     launch {
-      _createOrganisationState.value = _createOrganisationState.value.copy(
-        isCreating = true,
-        isSuccess = false,
-        error = null,
-        createdOrganisationId = null
-      )
+      _createOrganisationState.value =
+        _createOrganisationState.value.copy(
+          isCreating = true,
+          isSuccess = false,
+          error = null,
+          createdOrganisationId = null
+        )
 
       organisationsRepository.createOrganisation(name, description, logoUrl, priority, members).collect { result ->
         when (result) {
@@ -524,20 +567,22 @@ class OrganisationsViewModel(
           }
 
           is Result.Success -> {
-            _createOrganisationState.value = _createOrganisationState.value.copy(
-              isCreating = false,
-              isSuccess = true,
-              createdOrganisationId = result.data
-            )
+            _createOrganisationState.value =
+              _createOrganisationState.value.copy(
+                isCreating = false,
+                isSuccess = true,
+                createdOrganisationId = result.data
+              )
             // Reload organisations after successful creation
             loadOrganisations()
           }
 
           is Result.Error -> {
-            _createOrganisationState.value = _createOrganisationState.value.copy(
-              isCreating = false,
-              error = result.message
-            )
+            _createOrganisationState.value =
+              _createOrganisationState.value.copy(
+                isCreating = false,
+                error = result.message
+              )
           }
         }
       }
@@ -550,11 +595,12 @@ class OrganisationsViewModel(
    */
   fun deleteOrganisation(orgId: String) {
     launch {
-      _deleteOrganisationState.value = _deleteOrganisationState.value.copy(
-        isDeleting = true,
-        isSuccess = false,
-        error = null
-      )
+      _deleteOrganisationState.value =
+        _deleteOrganisationState.value.copy(
+          isDeleting = true,
+          isSuccess = false,
+          error = null
+        )
 
       organisationsRepository.deleteOrganisation(orgId).collect { result ->
         when (result) {
@@ -564,25 +610,28 @@ class OrganisationsViewModel(
 
           is Result.Success -> {
             if (result.data) {
-              _deleteOrganisationState.value = _deleteOrganisationState.value.copy(
-                isDeleting = false,
-                isSuccess = true
-              )
+              _deleteOrganisationState.value =
+                _deleteOrganisationState.value.copy(
+                  isDeleting = false,
+                  isSuccess = true
+                )
               // Reload organisations after successful deletion
               loadOrganisations()
             } else {
-              _deleteOrganisationState.value = _deleteOrganisationState.value.copy(
-                isDeleting = false,
-                error = "Failed to delete organisation"
-              )
+              _deleteOrganisationState.value =
+                _deleteOrganisationState.value.copy(
+                  isDeleting = false,
+                  error = "Failed to delete organisation"
+                )
             }
           }
 
           is Result.Error -> {
-            _deleteOrganisationState.value = _deleteOrganisationState.value.copy(
-              isDeleting = false,
-              error = result.message
-            )
+            _deleteOrganisationState.value =
+              _deleteOrganisationState.value.copy(
+                isDeleting = false,
+                error = result.message
+              )
           }
         }
       }

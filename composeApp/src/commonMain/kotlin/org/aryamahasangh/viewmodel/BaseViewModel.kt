@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.aryamahasangh.domain.error.AppError
 import org.aryamahasangh.domain.error.ErrorHandler
-import org.aryamahasangh.domain.error.getUserMessage
 import org.aryamahasangh.domain.error.toAppError
 import org.aryamahasangh.util.Result
 
@@ -26,10 +25,11 @@ abstract class BaseViewModel<S>(initialState: S) : ViewModel() {
   /**
    * Exception handler for coroutines
    */
-  private val exceptionHandler = CoroutineExceptionHandler { _, exception ->
-    val appError = exception.toAppError()
-    ErrorHandler.logError(appError, this::class.simpleName ?: "BaseViewModel")
-  }
+  private val exceptionHandler =
+    CoroutineExceptionHandler { _, exception ->
+      val appError = exception.toAppError()
+      ErrorHandler.logError(appError, this::class.simpleName ?: "BaseViewModel")
+    }
 
   /**
    * Updates the UI state using the provided update function

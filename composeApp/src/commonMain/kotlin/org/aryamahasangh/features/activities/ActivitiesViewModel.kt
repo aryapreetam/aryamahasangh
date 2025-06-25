@@ -264,7 +264,10 @@ class ActivitiesViewModel(
   /**
    * Update an existing activity
    */
-  fun updateActivity(id: String, input: ActivityInputData) {
+  fun updateActivity(
+    id: String,
+    input: ActivityInputData
+  ) {
     val activity =
       ActivitiesInsertInput(
         name = Optional.present(input.name),
@@ -390,17 +393,18 @@ class ActivitiesViewModel(
 
     println("Starting real-time listening for activity: $activityId")
 
-    registrationListenerJob = viewModelScope.launch {
-      try {
-        activityRepository.listenToRegistrations(activityId)
-          .collect { users ->
-            println("Real-time update: ${users.size} registered users")
-            _registeredUsers.value = users
-          }
-      } catch (e: Exception) {
-        println("Error in real-time listener: ${e.message}")
+    registrationListenerJob =
+      viewModelScope.launch {
+        try {
+          activityRepository.listenToRegistrations(activityId)
+            .collect { users ->
+              println("Real-time update: ${users.size} registered users")
+              _registeredUsers.value = users
+            }
+        } catch (e: Exception) {
+          println("Error in real-time listener: ${e.message}")
+        }
       }
-    }
 
     println("Real-time listener job created: ${registrationListenerJob != null}")
   }

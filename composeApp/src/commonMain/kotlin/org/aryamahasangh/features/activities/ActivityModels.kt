@@ -100,7 +100,7 @@ enum class ActivityStatus {
   UPCOMING;
 
   fun toDisplayName(): String {
-    return when(this){
+    return when (this) {
       PAST -> "समाप्त"
       ONGOING -> "चल रही है"
       UPCOMING -> "आगामी"
@@ -154,6 +154,7 @@ fun OrganisationalActivity.getStatus(): ActivityStatus {
 }
 
 fun OrganisationalActivity.isFromPast() = getStatus() == ActivityStatus.PAST
+
 fun OrganisationalActivity.isUpcoming() = getStatus() == ActivityStatus.UPCOMING
 
 fun OrganisationalActivity.hasOverview(): Boolean {

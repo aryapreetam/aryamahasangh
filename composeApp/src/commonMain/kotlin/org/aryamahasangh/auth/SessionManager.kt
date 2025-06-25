@@ -12,13 +12,13 @@ import org.aryamahasangh.network.supabaseClient
  * Handles secure session persistence across app restarts on all platforms.
  */
 object SessionManager {
-
   /**
    * Flow that emits true when user is authenticated, false otherwise
    */
-  val isAuthenticated: Flow<Boolean> = supabaseClient.auth.sessionStatus.map { status ->
-    status is SessionStatus.Authenticated
-  }
+  val isAuthenticated: Flow<Boolean> =
+    supabaseClient.auth.sessionStatus.map { status ->
+      status is SessionStatus.Authenticated
+    }
 
   /**
    * Get the current session synchronously (may be null if not authenticated)

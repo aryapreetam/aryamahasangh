@@ -20,10 +20,11 @@ fun ImagePickerExample() {
   val scrollState = rememberScrollState()
 
   Column(
-    modifier = Modifier
-      .fillMaxSize()
-      .verticalScroll(scrollState)
-      .padding(16.dp),
+    modifier =
+      Modifier
+        .fillMaxSize()
+        .verticalScroll(scrollState)
+        .padding(16.dp),
     verticalArrangement = Arrangement.spacedBy(24.dp)
   ) {
     // Example 1: Profile Photo Picker
@@ -64,11 +65,12 @@ private fun ProfilePhotoPickerExample() {
     ImagePickerComponent(
       state = imageState,
       onStateChange = { imageState = it },
-      config = ImagePickerConfig(
-        label = "फ़ोटो अपलोड करें",
-        type = ImagePickerType.PROFILE_PHOTO,
-        isMandatory = true
-      ),
+      config =
+        ImagePickerConfig(
+          label = "फ़ोटो अपलोड करें",
+          type = ImagePickerType.PROFILE_PHOTO,
+          isMandatory = true
+        ),
       modifier = Modifier.fillMaxWidth()
     )
 
@@ -76,9 +78,10 @@ private fun ProfilePhotoPickerExample() {
     if (imageState.hasImages) {
       Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-          containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        colors =
+          CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+          )
       ) {
         Column(
           modifier = Modifier.padding(16.dp),
@@ -109,12 +112,13 @@ private fun MultipleImagePickerExample() {
     ImagePickerComponent(
       state = imageState,
       onStateChange = { imageState = it },
-      config = ImagePickerConfig(
-        label = "छायाचित्र",
-        type = ImagePickerType.IMAGE,
-        allowMultiple = true,
-        maxImages = 5
-      ),
+      config =
+        ImagePickerConfig(
+          label = "छायाचित्र",
+          type = ImagePickerType.IMAGE,
+          allowMultiple = true,
+          maxImages = 5
+        ),
       modifier = Modifier.fillMaxWidth()
     )
 
@@ -122,9 +126,10 @@ private fun MultipleImagePickerExample() {
     if (imageState.hasImages) {
       Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-          containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        colors =
+          CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+          )
       ) {
         Column(
           modifier = Modifier.padding(16.dp),
@@ -153,12 +158,13 @@ private fun ImageAndDocumentPickerExample() {
     ImagePickerComponent(
       state = imageState,
       onStateChange = { imageState = it },
-      config = ImagePickerConfig(
-        label = "फ़ाइलें संलग्न करें",
-        type = ImagePickerType.IMAGE_AND_DOCUMENT,
-        allowMultiple = true,
-        maxImages = 8
-      ),
+      config =
+        ImagePickerConfig(
+          label = "फ़ाइलें संलग्न करें",
+          type = ImagePickerType.IMAGE_AND_DOCUMENT,
+          allowMultiple = true,
+          maxImages = 8
+        ),
       modifier = Modifier.fillMaxWidth()
     )
 
@@ -166,9 +172,10 @@ private fun ImageAndDocumentPickerExample() {
     if (imageState.hasImages) {
       Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-          containerColor = MaterialTheme.colorScheme.surfaceVariant
-        )
+        colors =
+          CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+          )
       ) {
         Column(
           modifier = Modifier.padding(16.dp),
@@ -189,18 +196,22 @@ private fun ImagePickerWithValidationExample() {
   var imageState by remember { mutableStateOf(ImagePickerState()) }
   var showErrors by remember { mutableStateOf(false) }
 
-  val config = ImagePickerConfig(
-    label = "दस्तावेज़ संलग्न करें",
-    type = ImagePickerType.IMAGE_AND_DOCUMENT,
-    allowMultiple = true,
-    maxImages = 3,
-    isMandatory = true,
-    minImages = 1
-  )
+  val config =
+    ImagePickerConfig(
+      label = "दस्तावेज़ संलग्न करें",
+      type = ImagePickerType.IMAGE_AND_DOCUMENT,
+      allowMultiple = true,
+      maxImages = 3,
+      isMandatory = true,
+      minImages = 1
+    )
 
-  val error = if (showErrors) {
-    validateImagePickerState(imageState, config)
-  } else null
+  val error =
+    if (showErrors) {
+      validateImagePickerState(imageState, config)
+    } else {
+      null
+    }
 
   Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
     Text(
@@ -228,7 +239,9 @@ private fun ImagePickerWithValidationExample() {
         val validationError = validateImagePickerState(imageState, config)
         if (validationError == null) {
           // Form is valid, proceed with submission
-          println("Files ready for upload: ${imageState.newImages.size} new, ${imageState.getActiveImageUrls().size} existing")
+          println(
+            "Files ready for upload: ${imageState.newImages.size} new, ${imageState.getActiveImageUrls().size} existing"
+          )
         }
       },
       modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -241,13 +254,14 @@ private fun ImagePickerWithValidationExample() {
 @Composable
 private fun EditModeImagePickerExample() {
   // Simulate existing images from server
-  val existingImageUrls = remember {
-    listOf(
-      "https://example.com/image1.jpg",
-      "https://example.com/image2.jpg",
-      "https://example.com/image3.jpg"
-    )
-  }
+  val existingImageUrls =
+    remember {
+      listOf(
+        "https://example.com/image1.jpg",
+        "https://example.com/image2.jpg",
+        "https://example.com/image3.jpg"
+      )
+    }
 
   var imageState by remember {
     mutableStateOf(
@@ -266,21 +280,23 @@ private fun EditModeImagePickerExample() {
     ImagePickerComponent(
       state = imageState,
       onStateChange = { imageState = it },
-      config = ImagePickerConfig(
-        label = "चित्र/पत्रिकाएं जोड़ें",
-        type = ImagePickerType.IMAGE,
-        allowMultiple = true,
-        maxImages = 10
-      ),
+      config =
+        ImagePickerConfig(
+          label = "चित्र/पत्रिकाएं जोड़ें",
+          type = ImagePickerType.IMAGE,
+          allowMultiple = true,
+          maxImages = 10
+        ),
       modifier = Modifier.fillMaxWidth()
     )
 
     if (imageState.hasChanges()) {
       Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-          containerColor = MaterialTheme.colorScheme.primaryContainer
-        )
+        colors =
+          CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+          )
       ) {
         Column(
           modifier = Modifier.padding(16.dp),
@@ -337,22 +353,27 @@ fun ActivityFormWithImagePickerExample() {
   val scope = rememberCoroutineScope()
   val snackbarHostState = LocalSnackbarHostState.current
 
-  val imageConfig = ImagePickerConfig(
-    label = "संबधित चित्र एवं पत्रिकाएं",
-    type = ImagePickerType.IMAGE,
-    allowMultiple = true,
-    maxImages = 10,
-    isMandatory = false
-  )
+  val imageConfig =
+    ImagePickerConfig(
+      label = "संबधित चित्र एवं पत्रिकाएं",
+      type = ImagePickerType.IMAGE,
+      allowMultiple = true,
+      maxImages = 10,
+      isMandatory = false
+    )
 
-  val imageError = if (showErrors) {
-    validateImagePickerState(imageState, imageConfig)
-  } else null
+  val imageError =
+    if (showErrors) {
+      validateImagePickerState(imageState, imageConfig)
+    } else {
+      null
+    }
 
   Column(
-    modifier = Modifier
-      .fillMaxSize()
-      .padding(16.dp),
+    modifier =
+      Modifier
+        .fillMaxSize()
+        .padding(16.dp),
     verticalArrangement = Arrangement.spacedBy(16.dp)
   ) {
     Text(

@@ -77,9 +77,10 @@ fun AryaSamajListScreen(
     listUiState.error?.let { error ->
       Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-          containerColor = MaterialTheme.colorScheme.errorContainer
-        )
+        colors =
+          CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+          )
       ) {
         Text(
           text = error,
@@ -91,13 +92,14 @@ fun AryaSamajListScreen(
     }
 
     // Arya Samaj list
-    val filteredAryaSamajs = if (listUiState.searchQuery.isBlank()) {
-      listUiState.aryaSamajs
-    } else {
-      listUiState.aryaSamajs.filter {
-        it.name.contains(listUiState.searchQuery, ignoreCase = true)
+    val filteredAryaSamajs =
+      if (listUiState.searchQuery.isBlank()) {
+        listUiState.aryaSamajs
+      } else {
+        listUiState.aryaSamajs.filter {
+          it.name.contains(listUiState.searchQuery, ignoreCase = true)
+        }
       }
-    }
 
     if (filteredAryaSamajs.isEmpty()) {
       Box(
@@ -115,11 +117,12 @@ fun AryaSamajListScreen(
             tint = MaterialTheme.colorScheme.onSurfaceVariant
           )
           Text(
-            text = if (listUiState.searchQuery.isBlank()) {
-              "कोई आर्य समाज नहीं मिला"
-            } else {
-              "\"${listUiState.searchQuery}\" के लिए कोई परिणाम नहीं मिला"
-            },
+            text =
+              if (listUiState.searchQuery.isBlank()) {
+                "कोई आर्य समाज नहीं मिला"
+              } else {
+                "\"${listUiState.searchQuery}\" के लिए कोई परिणाम नहीं मिला"
+              },
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
           )
@@ -242,9 +245,10 @@ private fun AryaSamajListItem(
             showDeleteDialog = false
             onDeleteClick()
           },
-          colors = ButtonDefaults.textButtonColors(
-            contentColor = MaterialTheme.colorScheme.error
-          )
+          colors =
+            ButtonDefaults.textButtonColors(
+              contentColor = MaterialTheme.colorScheme.error
+            )
         ) {
           Text("हटाएँ")
         }

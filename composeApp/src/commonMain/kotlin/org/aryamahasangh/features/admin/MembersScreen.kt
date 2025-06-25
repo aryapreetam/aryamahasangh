@@ -57,10 +57,11 @@ fun MembersScreen(
 
   LaunchedEffect(deleteState.deleteError) {
     deleteState.deleteError?.let { error ->
-      val result = snackbarHostState.showSnackbar(
-        message = error,
-        actionLabel = "Retry"
-      )
+      val result =
+        snackbarHostState.showSnackbar(
+          message = error,
+          actionLabel = "Retry"
+        )
       if (result == SnackbarResult.ActionPerformed) {
         // Handle retry if needed
       }
@@ -141,9 +142,10 @@ fun MembersScreen(
     uiState.error?.let { error ->
       Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-          containerColor = MaterialTheme.colorScheme.errorContainer
-        )
+        colors =
+          CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+          )
       ) {
         Text(
           text = error,
@@ -155,11 +157,12 @@ fun MembersScreen(
     }
 
     // Members List
-    val membersToShow = if (uiState.searchQuery.isNotBlank()) {
-      uiState.searchResults
-    } else {
-      uiState.members
-    }
+    val membersToShow =
+      if (uiState.searchQuery.isNotBlank()) {
+        uiState.searchResults
+      } else {
+        uiState.members
+      }
 
     if (membersToShow.isEmpty()) {
       Box(
@@ -230,9 +233,10 @@ private fun MemberItem(
   var showOptionsMenu by remember { mutableStateOf(false) }
 
   ElevatedCard(
-    modifier = modifier
-      .clickable { onMemberClick() }
-      .width(500.dp),
+    modifier =
+      modifier
+        .clickable { onMemberClick() }
+        .width(500.dp),
     shape = RoundedCornerShape(4.dp)
   ) {
     Row(
@@ -243,9 +247,10 @@ private fun MemberItem(
       AsyncImage(
         model = member.profileImage.ifEmpty { "https://via.placeholder.com/60" },
         contentDescription = "Profile Image",
-        modifier = Modifier
-          .size(60.dp)
-          .clip(CircleShape),
+        modifier =
+          Modifier
+            .size(60.dp)
+            .clip(CircleShape),
         contentScale = ContentScale.Crop
       )
 
@@ -306,12 +311,13 @@ private fun MemberItem(
 private fun MemberItemPreview() {
   MaterialTheme {
     MemberItem(
-      member = MemberShort(
-        id = "1",
-        name = "John Doe",
-        profileImage = "",
-        place = "Delhi, India"
-      ),
+      member =
+        MemberShort(
+          id = "1",
+          name = "John Doe",
+          profileImage = "",
+          place = "Delhi, India"
+        ),
       onMemberClick = {},
       onEditClick = {},
       onDeleteClick = {}

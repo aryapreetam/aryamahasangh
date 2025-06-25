@@ -15,7 +15,6 @@ import org.aryamahasangh.components.ErrorSnackbar
 import org.aryamahasangh.components.InlineErrorMessage
 import org.aryamahasangh.features.activities.toDevanagariNumerals
 import org.aryamahasangh.features.admin.data.AryaSamajViewModel
-import org.aryamahasangh.features.admin.FamilyViewModel
 import org.aryamahasangh.navigation.LocalSnackbarHostState
 
 @Composable
@@ -29,7 +28,9 @@ fun AdminContainerScreen(
   onNavigateToAryaSamajDetail: (String) -> Unit = {},
   onEditAryaSamaj: (String) -> Unit = {}, // New parameter for editing
   onNavigateToCreateFamily: () -> Unit = {}, // Fixed parameter name
-  onNavigateToFamilyDetail: (String) -> Unit = {} // Add navigation for family detail
+  onNavigateToFamilyDetail: (String) -> Unit = {}, // Add navigation for family detail
+  onEditFamily: (String) -> Unit = {},
+  onDeleteFamily: (String) -> Unit = {}
 ) {
   val membersCount by viewModel.membersCount.collectAsState()
   val membersUiState by viewModel.membersUiState.collectAsState()
@@ -79,17 +80,19 @@ fun AdminContainerScreen(
     PrimaryScrollableTabRow(
       selectedTabIndex = selectedTabIndex
     ) {
-      val count = if (membersUiState.appError == null) {
-        "$membersCount".toDevanagariNumerals()
-      } else {
-        "?" // Show question mark if count couldn't be loaded
-      }
+      val count =
+        if (membersUiState.appError == null) {
+          "$membersCount".toDevanagariNumerals()
+        } else {
+          "?" // Show question mark if count couldn't be loaded
+        }
 
-      val aryaSamajCount = if (aryaSamajUiState.appError == null) {
-        "${aryaSamajUiState.aryaSamajs.size}".toDevanagariNumerals()
-      } else {
-        "?"
-      }
+      val aryaSamajCount =
+        if (aryaSamajUiState.appError == null) {
+          "${aryaSamajUiState.aryaSamajs.size}".toDevanagariNumerals()
+        } else {
+          "?"
+        }
 
       Tab(
         selected = selectedTabIndex == 0,
@@ -115,9 +118,10 @@ fun AdminContainerScreen(
 
     HorizontalPager(
       state = pagerState,
-      modifier = Modifier
-        .fillMaxWidth()
-        .weight(1f),
+      modifier =
+        Modifier
+          .fillMaxWidth()
+          .weight(1f),
       userScrollEnabled = false
     ) {
       Box(
@@ -137,13 +141,15 @@ fun AdminContainerScreen(
             onNavigateToAryaSamajDetail = onNavigateToAryaSamajDetail,
             onEditAryaSamaj = onEditAryaSamaj // Pass the new handler
           )
-        } else if(it == 2){
+        } else if (it == 2) {
           AryaPariwarListScreen(
             viewModel = familyViewModel,
             onNavigateToFamilyDetail = onNavigateToFamilyDetail,
-            onNavigateToCreateFamily = onNavigateToCreateFamily
+            onNavigateToCreateFamily = onNavigateToCreateFamily,
+            onEditFamily = onEditFamily,
+            onDeleteFamily = onDeleteFamily
           )
-        } else if(it == 3){
+        } else if (it == 3) {
           EkalAryaListScreen()
         }
       }

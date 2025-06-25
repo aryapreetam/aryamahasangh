@@ -29,6 +29,7 @@ interface AryaNirmanRepository {
   ): Flow<Result<Boolean>>
 
   fun getRegistrationCounts(): Flow<Map<String, Int>>
+
   suspend fun getRegistrationCountByActivityId(activityId: String): Long?
 }
 
@@ -115,10 +116,10 @@ class AryaNirmanRepositoryImpl(private val apolloClient: ApolloClient) : AryaNir
         count(Count.EXACT)
         filter {
           filter(
-            column ="activity_id",
+            column = "activity_id",
             operator = FilterOperator.EQ,
             value = activityId
-            )
+          )
         }
       }.countOrNull()
   }

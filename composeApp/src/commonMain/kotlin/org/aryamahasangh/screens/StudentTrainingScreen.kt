@@ -21,11 +21,12 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 
 enum class Gender(
   val studentTerm: String, // छात्र / छात्रा
-  val verbEnding: String   // रहा / रहीं
+  val verbEnding: String // रहा / रहीं
 ) {
-  BOY( "छात्र", "रहा"), // Keeping BOY for internal logic, studentTerm for UI
-  GIRL( "छात्रा", "रहीं") // Keeping GIRL for internal logic, studentTerm for UI
+  BOY("छात्र", "रहा"), // Keeping BOY for internal logic, studentTerm for UI
+  GIRL("छात्रा", "रहीं") // Keeping GIRL for internal logic, studentTerm for UI
 }
+
 data class EventDetails(
   val id: String,
   val genderTarget: Gender,
@@ -39,14 +40,20 @@ data class EventDetails(
 }
 
 // Dummy event data
-val allEvents = listOf(
-  EventDetails("b1", Gender.BOY, "बालक शौर्य प्रशिक्षण", "दिल्ली", "15 जून - 17 जून 2024", "आर्य वीर दल"),
-  EventDetails("b2", Gender.BOY, "युवा संस्कार शिविर", "जयपुर", "01 जुलाई - 03 जुलाई 2024", "आर्य युवक परिषद"),
-  EventDetails("g1", Gender.GIRL, "कन्या आत्मरक्षा कार्यशाला", "मुंबई", "10 अगस्त - 12 अगस्त 2024", "आर्यांगना समिति"),
-  EventDetails("g2", Gender.GIRL, "तेजस्विनी बालिका शिविर", "पुणे", "05 सितम्बर - 07 सितम्बर 2024", "महिला आर्य समाज")
-)
-
-
+val allEvents =
+  listOf(
+    EventDetails("b1", Gender.BOY, "बालक शौर्य प्रशिक्षण", "दिल्ली", "15 जून - 17 जून 2024", "आर्य वीर दल"),
+    EventDetails("b2", Gender.BOY, "युवा संस्कार शिविर", "जयपुर", "01 जुलाई - 03 जुलाई 2024", "आर्य युवक परिषद"),
+    EventDetails(
+      "g1",
+      Gender.GIRL,
+      "कन्या आत्मरक्षा कार्यशाला",
+      "मुंबई",
+      "10 अगस्त - 12 अगस्त 2024",
+      "आर्यांगना समिति"
+    ),
+    EventDetails("g2", Gender.GIRL, "तेजस्विनी बालिका शिविर", "पुणे", "05 सितम्बर - 07 सितम्बर 2024", "महिला आर्य समाज")
+  )
 
 // Your EventDetails and Gender enum would be imported here
 // from EventData.kt
@@ -57,17 +64,48 @@ object EventApiService {
     delay(1500) // Simulate network delay
     return try {
       // In a real app, this would be an actual network call
-      val fetchedEvents = when (gender) {
-        Gender.BOY -> listOf(
-          EventDetails("api_b1", Gender.BOY, "आर्य छात्र प्रशिक्षण सत्र\n", "छात्र गुरुकुल, भाली आनंदपुर, रोहतक, हरियाणा", "15-17 जून", "राष्ट्रीय आर्य क्षत्रिय सभा"),
-          EventDetails("api_b2", Gender.BOY, "आर्य छात्र प्रशिक्षण सत्र\n", "छात्र गुरुकुल, भाली आनंदपुर, रोहतक, हरियाणा", "01-03 जुलाई", "राष्ट्रीय आर्य क्षत्रिय सभा")
-        )
-        Gender.GIRL -> listOf(
-          EventDetails("api_g1", Gender.GIRL, "एपीआई कन्या आत्मरक्षा कार्यशाला", "मुंबई (एपीआई)", "10-12 अगस्त", "आर्यांगना समिति"),
-          EventDetails("api_g2", Gender.GIRL, "एपीआई तेजस्विनी बालिका शिविर", "पुणे (एपीआई)", "05-07 सितम्बर", "महिला आर्य समाज")
-        )
-        // else -> emptyList() // Should not happen if gender is always provided
-      }
+      val fetchedEvents =
+        when (gender) {
+          Gender.BOY ->
+            listOf(
+              EventDetails(
+                "api_b1",
+                Gender.BOY,
+                "आर्य छात्र प्रशिक्षण सत्र\n",
+                "छात्र गुरुकुल, भाली आनंदपुर, रोहतक, हरियाणा",
+                "15-17 जून",
+                "राष्ट्रीय आर्य क्षत्रिय सभा"
+              ),
+              EventDetails(
+                "api_b2",
+                Gender.BOY,
+                "आर्य छात्र प्रशिक्षण सत्र\n",
+                "छात्र गुरुकुल, भाली आनंदपुर, रोहतक, हरियाणा",
+                "01-03 जुलाई",
+                "राष्ट्रीय आर्य क्षत्रिय सभा"
+              )
+            )
+          Gender.GIRL ->
+            listOf(
+              EventDetails(
+                "api_g1",
+                Gender.GIRL,
+                "एपीआई कन्या आत्मरक्षा कार्यशाला",
+                "मुंबई (एपीआई)",
+                "10-12 अगस्त",
+                "आर्यांगना समिति"
+              ),
+              EventDetails(
+                "api_g2",
+                Gender.GIRL,
+                "एपीआई तेजस्विनी बालिका शिविर",
+                "पुणे (एपीआई)",
+                "05-07 सितम्बर",
+                "महिला आर्य समाज"
+              )
+            )
+          // else -> emptyList() // Should not happen if gender is always provided
+        }
       if (fetchedEvents.isEmpty() && gender == Gender.BOY) { // Simulate an empty list for a specific case for testing
         // Result.success(emptyList())
       }
@@ -79,23 +117,23 @@ object EventApiService {
   }
 }
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PhysicalTrainingForm(
   initialGender: Gender?, // Gender is now an input parameter
   onSubmit: (formData: Map<String, String>) -> Unit
 ) {
-
   // FIXME
-  if(true){
+  if (true) {
     TBD()
     return
   }
-  
+
   // The selectedGender is now directly derived from initialGender and not user-selectable on this screen.
   // We'll use initialGender directly for logic.
-  var genderForForm by remember { mutableStateOf(initialGender) } // Store it in a state if needed for recomposition triggers
+  var genderForForm by remember {
+    mutableStateOf(initialGender)
+  } // Store it in a state if needed for recomposition triggers
 
   // State for event selection (fetched from API)
   var availableEvents by remember { mutableStateOf<List<EventDetails>>(emptyList()) }
@@ -138,7 +176,6 @@ fun PhysicalTrainingForm(
     }
   }
 
-
   // Form field states (remain the same)
   var name by remember { mutableStateOf("") }
   var nameError by remember { mutableStateOf<String?>(null) }
@@ -168,13 +205,28 @@ fun PhysicalTrainingForm(
 
   fun validate(): Boolean {
     var isValid = true
-    nameError = null; fatherNameError = null; /* genderError no longer for selection */ eventError = null;
-    currentAddressError = null; permanentAddressError = null; birthDateError = null;
-    qualificationError = null; mobileNumberError = null; aryaSamajNameError = null;
-    pradhanNameError = null; sessionAcceptanceDateError = null; acknowledgementError = null
+    nameError = null
+    fatherNameError = null
+    // genderError no longer for selection
+    eventError = null
+    currentAddressError = null
+    permanentAddressError = null
+    birthDateError = null
+    qualificationError = null
+    mobileNumberError = null
+    aryaSamajNameError = null
+    pradhanNameError = null
+    sessionAcceptanceDateError = null
+    acknowledgementError = null
 
-    if (name.isBlank()) { nameError = "नाम आवश्यक है"; isValid = false }
-    if (fatherName.isBlank()) { fatherNameError = "पिता का नाम आवश्यक है"; isValid = false }
+    if (name.isBlank()) {
+      nameError = "नाम आवश्यक है"
+      isValid = false
+    }
+    if (fatherName.isBlank()) {
+      fatherNameError = "पिता का नाम आवश्यक है"
+      isValid = false
+    }
 
     // Validate if genderForForm (derived from initialGender) is present
     if (genderForForm == null) {
@@ -190,40 +242,71 @@ fun PhysicalTrainingForm(
     }
 
     if (selectedEvent == null && availableEvents.isNotEmpty()) { // Only require if events were loaded
-      eventError = "कार्यक्रम का चयन करें"; isValid = false
+      eventError = "कार्यक्रम का चयन करें"
+      isValid = false
     }
-    if (currentAddress.isBlank()) { currentAddressError = "वर्तमान पता आवश्यक है"; isValid = false }
-    if (!isPermanentAddressSameAsCurrent && permanentAddress.isBlank()) { permanentAddressError = "स्थाई पता आवश्यक है"; isValid = false }
-    if (birthDate.isBlank()) { birthDateError = "जन्म तिथि आवश्यक है"; isValid = false }
-    else if (!birthDate.matches(Regex("""^\d{2}/\d{2}/\d{4}$""")) && !birthDate.matches(Regex("""^\d{4}-\d{2}-\d{2}$"""))) {
-      birthDateError = "जन्म तिथि DD/MM/YYYY या YYYY-MM-DD प्रारूप में होनी चाहिए"; isValid = false
+    if (currentAddress.isBlank()) {
+      currentAddressError = "वर्तमान पता आवश्यक है"
+      isValid = false
     }
-    if (qualification.isBlank()) { qualificationError = "योग्यता आवश्यक है"; isValid = false }
-    if (mobileNumber.isBlank()) { mobileNumberError = "चलभाष आवश्यक है"; isValid = false }
-    else if (!mobileNumber.matches(Regex("""^\d{10}$"""))) { mobileNumberError = "चलभाष 10 अंकों का होना चाहिए"; isValid = false }
-    if (aryaSamajName.isBlank()) { aryaSamajNameError = "संबंधित आर्य समाज का नाम आवश्यक है"; isValid = false }
-    if (pradhanName.isBlank()) { pradhanNameError = "प्रधान का नाम आवश्यक है"; isValid = false }
-    if (sessionAcceptanceDate.isBlank()) { sessionAcceptanceDateError = "द्विदिवसीय सत्र शिक्षा ग्रहण दिनांक/वर्ष आवश्यक है"; isValid = false }
-    if (!acknowledgementChecked) { acknowledgementError = "कृपया घोषणापत्र स्वीकार करें"; isValid = false }
+    if (!isPermanentAddressSameAsCurrent && permanentAddress.isBlank()) {
+      permanentAddressError = "स्थाई पता आवश्यक है"
+      isValid = false
+    }
+    if (birthDate.isBlank()) {
+      birthDateError = "जन्म तिथि आवश्यक है"
+      isValid = false
+    } else if (!birthDate.matches(Regex("""^\d{2}/\d{2}/\d{4}$""")) && !birthDate.matches(Regex("""^\d{4}-\d{2}-\d{2}$"""))) {
+      birthDateError = "जन्म तिथि DD/MM/YYYY या YYYY-MM-DD प्रारूप में होनी चाहिए"
+      isValid = false
+    }
+    if (qualification.isBlank()) {
+      qualificationError = "योग्यता आवश्यक है"
+      isValid = false
+    }
+    if (mobileNumber.isBlank()) {
+      mobileNumberError = "चलभाष आवश्यक है"
+      isValid = false
+    } else if (!mobileNumber.matches(Regex("""^\d{10}$"""))) {
+      mobileNumberError = "चलभाष 10 अंकों का होना चाहिए"
+      isValid = false
+    }
+    if (aryaSamajName.isBlank()) {
+      aryaSamajNameError = "संबंधित आर्य समाज का नाम आवश्यक है"
+      isValid = false
+    }
+    if (pradhanName.isBlank()) {
+      pradhanNameError = "प्रधान का नाम आवश्यक है"
+      isValid = false
+    }
+    if (sessionAcceptanceDate.isBlank()) {
+      sessionAcceptanceDateError = "द्विदिवसीय सत्र शिक्षा ग्रहण दिनांक/वर्ष आवश्यक है"
+      isValid = false
+    }
+    if (!acknowledgementChecked) {
+      acknowledgementError = "कृपया घोषणापत्र स्वीकार करें"
+      isValid = false
+    }
     return isValid
   }
 
   // Dynamic gender prompt based on the initialGender
-  val genderPromptText = genderForForm?.let {
-    "मैं आर्य ${it.studentTerm} प्रशिक्षण के लिए पंजीकरण कर ${it.verbEnding} हूँ।"
-  } ?: "लिंग निर्दिष्ट नहीं है।" // Fallback if initialGender is somehow null
+  val genderPromptText =
+    genderForForm?.let {
+      "मैं आर्य ${it.studentTerm} प्रशिक्षण के लिए पंजीकरण कर ${it.verbEnding} हूँ।"
+    } ?: "लिंग निर्दिष्ट नहीं है।" // Fallback if initialGender is somehow null
 
   Box(
     modifier = Modifier.fillMaxSize().padding(16.dp),
     contentAlignment = Alignment.TopCenter
   ) {
     Column(
-      modifier = Modifier
-        .verticalScroll(rememberScrollState())
-        .widthIn(max = 600.dp),
+      modifier =
+        Modifier
+          .verticalScroll(rememberScrollState())
+          .widthIn(max = 600.dp),
       verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-
       // --- Display Gender (Not Selectable) ---
       Text(genderPromptText, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(bottom = 8.dp))
       // The FilterChips for gender selection are now REMOVED.
@@ -235,8 +318,7 @@ fun PhysicalTrainingForm(
         Text(eventFetchError!!, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodyMedium)
       } else if (genderForForm == null) {
         Text("कृपया पंजीकरण के लिए लिंग चुनें (पिछला चरण)।", style = MaterialTheme.typography.bodyMedium)
-      }
-      else { // Only show dropdown if gender is present and not loading/error
+      } else { // Only show dropdown if gender is present and not loading/error
         ExposedDropdownMenuBox(
           expanded = eventDropdownExpanded,
           onExpandedChange = {
@@ -249,7 +331,13 @@ fun PhysicalTrainingForm(
             onValueChange = {},
             readOnly = true,
             label = { Text("प्रशिक्षण सत्र चुनें") },
-            trailingIcon = { if (availableEvents.isNotEmpty()) ExposedDropdownMenuDefaults.TrailingIcon(expanded = eventDropdownExpanded) },
+            trailingIcon = {
+              if (availableEvents.isNotEmpty()) {
+                ExposedDropdownMenuDefaults.TrailingIcon(
+                  expanded = eventDropdownExpanded
+                )
+              }
+            },
             modifier = Modifier.menuAnchor().fillMaxWidth(),
             isError = eventError != null,
             supportingText = { eventError?.let { Text(it) } },
@@ -281,18 +369,23 @@ fun PhysicalTrainingForm(
         }
       }
 
-
       // --- Form Fields (remain the same structure) ---
       CustomOutlinedTextField(
         value = name,
-        onValueChange = { name = it; nameError = null },
+        onValueChange = {
+          name = it
+          nameError = null
+        },
         label = "नाम",
         error = nameError
       )
       // ... (fatherName, currentAddress, permanentAddress, birthDate & qualification row, mobileNumber, aryaSamajName, pradhanName, sessionAcceptanceDate)
       CustomOutlinedTextField(
         value = fatherName,
-        onValueChange = { fatherName = it; fatherNameError = null },
+        onValueChange = {
+          fatherName = it
+          fatherNameError = null
+        },
         label = "पिता का नाम",
         error = fatherNameError
       )
@@ -331,7 +424,10 @@ fun PhysicalTrainingForm(
 
       CustomOutlinedTextField(
         value = permanentAddress,
-        onValueChange = { permanentAddress = it; permanentAddressError = null },
+        onValueChange = {
+          permanentAddress = it
+          permanentAddressError = null
+        },
         label = "स्थाई पता",
         error = permanentAddressError,
         enabled = !isPermanentAddressSameAsCurrent,
@@ -345,7 +441,10 @@ fun PhysicalTrainingForm(
       ) {
         CustomOutlinedTextField(
           value = birthDate,
-          onValueChange = { birthDate = it; birthDateError = null },
+          onValueChange = {
+            birthDate = it
+            birthDateError = null
+          },
           label = "जन्म तिथि (DD/MM/YYYY)",
           error = birthDateError,
           keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
@@ -354,7 +453,10 @@ fun PhysicalTrainingForm(
         )
         CustomOutlinedTextField(
           value = qualification,
-          onValueChange = { qualification = it; qualificationError = null },
+          onValueChange = {
+            qualification = it
+            qualificationError = null
+          },
           label = "योग्यता",
           error = qualificationError,
           modifier = Modifier.weight(1f).padding(start = 4.dp)
@@ -377,37 +479,46 @@ fun PhysicalTrainingForm(
 
       CustomOutlinedTextField(
         value = aryaSamajName,
-        onValueChange = { aryaSamajName = it; aryaSamajNameError = null },
+        onValueChange = {
+          aryaSamajName = it
+          aryaSamajNameError = null
+        },
         label = "संबंधित आर्य समाज का नाम",
         error = aryaSamajNameError
       )
 
       CustomOutlinedTextField(
         value = pradhanName,
-        onValueChange = { pradhanName = it; pradhanNameError = null },
+        onValueChange = {
+          pradhanName = it
+          pradhanNameError = null
+        },
         label = "प्रधान",
         error = pradhanNameError
       )
 
       CustomOutlinedTextField(
         value = sessionAcceptanceDate,
-        onValueChange = { sessionAcceptanceDate = it; sessionAcceptanceDateError = null },
+        onValueChange = {
+          sessionAcceptanceDate = it
+          sessionAcceptanceDateError = null
+        },
         label = "द्विदिवसीय सत्र शिक्षा ग्रहण दिनांक/वर्ष",
         error = sessionAcceptanceDateError
       )
-
 
       // --- Acknowledgement Checkbox (remains the same) ---
       Column(modifier = Modifier.fillMaxWidth().widthIn(max = 500.dp)) {
         Row(
           verticalAlignment = Alignment.Top,
-          modifier = Modifier
-            .fillMaxWidth()
-            .clickable {
-              acknowledgementChecked = !acknowledgementChecked
-              acknowledgementError = null
-            }
-            .padding(vertical = 4.dp)
+          modifier =
+            Modifier
+              .fillMaxWidth()
+              .clickable {
+                acknowledgementChecked = !acknowledgementChecked
+                acknowledgementError = null
+              }
+              .padding(vertical = 4.dp)
         ) {
           Checkbox(
             checked = acknowledgementChecked,
@@ -419,7 +530,7 @@ fun PhysicalTrainingForm(
           )
           Text(
             text = acknowledgementText,
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodySmall
           )
         }
         if (acknowledgementError != null) {
@@ -436,30 +547,32 @@ fun PhysicalTrainingForm(
       Button(
         onClick = {
           if (validate()) {
-            val formData = mapOf(
-              "नाम" to name,
-              "पिता का नाम" to fatherName,
-              "लिंग (छात्र/छात्रा)" to (genderForForm?.studentTerm ?: "अज्ञात"), // Use genderForForm
-              "कार्यक्रम" to (selectedEvent?.eventName ?: ""),
-              // ... other form data
-              "कार्यक्रम स्थान" to (selectedEvent?.place ?: ""),
-              "कार्यक्रम तिथि" to (selectedEvent?.dateRange ?: ""),
-              "कार्यक्रम आयोजक" to (selectedEvent?.organiserName ?: ""),
-              "वर्तमान पता" to currentAddress,
-              "स्थाई पता" to permanentAddress,
-              "जन्म तिथि" to birthDate,
-              "योग्यता" to qualification,
-              "चलभाष" to mobileNumber,
-              "आर्य समाज का नाम" to aryaSamajName,
-              "प्रधान" to pradhanName,
-              "सत्र शिक्षा ग्रहण दिनांक/वर्ष" to sessionAcceptanceDate,
-              "घोषणापत्र स्वीकृत" to acknowledgementChecked.toString()
-            )
+            val formData =
+              mapOf(
+                "नाम" to name,
+                "पिता का नाम" to fatherName,
+                "लिंग (छात्र/छात्रा)" to (genderForForm?.studentTerm ?: "अज्ञात"), // Use genderForForm
+                "कार्यक्रम" to (selectedEvent?.eventName ?: ""),
+                // ... other form data
+                "कार्यक्रम स्थान" to (selectedEvent?.place ?: ""),
+                "कार्यक्रम तिथि" to (selectedEvent?.dateRange ?: ""),
+                "कार्यक्रम आयोजक" to (selectedEvent?.organiserName ?: ""),
+                "वर्तमान पता" to currentAddress,
+                "स्थाई पता" to permanentAddress,
+                "जन्म तिथि" to birthDate,
+                "योग्यता" to qualification,
+                "चलभाष" to mobileNumber,
+                "आर्य समाज का नाम" to aryaSamajName,
+                "प्रधान" to pradhanName,
+                "सत्र शिक्षा ग्रहण दिनांक/वर्ष" to sessionAcceptanceDate,
+                "घोषणापत्र स्वीकृत" to acknowledgementChecked.toString()
+              )
             onSubmit(formData)
           }
         },
-        modifier = Modifier.fillMaxWidth()
-          .widthIn(max = 300.dp).height(48.dp),
+        modifier =
+          Modifier.fillMaxWidth()
+            .widthIn(max = 300.dp).height(48.dp),
         // Disable button if events are loading or gender is not provided
         enabled = !isLoadingEvents && genderForForm != null
       ) {
@@ -503,7 +616,7 @@ fun CustomOutlinedTextField(
   )
 }
 
-@Preview//(name = "खाली फॉर्म", showBackground = true)
+@Preview // (name = "खाली फॉर्म", showBackground = true)
 @Composable
 fun PhysicalTrainingFormPreview() {
   AppTheme { // The form uses MaterialTheme components
@@ -517,9 +630,9 @@ fun PhysicalTrainingFormPreview() {
   }
 }
 
-//@Preview//(name = "भरा हुआ फॉर्म (उदाहरण)", showBackground = true)
-//@Composable
-//fun PhysicalTrainingFormFilledPreview() {
+// @Preview//(name = "भरा हुआ फॉर्म (उदाहरण)", showBackground = true)
+// @Composable
+// fun PhysicalTrainingFormFilledPreview() {
 //  AppTheme {
 //    Surface {
 //      // We can't directly manipulate the internal state of PhysicalTrainingForm
@@ -537,11 +650,11 @@ fun PhysicalTrainingFormPreview() {
 //      }
 //    }
 //  }
-//}
+// }
 //
-//@Preview//(name = "त्रुटि स्थिति के साथ फॉर्म", showBackground = true)
-//@Composable
-//fun PhysicalTrainingFormWithErrorPreview() {
+// @Preview//(name = "त्रुटि स्थिति के साथ फॉर्म", showBackground = true)
+// @Composable
+// fun PhysicalTrainingFormWithErrorPreview() {
 //  AppTheme {
 //    Surface {
 //      // Similar to the "filled" state, directly triggering error states from
@@ -561,4 +674,4 @@ fun PhysicalTrainingFormPreview() {
 //      // with empty fields to see the errors.
 //    }
 //  }
-//}
+// }

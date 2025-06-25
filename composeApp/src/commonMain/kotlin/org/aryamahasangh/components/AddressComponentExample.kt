@@ -18,10 +18,11 @@ fun AddressComponentExample() {
   val scrollState = rememberScrollState()
 
   Column(
-    modifier = Modifier
-      .fillMaxSize()
-      .verticalScroll(scrollState)
-      .padding(16.dp),
+    modifier =
+      Modifier
+        .fillMaxSize()
+        .verticalScroll(scrollState)
+        .padding(16.dp),
     verticalArrangement = Arrangement.spacedBy(24.dp)
   ) {
     // Example 1: Full address component with all fields
@@ -52,23 +53,25 @@ private fun FullAddressExample() {
     AddressComponent(
       addressData = addressData,
       onAddressChange = { addressData = it },
-      fieldsConfig = AddressFieldsConfig(
-        showLocation = true,
-        showAddress = true,
-        showState = true,
-        showDistrict = true,
-        showVidhansabha = true,
-        showPincode = true
-      ),
+      fieldsConfig =
+        AddressFieldsConfig(
+          showLocation = true,
+          showAddress = true,
+          showState = true,
+          showDistrict = true,
+          showVidhansabha = true,
+          showPincode = true
+        ),
       modifier = Modifier.fillMaxWidth()
     )
 
     // Display collected data
     Card(
       modifier = Modifier.fillMaxWidth(),
-      colors = CardDefaults.cardColors(
-        containerColor = MaterialTheme.colorScheme.surfaceVariant
-      )
+      colors =
+        CardDefaults.cardColors(
+          containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
     ) {
       Column(
         modifier = Modifier.padding(16.dp),
@@ -112,14 +115,15 @@ private fun MinimalAddressExample() {
     AddressComponent(
       addressData = addressData,
       onAddressChange = { addressData = it },
-      fieldsConfig = AddressFieldsConfig(
-        showLocation = false,
-        showAddress = false,
-        showState = true,
-        showDistrict = true,
-        showVidhansabha = true,
-        showPincode = false
-      ),
+      fieldsConfig =
+        AddressFieldsConfig(
+          showLocation = false,
+          showAddress = false,
+          showState = true,
+          showDistrict = true,
+          showVidhansabha = true,
+          showPincode = false
+        ),
       modifier = Modifier.fillMaxWidth()
     )
   }
@@ -134,22 +138,23 @@ private fun AddressWithValidationExample() {
   val requiredFields = setOf("address", "state", "district", "pincode")
 
   // Validate on demand
-  val errors = if (showErrors) {
-    validateAddressData(
-      addressData,
-      AddressFieldsConfig(
-        showLocation = false,
-        showAddress = true,
-        showState = true,
-        showDistrict = true,
-        showVidhansabha = false,
-        showPincode = true
-      ),
-      requiredFields
-    )
-  } else {
-    AddressErrors()
-  }
+  val errors =
+    if (showErrors) {
+      validateAddressData(
+        addressData,
+        AddressFieldsConfig(
+          showLocation = false,
+          showAddress = true,
+          showState = true,
+          showDistrict = true,
+          showVidhansabha = false,
+          showPincode = true
+        ),
+        requiredFields
+      )
+    } else {
+      AddressErrors()
+    }
 
   Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
     Text(
@@ -166,14 +171,15 @@ private fun AddressWithValidationExample() {
           showErrors = false
         }
       },
-      fieldsConfig = AddressFieldsConfig(
-        showLocation = false,
-        showAddress = true,
-        showState = true,
-        showDistrict = true,
-        showVidhansabha = false,
-        showPincode = true
-      ),
+      fieldsConfig =
+        AddressFieldsConfig(
+          showLocation = false,
+          showAddress = true,
+          showState = true,
+          showDistrict = true,
+          showVidhansabha = false,
+          showPincode = true
+        ),
       errors = errors,
       modifier = Modifier.fillMaxWidth()
     )
@@ -182,25 +188,27 @@ private fun AddressWithValidationExample() {
       onClick = {
         showErrors = true
         // Check if all required fields are valid
-        val validationErrors = validateAddressData(
-          addressData,
-          AddressFieldsConfig(
-            showLocation = false,
-            showAddress = true,
-            showState = true,
-            showDistrict = true,
-            showVidhansabha = false,
-            showPincode = true
-          ),
-          requiredFields
-        )
+        val validationErrors =
+          validateAddressData(
+            addressData,
+            AddressFieldsConfig(
+              showLocation = false,
+              showAddress = true,
+              showState = true,
+              showDistrict = true,
+              showVidhansabha = false,
+              showPincode = true
+            ),
+            requiredFields
+          )
 
-        val hasErrors = listOf(
-          validationErrors.addressError,
-          validationErrors.stateError,
-          validationErrors.districtError,
-          validationErrors.pincodeError
-        ).any { it != null }
+        val hasErrors =
+          listOf(
+            validationErrors.addressError,
+            validationErrors.stateError,
+            validationErrors.districtError,
+            validationErrors.pincodeError
+          ).any { it != null }
 
         if (!hasErrors) {
           // Form is valid, proceed with submission
@@ -224,20 +232,22 @@ fun ActivityFormWithAddressExample() {
   var showErrors by remember { mutableStateOf(false) }
 
   val requiredFields = setOf("location", "address", "state", "district")
-  val addressErrors = if (showErrors) {
-    validateAddressData(
-      addressData,
-      AddressFieldsConfig(),
-      requiredFields
-    )
-  } else {
-    AddressErrors()
-  }
+  val addressErrors =
+    if (showErrors) {
+      validateAddressData(
+        addressData,
+        AddressFieldsConfig(),
+        requiredFields
+      )
+    } else {
+      AddressErrors()
+    }
 
   Column(
-    modifier = Modifier
-      .fillMaxSize()
-      .padding(16.dp),
+    modifier =
+      Modifier
+        .fillMaxSize()
+        .padding(16.dp),
     verticalArrangement = Arrangement.spacedBy(16.dp)
   ) {
     Text(
@@ -271,18 +281,20 @@ fun ActivityFormWithAddressExample() {
         showErrors = true
 
         // Validate all fields including address
-        val addressValidationErrors = validateAddressData(
-          addressData,
-          AddressFieldsConfig(),
-          requiredFields
-        )
+        val addressValidationErrors =
+          validateAddressData(
+            addressData,
+            AddressFieldsConfig(),
+            requiredFields
+          )
 
-        val hasAddressErrors = listOf(
-          addressValidationErrors.locationError,
-          addressValidationErrors.addressError,
-          addressValidationErrors.stateError,
-          addressValidationErrors.districtError
-        ).any { it != null }
+        val hasAddressErrors =
+          listOf(
+            addressValidationErrors.locationError,
+            addressValidationErrors.addressError,
+            addressValidationErrors.stateError,
+            addressValidationErrors.districtError
+          ).any { it != null }
 
         if (name.isNotBlank() && !hasAddressErrors) {
           // All validations passed

@@ -49,6 +49,7 @@ fragment MemberDetails on Member {
   name
   profileImage
   phoneNumber
+  joiningDate
   email
   dob
   address {
@@ -109,47 +110,7 @@ query GetFamilyDetail($familyId: String!) {
   familyCollection(filter: { id: { eq: $familyId } }) {
     edges {
       node {
-        id
-        name
-        photos
-        address {
-          id
-          basicAddress
-          state
-          district
-          pincode
-          latitude
-          longitude
-          vidhansabha
-          createdAt
-        }
-        aryaSamaj {
-          id
-          name
-          address {
-            basicAddress
-            district
-            state
-          }
-        }
-        familyMemberCollection(
-          orderBy: [{ isHead: DescNullsLast }, { createdAt: AscNullsFirst }]
-        ) {
-          edges {
-            node {
-              id
-              isHead
-              relationToHead
-              member {
-                id
-                name
-                profileImage
-                phoneNumber
-              }
-            }
-          }
-        }
-        createdAt
+        ...FamilyFields
       }
     }
   }

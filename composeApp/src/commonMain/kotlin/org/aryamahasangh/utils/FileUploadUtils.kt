@@ -6,7 +6,6 @@ import org.aryamahasangh.network.bucket
 import org.aryamahasangh.util.Result
 
 object FileUploadUtils {
-
   /**
    * Upload an image file to Supabase storage
    *
@@ -14,17 +13,21 @@ object FileUploadUtils {
    * @param folder The folder in storage to upload to (e.g., "activity_overview", "profile_images")
    * @return Result containing the public URL of the uploaded file
    */
-  suspend fun uploadImage(file: PlatformFile, folder: String): Result<String> {
+  suspend fun uploadImage(
+    file: PlatformFile,
+    folder: String
+  ): Result<String> {
     return try {
       val timestamp = Clock.System.now().epochSeconds
       val fileExtension = file.name.substringAfterLast('.', "jpg")
-      val fileName = "${folder}_${timestamp}.${fileExtension}"
+      val fileName = "${folder}_$timestamp.$fileExtension"
       val path = if (folder.isNotEmpty()) "$folder/$fileName" else fileName
 
-      val uploadResponse = bucket.upload(
-        path = path,
-        data = file.readBytes()
-      )
+      val uploadResponse =
+        bucket.upload(
+          path = path,
+          data = file.readBytes()
+        )
       uploadResponse.key
 
       val publicUrl = bucket.publicUrl(path)
@@ -44,12 +47,13 @@ object FileUploadUtils {
   suspend fun uploadFile(file: PlatformFile): String {
     val timestamp = Clock.System.now().epochSeconds
     val fileExtension = file.name.substringAfterLast('.', "jpg")
-    val fileName = "${timestamp}.${fileExtension}"
+    val fileName = "$timestamp.$fileExtension"
 
-    val uploadResponse = bucket.upload(
-      path = fileName,
-      data = file.readBytes()
-    )
+    val uploadResponse =
+      bucket.upload(
+        path = fileName,
+        data = file.readBytes()
+      )
 
     return bucket.publicUrl(uploadResponse.path)
   }
@@ -82,13 +86,14 @@ object FileUploadUtils {
         val timestamp = Clock.System.now().epochSeconds
         val randomSuffix = (1000..9999).random()
         val fileExtension = file.name.substringAfterLast('.', "jpg")
-        val fileName = "${timestamp}_${randomSuffix}.${fileExtension}"
+        val fileName = "${timestamp}_$randomSuffix.$fileExtension"
         val path = if (folder.isNotEmpty()) "$folder/$fileName" else fileName
 
-        val uploadResponse = bucket.upload(
-          path = path,
-          data = file.readBytes()
-        )
+        val uploadResponse =
+          bucket.upload(
+            path = path,
+            data = file.readBytes()
+          )
         println(uploadResponse.path)
         val publicUrl = bucket.publicUrl(path)
         uploadedUrls.add(publicUrl)
@@ -110,9 +115,10 @@ object FileUploadUtils {
     return try {
       if (urls.isEmpty()) return Result.Success(Unit)
 
-      val filePaths = urls.map { url ->
-        url.substringAfterLast("/")
-      }
+      val filePaths =
+        urls.map { url ->
+          url.substringAfterLast("/")
+        }
 
       bucket.delete(filePaths)
       Result.Success(Unit)

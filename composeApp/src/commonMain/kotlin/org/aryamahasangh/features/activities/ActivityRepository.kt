@@ -70,7 +70,12 @@ interface ActivityRepository {
    * Listen to real-time registration updates for an activity
    */
   fun listenToRegistrations(activityId: String): Flow<List<UserProfile>>
-  fun addActivityOverview(activityId: String, overview: String, mediaUrls: List<String> = emptyList()): Flow<Result<Boolean>>
+
+  fun addActivityOverview(
+    activityId: String,
+    overview: String,
+    mediaUrls: List<String> = emptyList()
+  ): Flow<Result<Boolean>>
 }
 
 /**
@@ -164,29 +169,31 @@ class ActivityRepositoryImpl(
   ): Result<Boolean> {
     return try {
       // Create update input using Optional fields
-      val updateInput = ActivitiesUpdateInput(
-        name = input.name,
-        type = input.type,
-        shortDescription = input.shortDescription,
-        longDescription = input.longDescription,
-        address = input.address,
-        state = input.state,
-        district = input.district,
-        startDatetime = input.startDatetime,
-        endDatetime = input.endDatetime,
-        mediaFiles = input.mediaFiles,
-        additionalInstructions = input.additionalInstructions,
-        capacity = input.capacity,
-        latitude = input.latitude,
-        longitude = input.longitude,
-        allowedGender = input.allowedGender
-      )
+      val updateInput =
+        ActivitiesUpdateInput(
+          name = input.name,
+          type = input.type,
+          shortDescription = input.shortDescription,
+          longDescription = input.longDescription,
+          address = input.address,
+          state = input.state,
+          district = input.district,
+          startDatetime = input.startDatetime,
+          endDatetime = input.endDatetime,
+          mediaFiles = input.mediaFiles,
+          additionalInstructions = input.additionalInstructions,
+          capacity = input.capacity,
+          latitude = input.latitude,
+          longitude = input.longitude,
+          allowedGender = input.allowedGender
+        )
 
       // Update the activity
-      val updateMutation = UpdateActivityMutation(
-        id = id,
-        input = updateInput
-      )
+      val updateMutation =
+        UpdateActivityMutation(
+          id = id,
+          input = updateInput
+        )
 
       val updateResponse = apolloClient.mutation(updateMutation).execute()
       if (updateResponse.hasErrors()) {
@@ -209,26 +216,28 @@ class ActivityRepositoryImpl(
         }
 
       // Add new associations
-      val organisationData = organisations.map {
-        OrganisationalActivityInsertData(
-          activityId = id,
-          organisationId = it.id
-        )
-      }
+      val organisationData =
+        organisations.map {
+          OrganisationalActivityInsertData(
+            activityId = id,
+            organisationId = it.id
+          )
+        }
 
       if (organisationData.isNotEmpty()) {
         supabaseClient.from("organisational_activity")
           .insert(organisationData)
       }
 
-      val contactData = contactMembers.map {
-        ActivityMemberInsertData(
-          activityId = id,
-          memberId = it.member.id,
-          post = it.post,
-          priority = it.priority
-        )
-      }
+      val contactData =
+        contactMembers.map {
+          ActivityMemberInsertData(
+            activityId = id,
+            memberId = it.member.id,
+            post = it.post,
+            priority = it.priority
+          )
+        }
 
       if (contactData.isNotEmpty()) {
         supabaseClient.from("activity_member")
@@ -315,21 +324,23 @@ class ActivityRepositoryImpl(
   ): Flow<Result<Boolean>> {
     return flow {
       emit(Result.Loading)
-      val result = safeCall {
-        val response = apolloClient.mutation(
-          AddActivityOverviewMutation(
-            activityId,
-            overview,
-            Optional.present(mediaUrls)
-          )
-        ).execute()
+      val result =
+        safeCall {
+          val response =
+            apolloClient.mutation(
+              AddActivityOverviewMutation(
+                activityId,
+                overview,
+                Optional.present(mediaUrls)
+              )
+            ).execute()
 
-        if (response.hasErrors()) {
-          throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+          if (response.hasErrors()) {
+            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+          }
+
+          response.data?.updateActivitiesCollection?.affectedCount!! > 0
         }
-
-        response.data?.updateActivitiesCollection?.affectedCount!! > 0
-      }
       emit(result)
     }
   }

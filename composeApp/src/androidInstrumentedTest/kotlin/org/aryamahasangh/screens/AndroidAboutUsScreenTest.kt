@@ -25,17 +25,17 @@ import org.koin.dsl.module
  * This ensures tests don't fail due to missing dependencies.
  */
 @Composable
-private fun TestWrapper(
-  content: @Composable () -> Unit
-) {
+private fun TestWrapper(content: @Composable () -> Unit) {
   // Create instances of all required dependencies
   val snackbarHostState = SnackbarHostState()
 
   // Wrap in KoinApplication for test isolation
   KoinApplication(application = {
-    modules(module {
-      // Add any test-specific dependencies here
-    })
+    modules(
+      module {
+        // Add any test-specific dependencies here
+      }
+    )
   }) {
     // Provide all CompositionLocals that might be needed
     CompositionLocalProvider(
@@ -109,17 +109,18 @@ class AndroidAboutUsScreenTest {
  * Android-specific fake implementation of AboutUsRepository for testing
  */
 class AndroidFakeAboutUsRepository : AboutUsRepository {
-  override fun getOrganisationByName(name: String) = flow {
-    emit(
-      Result.Success(
-        OrganisationDetail(
-          id = "test-id",
-          name = "आर्य महासंघ",
-          description = "Test description",
-          logo = null,
-          members = emptyList()
+  override fun getOrganisationByName(name: String) =
+    flow {
+      emit(
+        Result.Success(
+          OrganisationDetail(
+            id = "test-id",
+            name = "आर्य महासंघ",
+            description = "Test description",
+            logo = null,
+            members = emptyList()
+          )
         )
       )
-    )
-  }
+    }
 }

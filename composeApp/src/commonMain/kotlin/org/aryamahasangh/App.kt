@@ -30,12 +30,10 @@ private val initKoin by lazy {
   true // Return a value to satisfy the lazy property
 }
 
-
 @Composable
 fun App() {
   val demo = false // Set to true to show form components example
   if (!demo) {
-
     // Ensure Koin is initialized
     initKoin
 
@@ -59,16 +57,16 @@ fun App() {
       // Show the form components example
       FormComponentsExample()
     }
-    //ImagePickerExample()
-    //ActivityFormImagePickerIntegration()
+    // ImagePickerExample()
+    // ActivityFormImagePickerIntegration()
 //    DragAndDropSample()
-    //DNDWithCursor()
+    // DNDWithCursor()
   }
 }
 
 @Preview
 @Composable
-fun Test(){
+fun Test() {
   Column {
     Icon(
       modifier = Modifier.size(96.dp),
@@ -79,9 +77,10 @@ fun Test(){
     WithTooltip(tooltip = "नया परिवार जोड़ें") {
       IconButton(
         onClick = {},
-        modifier = Modifier
-          .size(48.dp) // or your desired size
-          .clip(RectangleShape)
+        modifier =
+          Modifier
+            .size(48.dp) // or your desired size
+            .clip(RectangleShape)
       ) {
         Icon(
           imageVector = vectorResource(Res.drawable.family_add),

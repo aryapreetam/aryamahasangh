@@ -19,8 +19,8 @@ import org.aryamahasangh.features.arya_nirman.SatraRegistrationFormScreen
 import org.aryamahasangh.features.arya_nirman.SatraRegistrationViewModel
 import org.aryamahasangh.features.organisations.NewOrganisationFormScreen
 import org.aryamahasangh.features.organisations.OrgDetailScreen
-import org.aryamahasangh.features.organisations.OrgsScreen
 import org.aryamahasangh.features.organisations.OrganisationsViewModel
+import org.aryamahasangh.features.organisations.OrgsScreen
 import org.aryamahasangh.screens.*
 import org.aryamahasangh.viewmodel.AboutUsViewModel
 import org.aryamahasangh.viewmodel.AdmissionsViewModel
@@ -78,15 +78,16 @@ fun RootNavGraph(navController: NavHostController) {
               emptyList()
             }
           },
-          allMembers = adminUiState.members.map { memberShort ->
-            Member(
-              id = memberShort.id,
-              name = memberShort.name,
-              profileImage = memberShort.profileImage,
-              phoneNumber = "", // Not available in MemberShort
-              email = "" // Not available in MemberShort
-            )
-          },
+          allMembers =
+            adminUiState.members.map { memberShort ->
+              Member(
+                id = memberShort.id,
+                name = memberShort.name,
+                profileImage = memberShort.profileImage,
+                phoneNumber = "", // Not available in MemberShort
+                email = "" // Not available in MemberShort
+              )
+            },
           onTriggerSearch = { query ->
             // Trigger the server search in AdminViewModel
             adminViewModel.searchMembers(query)
@@ -175,6 +176,12 @@ fun RootNavGraph(navController: NavHostController) {
           },
           onNavigateToFamilyDetail = { familyId ->
             navController.navigate(Screen.FamilyDetail(familyId))
+          },
+          onEditFamily = { familyId ->
+            navController.navigate(Screen.EditFamilyForm(familyId))
+          },
+          onDeleteFamily = { familyId ->
+            familyViewModel.deleteFamily(familyId)
           }
         )
       }
@@ -223,13 +230,46 @@ fun RootNavGraph(navController: NavHostController) {
           }
         )
       }
+      composable<Screen.EditFamilyForm> {
+        val familyId = it.toRoute<Screen.EditFamilyForm>().familyId
+        val familyViewModel = koinInject<FamilyViewModel>()
+        CreateAryaParivarFormScreen(
+          viewModel = familyViewModel,
+          onNavigateBack = {
+            navController.popBackStack()
+          },
+          onFamilyCreated = { familyId ->
+            navController.navigate(Screen.FamilyDetail(familyId)) {
+              popUpTo(Screen.AdminContainer)
+            }
+          },
+          editingFamilyId = familyId
+        )
+      }
       composable<Screen.FamilyDetail> {
         val familyId = it.toRoute<Screen.FamilyDetail>().familyId
-        // TODO: Implement FamilyDetailScreen
-        // For now, just navigate back
-        LaunchedEffect(Unit) {
-          navController.popBackStack()
+        val familyViewModel = koinInject<FamilyViewModel>()
+
+        // Navigate to AboutSection if user logs out
+        LaunchedEffect(isLoggedIn) {
+          if (!isLoggedIn) {
+            navController.navigate(Screen.AboutSection) {
+              // Clear the back stack so user can't navigate back to admin
+              popUpTo(0) { inclusive = true }
+            }
+          }
         }
+
+        FamilyDetailScreen(
+          familyId = familyId,
+          viewModel = familyViewModel,
+          onNavigateBack = {
+            navController.popBackStack()
+          },
+          onEditFamily = {
+            navController.navigate(Screen.EditFamilyForm(familyId))
+          }
+        )
       }
     }
     navigation<Screen.AryaNirmanSection>(startDestination = Screen.AryaNirmanHome) {
@@ -383,15 +423,16 @@ fun RootNavGraph(navController: NavHostController) {
               emptyList()
             }
           },
-          allMembers = adminUiState.members.map { memberShort ->
-            Member(
-              id = memberShort.id,
-              name = memberShort.name,
-              profileImage = memberShort.profileImage,
-              phoneNumber = "", // Not available in MemberShort
-              email = "" // Not available in MemberShort
-            )
-          },
+          allMembers =
+            adminUiState.members.map { memberShort ->
+              Member(
+                id = memberShort.id,
+                name = memberShort.name,
+                profileImage = memberShort.profileImage,
+                phoneNumber = "", // Not available in MemberShort
+                email = "" // Not available in MemberShort
+              )
+            },
           onTriggerSearch = { query ->
             // Trigger the server search in AdminViewModel
             adminViewModel.searchMembers(query)
@@ -439,15 +480,16 @@ fun RootNavGraph(navController: NavHostController) {
               emptyList()
             }
           },
-          allMembers = adminUiState.members.map { memberShort ->
-            Member(
-              id = memberShort.id,
-              name = memberShort.name,
-              profileImage = memberShort.profileImage,
-              phoneNumber = "", // Not available in MemberShort
-              email = "" // Not available in MemberShort
-            )
-          },
+          allMembers =
+            adminUiState.members.map { memberShort ->
+              Member(
+                id = memberShort.id,
+                name = memberShort.name,
+                profileImage = memberShort.profileImage,
+                phoneNumber = "", // Not available in MemberShort
+                email = "" // Not available in MemberShort
+              )
+            },
           onTriggerSearch = { query ->
             // Trigger the server search in AdminViewModel
             adminViewModel.searchMembers(query)
@@ -492,15 +534,16 @@ fun RootNavGraph(navController: NavHostController) {
               emptyList()
             }
           },
-          allMembers = adminUiState.members.map { memberShort ->
-            Member(
-              id = memberShort.id,
-              name = memberShort.name,
-              profileImage = memberShort.profileImage,
-              phoneNumber = "", // Not available in MemberShort
-              email = "" // Not available in MemberShort
-            )
-          },
+          allMembers =
+            adminUiState.members.map { memberShort ->
+              Member(
+                id = memberShort.id,
+                name = memberShort.name,
+                profileImage = memberShort.profileImage,
+                phoneNumber = "", // Not available in MemberShort
+                email = "" // Not available in MemberShort
+              )
+            },
           onTriggerSearch = { query ->
             // Trigger the server search in AdminViewModel
             adminViewModel.searchMembers(query)
@@ -541,15 +584,16 @@ fun RootNavGraph(navController: NavHostController) {
               emptyList()
             }
           },
-          allMembers = adminUiState.members.map { memberShort ->
-            Member(
-              id = memberShort.id,
-              name = memberShort.name,
-              profileImage = memberShort.profileImage,
-              phoneNumber = "", // Not available in MemberShort
-              email = "" // Not available in MemberShort
-            )
-          },
+          allMembers =
+            adminUiState.members.map { memberShort ->
+              Member(
+                id = memberShort.id,
+                name = memberShort.name,
+                profileImage = memberShort.profileImage,
+                phoneNumber = "", // Not available in MemberShort
+                email = "" // Not available in MemberShort
+              )
+            },
           onTriggerSearch = { query ->
             // Trigger the server search in AdminViewModel
             adminViewModel.searchMembers(query)
@@ -589,15 +633,16 @@ fun RootNavGraph(navController: NavHostController) {
               emptyList()
             }
           },
-          allMembers = adminUiState.members.map { memberShort ->
-            Member(
-              id = memberShort.id,
-              name = memberShort.name,
-              profileImage = memberShort.profileImage,
-              phoneNumber = "", // Not available in MemberShort
-              email = "" // Not available in MemberShort
-            )
-          },
+          allMembers =
+            adminUiState.members.map { memberShort ->
+              Member(
+                id = memberShort.id,
+                name = memberShort.name,
+                profileImage = memberShort.profileImage,
+                phoneNumber = "", // Not available in MemberShort
+                email = "" // Not available in MemberShort
+              )
+            },
           onTriggerSearch = { query ->
             // Trigger the server search in AdminViewModel
             adminViewModel.searchMembers(query)
@@ -647,6 +692,9 @@ fun RootNavGraph(navController: NavHostController) {
 }
 
 @Composable
-fun PhysicalTrainingForm(gender: Gender, onBack: (Map<String, String>) -> Unit) {
+fun PhysicalTrainingForm(
+  gender: Gender,
+  onBack: (Map<String, String>) -> Unit
+) {
   // Implementation of PhysicalTrainingForm
 }

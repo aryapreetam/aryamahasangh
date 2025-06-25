@@ -75,13 +75,16 @@ fun ActivitiesScreen(
     ) {
       // Sort activities by status: ONGOING -> UPCOMING -> PAST
       val currentTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-      val sortedActivities = uiState.activities.sortedWith(compareBy { activity ->
-        when {
-          currentTime >= activity.startDatetime.toLocalDateTime() && currentTime <= activity.endDatetime.toLocalDateTime() -> 0 // ONGOING
-          currentTime < activity.startDatetime.toLocalDateTime() -> 1 // UPCOMING
-          else -> 2 // PAST
-        }
-      })
+      val sortedActivities =
+        uiState.activities.sortedWith(
+          compareBy { activity ->
+            when {
+              currentTime >= activity.startDatetime.toLocalDateTime() && currentTime <= activity.endDatetime.toLocalDateTime() -> 0 // ONGOING
+              currentTime < activity.startDatetime.toLocalDateTime() -> 1 // UPCOMING
+              else -> 2 // PAST
+            }
+          }
+        )
 
       sortedActivities.forEach { activity ->
         ActivityListItem(

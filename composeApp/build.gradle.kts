@@ -89,9 +89,11 @@ kotlin {
       testTask {
         useKarma {
           useChrome()
-          useConfigDirectory(project.projectDir.resolve("karma.config.d").apply {
-            mkdirs()
-          })
+          useConfigDirectory(
+            project.projectDir.resolve("karma.config.d").apply {
+              mkdirs()
+            }
+          )
         }
       }
     }
@@ -218,8 +220,6 @@ android {
     println("📱 Android version: $versionName ($versionCode)")
   }
 
-
-
   buildFeatures {
     buildConfig = true
   }
@@ -279,9 +279,9 @@ compose.desktop {
   }
 }
 
-//tasks.register<ComposeHotRun>("runHot") {
+// tasks.register<ComposeHotRun>("runHot") {
 //  mainClass.set("org.aryamahasangh.MainKt")
-//}
+// }
 
 tasks.withType<ComposeHotRun>().configureEach {
   mainClass.set("org.aryamahasangh.MainKt")
@@ -305,12 +305,12 @@ apollo {
 }
 
 // not generating all models properly. needs refactoring. until that time don't use
-//tasks.register<GenerateKto>("generateKtoModels") {
+// tasks.register<GenerateKto>("generateKtoModels") {
 //  dependsOn("generateApolloSources")
 //  doLast {
 //    println("Generating DTO models...")
 //  }
-//}
+// }
 
 tasks.withType(ApolloGenerateSourcesTask::class.java).configureEach {
   doNotTrackState("i don't know")
@@ -464,7 +464,7 @@ tasks.named("setupSecrets") {
   dependsOn("checkSecrets")
 }
 //
-//abstract class AddWasmPreloadLinksTask : DefaultTask() {
+// abstract class AddWasmPreloadLinksTask : DefaultTask() {
 //    @get:Internal
 //    abstract val buildDirectory: DirectoryProperty
 //
@@ -520,13 +520,13 @@ tasks.named("setupSecrets") {
 //            println("  - ${file.name}")
 //        }
 //    }
-//}
+// }
 //
-//tasks.register<AddWasmPreloadLinksTask>("addWasmPreloadLinks") {
+// tasks.register<AddWasmPreloadLinksTask>("addWasmPreloadLinks") {
 //    buildDirectory.set(layout.buildDirectory)
-//}
+// }
 //
-//// Hook the task to run after wasmJsBrowserDistribution
-//tasks.named("wasmJsBrowserDistribution") {
+// // Hook the task to run after wasmJsBrowserDistribution
+// tasks.named("wasmJsBrowserDistribution") {
 //    finalizedBy("addWasmPreloadLinks")
-//}
+// }

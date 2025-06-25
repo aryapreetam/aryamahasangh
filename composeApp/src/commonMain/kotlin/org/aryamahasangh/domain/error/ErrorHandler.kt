@@ -22,21 +22,22 @@ object ErrorHandler {
       Result.Success(block())
     } catch (exception: Exception) {
       // Enhanced network detection using NetworkUtils
-      val appError = when {
-        NetworkUtils.isNetworkException(exception) -> {
-          when {
-            exception.message?.contains("timeout", ignoreCase = true) == true ->
-              AppError.NetworkError.Timeout
+      val appError =
+        when {
+          NetworkUtils.isNetworkException(exception) -> {
+            when {
+              exception.message?.contains("timeout", ignoreCase = true) == true ->
+                AppError.NetworkError.Timeout
 
-            else ->
-              AppError.NetworkError.NoConnection
+              else ->
+                AppError.NetworkError.NoConnection
+            }
           }
+          NetworkUtils.isLikelyNetworkIssue(exception.message, exception) -> {
+            AppError.NetworkError.NoConnection
+          }
+          else -> exception.toAppError()
         }
-        NetworkUtils.isLikelyNetworkIssue(exception.message, exception) -> {
-          AppError.NetworkError.NoConnection
-        }
-        else -> exception.toAppError()
-      }
 
       Result.Error(appError.getUserMessage(), exception)
     }
@@ -107,10 +108,11 @@ fun <T> Result<T>.mapError(transform: (String) -> AppError): Result<T> {
  */
 fun <T> Result<T>.onError(action: (AppError) -> Unit): Result<T> {
   if (this is Result.Error) {
-    val appError = when {
-      NetworkUtils.isNetworkException(this.exception) -> AppError.NetworkError.NoConnection
-      else -> this.exception?.toAppError() ?: AppError.UnknownError(this.message)
-    }
+    val appError =
+      when {
+        NetworkUtils.isNetworkException(this.exception) -> AppError.NetworkError.NoConnection
+        else -> this.exception?.toAppError() ?: AppError.UnknownError(this.message)
+      }
     action(appError)
   }
   return this
@@ -141,10 +143,11 @@ suspend fun <T> retryWithBackoff(
         }
 
         // Check if error is retryable
-        val appError = when {
-          NetworkUtils.isNetworkException(result.exception) -> AppError.NetworkError.NoConnection
-          else -> result.exception?.toAppError() ?: AppError.UnknownError(result.message)
-        }
+        val appError =
+          when {
+            NetworkUtils.isNetworkException(result.exception) -> AppError.NetworkError.NoConnection
+            else -> result.exception?.toAppError() ?: AppError.UnknownError(result.message)
+          }
 
         if (!isRetryableError(appError)) {
           return result

@@ -131,12 +131,13 @@ fun ActivityDetailScreen(
 
     // Edit button in top-right corner
     if (isLoggedIn) {
-      if(uiState.activity!!.isUpcoming()) {
+      if (uiState.activity!!.isUpcoming()) {
         IconButton(
           onClick = { onNavigateToEdit(id) },
-          modifier = Modifier
-            .align(Alignment.TopEnd)
-            .padding(8.dp)
+          modifier =
+            Modifier
+              .align(Alignment.TopEnd)
+              .padding(8.dp)
         ) {
           Icon(
             imageVector = Icons.Default.Edit,
@@ -230,13 +231,16 @@ fun UserProfileListItem(user: UserProfile, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun RegisteredUsers(users: List<UserProfile>, capacity: Int = 0) {
+fun RegisteredUsers(
+  users: List<UserProfile>,
+  capacity: Int = 0
+) {
   Column(
     verticalArrangement = Arrangement.spacedBy(8.dp) // Space between items
   ) {
     Column {
       val count = "${users.size}"
-      val capacityText = if (capacity > 0) " / ${capacity.toString()}" else ""
+      val capacityText = if (capacity > 0) " / $capacity" else ""
       Text(
         "कुल पंजीकरण (${count.toDevanagariNumerals()}${capacityText.toDevanagariNumerals()}):",
         style = MaterialTheme.typography.labelLarge,
@@ -362,8 +366,9 @@ fun ActivityDisplay(
     }
 
     // Place - only show if address data is present
-    val hasAddressData = activity.address.isNotEmpty() || activity.state.isNotEmpty() ||
-      activity.district.isNotEmpty() || activity.latitude != null || activity.longitude != null
+    val hasAddressData =
+      activity.address.isNotEmpty() || activity.state.isNotEmpty() ||
+        activity.district.isNotEmpty() || activity.latitude != null || activity.longitude != null
 
     if (hasAddressData) {
       Row(
@@ -373,11 +378,12 @@ fun ActivityDisplay(
         Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Place", tint = Color.Gray)
         Spacer(modifier = Modifier.width(4.dp))
 
-        val addressParts = listOfNotNull(
-          activity.address.takeIf { it.isNotEmpty() },
-          activity.district.takeIf { it.isNotEmpty() },
-          activity.state.takeIf { it.isNotEmpty() }
-        )
+        val addressParts =
+          listOfNotNull(
+            activity.address.takeIf { it.isNotEmpty() },
+            activity.district.takeIf { it.isNotEmpty() },
+            activity.state.takeIf { it.isNotEmpty() }
+          )
 
         Text(
           text = "स्थान: ${addressParts.joinToString(", ")}${if (addressParts.isNotEmpty()) "." else ""}",
@@ -494,7 +500,9 @@ fun ActivityDisplay(
       val hasCapacityLimit = activity.capacity > 0
       val isFull = hasCapacityLimit && registrationCount >= activity.capacity
 
-      println("Activity ${activity.id}: registrations=$registrationCount, capacity=${activity.capacity}, isFull=$isFull")
+      println(
+        "Activity ${activity.id}: registrations=$registrationCount, capacity=${activity.capacity}, isFull=$isFull"
+      )
 
       Row(
         modifier = Modifier.fillMaxWidth(),
@@ -502,7 +510,7 @@ fun ActivityDisplay(
       ) {
         Button(
           onClick = { onNavigateToRegistration(activity.id, activity.capacity) },
-          enabled = !isFull,
+          enabled = !isFull
         ) {
           Text(
             text = if (isFull) "पंजीकरण बंद" else "पंजीकरण",
@@ -539,12 +547,13 @@ fun ActivityDisplay(
       if (isLoggedIn) {
         // Tabs for logged in users
         var selectedTabIndex by remember { mutableStateOf(0) }
-        val tabs = listOf(
-          "अवलोकन",
-          "कुल पंजीकरण (${
-            registeredUsers.size.toString().toDevanagariNumerals()
-          }${if (activity.capacity > 0) " / ${activity.capacity.toString().toDevanagariNumerals()}" else ""})"
-        )
+        val tabs =
+          listOf(
+            "अवलोकन",
+            "कुल पंजीकरण (${
+              registeredUsers.size.toString().toDevanagariNumerals()
+            }${if (activity.capacity > 0) " / ${activity.capacity.toString().toDevanagariNumerals()}" else ""})"
+          )
 
         PrimaryTabRow(selectedTabIndex = selectedTabIndex) {
           tabs.forEachIndexed { index, title ->
@@ -607,7 +616,7 @@ fun ActivityDisplay(
           )
         }
       }
-    }else if(isLoggedIn){
+    } else if (isLoggedIn) {
       RegisteredUsers(registeredUsers, activity.capacity)
     }
   }
@@ -622,7 +631,7 @@ fun OverviewSection(
   Column(
     modifier = Modifier.padding(8.dp)
   ) {
-    if(!isLoggedIn) {
+    if (!isLoggedIn) {
       Text(
         text = "अवलोकन",
         style = MaterialTheme.typography.titleLarge,
@@ -661,7 +670,7 @@ fun OverviewSection(
       Spacer(modifier = Modifier.height(12.dp))
       FlowRow(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
       ) {
         val uriHandler = LocalUriHandler.current
         activity.overviewMediaUrls.forEach { imageUrl ->
@@ -669,13 +678,14 @@ fun OverviewSection(
             model = imageUrl,
             contentDescription = "अवलोकन चित्र",
             contentScale = ContentScale.Fit,
-            modifier = Modifier
-              .size(150.dp)
-              .clip(RoundedCornerShape(8.dp))
-              .clickable {
-                // Handle image click if needed - could open in full screen
-                uriHandler.openUri(imageUrl)
-              }
+            modifier =
+              Modifier
+                .size(150.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .clickable {
+                  // Handle image click if needed - could open in full screen
+                  uriHandler.openUri(imageUrl)
+                }
           )
         }
       }
@@ -687,8 +697,6 @@ fun OverviewSection(
         style = MaterialTheme.typography.bodyLarge
       )
     }
-
-
 
     if (isLoggedIn && !activity.hasOverview()) {
       Button(

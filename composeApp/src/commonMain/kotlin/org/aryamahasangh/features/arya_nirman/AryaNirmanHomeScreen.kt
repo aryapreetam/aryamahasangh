@@ -75,10 +75,11 @@ fun AryaNirmanHomeScreen(
   }
 
   Column(
-    modifier = Modifier
-      .padding(8.dp)
-      .fillMaxSize()
-      .verticalScroll(rememberScrollState())
+    modifier =
+      Modifier
+        .padding(8.dp)
+        .fillMaxSize()
+        .verticalScroll(rememberScrollState())
   ) {
     Text("आगामी सत्र", modifier = Modifier.padding(bottom = 8.dp))
 

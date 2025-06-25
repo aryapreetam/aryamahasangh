@@ -30,58 +30,78 @@ import kotlinx.serialization.Serializable
 // --- Data Models ---
 
 enum class DatePickerType {
-  DATE_OF_BIRTH,    // Cannot select future dates
-  FUTURE_EVENT,     // Cannot select past dates (can select today and after)
-  PAST_EVENT        // Cannot select future dates
+  DATE_OF_BIRTH, // Cannot select future dates
+  FUTURE_EVENT, // Cannot select past dates (can select today and after)
+  PAST_EVENT // Cannot select future dates
 }
 
 enum class Gender {
-  MALE, FEMALE, OTHER;
+  MALE,
+  FEMALE,
+  OTHER;
 
-  fun toDisplayName(): String = when (this) {
-    MALE -> "पुरुष"
-    FEMALE -> "महिला"
-    OTHER -> "अन्य"
-  }
+  fun toDisplayName(): String =
+    when (this) {
+      MALE -> "पुरुष"
+      FEMALE -> "महिला"
+      OTHER -> "अन्य"
+    }
 
   companion object {
-    fun fromDisplayName(displayName: String): Gender? =
-      entries.find { it.toDisplayName() == displayName }
+    fun fromDisplayName(displayName: String): Gender? = entries.find { it.toDisplayName() == displayName }
   }
 }
 
 enum class FamilyRelation {
-  SELF, FATHER, MOTHER, HUSBAND, WIFE, SON, DAUGHTER, BROTHER, SISTER,
-  GRANDFATHER, GRANDMOTHER, GRANDSON, GRANDDAUGHTER,
-  UNCLE, AUNT, COUSIN, NEPHEW, NIECE, GUARDIAN, RELATIVE, OTHER;
+  SELF,
+  FATHER,
+  MOTHER,
+  HUSBAND,
+  WIFE,
+  SON,
+  DAUGHTER,
+  BROTHER,
+  SISTER,
+  GRANDFATHER,
+  GRANDMOTHER,
+  GRANDSON,
+  GRANDDAUGHTER,
+  UNCLE,
+  AUNT,
+  COUSIN,
+  NEPHEW,
+  NIECE,
+  GUARDIAN,
+  RELATIVE,
+  OTHER;
 
-  fun toDisplayName(): String = when (this) {
-    SELF -> "स्वयं"
-    FATHER -> "पिता"
-    MOTHER -> "माता"
-    HUSBAND -> "पति"
-    WIFE -> "पत्नी"
-    SON -> "पुत्र"
-    DAUGHTER -> "पुत्री"
-    BROTHER -> "भाई"
-    SISTER -> "बहिन"
-    GRANDFATHER -> "पितामह"
-    GRANDMOTHER -> "पितामही"
-    GRANDSON -> "पौत्र"
-    GRANDDAUGHTER -> "पौत्री"
-    UNCLE -> "चाचा"
-    AUNT -> "चाची"
-    COUSIN -> "चचेरा भाई/बहिन"
-    NEPHEW -> "भतीजा"
-    NIECE -> "भतीजी"
-    GUARDIAN -> "अभिभावक"
-    RELATIVE -> "संबंधी"
-    OTHER -> "अन्य"
-  }
+  fun toDisplayName(): String =
+    when (this) {
+      SELF -> "स्वयं"
+      FATHER -> "पिता"
+      MOTHER -> "माता"
+      HUSBAND -> "पति"
+      WIFE -> "पत्नी"
+      SON -> "पुत्र"
+      DAUGHTER -> "पुत्री"
+      BROTHER -> "भाई"
+      SISTER -> "बहिन"
+      GRANDFATHER -> "पितामह"
+      GRANDMOTHER -> "पितामही"
+      GRANDSON -> "पौत्र"
+      GRANDDAUGHTER -> "पौत्री"
+      UNCLE -> "चाचा"
+      AUNT -> "चाची"
+      COUSIN -> "चचेरा भाई/बहिन"
+      NEPHEW -> "भतीजा"
+      NIECE -> "भतीजी"
+      GUARDIAN -> "अभिभावक"
+      RELATIVE -> "संबंधी"
+      OTHER -> "अन्य"
+    }
 
   companion object {
-    fun fromDisplayName(displayName: String): FamilyRelation? =
-      entries.find { it.toDisplayName() == displayName }
+    fun fromDisplayName(displayName: String): FamilyRelation? = entries.find { it.toDisplayName() == displayName }
   }
 }
 
@@ -111,13 +131,14 @@ fun DatePickerField(
 ) {
   var showDatePicker by remember { mutableStateOf(false) }
 
-  val dateFormatter = LocalDate.Format {
-    dayOfMonth()
-    char('/')
-    monthNumber()
-    char('/')
-    year()
-  }
+  val dateFormatter =
+    LocalDate.Format {
+      dayOfMonth()
+      char('/')
+      monthNumber()
+      char('/')
+      year()
+    }
 
   Box(modifier = modifier) {
     OutlinedTextField(
@@ -140,42 +161,47 @@ fun DatePickerField(
       isError = isError,
       supportingText = supportingText
     )
-    
+
     // Invisible clickable overlay to trigger date picker
     if (enabled) {
       Box(
-        modifier = Modifier
-          .matchParentSize()
-          .clickable { showDatePicker = true }
+        modifier =
+          Modifier
+            .matchParentSize()
+            .clickable { showDatePicker = true }
       )
     }
   }
 
   if (showDatePicker) {
     val currentTimeMillis = kotlinx.datetime.Clock.System.now().toEpochMilliseconds()
-    val currentDate = Instant.fromEpochMilliseconds(currentTimeMillis)
-      .toLocalDateTime(TimeZone.currentSystemDefault()).date
-    
+    val currentDate =
+      Instant.fromEpochMilliseconds(currentTimeMillis)
+        .toLocalDateTime(TimeZone.currentSystemDefault()).date
+
     // Set date validator based on type
     val dateValidator: (Long) -> Boolean = { timeInMillis ->
-      val dateToCheck = Instant.fromEpochMilliseconds(timeInMillis)
-        .toLocalDateTime(TimeZone.currentSystemDefault()).date
-      
+      val dateToCheck =
+        Instant.fromEpochMilliseconds(timeInMillis)
+          .toLocalDateTime(TimeZone.currentSystemDefault()).date
+
       when (type) {
         DatePickerType.DATE_OF_BIRTH -> dateToCheck <= currentDate // Cannot select future dates
         DatePickerType.FUTURE_EVENT -> dateToCheck >= currentDate // Cannot select past dates
         DatePickerType.PAST_EVENT -> dateToCheck <= currentDate // Cannot select future dates
       }
     }
-    
-    val datePickerState = rememberDatePickerState(
-      initialSelectedDateMillis = value?.toEpochDays()?.times(24 * 60 * 60 * 1000L),
-      selectableDates = object : SelectableDates {
-        override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-          return dateValidator(utcTimeMillis)
-        }
-      }
-    )
+
+    val datePickerState =
+      rememberDatePickerState(
+        initialSelectedDateMillis = value?.toEpochDays()?.times(24 * 60 * 60 * 1000L),
+        selectableDates =
+          object : SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+              return dateValidator(utcTimeMillis)
+            }
+          }
+      )
 
     DatePickerDialog(
       onDateSelected = { selectedDate ->
@@ -202,9 +228,10 @@ private fun DatePickerDialog(
     Surface(
       shape = MaterialTheme.shapes.extraLarge,
       tonalElevation = 6.dp,
-      modifier = Modifier
-        .wrapContentSize()
-        .padding(16.dp)
+      modifier =
+        Modifier
+          .wrapContentSize()
+          .padding(16.dp)
     ) {
       Column(
         modifier = Modifier.padding(16.dp)
@@ -229,9 +256,10 @@ private fun DatePickerDialog(
           }
           TextButton(
             onClick = {
-              val selectedDate = datePickerState.selectedDateMillis?.let { millis ->
-                LocalDate.fromEpochDays((millis / (24 * 60 * 60 * 1000L)).toInt())
-              }
+              val selectedDate =
+                datePickerState.selectedDateMillis?.let { millis ->
+                  LocalDate.fromEpochDays((millis / (24 * 60 * 60 * 1000L)).toInt())
+                }
               onDateSelected(selectedDate)
             }
           ) {
@@ -409,10 +437,11 @@ fun AryaSamajSelector(
     // Invisible clickable overlay that excludes the trailing icon area
     if (enabled) {
       Box(
-        modifier = Modifier
-          .matchParentSize()
-          .padding(end = if (selectedAryaSamaj != null) 96.dp else 48.dp) // Exclude trailing icons
-          .clickable { showDialog = true }
+        modifier =
+          Modifier
+            .matchParentSize()
+            .padding(end = if (selectedAryaSamaj != null) 96.dp else 48.dp) // Exclude trailing icons
+            .clickable { showDialog = true }
       )
     }
   }
@@ -444,9 +473,10 @@ private fun AryaSamajSelectionDialog(
   selectedAryaSamaj: AryaSamaj?
 ) {
   var searchQuery by remember { mutableStateOf("") }
-  val searchResults = remember(searchQuery) {
-    if (searchQuery.isBlank()) allAryaSamaj else searchAryaSamaj(searchQuery)
-  }
+  val searchResults =
+    remember(searchQuery) {
+      if (searchQuery.isBlank()) allAryaSamaj else searchAryaSamaj(searchQuery)
+    }
 
   Dialog(
     onDismissRequest = onDismiss,
@@ -455,9 +485,10 @@ private fun AryaSamajSelectionDialog(
     Surface(
       shape = MaterialTheme.shapes.extraLarge,
       tonalElevation = 6.dp,
-      modifier = Modifier
-        .fillMaxWidth(0.9f)
-        .fillMaxHeight(0.8f)
+      modifier =
+        Modifier
+          .fillMaxWidth(0.9f)
+          .fillMaxHeight(0.8f)
     ) {
       Column(
         modifier = Modifier.padding(16.dp)
@@ -491,13 +522,15 @@ private fun AryaSamajSelectionDialog(
             }
           },
           modifier = Modifier.fillMaxWidth(),
-          keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Text,
-            imeAction = ImeAction.Search
-          ),
-          keyboardActions = KeyboardActions(
-            onSearch = { onTriggerSearch(searchQuery) }
-          )
+          keyboardOptions =
+            KeyboardOptions(
+              keyboardType = KeyboardType.Text,
+              imeAction = ImeAction.Search
+            ),
+          keyboardActions =
+            KeyboardActions(
+              onSearch = { onTriggerSearch(searchQuery) }
+            )
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -522,9 +555,10 @@ private fun AryaSamajSelectionDialog(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center,
-                modifier = Modifier
-                  .fillMaxWidth()
-                  .padding(32.dp)
+                modifier =
+                  Modifier
+                    .fillMaxWidth()
+                    .padding(32.dp)
               )
             }
           }
@@ -552,16 +586,21 @@ private fun AryaSamajItem(
 ) {
   Card(
     onClick = onClick,
-    colors = CardDefaults.cardColors(
-      containerColor = if (isSelected)
-        MaterialTheme.colorScheme.primaryContainer
-      else
-        MaterialTheme.colorScheme.surface
-    ),
-    border = if (isSelected)
-      null
-    else
-      CardDefaults.outlinedCardBorder(),
+    colors =
+      CardDefaults.cardColors(
+        containerColor =
+          if (isSelected) {
+            MaterialTheme.colorScheme.primaryContainer
+          } else {
+            MaterialTheme.colorScheme.surface
+          }
+      ),
+    border =
+      if (isSelected) {
+        null
+      } else {
+        CardDefaults.outlinedCardBorder()
+      },
     modifier = Modifier.fillMaxWidth()
   ) {
     Column(
@@ -571,29 +610,35 @@ private fun AryaSamajItem(
         text = aryaSamaj.name,
         style = MaterialTheme.typography.titleMedium,
         fontWeight = FontWeight.SemiBold,
-        color = if (isSelected)
-          MaterialTheme.colorScheme.onPrimaryContainer
-        else
-          MaterialTheme.colorScheme.onSurface
+        color =
+          if (isSelected) {
+            MaterialTheme.colorScheme.onPrimaryContainer
+          } else {
+            MaterialTheme.colorScheme.onSurface
+          }
       )
 
       Text(
         text = aryaSamaj.address,
         style = MaterialTheme.typography.bodyMedium,
-        color = if (isSelected)
-          MaterialTheme.colorScheme.onPrimaryContainer
-        else
-          MaterialTheme.colorScheme.onSurfaceVariant,
+        color =
+          if (isSelected) {
+            MaterialTheme.colorScheme.onPrimaryContainer
+          } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+          },
         modifier = Modifier.padding(top = 4.dp)
       )
 
       Text(
         text = "जिला: ${aryaSamaj.district}",
         style = MaterialTheme.typography.bodySmall,
-        color = if (isSelected)
-          MaterialTheme.colorScheme.onPrimaryContainer
-        else
-          MaterialTheme.colorScheme.onSurfaceVariant,
+        color =
+          if (isSelected) {
+            MaterialTheme.colorScheme.onPrimaryContainer
+          } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+          },
         modifier = Modifier.padding(top = 2.dp)
       )
     }

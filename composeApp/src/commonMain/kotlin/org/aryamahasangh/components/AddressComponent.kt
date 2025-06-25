@@ -21,8 +21,6 @@ import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.serialization.kotlinx.json.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.*
@@ -54,7 +52,7 @@ data class AddressFieldsConfig(
   val showState: Boolean = true,
   val showDistrict: Boolean = true,
   val showVidhansabha: Boolean = true,
-  val showPincode: Boolean = true,
+  val showPincode: Boolean = true
 )
 
 /**
@@ -138,19 +136,25 @@ fun AddressComponent(
   val pincodeFocusRequester = remember { FocusRequester() }
 
   // HTTP client for reverse geocoding
-  val httpClient = remember {
-    HttpClient {
-      install(ContentNegotiation) {
-        json(Json {
-          ignoreUnknownKeys = true
-          coerceInputValues = true
-        })
+  val httpClient =
+    remember {
+      HttpClient {
+        install(ContentNegotiation) {
+          json(
+            Json {
+              ignoreUnknownKeys = true
+              coerceInputValues = true
+            }
+          )
+        }
       }
     }
-  }
 
   // Function to perform reverse geocoding
-  suspend fun reverseGeocode(lat: Double, lon: Double) {
+  suspend fun reverseGeocode(
+    lat: Double,
+    lon: Double
+  ) {
     isReverseGeocoding = true
     try {
       println("Starting reverse geocoding for lat: $lat, lon: $lon")
@@ -163,19 +167,21 @@ fun AddressComponent(
       val languages = listOf("hi", "en")
 
       for (lang in languages) {
-        val url = "https://nominatim.openstreetmap.org/reverse?" +
-          "lat=$lat&lon=$lon&format=json&addressdetails=1&accept-language=$lang"
+        val url =
+          "https://nominatim.openstreetmap.org/reverse?" +
+            "lat=$lat&lon=$lon&format=json&addressdetails=1&accept-language=$lang"
 
         println("Trying reverse geocoding with language: $lang")
 
         try {
-          val response: HttpResponse = httpClient.get(url) {
-            headers {
-              append("User-Agent", "AryaMahasangh/1.0")
-              // Don't send content-type header for GET requests - causes CORS issues
-              // append("Accept", "application/json") // Also not needed, causes issues
+          val response: HttpResponse =
+            httpClient.get(url) {
+              headers {
+                append("User-Agent", "AryaMahasangh/1.0")
+                // Don't send content-type header for GET requests - causes CORS issues
+                // append("Accept", "application/json") // Also not needed, causes issues
+              }
             }
-          }
 
           println("Response status: ${response.status}")
 
@@ -207,75 +213,78 @@ fun AddressComponent(
               println("State from API: $stateStr")
 
               // Map state name to match our state list - check both Hindi and English
-              val mappedState = when {
-                // Hindi mappings
-                stateStr.contains("उत्तर प्रदेश", ignoreCase = true) -> "उत्तर प्रदेश"
-                stateStr.contains("हरियाणा", ignoreCase = true) -> "हरियाणा"
-                stateStr.contains("दिल्ली", ignoreCase = true) -> "दिल्ली"
-                stateStr.contains("राजस्थान", ignoreCase = true) -> "राजस्थान"
-                stateStr.contains("मध्य प्रदेश", ignoreCase = true) -> "मध्य प्रदेश"
-                stateStr.contains("महाराष्ट्र", ignoreCase = true) -> "महाराष्ट्र"
-                stateStr.contains("गुजरात", ignoreCase = true) -> "गुजरात"
-                stateStr.contains("बिहार", ignoreCase = true) -> "बिहार"
-                stateStr.contains("पंजाब", ignoreCase = true) -> "पंजाब"
-                // English mappings
-                stateStr.contains("Uttar Pradesh", ignoreCase = true) -> "उत्तर प्रदेश"
-                stateStr.contains("Haryana", ignoreCase = true) -> "हरियाणा"
-                stateStr.contains("Delhi", ignoreCase = true) -> "दिल्ली"
-                stateStr.contains("NCT of Delhi", ignoreCase = true) -> "दिल्ली"
-                stateStr.contains("National Capital Territory", ignoreCase = true) -> "दिल्ली"
-                stateStr.contains("Rajasthan", ignoreCase = true) -> "राजस्थान"
-                stateStr.contains("Madhya Pradesh", ignoreCase = true) -> "मध्य प्रदेश"
-                stateStr.contains("Maharashtra", ignoreCase = true) -> "महाराष्ट्र"
-                stateStr.contains("Gujarat", ignoreCase = true) -> "गुजरात"
-                stateStr.contains("Bihar", ignoreCase = true) -> "बिहार"
-                stateStr.contains("Punjab", ignoreCase = true) -> "पंजाब"
-                stateStr.contains("West Bengal", ignoreCase = true) -> "पश्चिम बंगाल"
-                stateStr.contains("Tamil Nadu", ignoreCase = true) -> "तमिलनाडु"
-                stateStr.contains("Karnataka", ignoreCase = true) -> "कर्नाटक"
-                stateStr.contains("Kerala", ignoreCase = true) -> "केरल"
-                stateStr.contains("Andhra Pradesh", ignoreCase = true) -> "आंध्र प्रदेश"
-                stateStr.contains("Telangana", ignoreCase = true) -> "तेलंगाना"
-                stateStr.contains("Odisha", ignoreCase = true) -> "ओडिशा"
-                stateStr.contains("Orissa", ignoreCase = true) -> "ओडिशा"
-                stateStr.contains("Jharkhand", ignoreCase = true) -> "झारखंड"
-                stateStr.contains("Chhattisgarh", ignoreCase = true) -> "छत्तीसगढ़"
-                stateStr.contains("Uttarakhand", ignoreCase = true) -> "उत्तराखंड"
-                stateStr.contains("Himachal Pradesh", ignoreCase = true) -> "हिमाचल प्रदेश"
-                stateStr.contains("Jammu", ignoreCase = true) -> "जम्मू और कश्मीर"
-                stateStr.contains("Kashmir", ignoreCase = true) -> "जम्मू और कश्मीर"
-                stateStr.contains("Assam", ignoreCase = true) -> "असम"
-                stateStr.contains("Sikkim", ignoreCase = true) -> "सिक्किम"
-                stateStr.contains("Meghalaya", ignoreCase = true) -> "मेघालय"
-                stateStr.contains("Tripura", ignoreCase = true) -> "त्रिपुरा"
-                stateStr.contains("Mizoram", ignoreCase = true) -> "मिजोरम"
-                stateStr.contains("Manipur", ignoreCase = true) -> "मणिपुर"
-                stateStr.contains("Nagaland", ignoreCase = true) -> "नागालैंड"
-                stateStr.contains("Arunachal Pradesh", ignoreCase = true) -> "अरुणाचल प्रदेश"
-                stateStr.contains("Goa", ignoreCase = true) -> "गोवा"
-                else -> ""
-              }
+              val mappedState =
+                when {
+                  // Hindi mappings
+                  stateStr.contains("उत्तर प्रदेश", ignoreCase = true) -> "उत्तर प्रदेश"
+                  stateStr.contains("हरियाणा", ignoreCase = true) -> "हरियाणा"
+                  stateStr.contains("दिल्ली", ignoreCase = true) -> "दिल्ली"
+                  stateStr.contains("राजस्थान", ignoreCase = true) -> "राजस्थान"
+                  stateStr.contains("मध्य प्रदेश", ignoreCase = true) -> "मध्य प्रदेश"
+                  stateStr.contains("महाराष्ट्र", ignoreCase = true) -> "महाराष्ट्र"
+                  stateStr.contains("गुजरात", ignoreCase = true) -> "गुजरात"
+                  stateStr.contains("बिहार", ignoreCase = true) -> "बिहार"
+                  stateStr.contains("पंजाब", ignoreCase = true) -> "पंजाब"
+                  // English mappings
+                  stateStr.contains("Uttar Pradesh", ignoreCase = true) -> "उत्तर प्रदेश"
+                  stateStr.contains("Haryana", ignoreCase = true) -> "हरियाणा"
+                  stateStr.contains("Delhi", ignoreCase = true) -> "दिल्ली"
+                  stateStr.contains("NCT of Delhi", ignoreCase = true) -> "दिल्ली"
+                  stateStr.contains("National Capital Territory", ignoreCase = true) -> "दिल्ली"
+                  stateStr.contains("Rajasthan", ignoreCase = true) -> "राजस्थान"
+                  stateStr.contains("Madhya Pradesh", ignoreCase = true) -> "मध्य प्रदेश"
+                  stateStr.contains("Maharashtra", ignoreCase = true) -> "महाराष्ट्र"
+                  stateStr.contains("Gujarat", ignoreCase = true) -> "गुजरात"
+                  stateStr.contains("Bihar", ignoreCase = true) -> "बिहार"
+                  stateStr.contains("Punjab", ignoreCase = true) -> "पंजाब"
+                  stateStr.contains("West Bengal", ignoreCase = true) -> "पश्चिम बंगाल"
+                  stateStr.contains("Tamil Nadu", ignoreCase = true) -> "तमिलनाडु"
+                  stateStr.contains("Karnataka", ignoreCase = true) -> "कर्नाटक"
+                  stateStr.contains("Kerala", ignoreCase = true) -> "केरल"
+                  stateStr.contains("Andhra Pradesh", ignoreCase = true) -> "आंध्र प्रदेश"
+                  stateStr.contains("Telangana", ignoreCase = true) -> "तेलंगाना"
+                  stateStr.contains("Odisha", ignoreCase = true) -> "ओडिशा"
+                  stateStr.contains("Orissa", ignoreCase = true) -> "ओडिशा"
+                  stateStr.contains("Jharkhand", ignoreCase = true) -> "झारखंड"
+                  stateStr.contains("Chhattisgarh", ignoreCase = true) -> "छत्तीसगढ़"
+                  stateStr.contains("Uttarakhand", ignoreCase = true) -> "उत्तराखंड"
+                  stateStr.contains("Himachal Pradesh", ignoreCase = true) -> "हिमाचल प्रदेश"
+                  stateStr.contains("Jammu", ignoreCase = true) -> "जम्मू और कश्मीर"
+                  stateStr.contains("Kashmir", ignoreCase = true) -> "जम्मू और कश्मीर"
+                  stateStr.contains("Assam", ignoreCase = true) -> "असम"
+                  stateStr.contains("Sikkim", ignoreCase = true) -> "सिक्किम"
+                  stateStr.contains("Meghalaya", ignoreCase = true) -> "मेघालय"
+                  stateStr.contains("Tripura", ignoreCase = true) -> "त्रिपुरा"
+                  stateStr.contains("Mizoram", ignoreCase = true) -> "मिजोरम"
+                  stateStr.contains("Manipur", ignoreCase = true) -> "मणिपुर"
+                  stateStr.contains("Nagaland", ignoreCase = true) -> "नागालैंड"
+                  stateStr.contains("Arunachal Pradesh", ignoreCase = true) -> "अरुणाचल प्रदेश"
+                  stateStr.contains("Goa", ignoreCase = true) -> "गोवा"
+                  else -> ""
+                }
 
               println("Mapped state: $mappedState")
 
               // Get district
-              val districtStr = address["state_district"]?.jsonPrimitive?.content
-                ?: address["county"]?.jsonPrimitive?.content ?: ""
+              val districtStr =
+                address["state_district"]?.jsonPrimitive?.content
+                  ?: address["county"]?.jsonPrimitive?.content ?: ""
               println("District from API: $districtStr")
 
               val stateDistricts = indianStatesToDistricts[mappedState] ?: emptyList()
-              val mappedDistrict = if (districtStr.isNotEmpty() && stateDistricts.isNotEmpty()) {
-                stateDistricts.find { districtInList ->
-                  // Check if API district contains our district or vice versa
-                  districtStr.contains(districtInList, ignoreCase = true) ||
-                    districtInList.contains(districtStr, ignoreCase = true) ||
-                  // Also check without "district" suffix
-                  districtStr.replace(" district", "", ignoreCase = true)
-                    .contains(districtInList.replace(" district", "", ignoreCase = true), ignoreCase = true)
-                } ?: ""
-              } else {
-                ""
-              }
+              val mappedDistrict =
+                if (districtStr.isNotEmpty() && stateDistricts.isNotEmpty()) {
+                  stateDistricts.find { districtInList ->
+                    // Check if API district contains our district or vice versa
+                    districtStr.contains(districtInList, ignoreCase = true) ||
+                      districtInList.contains(districtStr, ignoreCase = true) ||
+                      // Also check without "district" suffix
+                      districtStr.replace(" district", "", ignoreCase = true)
+                        .contains(districtInList.replace(" district", "", ignoreCase = true), ignoreCase = true)
+                  } ?: ""
+                } else {
+                  ""
+                }
 
               println("Mapped district: $mappedDistrict")
 
@@ -287,13 +296,14 @@ fun AddressComponent(
               println("Preserved location: $preservedLocation")
 
               // Update address data with explicit location preservation
-              val newAddressData = addressData.copy(
-                location = LatLng(lat,lon), // Explicitly preserve the original location
-                address = if (fullAddress.isNotBlank()) fullAddress else addressData.address,
-                state = if (mappedState.isNotBlank()) mappedState else addressData.state,
-                district = if (mappedDistrict.isNotBlank()) mappedDistrict else addressData.district,
-                pincode = if (pincode.isNotBlank()) pincode else addressData.pincode
-              )
+              val newAddressData =
+                addressData.copy(
+                  location = LatLng(lat, lon), // Explicitly preserve the original location
+                  address = if (fullAddress.isNotBlank()) fullAddress else addressData.address,
+                  state = if (mappedState.isNotBlank()) mappedState else addressData.state,
+                  district = if (mappedDistrict.isNotBlank()) mappedDistrict else addressData.district,
+                  pincode = if (pincode.isNotBlank()) pincode else addressData.pincode
+                )
 
               println("Final address data after reverse geocoding: $newAddressData")
               println("Location preserved: ${newAddressData.location}")
@@ -383,17 +393,19 @@ fun AddressComponent(
           }
         },
         label = { Text("पूर्ण पता") },
-        modifier = Modifier
-          .width(500.dp)
-          .focusRequester(addressFocusRequester),
+        modifier =
+          Modifier
+            .width(500.dp)
+            .focusRequester(addressFocusRequester),
         minLines = 2,
         maxLines = 3,
         isError = errors.addressError != null,
         supportingText = { errors.addressError?.let { Text(it) } },
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-        keyboardActions = KeyboardActions(
-          onNext = { focusManager.moveFocus(FocusDirection.Next) }
-        )
+        keyboardActions =
+          KeyboardActions(
+            onNext = { focusManager.moveFocus(FocusDirection.Next) }
+          )
       )
     }
 
@@ -465,19 +477,22 @@ fun AddressComponent(
           }
         },
         label = { Text("पिन कोड") },
-        modifier = Modifier
-          .width(150.dp)
-          .focusRequester(pincodeFocusRequester),
+        modifier =
+          Modifier
+            .width(150.dp)
+            .focusRequester(pincodeFocusRequester),
         singleLine = true,
         isError = errors.pincodeError != null,
         supportingText = { errors.pincodeError?.let { Text(it) } },
-        keyboardOptions = KeyboardOptions(
-          keyboardType = KeyboardType.Number,
-          imeAction = ImeAction.Done
-        ),
-        keyboardActions = KeyboardActions(
-          onDone = { focusManager.clearFocus() }
-        )
+        keyboardOptions =
+          KeyboardOptions(
+            keyboardType = KeyboardType.Number,
+            imeAction = ImeAction.Done
+          ),
+        keyboardActions =
+          KeyboardActions(
+            onDone = { focusManager.clearFocus() }
+          )
       )
     }
 
@@ -503,9 +518,10 @@ fun AddressComponent(
     // Show loading indicator for reverse geocoding
     if (isReverseGeocoding) {
       Row(
-        modifier = Modifier
-          .fillMaxWidth()
-          .padding(8.dp),
+        modifier =
+          Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
         horizontalArrangement = Arrangement.Center
       ) {
         CircularProgressIndicator(
@@ -578,33 +594,46 @@ fun validateAddressData(
   requiredFields: Set<String> = emptySet()
 ): AddressErrors {
   return AddressErrors(
-    locationError = if (fieldsConfig.showLocation && "location" in requiredFields && addressData.location == null) {
-      "स्थान चुनना अपेक्षित है"
-    } else null,
-
-    addressError = if (fieldsConfig.showAddress && "address" in requiredFields && addressData.address.isBlank()) {
-      "पता अपेक्षित है"
-    } else null,
-
-    stateError = if (fieldsConfig.showState && "state" in requiredFields && addressData.state.isBlank()) {
-      "राज्य चुनना अपेक्षित है"
-    } else null,
-
-    districtError = if (fieldsConfig.showDistrict && "district" in requiredFields && addressData.district.isBlank()) {
-      "जिला चुनना अपेक्षित है"
-    } else null,
-
-    vidhansabhaError = if (fieldsConfig.showVidhansabha && "vidhansabha" in requiredFields && addressData.vidhansabha.isBlank()) {
-      "विधानसभा चुनना अपेक्षित है"
-    } else null,
-
-    pincodeError = if (fieldsConfig.showPincode && "pincode" in requiredFields) {
-      when {
-        addressData.pincode.isBlank() -> "पिन कोड अपेक्षित है"
-        addressData.pincode.length < 6 -> "पिन कोड कम से कम 6 अंक का होना चाहिए"
-        !addressData.pincode.all { it.isDigit() } -> "पिन कोड में केवल अंक होने चाहिए"
-        else -> null
+    locationError =
+      if (fieldsConfig.showLocation && "location" in requiredFields && addressData.location == null) {
+        "स्थान चुनना अपेक्षित है"
+      } else {
+        null
+      },
+    addressError =
+      if (fieldsConfig.showAddress && "address" in requiredFields && addressData.address.isBlank()) {
+        "पता अपेक्षित है"
+      } else {
+        null
+      },
+    stateError =
+      if (fieldsConfig.showState && "state" in requiredFields && addressData.state.isBlank()) {
+        "राज्य चुनना अपेक्षित है"
+      } else {
+        null
+      },
+    districtError =
+      if (fieldsConfig.showDistrict && "district" in requiredFields && addressData.district.isBlank()) {
+        "जिला चुनना अपेक्षित है"
+      } else {
+        null
+      },
+    vidhansabhaError =
+      if (fieldsConfig.showVidhansabha && "vidhansabha" in requiredFields && addressData.vidhansabha.isBlank()) {
+        "विधानसभा चुनना अपेक्षित है"
+      } else {
+        null
+      },
+    pincodeError =
+      if (fieldsConfig.showPincode && "pincode" in requiredFields) {
+        when {
+          addressData.pincode.isBlank() -> "पिन कोड अपेक्षित है"
+          addressData.pincode.length < 6 -> "पिन कोड कम से कम 6 अंक का होना चाहिए"
+          !addressData.pincode.all { it.isDigit() } -> "पिन कोड में केवल अंक होने चाहिए"
+          else -> null
+        }
+      } else {
+        null
       }
-    } else null
   )
 }

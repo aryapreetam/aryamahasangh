@@ -310,17 +310,18 @@ fun ContactPeopleDropdown(
                 Text(member.name)
                 var fieldCoordinates by remember { mutableStateOf(0f) }
                 OutlinedTextField(
-                  modifier = Modifier
-                    .width(200.dp)
-                    .onGloballyPositioned { coordinates ->
-                      fieldCoordinates = coordinates.positionInRoot().y
-                    }
-                    .onFocusChanged { focusState ->
-                      if (isSmallScreen && focusState.isFocused && onFieldFocused != null) {
-                        // Use stored coordinates
-                        onFieldFocused(fieldCoordinates)
+                  modifier =
+                    Modifier
+                      .width(200.dp)
+                      .onGloballyPositioned { coordinates ->
+                        fieldCoordinates = coordinates.positionInRoot().y
                       }
-                    },
+                      .onFocusChanged { focusState ->
+                        if (isSmallScreen && focusState.isFocused && onFieldFocused != null) {
+                          // Use stored coordinates
+                          onFieldFocused(fieldCoordinates)
+                        }
+                      },
                   value = text,
                   onValueChange = {
                     text = it
@@ -463,7 +464,6 @@ fun TimePickerDialog(
 
 val genderAllowedDisplayOptions = GenderAllowed.entries.map { it.toDisplayName() } // List of display names
 
-
 @OptIn(ExperimentalLayoutApi::class)
 @ExperimentalMaterial3Api
 @Composable
@@ -497,8 +497,6 @@ private fun CreateActivityScreenContent(
   onCancel: () -> Unit = {},
   isSmallScreen: Boolean
 ) {
-
-
   var organisations by remember { mutableStateOf(emptyList<Organisation>()) }
   var members by remember { mutableStateOf(emptyList<Member>()) }
 
@@ -649,27 +647,28 @@ private fun CreateActivityScreenContent(
   fun hasUnsavedChanges(): Boolean {
     if (initialFormValues == null) return false
 
-    val currentValues = mapOf(
-      "name" to name,
-      "selectedType" to selectedType,
-      "shortDescription" to shortDescription,
-      "description" to description,
-      "associatedOrganisations" to associatedOrganisations,
-      "address" to address,
-      "state" to state,
-      "district" to district,
-      "startDate" to startDate,
-      "startTime" to startTime,
-      "endDate" to endDate,
-      "endTime" to endTime,
-      "contactPeople" to contactPeople,
-      "additionalInstructions" to additionalInstructions,
-      "eventCapacity" to eventCapacity,
-      "eventGenderAllowed" to eventGenderAllowed,
-      "eventLatitude" to eventLatitude,
-      "eventLongitude" to eventLongitude,
-      "attachedDocuments" to attachedDocuments
-    )
+    val currentValues =
+      mapOf(
+        "name" to name,
+        "selectedType" to selectedType,
+        "shortDescription" to shortDescription,
+        "description" to description,
+        "associatedOrganisations" to associatedOrganisations,
+        "address" to address,
+        "state" to state,
+        "district" to district,
+        "startDate" to startDate,
+        "startTime" to startTime,
+        "endDate" to endDate,
+        "endTime" to endTime,
+        "contactPeople" to contactPeople,
+        "additionalInstructions" to additionalInstructions,
+        "eventCapacity" to eventCapacity,
+        "eventGenderAllowed" to eventGenderAllowed,
+        "eventLatitude" to eventLatitude,
+        "eventLongitude" to eventLongitude,
+        "attachedDocuments" to attachedDocuments
+      )
 
     return currentValues != initialFormValues
   }
@@ -694,7 +693,6 @@ private fun CreateActivityScreenContent(
   val formSubmissionState by viewModel.activityFormSubmissionState.collectAsState()
   val isSubmitting = formSubmissionState.isSubmitting
   val createdActivityId by viewModel.createdActivityId.collectAsState()
-
 
   val scrollState = rememberScrollState()
 
@@ -755,14 +753,15 @@ private fun CreateActivityScreenContent(
       selectedType = activity.type
 
       // Determine if address was included based on whether address fields have values
-      includeAddress = if (activity.type == ActivityType.CAMPAIGN) {
-        // For CAMPAIGN type, check if any address field has content
-        activity.address.isNotEmpty() || activity.state.isNotEmpty() ||
-          activity.district.isNotEmpty() || activity.latitude != null || activity.longitude != null
-      } else {
-        // For other types, address is always included
-        true
-      }
+      includeAddress =
+        if (activity.type == ActivityType.CAMPAIGN) {
+          // For CAMPAIGN type, check if any address field has content
+          activity.address.isNotEmpty() || activity.state.isNotEmpty() ||
+            activity.district.isNotEmpty() || activity.latitude != null || activity.longitude != null
+        } else {
+          // For other types, address is always included
+          true
+        }
 
       shortDescription = activity.shortDescription
       description = activity.longDescription
@@ -783,10 +782,11 @@ private fun CreateActivityScreenContent(
       endTimeText = TextFieldValue(timeFormatter(endTime!!))
 
       // Contact people - Fix: Map the Member objects correctly
-      contactPeople = activity.contactPeople.map { activityMember ->
-        // Find the full member object from the members list if available
-        members.find { it.id == activityMember.member.id } ?: activityMember.member
-      }.toSet()
+      contactPeople =
+        activity.contactPeople.map { activityMember ->
+          // Find the full member object from the members list if available
+          members.find { it.id == activityMember.member.id } ?: activityMember.member
+        }.toSet()
 
       // Clear and repopulate postMap
       postMap.clear()
@@ -801,34 +801,37 @@ private fun CreateActivityScreenContent(
       eventLongitude = activity.longitude?.toString() ?: ""
 
       // Debug: Print latitude/longitude values
-      println("Edit mode - Loading lat/lng: lat=$eventLatitude, lng=$eventLongitude, activity.lat=${activity.latitude}, activity.lng=${activity.longitude}")
+      println(
+        "Edit mode - Loading lat/lng: lat=$eventLatitude, lng=$eventLongitude, activity.lat=${activity.latitude}, activity.lng=${activity.longitude}"
+      )
 
       // Store existing media URLs separately
       existingMediaUrls = activity.mediaFiles
       attachedDocuments = emptyList() // Start with no new files
 
       // Store initial values for unsaved changes detection
-      initialFormValues = mapOf(
-        "name" to name,
-        "selectedType" to selectedType,
-        "shortDescription" to shortDescription,
-        "description" to description,
-        "associatedOrganisations" to associatedOrganisations,
-        "address" to address,
-        "state" to state,
-        "district" to district,
-        "startDate" to startDate,
-        "startTime" to startTime,
-        "endDate" to endDate,
-        "endTime" to endTime,
-        "contactPeople" to contactPeople,
-        "additionalInstructions" to additionalInstructions,
-        "eventCapacity" to eventCapacity,
-        "eventGenderAllowed" to eventGenderAllowed,
-        "eventLatitude" to eventLatitude,
-        "eventLongitude" to eventLongitude,
-        "attachedDocuments" to attachedDocuments
-      ) as Map<String, Any>
+      initialFormValues =
+        mapOf(
+          "name" to name,
+          "selectedType" to selectedType,
+          "shortDescription" to shortDescription,
+          "description" to description,
+          "associatedOrganisations" to associatedOrganisations,
+          "address" to address,
+          "state" to state,
+          "district" to district,
+          "startDate" to startDate,
+          "startTime" to startTime,
+          "endDate" to endDate,
+          "endTime" to endTime,
+          "contactPeople" to contactPeople,
+          "additionalInstructions" to additionalInstructions,
+          "eventCapacity" to eventCapacity,
+          "eventGenderAllowed" to eventGenderAllowed,
+          "eventLatitude" to eventLatitude,
+          "eventLongitude" to eventLongitude,
+          "attachedDocuments" to attachedDocuments
+        ) as Map<String, Any>
     }
   }
 
@@ -940,7 +943,7 @@ private fun CreateActivityScreenContent(
       if (!(
           startDateTime < endDateTime &&
             startDateTime > currentDateTime && endDateTime > currentDateTime
-          )
+        )
       ) {
         if (startDateTime >= endDateTime) {
           startDateError = true
@@ -979,7 +982,7 @@ private fun CreateActivityScreenContent(
       nameError || typesError || shortDescriptionError || descriptionError || associatedOrganisationsError ||
         addressError || stateError || districtError || startDateError || startTimeError ||
         endDateError || endTimeError || contactPeopleError || !eventDetailsValid
-      )
+    )
   }
 
   fun submitForm() {
@@ -993,9 +996,10 @@ private fun CreateActivityScreenContent(
         // Delete files marked for deletion from bucket
         if (deletedMediaUrls.isNotEmpty()) {
           try {
-            val filesToDelete = deletedMediaUrls.map { url ->
-              url.substringAfterLast("/")
-            }.toList()
+            val filesToDelete =
+              deletedMediaUrls.map { url ->
+                url.substringAfterLast("/")
+              }.toList()
             bucket.delete(filesToDelete)
           } catch (e: Exception) {
             snackbarHostState.showSnackbar(
@@ -1112,8 +1116,9 @@ private fun CreateActivityScreenContent(
         value = name,
         onValueChange = { name = it },
         label = { Text("नाम") },
-        modifier = Modifier
-          .width(500.dp),
+        modifier =
+          Modifier
+            .width(500.dp),
         isError = nameError,
         supportingText = {
           if (nameError) {
@@ -1183,8 +1188,9 @@ private fun CreateActivityScreenContent(
           }
         },
         label = { Text("संक्षिप्त विवरण") },
-        modifier = Modifier
-          .width(500.dp),
+        modifier =
+          Modifier
+            .width(500.dp),
         isError = shortDescriptionError,
         supportingText = { if (shortDescriptionError) Text("Short Description is required") },
         maxLines = 1,
@@ -1201,8 +1207,9 @@ private fun CreateActivityScreenContent(
           }
         },
         label = { Text("विस्तृत विवरण") },
-        modifier = Modifier
-          .width(500.dp),
+        modifier =
+          Modifier
+            .width(500.dp),
         minLines = 3,
         maxLines = 30,
         isError = descriptionError,
@@ -1249,8 +1256,9 @@ private fun CreateActivityScreenContent(
             }
           },
           label = { Text("पूर्ण पता") },
-          modifier = Modifier
-            .width(500.dp),
+          modifier =
+            Modifier
+              .width(500.dp),
           minLines = 2,
           maxLines = 3,
           isError = addressError,
@@ -1326,17 +1334,18 @@ private fun CreateActivityScreenContent(
               }
             },
             label = { Text("अक्षांश (Latitude)") },
-            modifier = Modifier
-              .width(170.dp)
-              .focusRequester(latitudeFocusRequester)
-              .onGloballyPositioned { coordinates ->
-                lastFocusedFieldOffset = coordinates.positionInRoot().y
-              }
-              .onFocusChanged { focusState ->
-                if (isSmallScreen && focusState.isFocused) {
-                  scrollToFocusedField(lastFocusedFieldOffset)
+            modifier =
+              Modifier
+                .width(170.dp)
+                .focusRequester(latitudeFocusRequester)
+                .onGloballyPositioned { coordinates ->
+                  lastFocusedFieldOffset = coordinates.positionInRoot().y
                 }
-              },
+                .onFocusChanged { focusState ->
+                  if (isSmallScreen && focusState.isFocused) {
+                    scrollToFocusedField(lastFocusedFieldOffset)
+                  }
+                },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
             keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }),
@@ -1353,17 +1362,18 @@ private fun CreateActivityScreenContent(
               }
             },
             label = { Text("देशांतर (Longitude)") },
-            modifier = Modifier
-              .width(170.dp)
-              .focusRequester(longitudeFocusRequester)
-              .onGloballyPositioned { coordinates ->
-                lastFocusedFieldOffset = coordinates.positionInRoot().y
-              }
-              .onFocusChanged { focusState ->
-                if (isSmallScreen && focusState.isFocused) {
-                  scrollToFocusedField(lastFocusedFieldOffset)
+            modifier =
+              Modifier
+                .width(170.dp)
+                .focusRequester(longitudeFocusRequester)
+                .onGloballyPositioned { coordinates ->
+                  lastFocusedFieldOffset = coordinates.positionInRoot().y
                 }
-              },
+                .onFocusChanged { focusState ->
+                  if (isSmallScreen && focusState.isFocused) {
+                    scrollToFocusedField(lastFocusedFieldOffset)
+                  }
+                },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
             keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
@@ -1540,9 +1550,10 @@ private fun CreateActivityScreenContent(
             Box(modifier = Modifier.width(120.dp).padding(8.dp)) {
               Column {
                 Surface(
-                  modifier = Modifier
-                    .size(100.dp)
-                    .clip(shape = MaterialTheme.shapes.medium)
+                  modifier =
+                    Modifier
+                      .size(100.dp)
+                      .clip(shape = MaterialTheme.shapes.medium)
                 ) {
                   Box(modifier = Modifier.fillMaxSize()) {
                     AsyncImage(
@@ -1622,11 +1633,12 @@ private fun CreateActivityScreenContent(
 
       // Contact People
       ContactPeopleDropdown(
-        modifier = Modifier
-          .fillMaxWidth()
-          .onGloballyPositioned { coordinates ->
-            lastFocusedFieldOffset = coordinates.positionInRoot().y
-          },
+        modifier =
+          Modifier
+            .fillMaxWidth()
+            .onGloballyPositioned { coordinates ->
+              lastFocusedFieldOffset = coordinates.positionInRoot().y
+            },
         label = "संपर्क सूत्र",
         members = members,
         selectedMembers = contactPeople,
@@ -1650,16 +1662,17 @@ private fun CreateActivityScreenContent(
           }
         },
         label = { Text("अतिरिक्त निर्देश") },
-        modifier = Modifier
-          .width(500.dp)
-          .onGloballyPositioned { coordinates ->
-            lastFocusedFieldOffset = coordinates.positionInRoot().y
-          }
-          .onFocusChanged { focusState ->
-            if (isSmallScreen && focusState.isFocused) {
-              scrollToFocusedField(lastFocusedFieldOffset)
+        modifier =
+          Modifier
+            .width(500.dp)
+            .onGloballyPositioned { coordinates ->
+              lastFocusedFieldOffset = coordinates.positionInRoot().y
             }
-          },
+            .onFocusChanged { focusState ->
+              if (isSmallScreen && focusState.isFocused) {
+                scrollToFocusedField(lastFocusedFieldOffset)
+              }
+            },
         minLines = 3,
         maxLines = 10,
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
@@ -1710,15 +1723,16 @@ private fun CreateActivityScreenContent(
 
           formSubmissionState.error != null -> {
             // Error submitting form
-            val errorMessage = when {
-              formSubmissionState.error!!.contains("network", ignoreCase = true) ->
-                "नेटवर्क त्रुटि। कृपया अपना इंटरनेट कनेक्शन जांचें"
+            val errorMessage =
+              when {
+                formSubmissionState.error!!.contains("network", ignoreCase = true) ->
+                  "नेटवर्क त्रुटि। कृपया अपना इंटरनेट कनेक्शन जांचें"
 
-              formSubmissionState.error!!.contains("duplicate", ignoreCase = true) ->
-                "इस नाम की गतिविधि पहले से उपस्थित है"
+                formSubmissionState.error!!.contains("duplicate", ignoreCase = true) ->
+                  "इस नाम की गतिविधि पहले से उपस्थित है"
 
-              else -> "त्रुटि: ${formSubmissionState.error}"
-            }
+                else -> "त्रुटि: ${formSubmissionState.error}"
+              }
             snackbarHostState.showSnackbar(
               message = errorMessage,
               actionLabel = "बंद करें",
@@ -1806,7 +1820,7 @@ private fun CreateActivityScreenContent(
           onDismiss = {
             showMapDialog = false // Reset state to false to hide the dialog
           }
-        ){ it ->
+        ) { it ->
           println("Location picked: $it")
 
           eventLatitude = it.latitude.toString()
@@ -1821,4 +1835,3 @@ private fun CreateActivityScreenContent(
 
 // --- Preview ---
 // Preview removed since we inlined the components
-
