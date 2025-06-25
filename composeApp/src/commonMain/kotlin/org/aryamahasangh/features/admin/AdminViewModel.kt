@@ -7,7 +7,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import org.aryamahasangh.components.AryaSamaj
@@ -68,7 +67,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
 
   fun loadMembers() {
     viewModelScope.launch {
-      repository.getMembers().collect { result ->
+      repository.getOrganisationalMembers().collect { result ->
         result.handleResult(
           onLoading = {
             _membersUiState.value =

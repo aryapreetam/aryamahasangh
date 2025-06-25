@@ -361,6 +361,18 @@ query members {
   }
 }
 
+query organisationalMembers {
+  organisationalMemberCollection{
+    edges {
+      node{
+        member {
+          ...MemberShort
+        }
+      }
+    }
+  }
+}
+
 query memberDetail($memberId: String!) {
   memberCollection(filter: {id: {eq: $memberId}}) {
     edges {
@@ -409,6 +421,23 @@ query memberDetail($memberId: String!) {
 }
 
 query searchMembers($nameOrPhoneNumber: String!) {
+  memberCollection(
+    filter: {
+      or: [
+        {name: {ilike: $nameOrPhoneNumber}},
+        {phoneNumber: {ilike: $nameOrPhoneNumber}}
+      ]
+    }
+  ) {
+    edges {
+      node {
+        ...MemberShort
+      }
+    }
+  }
+}
+
+query searchOrganisationalMembers($nameOrPhoneNumber: String!) {
   memberCollection(
     filter: {
       or: [

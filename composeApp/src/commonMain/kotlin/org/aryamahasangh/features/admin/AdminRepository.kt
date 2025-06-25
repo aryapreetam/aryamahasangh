@@ -20,7 +20,7 @@ import org.aryamahasangh.util.safeCall
 
 interface AdminRepository {
   // Member methods
-  suspend fun getMembers(): Flow<Result<List<MemberShort>>>
+  suspend fun getOrganisationalMembers(): Flow<Result<List<MemberShort>>>
 
   suspend fun getMembersCount(): Flow<Result<Long>>
 
@@ -90,17 +90,17 @@ interface AdminRepository {
 }
 
 class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminRepository {
-  override suspend fun getMembers(): Flow<Result<List<MemberShort>>> =
+  override suspend fun getOrganisationalMembers(): Flow<Result<List<MemberShort>>> =
     flow {
       emit(Result.Loading)
       val result =
         safeCall {
-          val response = apolloClient.query(MembersQuery()).execute()
+          val response = apolloClient.query(OrganisationalMembersQuery()).execute()
           if (response.hasErrors()) {
             throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
           }
-          response.data?.memberCollection?.edges?.map {
-            val member = it.node.memberShort
+          response.data?.organisationalMemberCollection?.edges?.map {
+            val member = it.node.member?.memberShort!!
             val place =
               buildString {
                 // TODO: Add district and state info when available from GraphQL
