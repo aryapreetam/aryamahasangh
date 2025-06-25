@@ -1,351 +1,10 @@
-query Organisations{
-  organisationCollection(orderBy: {priority: AscNullsLast}){
-    edges{
-      node{
-        id
-        name
-        description
-      }
-    }
-  }
-}
-
-query OrganisationsAndMembers{
-  memberCollection{
-    edges{
-      node{
-        id
-        name
-        profileImage
-      }
-    }
-  }
-  organisationCollection{
-    edges{
-      node {
-        id
-        name
-      }
-    }
-  }
-}
-
-query OrganisationDetailById($orgnisationId: String!) {
-  organisationCollection(filter: { id: { eq: $orgnisationId } } ){
-    edges{
-      node{
-        id
-        name
-        logo
-        description
-        organisationalMemberCollection{
-          edges{
-            node{
-              id
-              post
-              priority
-              member{
-                id
-                name
-                email
-                phoneNumber
-                profileImage
-                educationalQualification
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-query Organisation($filter: OrganisationFilter) {
-  organisationCollection(filter: $filter){
-    edges{
-      node{
-        id
-        name
-        logo
-        description
-        organisationalMemberCollection{
-          edges{
-            node{
-              id
-              post
-              priority
-              member{
-                id
-                name
-                email
-                phoneNumber
-                profileImage
-                educationalQualification
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-query LearningItems {
-  learningCollection{
-    edges{
-      node{
-        id
-        thumbnailUrl
-        title
-      }
-    }
-  }
-}
-
-query LearningItem($filter: LearningFilter) {
-  learningCollection(filter: $filter){
-    edges{
-      node{
-        id
-        thumbnailUrl
-        title
-        videoId
-        url
-        description
-      }
-    }
-  }
-}
-
-fragment OrganisationalActivityShort on Activities {
+fragment MemberShort on Member {
   id
   name
-  shortDescription
-  startDatetime
-  endDatetime
-  type
-  district
-  state
+  profileImage
 }
 
-query UpcomingSatrByRegion($state: String!, $district: String, $currentDateTime: Datetime){
-  activitiesCollection(
-    filter: {
-      state: {eq: $state},
-      district: {eq: $district},
-      startDatetime: {gt: $currentDateTime},
-      type: {eq: SESSION}
-    }
-  ){
-    edges{
-      node{
-        ...OrganisationalActivityShort
-      }
-    }
-  }
-}
-
-query OrganisationalActivities($filter: ActivitiesFilter){
-  activitiesCollection(filter: $filter){
-    edges{
-      node{
-        ...OrganisationalActivityShort
-      }
-    }
-  }
-}
-
-query OrganisationalActivityDetailById($activityId: String!){
-  activitiesCollection(filter: { id: { eq: $activityId } }){
-    edges{
-      node{
-        ...OrganisationalActivityShort
-        longDescription
-        address
-        state
-        mediaFiles
-        additionalInstructions
-        capacity
-        latitude
-        longitude
-        allowedGender
-        overviewDescription
-        overviewMediaUrls
-        organisationalActivityCollection{
-          edges{
-            node{
-              id
-              organisation{
-                id
-                name
-              }
-            }
-          }
-        }
-        activityMemberCollection{
-          edges{
-            node{
-              id
-              post
-              priority
-              member{
-                id
-                name
-                profileImage
-                phoneNumber
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-query OrganisationalActivityDetail($filter: ActivitiesFilter){
-  activitiesCollection(filter: $filter){
-    edges{
-      node{
-        ...OrganisationalActivityShort
-        longDescription
-        address
-        state
-        mediaFiles
-        additionalInstructions
-        capacity
-        latitude
-        longitude
-        allowedGender
-        overviewDescription
-        overviewMediaUrls
-        organisationalActivityCollection{
-          edges{
-            node{
-              id
-              organisation{
-                id
-                name
-              }
-            }
-          }
-        }
-        activityMemberCollection{
-          edges{
-            node{
-              id
-              post
-              priority
-              member{
-                id
-                name
-                profileImage
-                phoneNumber
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-query StudentsApplied {
-  admissionCollection{
-    edges{
-      node{
-        id
-        studentName
-        studentPhoto
-        previousClass
-        marksObtained
-      }
-    }
-  }
-}
-
-query AppLabel($labelKey: String!){
-  appLabelsCollection(filter: { labelKey: { eq: $labelKey } }){
-    edges{
-      node{
-        id
-        labelValue
-      }
-    }
-  }
-}
-
-query BookOrders($filter: BookOrdersFilter) {
-  bookOrdersCollection(filter: $filter) {
-    edges {
-      node {
-        id
-        fullname
-        address
-        city
-        district
-        state
-        pincode
-        country
-        mobile
-        districtOfficerName
-        districtOfficerNumber
-        paymentReceiptUrl
-        createdAt
-        isFulfilled
-      }
-    }
-  }
-}
-
-query UpcomingSatrActivities($currentDateTime: Datetime!){
-  activitiesCollection(
-    filter: {
-      startDatetime: {gt: $currentDateTime},
-      type: {eq: SESSION}
-    }
-  ){
-    edges{
-      node{
-        id
-        name
-        startDatetime
-        endDatetime
-        allowedGender
-        district
-        state
-        latitude
-        longitude
-        capacity
-        satrRegistrationCollection{
-          pageInfo{
-            startCursor
-          }
-          edges{
-            node{
-              id
-            }
-          }
-        }
-      }
-    }
-  }
-}
-
-query registrationsForActivity($activityId: String!){
-  satrRegistrationCollection(filter: { activityId: { eq: $activityId } }){
-    edges{
-      node{
-        id
-        fullname
-        gender
-        address
-        mobile
-      }
-    }
-  }
-}
-
-fragment MemberShort on Member {
+fragment MemberInOrganisationShort on MemberInOrganisation {
   id
   name
   profileImage
@@ -361,15 +20,63 @@ query members {
   }
 }
 
-query organisationalMembers {
-  organisationalMemberCollection{
+query membersInOrganisation {
+  memberInOrganisationCollection {
     edges {
-      node{
-        member {
-          ...MemberShort
-        }
+      node {
+        ...MemberInOrganisationShort
       }
     }
+  }
+}
+
+query organisationalMembers {
+  memberInOrganisationCollection {
+    edges {
+      node {
+        ...MemberInOrganisationShort
+      }
+    }
+  }
+}
+
+query searchMembers($nameOrPhoneNumber: String!) {
+  memberCollection(
+    filter: {
+      or: [
+        {name: {ilike: $nameOrPhoneNumber}},
+        {phoneNumber: {ilike: $nameOrPhoneNumber}}
+      ]
+    }
+  ) {
+    edges {
+      node {
+        ...MemberShort
+      }
+    }
+  }
+}
+
+query searchOrganisationalMembers($nameOrPhoneNumber: String!) {
+  memberInOrganisationCollection(
+    filter: {
+      or: [
+        {name: {ilike: $nameOrPhoneNumber}},
+        {phoneNumber: {ilike: $nameOrPhoneNumber}}
+      ]
+    }
+  ) {
+    edges {
+      node {
+        ...MemberInOrganisationShort
+      }
+    }
+  }
+}
+
+query membersCount {
+  memberCollection {
+    totalCount
   }
 }
 
@@ -383,7 +90,7 @@ query memberDetail($memberId: String!) {
         phoneNumber
         educationalQualification
         email
-        address{
+        address {
           basicAddress
           district
           state
@@ -420,35 +127,348 @@ query memberDetail($memberId: String!) {
   }
 }
 
-query searchMembers($nameOrPhoneNumber: String!) {
-  memberCollection(
-    filter: {
-      or: [
-        {name: {ilike: $nameOrPhoneNumber}},
-        {phoneNumber: {ilike: $nameOrPhoneNumber}}
-      ]
-    }
-  ) {
+query Organisations {
+  organisationCollection(orderBy: {priority: AscNullsLast}) {
     edges {
       node {
-        ...MemberShort
+        id
+        name
+        description
       }
     }
   }
 }
 
-query searchOrganisationalMembers($nameOrPhoneNumber: String!) {
-  memberCollection(
+query OrganisationsAndMembers {
+  memberCollection {
+    edges {
+      node {
+        id
+        name
+        profileImage
+      }
+    }
+  }
+  organisationCollection {
+    edges {
+      node {
+        id
+        name
+      }
+    }
+  }
+}
+
+query OrganisationDetailById($orgnisationId: String!) {
+  organisationCollection(filter: { id: { eq: $orgnisationId } }) {
+    edges {
+      node {
+        id
+        name
+        logo
+        description
+        organisationalMemberCollection {
+          edges {
+            node {
+              id
+              post
+              priority
+              member {
+                id
+                name
+                email
+                phoneNumber
+                profileImage
+                educationalQualification
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query Organisation($filter: OrganisationFilter) {
+  organisationCollection(filter: $filter) {
+    edges {
+      node {
+        id
+        name
+        logo
+        description
+        organisationalMemberCollection {
+          edges {
+            node {
+              id
+              post
+              priority
+              member {
+                id
+                name
+                email
+                phoneNumber
+                profileImage
+                educationalQualification
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query LearningItems {
+  learningCollection {
+    edges {
+      node {
+        id
+        thumbnailUrl
+        title
+      }
+    }
+  }
+}
+
+query LearningItem($filter: LearningFilter) {
+  learningCollection(filter: $filter) {
+    edges {
+      node {
+        id
+        thumbnailUrl
+        title
+        videoId
+        url
+        description
+      }
+    }
+  }
+}
+
+fragment OrganisationalActivityShort on Activities {
+  id
+  name
+  shortDescription
+  startDatetime
+  endDatetime
+  type
+  district
+  state
+}
+
+query UpcomingSatrByRegion($state: String!, $district: String, $currentDateTime: Datetime) {
+  activitiesCollection(
     filter: {
-      or: [
-        {name: {ilike: $nameOrPhoneNumber}},
-        {phoneNumber: {ilike: $nameOrPhoneNumber}}
-      ]
+      state: {eq: $state},
+      district: {eq: $district},
+      startDatetime: {gt: $currentDateTime},
+      type: {eq: SESSION}
     }
   ) {
     edges {
       node {
-        ...MemberShort
+        ...OrganisationalActivityShort
+      }
+    }
+  }
+}
+
+query OrganisationalActivities($filter: ActivitiesFilter) {
+  activitiesCollection(filter: $filter) {
+    edges {
+      node {
+        ...OrganisationalActivityShort
+      }
+    }
+  }
+}
+
+query OrganisationalActivityDetailById($activityId: String!) {
+  activitiesCollection(filter: { id: { eq: $activityId } }) {
+    edges {
+      node {
+        ...OrganisationalActivityShort
+        longDescription
+        address
+        state
+        mediaFiles
+        additionalInstructions
+        capacity
+        latitude
+        longitude
+        allowedGender
+        overviewDescription
+        overviewMediaUrls
+        organisationalActivityCollection {
+          edges {
+            node {
+              id
+              organisation {
+                id
+                name
+              }
+            }
+          }
+        }
+        activityMemberCollection {
+          edges {
+            node {
+              id
+              post
+              priority
+              member {
+                id
+                name
+                profileImage
+                phoneNumber
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query OrganisationalActivityDetail($filter: ActivitiesFilter) {
+  activitiesCollection(filter: $filter) {
+    edges {
+      node {
+        ...OrganisationalActivityShort
+        longDescription
+        address
+        state
+        mediaFiles
+        additionalInstructions
+        capacity
+        latitude
+        longitude
+        allowedGender
+        overviewDescription
+        overviewMediaUrls
+        organisationalActivityCollection {
+          edges {
+            node {
+              id
+              organisation {
+                id
+                name
+              }
+            }
+          }
+        }
+        activityMemberCollection {
+          edges {
+            node {
+              id
+              post
+              priority
+              member {
+                id
+                name
+                profileImage
+                phoneNumber
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query StudentsApplied {
+  admissionCollection {
+    edges {
+      node {
+        id
+        studentName
+        studentPhoto
+        previousClass
+        marksObtained
+      }
+    }
+  }
+}
+
+query AppLabel($labelKey: String!) {
+  appLabelsCollection(filter: { labelKey: { eq: $labelKey } }) {
+    edges {
+      node {
+        id
+        labelValue
+      }
+    }
+  }
+}
+
+query BookOrders($filter: BookOrdersFilter) {
+  bookOrdersCollection(filter: $filter) {
+    edges {
+      node {
+        id
+        fullname
+        address
+        city
+        district
+        state
+        pincode
+        country
+        mobile
+        districtOfficerName
+        districtOfficerNumber
+        paymentReceiptUrl
+        createdAt
+        isFulfilled
+      }
+    }
+  }
+}
+
+query UpcomingSatrActivities($currentDateTime: Datetime!) {
+  activitiesCollection(
+    filter: {
+      startDatetime: {gt: $currentDateTime},
+      type: {eq: SESSION}
+    }
+  ) {
+    edges {
+      node {
+        id
+        name
+        startDatetime
+        endDatetime
+        allowedGender
+        district
+        state
+        latitude
+        longitude
+        capacity
+        satrRegistrationCollection {
+          pageInfo {
+            startCursor
+          }
+          edges {
+            node {
+              id
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+query registrationsForActivity($activityId: String!) {
+  satrRegistrationCollection(filter: { activityId: { eq: $activityId } }) {
+    edges {
+      node {
+        id
+        fullname
+        gender
+        address
+        mobile
       }
     }
   }
@@ -595,8 +615,6 @@ query aryaSamajDetail($aryaSamajId: String!) {
     }
   }
 }
-
-
 
 # Samaj Member Queries
 fragment SamajMemberFields on SamajMember {

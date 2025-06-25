@@ -83,7 +83,7 @@ fun MembersScreen(
       // Search Bar
       OutlinedTextField(
         value = uiState.searchQuery,
-        onValueChange = viewModel::searchMembers,
+        onValueChange = viewModel::searchOrganisationalMembers,
         modifier = if (isCompact) Modifier.weight(1f) else Modifier.widthIn(max = 600.dp),
         placeholder = { Text("आर्य का नाम/दूरभाष") },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
@@ -159,7 +159,14 @@ fun MembersScreen(
     // Members List
     val membersToShow =
       if (uiState.searchQuery.isNotBlank()) {
-        uiState.searchResults
+        uiState.organisationalSearchResults.map { orgMember ->
+          MemberShort(
+            id = orgMember.id ?: "",
+            name = orgMember.name ?: "",
+            profileImage = orgMember.profileImage ?: "",
+            place = "" // MemberInOrganisationShort doesn't have place field
+          )
+        }
       } else {
         uiState.members
       }

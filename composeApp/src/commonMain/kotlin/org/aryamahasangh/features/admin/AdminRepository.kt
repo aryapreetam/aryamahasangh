@@ -13,6 +13,7 @@ import org.aryamahasangh.*
 import org.aryamahasangh.components.AryaSamaj
 import org.aryamahasangh.components.Gender
 import org.aryamahasangh.features.activities.Member
+import org.aryamahasangh.fragment.MemberInOrganisationShort
 import org.aryamahasangh.network.supabaseClient
 import org.aryamahasangh.type.GenderFilter
 import org.aryamahasangh.util.Result
@@ -27,6 +28,8 @@ interface AdminRepository {
   suspend fun getMember(id: String): Flow<Result<MemberDetail>>
 
   suspend fun searchMembers(query: String): Flow<Result<List<MemberShort>>>
+
+  suspend fun searchOrganisationalMembers(query: String): Flow<Result<List<MemberInOrganisationShort>>>
 
   // Search members that returns Member list for MembersComponent
   suspend fun searchMembersForSelection(query: String): Flow<Result<List<Member>>>
@@ -90,29 +93,52 @@ interface AdminRepository {
 }
 
 class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminRepository {
+
+  override suspend fun searchOrganisationalMembers(query: String): Flow<Result<List<MemberInOrganisationShort>>> =
+    flow {
+      emit(Result.Loading)
+      val result =
+        safeCall {
+          val response =
+            apolloClient.query(SearchOrganisationalMembersQuery("%$query%")).execute()
+          if (response.hasErrors()) {
+            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+          }
+          response.data?.memberInOrganisationCollection?.edges?.map {
+            val member = it.node.memberInOrganisationShort
+            MemberInOrganisationShort(
+              id = member.id,
+              name = member.name!!,
+              profileImage = member.profileImage ?: "",
+            )
+          } ?: emptyList()
+        }
+      emit(result)
+    }
+
   override suspend fun getOrganisationalMembers(): Flow<Result<List<MemberShort>>> =
     flow {
       emit(Result.Loading)
       val result =
         safeCall {
-          val response = apolloClient.query(OrganisationalMembersQuery()).execute()
+          val response = apolloClient.query(MembersInOrganisationQuery()).execute()
           if (response.hasErrors()) {
             throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
           }
-          response.data?.organisationalMemberCollection?.edges?.map {
-            val member = it.node.member?.memberShort!!
+          response.data?.memberInOrganisationCollection?.edges?.map {
+            val member = it.node.memberInOrganisationShort
             val place =
               buildString {
                 // TODO: Add district and state info when available from GraphQL
                 // For now, we'll leave it empty
               }
             MemberShort(
-              id = member.id,
+              id = member.id!!,
               name = member.name!!,
               profileImage = member.profileImage ?: "",
               place = place
             )
-          }!!
+          } ?: emptyList()
         }
       emit(result)
     }
@@ -124,7 +150,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
         safeCall {
           var count = 0L
           try {
-            count = supabaseClient.from("member").select { count(Count.EXACT) }.countOrNull() ?: 0L
+            count = supabaseClient.from("member_in_organisation").select { count(Count.EXACT) }.countOrNull() ?: 0L
           } catch (e: Exception) {
             throw Exception("Unknown error occurred ${e.message}")
           }
@@ -207,16 +233,10 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
           }
           response.data?.memberCollection?.edges?.map {
             val member = it.node.memberShort
-            val place =
-              buildString {
-                // TODO: Add district and state info when available from GraphQL
-                // For now, we'll leave it empty
-              }
             MemberShort(
               id = member.id,
               name = member.name!!,
               profileImage = member.profileImage ?: "",
-              place = place
             )
           } ?: emptyList()
         }
@@ -507,7 +527,8 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
           if (response.hasErrors()) {
             throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
           }
-          true
+          response.data?.deleteFromMemberCollection?.affectedCount != null &&
+            response.data?.deleteFromMemberCollection?.affectedCount!! > 0
         }
       emit(result)
     }
