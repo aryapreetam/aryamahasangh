@@ -2298,6 +2298,126 @@ input MemberFilter {
   not: MemberFilter
 }
 
+type MemberInOrganisation implements Node {
+  """
+  Globally Unique Record Identifier
+  """
+  nodeId: ID!
+
+  id: String
+
+  name: String
+
+  phoneNumber: String
+
+  profileImage: String
+}
+
+type MemberInOrganisationConnection {
+  edges: [MemberInOrganisationEdge!]!
+
+  pageInfo: PageInfo!
+}
+
+type MemberInOrganisationDeleteResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [MemberInOrganisation!]!
+}
+
+type MemberInOrganisationEdge {
+  cursor: String!
+
+  node: MemberInOrganisation!
+}
+
+input MemberInOrganisationFilter {
+  id: StringFilter
+
+  name: StringFilter
+
+  phoneNumber: StringFilter
+
+  profileImage: StringFilter
+
+  nodeId: IDFilter
+
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [MemberInOrganisationFilter!]
+
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [MemberInOrganisationFilter!]
+
+  """
+  Negates a filter
+  """
+  not: MemberInOrganisationFilter
+}
+
+input MemberInOrganisationInsertInput {
+  id: String
+
+  name: String
+
+  phoneNumber: String
+
+  profileImage: String
+}
+
+type MemberInOrganisationInsertResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [MemberInOrganisation!]!
+}
+
+input MemberInOrganisationOrderBy {
+  id: OrderByDirection
+
+  name: OrderByDirection
+
+  phoneNumber: OrderByDirection
+
+  profileImage: OrderByDirection
+}
+
+input MemberInOrganisationUpdateInput {
+  id: String
+
+  name: String
+
+  phoneNumber: String
+
+  profileImage: String
+}
+
+type MemberInOrganisationUpdateResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [MemberInOrganisation!]!
+}
+
 input MemberInsertInput {
   id: String
 
@@ -2608,6 +2728,11 @@ type Mutation {
   deleteFromMemberCollection("Restricts the mutation's impact to records matching the criteria" filter: MemberFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): MemberDeleteResponse!
 
   """
+  Deletes zero or more records from the `MemberInOrganisation` collection
+  """
+  deleteFromMemberInOrganisationCollection("Restricts the mutation's impact to records matching the criteria" filter: MemberInOrganisationFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): MemberInOrganisationDeleteResponse!
+
+  """
   Deletes zero or more records from the `MemberNotInFamily` collection
   """
   deleteFromMemberNotInFamilyCollection("Restricts the mutation's impact to records matching the criteria" filter: MemberNotInFamilyFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): MemberNotInFamilyDeleteResponse!
@@ -2693,6 +2818,11 @@ type Mutation {
   insertIntoMemberCollection(objects: [MemberInsertInput!]!): MemberInsertResponse
 
   """
+  Adds one or more `MemberInOrganisation` records to the collection
+  """
+  insertIntoMemberInOrganisationCollection(objects: [MemberInOrganisationInsertInput!]!): MemberInOrganisationInsertResponse
+
+  """
   Adds one or more `MemberNotInFamily` records to the collection
   """
   insertIntoMemberNotInFamilyCollection(objects: [MemberNotInFamilyInsertInput!]!): MemberNotInFamilyInsertResponse
@@ -2776,6 +2906,11 @@ type Mutation {
   Updates zero or more records in the `Member` collection
   """
   updateMemberCollection("Fields that are set will be updated for all records matching the `filter`" set: MemberUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: MemberFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): MemberUpdateResponse!
+
+  """
+  Updates zero or more records in the `MemberInOrganisation` collection
+  """
+  updateMemberInOrganisationCollection("Fields that are set will be updated for all records matching the `filter`" set: MemberInOrganisationUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: MemberInOrganisationFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): MemberInOrganisationUpdateResponse!
 
   """
   Updates zero or more records in the `MemberNotInFamily` collection
@@ -3304,6 +3439,11 @@ type Query {
   A pagable collection of type `Member`
   """
   memberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: MemberFilter, "Sort order to apply to the collection" orderBy: [MemberOrderBy!]): MemberConnection
+
+  """
+  A pagable collection of type `MemberInOrganisation`
+  """
+  memberInOrganisationCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: MemberInOrganisationFilter, "Sort order to apply to the collection" orderBy: [MemberInOrganisationOrderBy!]): MemberInOrganisationConnection
 
   """
   A pagable collection of type `MemberNotInFamily`

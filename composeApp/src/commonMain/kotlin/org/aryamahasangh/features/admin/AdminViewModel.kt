@@ -15,6 +15,7 @@ import org.aryamahasangh.domain.error.AppError
 import org.aryamahasangh.domain.error.ErrorHandler
 import org.aryamahasangh.domain.error.getUserMessage
 import org.aryamahasangh.features.activities.Member
+import org.aryamahasangh.fragment.MemberInOrganisationShort
 import org.aryamahasangh.viewmodel.ErrorState
 import org.aryamahasangh.viewmodel.handleResult
 
@@ -25,6 +26,7 @@ data class MembersUiState(
   override val appError: AppError? = null,
   val searchQuery: String = "",
   val searchResults: List<MemberShort> = emptyList(),
+  val organisationalSearchResults: List<MemberInOrganisationShort> = emptyList(),
   val isSearching: Boolean = false
 ) : ErrorState
 
@@ -132,6 +134,50 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
             },
             onError = { appError ->
               ErrorHandler.logError(appError, "AdminViewModel.searchMembers")
+              _membersUiState.value =
+                _membersUiState.value.copy(
+                  isSearching = false,
+                  error = appError.getUserMessage(),
+                  appError = appError
+                )
+            }
+          )
+        }
+      }
+  }
+
+  fun searchOrganisationalMembers(query: String) {
+    _membersUiState.value = _membersUiState.value.copy(searchQuery = query)
+
+    searchJob?.cancel()
+    searchJob =
+      viewModelScope.launch {
+        if (query.isBlank()) {
+          _membersUiState.value =
+            _membersUiState.value.copy(
+              organisationalSearchResults = emptyList(),
+              isSearching = false
+            )
+          return@launch
+        }
+
+        // Debounce search
+        delay(500)
+
+        repository.searchOrganisationalMembers(query).collect { result ->
+          result.handleResult(
+            onLoading = {
+              _membersUiState.value = _membersUiState.value.copy(isSearching = true)
+            },
+            onSuccess = { searchResults ->
+              _membersUiState.value =
+                _membersUiState.value.copy(
+                  organisationalSearchResults = searchResults,
+                  isSearching = false
+                )
+            },
+            onError = { appError ->
+              ErrorHandler.logError(appError, "AdminViewModel.searchOrganisationalMembers")
               _membersUiState.value =
                 _membersUiState.value.copy(
                   isSearching = false,
