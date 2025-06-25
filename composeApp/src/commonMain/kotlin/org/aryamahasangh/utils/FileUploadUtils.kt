@@ -94,7 +94,7 @@ object FileUploadUtils {
             path = path,
             data = file.readBytes()
           )
-        println(uploadResponse.path)
+//        println(uploadResponse.path)
         val publicUrl = bucket.publicUrl(path)
         uploadedUrls.add(publicUrl)
       }
