@@ -200,11 +200,12 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
                 endDatetime = activity.endDatetime!!.toLocalDateTime(TimeZone.currentSystemDefault())
               )
             }
+          val aryaSamaj = memberNode.aryaSamaj?.aryaSamajFields
 
           val address = memberNode.address
           val addressInfo =
             if (address != null) {
-              "${address.basicAddress ?: ""}, ${address.district ?: ""}, ${address.state ?: ""} ${address.pincode ?: ""}"
+              "${address.addressFields.basicAddress ?: ""}, ${address.addressFields.district ?: ""}, ${address.addressFields.state ?: ""} ${address.addressFields.pincode ?: ""}"
             } else {
               ""
             }
@@ -217,11 +218,12 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
             educationalQualification = memberNode.educationalQualification ?: "",
             email = memberNode.email ?: "",
             address = addressInfo,
-            district = address?.district ?: "",
-            state = address?.state ?: "",
-            pincode = address?.pincode ?: "",
+            district = address?.addressFields?.district ?: "",
+            state = address?.addressFields?.state ?: "",
+            pincode = address?.addressFields?.pincode ?: "",
             organisations = organisations ?: emptyList(),
-            activities = activities ?: emptyList()
+            activities = activities ?: emptyList(),
+            aryaSamaj = aryaSamaj
           )
         }
       emit(result)
@@ -253,14 +255,6 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
       emit(Result.Loading)
       val result =
         safeCall {
-          // TODO decide later
-//      val response = if (query.isBlank()) {
-//        // Return all members when query is empty
-//        apolloClient.query(MembersQuery()).execute()
-//      } else {
-//        apolloClient.query(SearchMembersQuery("%$query%")).execute()
-//      }
-
           val response =
             apolloClient.query(SearchMembersQuery("%$query%")).execute()
 
@@ -475,13 +469,13 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
           response.data?.aryaSamajCollection?.edges?.map { edge ->
             val node = edge.node
             val aryaSamajFields = node.aryaSamajFields
-            val address = node.address?.addressFields
+            val address = node.address
 
             AryaSamaj(
               id = aryaSamajFields.id,
               name = aryaSamajFields.name ?: "",
-              address = "${address?.basicAddress ?: ""}, ${address?.district ?: ""}, ${address?.state ?: ""} ${address?.pincode ?: ""}".trim(),
-              district = address?.district ?: ""
+              address = "${address?.addressFields?.basicAddress ?: ""}, ${address?.addressFields?.district ?: ""}, ${address?.addressFields?.state ?: ""} ${address?.addressFields?.pincode ?: ""}".trim(),
+              district = address?.addressFields?.district ?: ""
             )
           } ?: emptyList()
         }
@@ -503,13 +497,13 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
             response.data?.aryaSamajCollection?.edges?.map { edge ->
               val node = edge.node
               val aryaSamajFields = node.aryaSamajFields
-              val address = node.address?.addressFields
+              val address = node.address
 
               AryaSamaj(
                 id = aryaSamajFields.id,
                 name = aryaSamajFields.name ?: "",
-                address = "${address?.basicAddress ?: ""}, ${address?.district ?: ""}, ${address?.state ?: ""} ${address?.pincode ?: ""}".trim(),
-                district = address?.district ?: ""
+                address = "${address?.addressFields?.basicAddress ?: ""}, ${address?.addressFields?.district ?: ""}, ${address?.addressFields?.state ?: ""} ${address?.addressFields?.pincode ?: ""}".trim(),
+                district = address?.addressFields?.district ?: ""
               )
             } ?: emptyList()
 
@@ -553,7 +547,6 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
               id = member.id!!,
               name = member.name!!,
               profileImage = member.profileImage ?: "",
-              place = "" // MemberNotInFamily doesn't have place field, we can add it later if needed
             )
           } ?: emptyList()
         }
@@ -575,7 +568,6 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
               id = member.id!!,
               name = member.name!!,
               profileImage = member.profileImage ?: "",
-              place = "" // MemberNotInFamily doesn't have place field, we can add it later if needed
             )
           } ?: emptyList()
         }

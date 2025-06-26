@@ -1,6 +1,7 @@
 package org.aryamahasangh.features.admin
 
 import kotlinx.datetime.LocalDateTime
+import org.aryamahasangh.fragment.AryaSamajFields
 
 data class MemberShort(
   val id: String,
@@ -21,7 +22,8 @@ data class MemberDetail(
   val state: String,
   val pincode: String,
   val organisations: List<OrganisationInfo>,
-  val activities: List<ActivityInfo>
+  val activities: List<ActivityInfo>,
+  val aryaSamaj: AryaSamajFields?
 )
 
 data class OrganisationInfo(

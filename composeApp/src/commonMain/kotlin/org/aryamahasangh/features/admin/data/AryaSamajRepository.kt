@@ -8,7 +8,7 @@ import org.aryamahasangh.*
 import org.aryamahasangh.components.AddressData
 import org.aryamahasangh.components.getActiveImageUrls
 import org.aryamahasangh.features.activities.LatLng
-import org.aryamahasangh.type.SamajMemberInsertInput
+import org.aryamahasangh.type.*
 import org.aryamahasangh.util.Result
 import org.aryamahasangh.util.safeCall
 
@@ -25,6 +25,14 @@ interface AryaSamajRepository {
     id: String,
     formData: AryaSamajFormData
   ): Flow<Result<Boolean>>
+
+  suspend fun getAryaSamajCount(): Flow<Result<Int>>
+
+  suspend fun getAryaSamajByAddress(
+    state: String?,
+    district: String?,
+    vidhansabha: String?
+  ): Flow<Result<List<AryaSamajListItem>>>
 }
 
 class AryaSamajRepositoryImpl(private val apolloClient: ApolloClient) : AryaSamajRepository {
@@ -278,6 +286,8 @@ class AryaSamajRepositoryImpl(private val apolloClient: ApolloClient) : AryaSama
               if (updateAddressResponse.hasErrors()) {
                 throw Exception(updateAddressResponse.errors?.firstOrNull()?.message ?: "Failed to update address")
               }
+
+              addressId = currentAddress.id
             }
           } else if (newAddressData.address.isNotBlank() || newAddressData.state.isNotBlank()) {
             // Create new address if it doesn't exist but we have address data
@@ -298,7 +308,8 @@ class AryaSamajRepositoryImpl(private val apolloClient: ApolloClient) : AryaSama
               throw Exception(createAddressResponse.errors?.firstOrNull()?.message ?: "Failed to create address")
             }
 
-            addressId = createAddressResponse.data?.insertIntoAddressCollection?.records?.firstOrNull()?.id
+            addressId =
+              createAddressResponse.data?.insertIntoAddressCollection?.records?.firstOrNull()?.id
           }
 
           // Step 3: Update main AryaSamaj data
@@ -411,6 +422,158 @@ class AryaSamajRepositoryImpl(private val apolloClient: ApolloClient) : AryaSama
           }
 
           true
+        }
+      emit(result)
+    }
+
+  override suspend fun getAryaSamajCount(): Flow<Result<Int>> =
+    flow {
+      emit(Result.Loading)
+      val result =
+        safeCall {
+          val response = apolloClient.query(AryaSamajCountQuery()).execute()
+          if (response.hasErrors()) {
+            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+          }
+          response.data?.aryaSamajCollection?.totalCount ?: 0
+        }
+      emit(result)
+    }
+
+  override suspend fun getAryaSamajByAddress(
+    state: String?,
+    district: String?,
+    vidhansabha: String?
+  ): Flow<Result<List<AryaSamajListItem>>> =
+    flow {
+      emit(Result.Loading)
+      val result =
+        safeCall {
+          // First, find addresses that match the criteria
+          val addressFilters = mutableListOf<AddressFilter>()
+          
+          if (!state.isNullOrBlank()) {
+            addressFilters.add(AddressFilter(state = Optional.present(StringFilter(eq = Optional.present(state)))))
+          }
+          if (!district.isNullOrBlank()) {
+            addressFilters.add(AddressFilter(district = Optional.present(StringFilter(eq = Optional.present(district)))))
+          }
+          if (!vidhansabha.isNullOrBlank()) {
+            val vidhansabhaStringFilter = StringFilter(eq = Optional.present(vidhansabha))
+            addressFilters.add(
+              AddressFilter(
+                vidhansabha = Optional.present(
+                  vidhansabhaStringFilter
+                )
+              )
+            )
+          }
+          
+          if (addressFilters.isEmpty()) {
+            // If no filters, return all AryaSamaj
+            val response = apolloClient.query(AryaSamajsQuery()).execute()
+            if (response.hasErrors()) {
+              throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+            }
+            return@safeCall response.data?.aryaSamajCollection?.edges?.map { edge ->
+              val aryaSamaj = edge.node
+              val address = aryaSamaj.address?.addressFields
+              val formattedAddress =
+                if (address != null) {
+                  buildString {
+                    if (!address.basicAddress.isNullOrBlank()) append(address.basicAddress)
+                    if (!address.district.isNullOrBlank()) {
+                      if (isNotBlank()) append(", ")
+                      append(address.district)
+                    }
+                    if (!address.state.isNullOrBlank()) {
+                      if (isNotBlank()) append(", ")
+                      append(address.state)
+                    }
+                  }
+                } else {
+                  ""
+                }
+              val aryaSamajFields = aryaSamaj.aryaSamajFields
+              AryaSamajListItem(
+                id = aryaSamajFields.id,
+                name = aryaSamajFields.name ?: "",
+                description = aryaSamajFields.description ?: "",
+                formattedAddress = formattedAddress,
+                memberCount = 0
+              )
+            } ?: emptyList()
+          }
+          
+          // Get addresses that match criteria
+          val addressResponse = apolloClient.query(
+            AddressesQuery(
+              filter = Optional.present(
+                AddressFilter(
+                  and = Optional.present(addressFilters)
+                )
+              )
+            )
+          ).execute()
+          
+          if (addressResponse.hasErrors()) {
+            throw Exception(addressResponse.errors?.firstOrNull()?.message ?: "Failed to get addresses")
+          }
+
+          val matchingAddressIds =
+            addressResponse.data?.addressCollection?.edges?.map { it.node.addressFields.id } ?: emptyList()
+          
+          if (matchingAddressIds.isEmpty()) {
+            return@safeCall emptyList<AryaSamajListItem>()
+          }
+          
+          // Now get AryaSamaj with those addressIds
+          val aryaSamajResponse = apolloClient.query(
+            AryaSamajsQuery(
+              filter = Optional.present(
+                AryaSamajFilter(
+                  addressId = Optional.present(
+                    StringFilter(
+                      `in` = Optional.present(matchingAddressIds)
+                    )
+                  )
+                )
+              )
+            )
+          ).execute()
+          
+          if (aryaSamajResponse.hasErrors()) {
+            throw Exception(aryaSamajResponse.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+          }
+          
+          aryaSamajResponse.data?.aryaSamajCollection?.edges?.map { edge ->
+            val aryaSamaj = edge.node
+            val address = aryaSamaj.address?.addressFields
+            val formattedAddress =
+              if (address != null) {
+                buildString {
+                  if (!address.basicAddress.isNullOrBlank()) append(address.basicAddress)
+                  if (!address.district.isNullOrBlank()) {
+                    if (isNotBlank()) append(", ")
+                    append(address.district)
+                  }
+                  if (!address.state.isNullOrBlank()) {
+                    if (isNotBlank()) append(", ")
+                    append(address.state)
+                  }
+                }
+              } else {
+                ""
+              }
+            val aryaSamajFields = aryaSamaj.aryaSamajFields
+            AryaSamajListItem(
+              id = aryaSamajFields.id,
+              name = aryaSamajFields.name ?: "",
+              description = aryaSamajFields.description ?: "",
+              formattedAddress = formattedAddress,
+              memberCount = 0
+            )
+          } ?: emptyList()
         }
       emit(result)
     }
