@@ -7,7 +7,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.*
@@ -25,10 +28,9 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun MembersScreen(
+fun OrganisationalMembersScreen(
   viewModel: AdminViewModel,
   onNavigateToMemberDetail: (String) -> Unit = {},
-  onNavigateToAddMember: () -> Unit = {}
 ) {
   val uiState by viewModel.membersUiState.collectAsState()
   val deleteState by viewModel.deleteMemberState.collectAsState()
@@ -84,45 +86,11 @@ fun MembersScreen(
       OutlinedTextField(
         value = uiState.searchQuery,
         onValueChange = viewModel::searchOrganisationalMembers,
-        modifier = if (isCompact) Modifier.weight(1f) else Modifier.widthIn(max = 600.dp),
-        placeholder = { Text("आर्य का नाम/दूरभाष") },
+        modifier = if (isCompact) Modifier.fillMaxWidth() else Modifier.widthIn(max = 600.dp),
+        placeholder = { Text("पदाधिकारी का नाम/दूरभाष") },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
         singleLine = true
       )
-
-      if (!isCompact) {
-        Spacer(modifier = Modifier.weight(1f))
-      } else {
-        Spacer(modifier = Modifier.width(16.dp))
-      }
-
-      if (isCompact) {
-        // Tooltip for IconButton on compact screens
-        TooltipBox(
-          positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-          tooltip = {
-            PlainTooltip {
-              Text("नए आर्य जोड़ें")
-            }
-          },
-          state = rememberTooltipState()
-        ) {
-          IconButton(
-            onClick = onNavigateToAddMember
-          ) {
-            Icon(Icons.Default.PersonAdd, contentDescription = "Add new member")
-          }
-        }
-      } else {
-        // Button with text for larger screens
-        Button(
-          onClick = onNavigateToAddMember
-        ) {
-          Icon(Icons.Default.PersonAdd, contentDescription = null)
-          Spacer(modifier = Modifier.width(8.dp))
-          Text("नए आर्य जोड़ें")
-        }
-      }
     }
 
     Spacer(modifier = Modifier.height(16.dp))

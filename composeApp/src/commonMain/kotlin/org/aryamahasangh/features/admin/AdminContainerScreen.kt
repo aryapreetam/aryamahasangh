@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.PrimaryScrollableTabRow
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
@@ -34,11 +35,15 @@ fun AdminContainerScreen(
 ) {
   val membersCount by viewModel.membersCount.collectAsState()
   val membersUiState by viewModel.membersUiState.collectAsState()
+  val ekalAryaUiState by viewModel.ekalAryaUiState.collectAsState()
   val aryaSamajUiState by aryaSamajViewModel.listUiState.collectAsState()
+  val familyUiState by familyViewModel.familiesUiState.collectAsState()
   val snackbarHostState = LocalSnackbarHostState.current
 
   LaunchedEffect(Unit) {
     viewModel.getMembersCount()
+    viewModel.loadEkalAryaMembers()
+    familyViewModel.loadFamilies()
   }
 
   // Show error snackbar for member count loading errors (if any)
@@ -51,6 +56,31 @@ fun AdminContainerScreen(
     },
     onDismiss = { viewModel.clearMembersError() }
   )
+
+  // Show error snackbar for EkalArya loading errors (if any)
+  ErrorSnackbar(
+    error = ekalAryaUiState.appError,
+    snackbarHostState = snackbarHostState,
+    onRetry = {
+      viewModel.clearEkalAryaError()
+      viewModel.loadEkalAryaMembers()
+    },
+    onDismiss = { viewModel.clearEkalAryaError() }
+  )
+
+  // Show error snackbar for family loading errors (if any)
+  familyUiState.error?.let { errorMessage ->
+    LaunchedEffect(errorMessage) {
+      val result = snackbarHostState.showSnackbar(
+        message = errorMessage,
+        actionLabel = "पुनः प्रयास"
+      )
+      if (result == SnackbarResult.ActionPerformed) {
+        familyViewModel.clearError()
+        familyViewModel.loadFamilies()
+      }
+    }
+  }
 
   Column(modifier = Modifier.fillMaxSize()) {
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
@@ -94,6 +124,20 @@ fun AdminContainerScreen(
           "?"
         }
 
+      val ekalAryaCount =
+        if (ekalAryaUiState.appError == null) {
+          "${ekalAryaUiState.ekalAryaMembers.size}".toDevanagariNumerals()
+        } else {
+          "?"
+        }
+
+      val familyCount =
+        if (familyUiState.error == null) {
+          "${familyUiState.families.size}".toDevanagariNumerals()
+        } else {
+          "?"
+        }
+
       Tab(
         selected = selectedTabIndex == 0,
         onClick = { selectedTabIndex = 0 },
@@ -107,12 +151,12 @@ fun AdminContainerScreen(
       Tab(
         selected = selectedTabIndex == 2,
         onClick = { selectedTabIndex = 2 },
-        text = { Text("आर्य परिवार (0)") }
+        text = { Text("आर्य परिवार ($familyCount)") }
       )
       Tab(
         selected = selectedTabIndex == 3,
         onClick = { selectedTabIndex = 3 },
-        text = { Text("एकल आर्य (0)") }
+        text = { Text("एकल आर्य ($ekalAryaCount)") }
       )
     }
 
@@ -129,10 +173,9 @@ fun AdminContainerScreen(
         contentAlignment = Alignment.Center
       ) {
         if (it == 0) {
-          MembersScreen(
+          OrganisationalMembersScreen(
             viewModel = viewModel,
-            onNavigateToMemberDetail = onNavigateToMemberDetail,
-            onNavigateToAddMember = onNavigateToAddMember
+            onNavigateToMemberDetail = onNavigateToMemberDetail
           )
         } else if (it == 1) {
           AryaSamajListScreen(
@@ -150,7 +193,11 @@ fun AdminContainerScreen(
             onDeleteFamily = onDeleteFamily
           )
         } else if (it == 3) {
-          EkalAryaListScreen()
+          EkalAryaListScreen(
+            viewModel = viewModel,
+            onNavigateToMemberDetail = onNavigateToMemberDetail,
+            onNavigateToAddMember = onNavigateToAddMember
+          )
         }
       }
     }
