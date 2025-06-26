@@ -2672,6 +2672,10 @@ type MemberUpdateResponse {
 The root type for creating and mutating data
 """
 type Mutation {
+  deleteAryaSamaj(pAryaSamajId: String!): JSON
+
+  deleteFamily(pFamilyId: String!): JSON
+
   """
   Deletes zero or more records from the `Activities` collection
   """
@@ -2761,6 +2765,12 @@ type Mutation {
   Deletes zero or more records from the `SatrRegistration` collection
   """
   deleteFromSatrRegistrationCollection("Restricts the mutation's impact to records matching the criteria" filter: SatrRegistrationFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): SatrRegistrationDeleteResponse!
+
+  deleteMember(pMemberId: String!): JSON
+
+  insertAryaSamajDetails(pSamajName: String!, pSamajDescription: String!, pBasicAddress: String!, pState: String!, pDistrict: String!, pSamajMediaUrls: [String], pPincode: String, pLatitude: Float, pLongitude: Float, pVidhansabha: String, pMemberId: String, pPost: String = "प्रधान", pPriority: Int = 1): JSON
+
+  insertFamilyDetails(pFamilyName: String!, pHeadMemberId: String!, pAddressId: String, pAryaSamajId: String, pPhotos: [String]): JSON
 
   """
   Adds one or more `Activities` records to the collection
@@ -2852,6 +2862,8 @@ type Mutation {
   """
   insertIntoSatrRegistrationCollection(objects: [SatrRegistrationInsertInput!]!): SatrRegistrationInsertResponse
 
+  insertMemberDetails(pName: String!, pPhoneNumber: String!, pProfileImage: String, pEducationalQualification: String, pEmail: String, pDob: Date, pAddressId: String, pAryaSamajId: String, pJoiningDate: Date, pTempAddressId: String, pReferrerId: String, pOccupation: String, pIntroduction: String, pGender: String): JSON
+
   """
   Updates zero or more records in the `Activities` collection
   """
@@ -2882,6 +2894,8 @@ type Mutation {
   """
   updateAryaSamajCollection("Fields that are set will be updated for all records matching the `filter`" set: AryaSamajUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: AryaSamajFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): AryaSamajUpdateResponse!
 
+  updateAryaSamajDetails(pAryaSamajId: String!, pSamajName: String, pSamajDescription: String, pBasicAddress: String, pState: String, pDistrict: String, pSamajMediaUrls: [String], pPincode: String, pLatitude: Float, pLongitude: Float, pVidhansabha: String): JSON
+
   """
   Updates zero or more records in the `BookOrders` collection
   """
@@ -2891,6 +2905,8 @@ type Mutation {
   Updates zero or more records in the `Family` collection
   """
   updateFamilyCollection("Fields that are set will be updated for all records matching the `filter`" set: FamilyUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: FamilyFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): FamilyUpdateResponse!
+
+  updateFamilyDetails(pFamilyId: String!, pFamilyName: String, pAddressId: String, pAryaSamajId: String, pPhotos: [String]): JSON
 
   """
   Updates zero or more records in the `FamilyMember` collection
@@ -2906,6 +2922,8 @@ type Mutation {
   Updates zero or more records in the `Member` collection
   """
   updateMemberCollection("Fields that are set will be updated for all records matching the `filter`" set: MemberUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: MemberFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): MemberUpdateResponse!
+
+  updateMemberDetails(pMemberId: String!, pName: String, pPhoneNumber: String, pProfileImage: String, pEducationalQualification: String, pEmail: String, pDob: Date, pAddressId: String, pAryaSamajId: String, pJoiningDate: Date, pTempAddressId: String, pReferrerId: String, pOccupation: String, pIntroduction: String, pGender: String): JSON
 
   """
   Updates zero or more records in the `MemberInOrganisation` collection

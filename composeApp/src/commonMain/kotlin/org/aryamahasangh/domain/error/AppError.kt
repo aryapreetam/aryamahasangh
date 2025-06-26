@@ -1,5 +1,7 @@
 package org.aryamahasangh.domain.error
 
+import org.aryamahasangh.utils.LocalizationManager
+
 /**
  * Sealed class representing different types of application errors
  */
@@ -26,6 +28,53 @@ sealed class AppError(
       "Unknown network error: ${cause.message}",
       cause
     )
+  }
+
+  /**
+   * CRUD operation errors from Supabase functions
+   * These errors contain message codes that get localized to Hindi
+   */
+  sealed class CrudError(
+    val messageCode: String,
+    override val message: String
+  ) : AppError(message) {
+
+    /**
+     * Success response from CRUD operations
+     */
+    data class Success(
+      private val code: String,
+      val details: String? = null
+    ) : CrudError(code, LocalizationManager.translateMessageCode(code))
+
+    /**
+     * Error response from CRUD operations
+     */
+    data class Error(
+      private val code: String,
+      val details: String? = null
+    ) : CrudError(code, LocalizationManager.translateMessageCode(code))
+
+    /**
+     * Gets the localized message in Hindi
+     */
+    fun getLocalizedMessage(): String {
+      return LocalizationManager.translateMessageCode(messageCode)
+    }
+
+    /**
+     * Checks if this is a success response
+     */
+    fun isSuccess(): Boolean {
+      return LocalizationManager.isSuccessMessage(messageCode)
+    }
+
+    /**
+     * Checks if this is an error response
+     */
+    fun isError(): Boolean {
+      return LocalizationManager.isErrorMessage(messageCode)
+    }
   }
 
   /**
@@ -112,6 +161,33 @@ sealed class AppError(
     override val message: String = "An unknown error occurred",
     override val cause: Throwable? = null
   ) : AppError(message, cause)
+}
+
+/**
+ * Helper function to create CrudError from JSON response
+ */
+fun createCrudErrorFromResponse(
+  success: Boolean?,
+  messageCode: String?,
+  errorCode: String?,
+  errorDetails: String? = null
+): AppError.CrudError {
+  return when {
+    success == true && messageCode != null ->
+      AppError.CrudError.Success(messageCode, errorDetails)
+
+    success == false && errorCode != null ->
+      AppError.CrudError.Error(errorCode, errorDetails)
+
+    messageCode != null ->
+      AppError.CrudError.Success(messageCode, errorDetails)
+
+    errorCode != null ->
+      AppError.CrudError.Error(errorCode, errorDetails)
+
+    else ->
+      AppError.CrudError.Error("UNKNOWN_ERROR", errorDetails)
+  }
 }
 
 /**
@@ -203,31 +279,32 @@ fun Throwable.toAppError(): AppError {
 }
 
 /**
- * Extension function to get user-friendly error messages
+ * Extension function to get user-friendly error messages with Hindi support
  */
 fun AppError.getUserMessage(): String {
   return when (this) {
-    is AppError.NetworkError.NoConnection -> "Please check your internet connection and try again"
-    is AppError.NetworkError.Timeout -> "Request timed out. Please try again"
-    is AppError.NetworkError.ServerError -> "Server is temporarily unavailable. Please try again later"
+    is AppError.CrudError -> getLocalizedMessage()
+    is AppError.NetworkError.NoConnection -> "कृपया अपना इंटरनेट कनेक्शन जांचें और पुनः प्रयास करें"
+    is AppError.NetworkError.Timeout -> "अनुरोध का समय समाप्त हो गया। कृपया पुनः प्रयास करें"
+    is AppError.NetworkError.ServerError -> "सर्वर अस्थायी रूप से अनुपलब्ध है। कृपया बाद में पुनः प्रयास करें"
     is AppError.NetworkError.HttpError ->
       when (code) {
-        400 -> "Invalid request. Please check your input"
-        401 -> "Authentication required. Please log in"
-        403 -> "You don't have permission to perform this action"
-        404 -> "The requested resource was not found"
-        500 -> "Server error. Please try again later"
-        else -> "Network error occurred (Code: $code)"
+        400 -> "अमान्य अनुरोध। कृपया अपना इनपुट जांचें"
+        401 -> "प्रमाणीकरण आवश्यक। कृपया लॉगिन करें"
+        403 -> "आपको यह कार्य करने की अनुमति नहीं है"
+        404 -> "अनुरोधित संसाधन नहीं मिला"
+        500 -> "सर्वर त्रुटि। कृपया बाद में पुनः प्रयास करें"
+        else -> "नेटवर्क त्रुटि हुई (कोड: $code)"
       }
     is AppError.ValidationError -> message
-    is AppError.AuthError.NotAuthenticated -> "Please log in to continue"
-    is AppError.AuthError.NotAuthorized -> "You don't have permission to perform this action"
-    is AppError.AuthError.SessionExpired -> "Your session has expired. Please log in again"
-    is AppError.AuthError.InvalidCredentials -> "Invalid username or password"
-    is AppError.DataError.NotFound -> "The requested information was not found"
-    is AppError.DataError.AlreadyExists -> "This information already exists"
-    is AppError.BusinessError.InsufficientPermissions -> "You don't have sufficient permissions"
-    is AppError.BusinessError.OperationNotAllowed -> "This operation is not allowed"
+    is AppError.AuthError.NotAuthenticated -> "कृपया जारी रखने के लिए लॉगिन करें"
+    is AppError.AuthError.NotAuthorized -> "आपको यह कार्य करने की अनुमति नहीं है"
+    is AppError.AuthError.SessionExpired -> "आपका सत्र समाप्त हो गया है। कृपया पुनः लॉगिन करें"
+    is AppError.AuthError.InvalidCredentials -> "अमान्य उपयोगकर्ता नाम या पासवर्ड"
+    is AppError.DataError.NotFound -> "अनुरोधित जानकारी नहीं मिली"
+    is AppError.DataError.AlreadyExists -> "यह जानकारी पहले से मौजूद है"
+    is AppError.BusinessError.InsufficientPermissions -> "आपके पास पर्याप्त अनुमतियां नहीं हैं"
+    is AppError.BusinessError.OperationNotAllowed -> "यह कार्य अनुमतित नहीं है"
     else -> message
   }
 }
