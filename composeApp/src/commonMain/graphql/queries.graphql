@@ -90,6 +90,8 @@ query memberDetail($memberId: String!) {
         phoneNumber
         educationalQualification
         email
+        dob
+        joiningDate
         address {
           basicAddress
           district
@@ -735,6 +737,42 @@ query memberWithAddress($memberId: String!) {
             }
           }
         }
+      }
+    }
+  }
+}
+
+# Member Not In Family Queries
+fragment MemberNotInFamilyShort on MemberNotInFamily {
+  id
+  name
+  profileImage
+  phoneNumber
+  addressId
+}
+
+query ekalAryaMembers {
+  memberNotInFamilyCollection {
+    edges {
+      node {
+        ...MemberNotInFamilyShort
+      }
+    }
+  }
+}
+
+query searchEkalAryaMembers($nameOrPhoneNumber: String!) {
+  memberNotInFamilyCollection(
+    filter: {
+      or: [
+        {name: {ilike: $nameOrPhoneNumber}},
+        {phoneNumber: {ilike: $nameOrPhoneNumber}}
+      ]
+    }
+  ) {
+    edges {
+      node {
+        ...MemberNotInFamilyShort
       }
     }
   }

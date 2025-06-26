@@ -30,6 +30,16 @@ data class MembersUiState(
   val isSearching: Boolean = false
 ) : ErrorState
 
+data class EkalAryaUiState(
+  val ekalAryaMembers: List<MemberShort> = emptyList(),
+  override val isLoading: Boolean = false,
+  override val error: String? = null,
+  override val appError: AppError? = null,
+  val searchQuery: String = "",
+  val searchResults: List<MemberShort> = emptyList(),
+  val isSearching: Boolean = false
+) : ErrorState
+
 data class MemberDetailUiState(
   val member: MemberDetail? = null,
   override val isLoading: Boolean = false,
@@ -58,6 +68,9 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
 
   private val _membersUiState = MutableStateFlow(MembersUiState())
   val membersUiState: StateFlow<MembersUiState> = _membersUiState.asStateFlow()
+
+  private val _ekalAryaUiState = MutableStateFlow(EkalAryaUiState())
+  val ekalAryaUiState: StateFlow<EkalAryaUiState> = _ekalAryaUiState.asStateFlow()
 
   private val _memberDetailUiState = MutableStateFlow(MemberDetailUiState())
   val memberDetailUiState: StateFlow<MemberDetailUiState> = _memberDetailUiState.asStateFlow()
@@ -188,6 +201,87 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
           )
         }
       }
+  }
+
+  // New method for searching EkalArya members
+  fun searchEkalAryaMembers(query: String) {
+    _ekalAryaUiState.value = _ekalAryaUiState.value.copy(searchQuery = query)
+
+    searchJob?.cancel()
+    searchJob =
+      viewModelScope.launch {
+        if (query.isBlank()) {
+          _ekalAryaUiState.value =
+            _ekalAryaUiState.value.copy(
+              searchResults = emptyList(),
+              isSearching = false
+            )
+          return@launch
+        }
+
+        // Debounce search
+        delay(500)
+
+        repository.searchEkalAryaMembers(query).collect { result ->
+          result.handleResult(
+            onLoading = {
+              _ekalAryaUiState.value = _ekalAryaUiState.value.copy(isSearching = true)
+            },
+            onSuccess = { searchResults ->
+              _ekalAryaUiState.value =
+                _ekalAryaUiState.value.copy(
+                  searchResults = searchResults,
+                  isSearching = false
+                )
+            },
+            onError = { appError ->
+              ErrorHandler.logError(appError, "AdminViewModel.searchEkalAryaMembers")
+              _ekalAryaUiState.value =
+                _ekalAryaUiState.value.copy(
+                  isSearching = false,
+                  error = appError.getUserMessage(),
+                  appError = appError
+                )
+            }
+          )
+        }
+      }
+  }
+
+  // New method to load EkalArya members
+  fun loadEkalAryaMembers() {
+    viewModelScope.launch {
+      repository.getEkalAryaMembers().collect { result ->
+        result.handleResult(
+          onLoading = {
+            _ekalAryaUiState.value =
+              _ekalAryaUiState.value.copy(
+                isLoading = true,
+                error = null,
+                appError = null
+              )
+          },
+          onSuccess = { ekalAryaMembers ->
+            _ekalAryaUiState.value =
+              _ekalAryaUiState.value.copy(
+                ekalAryaMembers = ekalAryaMembers,
+                isLoading = false,
+                error = null,
+                appError = null
+              )
+          },
+          onError = { appError ->
+            ErrorHandler.logError(appError, "AdminViewModel.loadEkalAryaMembers")
+            _ekalAryaUiState.value =
+              _ekalAryaUiState.value.copy(
+                isLoading = false,
+                error = appError.getUserMessage(),
+                appError = appError
+              )
+          }
+        )
+      }
+    }
   }
 
   // New method for searching members for selection component
@@ -595,6 +689,10 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
    */
   fun clearMembersError() {
     _membersUiState.value = _membersUiState.value.copy(error = null, appError = null)
+  }
+
+  fun clearEkalAryaError() {
+    _ekalAryaUiState.value = _ekalAryaUiState.value.copy(error = null, appError = null)
   }
 
   fun clearMemberDetailError() {

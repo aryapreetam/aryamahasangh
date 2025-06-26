@@ -34,6 +34,11 @@ interface AdminRepository {
   // Search members that returns Member list for MembersComponent
   suspend fun searchMembersForSelection(query: String): Flow<Result<List<Member>>>
 
+  // EkalArya (Member not in family) methods
+  suspend fun getEkalAryaMembers(): Flow<Result<List<MemberShort>>>
+
+  suspend fun searchEkalAryaMembers(query: String): Flow<Result<List<MemberShort>>>
+
   suspend fun updateMemberDetails(
     memberId: String,
     name: String?,
@@ -529,6 +534,50 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
           }
           response.data?.deleteFromMemberCollection?.affectedCount != null &&
             response.data?.deleteFromMemberCollection?.affectedCount!! > 0
+        }
+      emit(result)
+    }
+
+  override suspend fun getEkalAryaMembers(): Flow<Result<List<MemberShort>>> =
+    flow {
+      emit(Result.Loading)
+      val result =
+        safeCall {
+          val response = apolloClient.query(EkalAryaMembersQuery()).execute()
+          if (response.hasErrors()) {
+            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+          }
+          response.data?.memberNotInFamilyCollection?.edges?.map {
+            val member = it.node.memberNotInFamilyShort
+            MemberShort(
+              id = member.id!!,
+              name = member.name!!,
+              profileImage = member.profileImage ?: "",
+              place = "" // MemberNotInFamily doesn't have place field, we can add it later if needed
+            )
+          } ?: emptyList()
+        }
+      emit(result)
+    }
+
+  override suspend fun searchEkalAryaMembers(query: String): Flow<Result<List<MemberShort>>> =
+    flow {
+      emit(Result.Loading)
+      val result =
+        safeCall {
+          val response = apolloClient.query(SearchEkalAryaMembersQuery("%$query%")).execute()
+          if (response.hasErrors()) {
+            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+          }
+          response.data?.memberNotInFamilyCollection?.edges?.map {
+            val member = it.node.memberNotInFamilyShort
+            MemberShort(
+              id = member.id!!,
+              name = member.name!!,
+              profileImage = member.profileImage ?: "",
+              place = "" // MemberNotInFamily doesn't have place field, we can add it later if needed
+            )
+          } ?: emptyList()
         }
       emit(result)
     }
