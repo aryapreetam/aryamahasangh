@@ -93,15 +93,20 @@ query memberDetail($memberId: String!) {
         dob
         joiningDate
         address {
-          basicAddress
-          district
-          state
-          pincode
+          ...AddressFields
+        }
+        tempAddress {
+          ...AddressFields
+        }
+        aryaSamaj {
+          ...AryaSamajFields
         }
         organisationalMemberCollection {
           edges {
             node {
               id
+              post
+              priority
               organisation {
                 id
                 name
@@ -120,6 +125,20 @@ query memberDetail($memberId: String!) {
                 state
                 startDatetime
                 endDatetime
+              }
+            }
+          }
+        }
+        samajMemberCollection {
+          edges {
+            node {
+              id
+              post
+              priority
+              aryaSamaj {
+                id
+                name
+                description
               }
             }
           }
@@ -562,6 +581,9 @@ fragment AryaSamajFields on AryaSamaj {
   description
   mediaUrls
   addressId
+  address {
+    ...AddressFields
+  }
   createdAt
 }
 
@@ -739,6 +761,13 @@ query memberWithAddress($memberId: String!) {
         }
       }
     }
+  }
+}
+
+# AryaSamaj count query
+query aryaSamajCount {
+  aryaSamajCollection {
+    totalCount
   }
 }
 

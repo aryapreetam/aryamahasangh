@@ -392,7 +392,7 @@ fun RootNavGraph(navController: NavHostController) {
       }
       composable<Screen.OrgDetails> {
         val orgId = it.toRoute<Screen.OrgDetails>().organisationId
-        val viewModel = koinInject<OrganisationsViewModel>()
+        val orgViewModel = koinInject<OrganisationsViewModel>()
         val adminViewModel = koinInject<AdminViewModel>()
 
         // Load members when screen is accessed
@@ -405,7 +405,7 @@ fun RootNavGraph(navController: NavHostController) {
 
         OrgDetailScreen(
           id = orgId,
-          viewModel = viewModel,
+          viewModel = orgViewModel,
           searchMembers = { query ->
             // Use the search results from AdminViewModel
             // This will contain fresh results from server
@@ -500,7 +500,12 @@ fun RootNavGraph(navController: NavHostController) {
     navigation<Screen.AryaSamajSection>(startDestination = Screen.AryaSamajHome) {
       composable<Screen.AryaSamajHome> {
         val aryaSamajViewModel = koinInject<org.aryamahasangh.features.admin.data.AryaSamajViewModel>()
-        AryaSamajHomeScreen(viewModel = aryaSamajViewModel)
+        AryaSamajHomeScreen(
+          viewModel = aryaSamajViewModel,
+          onNavigateToDetail = { aryaSamajId ->
+            navController.navigate(Screen.AryaSamajDetail(aryaSamajId))
+          }
+        )
       }
       composable<Screen.AddAryaSamajForm> {
         val viewModel = koinInject<org.aryamahasangh.features.admin.data.AryaSamajViewModel>()

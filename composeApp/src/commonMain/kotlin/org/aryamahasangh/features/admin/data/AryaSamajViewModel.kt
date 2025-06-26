@@ -21,7 +21,8 @@ data class AryaSamajListUiState(
   override val isLoading: Boolean = false,
   override val error: String? = null,
   override val appError: AppError? = null,
-  val searchQuery: String = ""
+  val searchQuery: String = "",
+  val totalCount: Int = 0
 ) : ErrorState
 
 data class AryaSamajDetailUiState(
@@ -167,67 +168,6 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
       _formUiState.value.copy(
         formData = formData
       ).updateHasUnsavedChanges()
-  }
-
-  fun loadAryaSamajForEdit(aryaSamajId: String) {
-    viewModelScope.launch {
-      repository.getAryaSamajDetail(aryaSamajId).collect { result ->
-        result.handleResult(
-          onLoading = {
-            _formUiState.value =
-              _formUiState.value.copy(
-                isSubmitting = true
-              )
-          },
-          onSuccess = { aryaSamajDetail ->
-            // Convert AryaSamajDetail to AryaSamajFormData
-            val formData =
-              AryaSamajFormData(
-                name = aryaSamajDetail.name,
-                description = aryaSamajDetail.description,
-                imagePickerState =
-                  ImagePickerState(
-                    existingImageUrls = aryaSamajDetail.mediaUrls
-                  ),
-                addressData = aryaSamajDetail.address,
-                membersState =
-                  MembersState(
-                    members =
-                      aryaSamajDetail.members.associate { member ->
-                        // Convert AryaSamajMember to Member and post/priority pair
-                        val memberObj =
-                          Member(
-                            id = member.memberId,
-                            name = member.memberName,
-                            profileImage = member.memberProfileImage ?: "",
-                            phoneNumber = member.memberPhoneNumber ?: "",
-                            educationalQualification = "", // Not available in AryaSamajMember
-                            email = "" // Not available in AryaSamajMember
-                          )
-                        memberObj to (member.post to member.priority)
-                      }.toMutableMap()
-                  )
-              )
-
-            _formUiState.value =
-              _formUiState.value.copy(
-                formData = formData,
-                isSubmitting = false,
-                editingAryaSamajId = aryaSamajId,
-                originalFormData = formData
-              )
-          },
-          onError = { appError ->
-            ErrorHandler.logError(appError, "AryaSamajViewModel.loadAryaSamajForEdit")
-            _formUiState.value =
-              _formUiState.value.copy(
-                isSubmitting = false,
-                submitError = appError.getUserMessage()
-              )
-          }
-        )
-      }
-    }
   }
 
   fun submitForm() {
@@ -422,5 +362,123 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
 
   fun clearFormError() {
     _formUiState.value = _formUiState.value.copy(submitError = null)
+  }
+
+  // New methods
+  fun getAryaSamajCount() {
+    viewModelScope.launch {
+      repository.getAryaSamajCount().collect { result ->
+        result.handleResult(
+          onLoading = {
+            _listUiState.value = _listUiState.value.copy(isLoading = true)
+          },
+          onSuccess = { count ->
+            _listUiState.value = _listUiState.value.copy(totalCount = count, isLoading = false)
+          },
+          onError = { appError ->
+            ErrorHandler.logError(appError, "AryaSamajViewModel.getAryaSamajCount")
+            _listUiState.value =
+              _listUiState.value.copy(
+                isLoading = false,
+                error = appError.getUserMessage(),
+                appError = appError
+              )
+          }
+        )
+      }
+    }
+  }
+
+  fun filterAryaSamajsByAddress(address: String) {
+    _listUiState.value = _listUiState.value.copy(searchQuery = address)
+  }
+
+  fun searchAryaSamajByAddress(state: String? = null, district: String? = null, vidhansabha: String? = null) {
+    viewModelScope.launch {
+      repository.getAryaSamajByAddress(state, district, vidhansabha).collect { result ->
+        result.handleResult(
+          onLoading = {
+            _listUiState.value = _listUiState.value.copy(isLoading = true, error = null, appError = null)
+          },
+          onSuccess = { aryaSamajs ->
+            _listUiState.value = _listUiState.value.copy(
+              aryaSamajs = aryaSamajs,
+              isLoading = false,
+              error = null,
+              appError = null
+            )
+          },
+          onError = { appError ->
+            ErrorHandler.logError(appError, "AryaSamajViewModel.searchAryaSamajByAddress")
+            _listUiState.value = _listUiState.value.copy(
+              isLoading = false,
+              error = appError.getUserMessage(),
+              appError = appError
+            )
+          }
+        )
+      }
+    }
+  }
+
+  fun loadAryaSamajForEdit(aryaSamajId: String) {
+    viewModelScope.launch {
+      repository.getAryaSamajDetail(aryaSamajId).collect { result ->
+        result.handleResult(
+          onLoading = {
+            _formUiState.value =
+              _formUiState.value.copy(
+                isSubmitting = true
+              )
+          },
+          onSuccess = { aryaSamajDetail ->
+            // Convert AryaSamajDetail to AryaSamajFormData
+            val formData =
+              AryaSamajFormData(
+                name = aryaSamajDetail.name,
+                description = aryaSamajDetail.description,
+                imagePickerState =
+                  ImagePickerState(
+                    existingImageUrls = aryaSamajDetail.mediaUrls
+                  ),
+                addressData = aryaSamajDetail.address,
+                membersState =
+                  MembersState(
+                    members =
+                      aryaSamajDetail.members.associate { member ->
+                        // Convert AryaSamajMember to Member and post/priority pair
+                        val memberObj =
+                          Member(
+                            id = member.memberId,
+                            name = member.memberName,
+                            profileImage = member.memberProfileImage ?: "",
+                            phoneNumber = member.memberPhoneNumber ?: "",
+                            educationalQualification = "", // Not available in AryaSamajMember
+                            email = "" // Not available in AryaSamajMember
+                          )
+                        memberObj to (member.post to member.priority)
+                      }.toMutableMap()
+                  )
+              )
+
+            _formUiState.value =
+              _formUiState.value.copy(
+                formData = formData,
+                isSubmitting = false,
+                editingAryaSamajId = aryaSamajId,
+                originalFormData = formData
+              )
+          },
+          onError = { appError ->
+            ErrorHandler.logError(appError, "AryaSamajViewModel.loadAryaSamajForEdit")
+            _formUiState.value =
+              _formUiState.value.copy(
+                isSubmitting = false,
+                submitError = appError.getUserMessage()
+              )
+          }
+        )
+      }
+    }
   }
 }
