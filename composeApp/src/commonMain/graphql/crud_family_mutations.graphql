@@ -1,0 +1,41 @@
+# Family CRUD Mutations using the comprehensive Supabase functions
+# These mutations call the custom functions that provide full business logic
+
+# Create Family with comprehensive details
+mutation InsertFamilyDetails(
+  $familyName: String!,
+  $headMemberId: String!,
+  $addressId: String = null,
+  $aryaSamajId: String = null,
+  $photos: [String] = null
+) {
+  insertFamilyDetails(
+    pFamilyName: $familyName,
+    pHeadMemberId: $headMemberId,
+    pAddressId: $addressId,
+    pAryaSamajId: $aryaSamajId,
+    pPhotos: $photos
+  )
+}
+
+# Update Family details
+mutation UpdateFamilyDetails(
+  $familyId: String!,
+  $familyName: String = null,
+  $addressId: String = null,
+  $aryaSamajId: String = null,
+  $photos: [String] = null
+) {
+  updateFamilyDetails(
+    pFamilyId: $familyId,
+    pFamilyName: $familyName,
+    pAddressId: $addressId,
+    pAryaSamajId: $aryaSamajId,
+    pPhotos: $photos
+  )
+}
+
+# Delete Family (comprehensive deletion with cleanup)
+mutation DeleteFamilyComprehensive($familyId: String!) {
+  deleteFamily(pFamilyId: $familyId)
+}

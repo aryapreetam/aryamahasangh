@@ -1,0 +1,79 @@
+# Member CRUD Mutations using the comprehensive Supabase functions
+# These mutations call the custom functions that provide full business logic
+
+# Create Member with comprehensive details
+mutation InsertMemberDetails(
+  $name: String!,
+  $phoneNumber: String!,
+  $profileImage: String = null,
+  $educationalQualification: String = null,
+  $email: String = null,
+  $dob: Date = null,
+  $addressId: String = null,
+  $aryaSamajId: String = null,
+  $joiningDate: Date = null,
+  $tempAddressId: String = null,
+  $referrerId: String = null,
+  $occupation: String = null,
+  $introduction: String = null,
+  $gender: String = null
+) {
+  insertMemberDetails(
+    pName: $name,
+    pPhoneNumber: $phoneNumber,
+    pProfileImage: $profileImage,
+    pEducationalQualification: $educationalQualification,
+    pEmail: $email,
+    pDob: $dob,
+    pAddressId: $addressId,
+    pAryaSamajId: $aryaSamajId,
+    pJoiningDate: $joiningDate,
+    pTempAddressId: $tempAddressId,
+    pReferrerId: $referrerId,
+    pOccupation: $occupation,
+    pIntroduction: $introduction,
+    pGender: $gender
+  )
+}
+
+# Update Member details
+mutation UpdateMemberDetailsComprehensive(
+  $memberId: String!,
+  $name: String = null,
+  $phoneNumber: String = null,
+  $profileImage: String = null,
+  $educationalQualification: String = null,
+  $email: String = null,
+  $dob: Date = null,
+  $addressId: String = null,
+  $aryaSamajId: String = null,
+  $joiningDate: Date = null,
+  $tempAddressId: String = null,
+  $referrerId: String = null,
+  $occupation: String = null,
+  $introduction: String = null,
+  $gender: String = null
+) {
+  updateMemberDetails(
+    pMemberId: $memberId,
+    pName: $name,
+    pPhoneNumber: $phoneNumber,
+    pProfileImage: $profileImage,
+    pEducationalQualification: $educationalQualification,
+    pEmail: $email,
+    pDob: $dob,
+    pAddressId: $addressId,
+    pAryaSamajId: $aryaSamajId,
+    pJoiningDate: $joiningDate,
+    pTempAddressId: $tempAddressId,
+    pReferrerId: $referrerId,
+    pOccupation: $occupation,
+    pIntroduction: $introduction,
+    pGender: $gender
+  )
+}
+
+# Delete Member (comprehensive deletion with cleanup)
+mutation DeleteMemberComprehensive($memberId: String!) {
+  deleteMember(pMemberId: $memberId)
+}

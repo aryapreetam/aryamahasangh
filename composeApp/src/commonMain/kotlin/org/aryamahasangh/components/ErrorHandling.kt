@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import org.aryamahasangh.domain.error.AppError
+import org.aryamahasangh.domain.error.getUserMessage
 
 @Composable
 fun ErrorContent(
@@ -73,7 +74,7 @@ fun ErrorContent(
             verticalArrangement = Arrangement.spacedBy(8.dp)
           ) {
             Text(
-              text = "💡 What you can try:",
+              text = "💡 आप यह कोशिश कर सकते हैं:",
               style = MaterialTheme.typography.titleSmall,
               fontWeight = FontWeight.Medium,
               color = MaterialTheme.colorScheme.onSurface
@@ -98,7 +99,7 @@ fun ErrorContent(
             onClick = onDismiss,
             modifier = Modifier.weight(1f)
           ) {
-            Text("Maybe Later")
+            Text("कुछ बाद में")
           }
         }
 
@@ -113,7 +114,7 @@ fun ErrorContent(
               modifier = Modifier.size(18.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Try Again")
+            Text("पुनः प्रयास करें")
           }
         }
       }
@@ -179,7 +180,7 @@ fun InlineErrorMessage(
             modifier = Modifier.size(16.dp)
           )
           Spacer(modifier = Modifier.width(4.dp))
-          Text("Retry", style = MaterialTheme.typography.labelMedium)
+          Text("पुनः प्रयास करें", style = MaterialTheme.typography.labelMedium)
         }
       }
     }
@@ -200,7 +201,7 @@ fun ErrorSnackbar(
       val result =
         snackbarHostState.showSnackbar(
           message = "${errorInfo.title}: ${errorInfo.description}",
-          actionLabel = if (onRetry != null) "Retry" else null,
+          actionLabel = if (onRetry != null) "पुनः प्रयास करें" else null,
           duration = SnackbarDuration.Long
         )
 
@@ -226,7 +227,7 @@ fun LoadingErrorState(
         color = MaterialTheme.colorScheme.primary
       )
       Text(
-        text = "Loading...",
+        text = "लोड हो रहा है...",
         style = MaterialTheme.typography.bodyLarge,
         color = MaterialTheme.colorScheme.onSurfaceVariant
       )
@@ -269,44 +270,63 @@ private data class ErrorInfo(
 
 private fun getErrorInfo(error: AppError?): ErrorInfo {
   return when (error) {
+    is AppError.CrudError.Success ->
+      ErrorInfo(
+        title = "सफल",
+        description = error.getLocalizedMessage(),
+        suggestions = emptyList(),
+        icon = Icons.Default.Info
+      )
+
+    is AppError.CrudError.Error ->
+      ErrorInfo(
+        title = "त्रुटि",
+        description = error.getLocalizedMessage(),
+        suggestions = listOf(
+          "🔄 कृपया पुनः प्रयास करें",
+          "📞 यदि समस्या बनी रहे तो सहायता से संपर्क करें"
+        ),
+        icon = Icons.Default.Warning
+      )
+
     is AppError.NetworkError.NoConnection ->
       ErrorInfo(
-        title = "No Internet Connection",
-        description = "It looks like you're not connected to the internet.",
+        title = "इंटरनेट कनेक्शन नहीं",
+        description = "ऐसा लगता है कि आप इंटरनेट से जुड़े नहीं हैं।",
         suggestions =
           listOf(
-            "📶 Check if Wi-Fi or mobile data is turned on",
-            "🔄 Try switching between Wi-Fi and mobile data",
-            "📍 Move to an area with better signal",
-            "🔌 Restart your router or reconnect to Wi-Fi"
+            "📶 जांचें कि Wi-Fi या मोबाइल डेटा चालू है",
+            "🔄 Wi-Fi और मोबाइल डेटा के बीच स्विच करने का प्रयास करें",
+            "📍 बेहतर सिग्नल वाले क्षेत्र में जाएं",
+            "🔌 अपना राउटर पुनः चालू करें या Wi-Fi से पुनः कनेक्ट करें"
           ),
         icon = Icons.Default.SignalWifiOff
       )
 
     is AppError.NetworkError.Timeout ->
       ErrorInfo(
-        title = "Taking Longer Than Expected",
-        description = "The connection is slow or the server is busy.",
+        title = "अपेक्षा से अधिक समय लग रहा",
+        description = "कनेक्शन धीमा है या सर्वर व्यस्त है।",
         suggestions =
           listOf(
-            "⏱️ Wait a moment and try again",
-            "📶 Check your internet speed",
-            "🔄 Switch to a faster network if available",
-            "📱 Close other apps using the internet"
+            "⏱️ कुछ देर प्रतीक्षा करें और पुनः प्रयास करें",
+            "📶 अपनी इंटरनेट स्पीड जांचें",
+            "🔄 यदि उपलब्ध हो तो तेज़ नेटवर्क पर स्विच करें",
+            "📱 इंटरनेट का उपयोग करने वाले अन्य ऐप्स बंद करें"
           ),
         icon = Icons.Default.CloudOff
       )
 
     is AppError.NetworkError.ServerError ->
       ErrorInfo(
-        title = "Service Temporarily Unavailable",
-        description = "Our servers are experiencing some issues right now.",
+        title = "सेवा अस्थायी रूप से अनुपलब्ध",
+        description = "हमारे सर्वर में अभी कुछ समस्याएं आ रही हैं।",
         suggestions =
           listOf(
-            "⏰ Please try again in a few minutes",
-            "🔔 We're working to fix this quickly",
-            "📞 Contact support if this continues",
-            "📱 Check our social media for updates"
+            "⏰ कृपया कुछ मिनट बाद पुनः प्रयास करें",
+            "🔔 हम इसे जल्दी ठीक करने के लिए काम कर रहे हैं",
+            "📞 यदि यह जारी रहे तो सहायता से संपर्क करें",
+            "📱 अपडेट के लिए हमारे सोशल मीडिया देखें"
           ),
         icon = Icons.Default.CloudOff
       )
@@ -315,79 +335,79 @@ private fun getErrorInfo(error: AppError?): ErrorInfo {
       ErrorInfo(
         title =
           when (error.code) {
-            404 -> "Content Not Found"
-            500, 502, 503 -> "Service Temporarily Down"
-            else -> "Service Error"
+            404 -> "सामग्री नहीं मिली"
+            500, 502, 503 -> "सेवा अस्थायी रूप से बंद"
+            else -> "सेवा त्रुटि"
           },
         description =
           when (error.code) {
-            404 -> "The information you're looking for is not available."
-            500, 502, 503 -> "Our servers are having trouble right now."
-            else -> "Something went wrong on our end."
+            404 -> "आपकी खोजी गई जानकारी उपलब्ध नहीं है।"
+            500, 502, 503 -> "हमारे सर्वर में अभी समस्या आ रही है।"
+            else -> "हमारी तरफ से कुछ गलत हुआ है।"
           },
         suggestions =
           when (error.code) {
-            404 -> listOf("🔍 Try searching for something else", "🏠 Go back to the main page")
+            404 -> listOf("🔍 कुछ और खोजने का प्रयास करें", "🏠 मुख्य पेज पर वापस जाएं")
             500, 502, 503 ->
               listOf(
-                "⏰ Please try again in a few minutes",
-                "🔄 Refresh the page",
-                "📞 Contact support if this persists"
+                "⏰ कृपया कुछ मिनट बाद पुनः प्रयास करें",
+                "🔄 पेज को रिफ्रेश करें",
+                "📞 यदि समस्या बनी रहे तो सहायता से संपर्क करें"
               )
-            else -> listOf("🔄 Please try again", "📞 Contact support if needed")
+            else -> listOf("🔄 कृपया पुनः प्रयास करें", "📞 यदि आवश्यक हो तो सहायता से संपर्क करें")
           },
         icon = Icons.Default.Info
       )
 
     is AppError.ValidationError ->
       ErrorInfo(
-        title = "Input Issue",
+        title = "इनपुट समस्या",
         description = error.message,
-        suggestions = listOf("✏️ Please check your input and try again"),
+        suggestions = listOf("✏️ कृपया अपना इनपुट जांचें और पुनः प्रयास करें"),
         icon = Icons.Default.Info
       )
 
     is AppError.AuthError ->
       ErrorInfo(
-        title = "Authentication Required",
-        description = error.message,
+        title = "प्रमाणीकरण आवश्यक",
+        description = error.getUserMessage(),
         suggestions =
           when (error) {
-            is AppError.AuthError.NotAuthenticated -> listOf("🔑 Please log in to continue")
-            is AppError.AuthError.SessionExpired -> listOf("🔄 Please log in again")
-            else -> listOf("🔑 Please check your login details")
+            is AppError.AuthError.NotAuthenticated -> listOf("🔑 जारी रखने के लिए कृपया लॉगिन करें")
+            is AppError.AuthError.SessionExpired -> listOf("🔄 कृपया पुनः लॉगिन करें")
+            else -> listOf("🔑 कृपया अपनी लॉगिन जानकारी जांचें")
           },
         icon = Icons.Default.Info
       )
 
     is AppError.DataError ->
       ErrorInfo(
-        title = "Data Issue",
-        description = error.message,
+        title = "डेटा समस्या",
+        description = error.getUserMessage(),
         suggestions =
           listOf(
-            "🔄 Please try again",
-            "📞 Contact support if this continues"
+            "🔄 कृपया पुनः प्रयास करें",
+            "📞 यदि यह जारी रहे तो सहायता से संपर्क करें"
           ),
         icon = Icons.Default.Warning
       )
 
     is AppError.BusinessError ->
       ErrorInfo(
-        title = "Action Not Allowed",
-        description = error.message,
-        suggestions = listOf("ℹ️ Please check your permissions"),
+        title = "कार्य अनुमतित नहीं",
+        description = error.getUserMessage(),
+        suggestions = listOf("ℹ️ कृपया अपनी अनुमतियां जांचें"),
         icon = Icons.Default.Info
       )
 
     else ->
       ErrorInfo(
-        title = "Something Went Wrong",
-        description = error?.message ?: "An unexpected issue occurred.",
+        title = "कुछ गलत हुआ",
+        description = error?.getUserMessage() ?: "एक अप्रत्याशित समस्या आई।",
         suggestions =
           listOf(
-            "🔄 Please try again",
-            "📞 Contact support if this continues"
+            "🔄 कृपया पुनः प्रयास करें",
+            "📞 यदि यह जारी रहे तो सहायता से संपर्क करें"
           ),
         icon = Icons.Default.Info
       )

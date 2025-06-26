@@ -1,3 +1,37 @@
+# Arya Mahasangh - Organization Management Platform
+
+A Kotlin Multiplatform project for managing Arya Samaj organizations, members, and activities. Built with Compose
+Multiplatform targeting Android, iOS, Web, Desktop, and Server.
+
+## 📚 Documentation
+
+### 📋 Planning & Development
+
+- **[Development Planning](docs/planning/)** - Active development plans and roadmaps
+    - [CRUD Integration Plan](docs/planning/2025-06-27-crud-integration-plan.md) - Step-by-step CRUD implementation plan
+- **[Development Logs](docs/development-logs/)** - Historical development records
+    - [Supabase Setup](docs/development-logs/2025-06-26-initial-supabase-setup-and-functions.md)
+    - [CRUD Functions](docs/development-logs/2025-06-27-supabase-crud-functions.md)
+
+### 🏗️ Technical Documentation
+
+- **[Architecture](docs/architecture/)** - System architecture and design decisions
+- **[Configuration](docs/CONFIGURATION.md)** - Project configuration guide
+- **[Development Guide](docs/DEVELOPMENT.md)** - Development setup and guidelines
+- **[Authentication & Security](docs/AUTHENTICATION_SECURITY.md)** - Security implementation details
+
+### 🔧 Setup & Configuration
+
+- **[Secrets Management](docs/SECRETS_SETUP_GUIDE.md)** - How to configure project secrets
+- **[Error Handling](docs/ERROR_HANDLING_GUIDE.md)** - Error handling patterns and best practices
+
+### 🗺️ Features & Integration
+
+- **[OpenStreetMap Integration](docs/OpenStreetMapIntegration.md)** - Map functionality implementation
+- **[Map Implementation Status](docs/MapImplementationStatus.md)** - Current map feature status
+
+## 🏢 Project Structure
+
 This is a Kotlin Multiplatform project targeting Android, iOS, Web, Desktop, Server.
 
 * `/composeApp` is for code that will be shared across your Compose Multiplatform applications.
@@ -16,17 +50,23 @@ This is a Kotlin Multiplatform project targeting Android, iOS, Web, Desktop, Ser
   The most important subfolder is `commonMain`. If preferred, you can add code to the platform-specific folders here
   too.
 
-Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html),
-[Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform/#compose-multiplatform),
-[Kotlin/Wasm](https://kotl.in/wasm/)…
+## 🚀 Quick Start
 
-We would appreciate your feedback on Compose/Web and Kotlin/Wasm in the public Slack
-channel [#compose-web](https://slack-chats.kotlinlang.org/c/compose-web).
-If you face any issues, please report them on [GitHub](https://github.com/JetBrains/compose-multiplatform/issues).
+### Prerequisites
 
-You can open the web application by running the `:composeApp:wasmJsBrowserDevelopmentRun` Gradle task.
+- Java 11 or higher
+- Android SDK (for Android builds)
+- Xcode (for iOS builds, macOS only)
+- Node.js (for web builds)
 
-## Build Commands
+### Setup
+
+1. Clone the repository
+2. Copy `secrets.properties.template` to `secrets.properties`
+3. Fill in your configuration values in `secrets.properties`
+4. Run the setup script: `./setup-secrets.sh`
+
+## 🛠️ Build Commands
 
 ### Release Build
 
@@ -40,7 +80,7 @@ You can open the web application by running the `:composeApp:wasmJsBrowserDevelo
 ./gradlew downloadApolloSchema --endpoint="http://localhost:4000/graphql" --schema="composeApp/src/commonMain/graphql/schema.json"
 ```
 
-## Release Management
+## 📦 Release Management
 
 This project uses automated semantic versioning for releases. Every push to the `dev` branch triggers a new release with
 an incremented version number.
@@ -97,7 +137,19 @@ Each release includes:
 
 Monitor build progress at: [GitHub Actions](../../actions)
 
-## Database Setup
+## 🔗 External Resources
+
+Learn more about [Kotlin Multiplatform](https://www.jetbrains.com/help/kotlin-multiplatform-dev/get-started.html),
+[Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform/#compose-multiplatform),
+[Kotlin/Wasm](https://kotl.in/wasm/)…
+
+We would appreciate your feedback on Compose/Web and Kotlin/Wasm in the public Slack
+channel [#compose-web](https://slack-chats.kotlinlang.org/c/compose-web).
+If you face any issues, please report them on [GitHub](https://github.com/JetBrains/compose-multiplatform/issues).
+
+You can open the web application by running the `:composeApp:wasmJsBrowserDevelopmentRun` Gradle task.
+
+## 🗄️ Database Setup
 
 ### View for listening to satr registration changes
 

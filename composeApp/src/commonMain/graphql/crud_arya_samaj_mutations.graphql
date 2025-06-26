@@ -1,0 +1,69 @@
+# Arya Samaj CRUD Mutations using the comprehensive Supabase functions
+# These mutations call the custom functions that provide full business logic
+
+# Create Arya Samaj with comprehensive details
+mutation InsertAryaSamajDetails(
+  $samajName: String!,
+  $samajDescription: String!,
+  $basicAddress: String!,
+  $state: String!,
+  $district: String!,
+  $samajMediaUrls: [String] = [],
+  $pincode: String = null,
+  $latitude: Float = null,
+  $longitude: Float = null,
+  $vidhansabha: String = null,
+  $memberId: String = null,
+  $post: String = "प्रधान",
+  $priority: Int = 1
+) {
+  insertAryaSamajDetails(
+    pSamajName: $samajName,
+    pSamajDescription: $samajDescription,
+    pBasicAddress: $basicAddress,
+    pState: $state,
+    pDistrict: $district,
+    pSamajMediaUrls: $samajMediaUrls,
+    pPincode: $pincode,
+    pLatitude: $latitude,
+    pLongitude: $longitude,
+    pVidhansabha: $vidhansabha,
+    pMemberId: $memberId,
+    pPost: $post,
+    pPriority: $priority
+  )
+}
+
+# Update Arya Samaj details
+mutation UpdateAryaSamajDetails(
+  $aryaSamajId: String!,
+  $samajName: String = null,
+  $samajDescription: String = null,
+  $basicAddress: String = null,
+  $state: String = null,
+  $district: String = null,
+  $samajMediaUrls: [String] = null,
+  $pincode: String = null,
+  $latitude: Float = null,
+  $longitude: Float = null,
+  $vidhansabha: String = null
+) {
+  updateAryaSamajDetails(
+    pAryaSamajId: $aryaSamajId,
+    pSamajName: $samajName,
+    pSamajDescription: $samajDescription,
+    pBasicAddress: $basicAddress,
+    pState: $state,
+    pDistrict: $district,
+    pSamajMediaUrls: $samajMediaUrls,
+    pPincode: $pincode,
+    pLatitude: $latitude,
+    pLongitude: $longitude,
+    pVidhansabha: $vidhansabha
+  )
+}
+
+# Delete Arya Samaj (comprehensive deletion with cleanup)
+mutation DeleteAryaSamajComprehensive($aryaSamajId: String!) {
+  deleteAryaSamaj(pAryaSamajId: $aryaSamajId)
+}
