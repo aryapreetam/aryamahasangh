@@ -261,9 +261,9 @@ class ActivityRepositoryImpl(
           members =
             it?.memberCollection?.edges?.map {
               Member(
-                id = it.node.id,
-                name = it.node.name!!,
-                profileImage = it.node.profileImage ?: ""
+                id = it.node.memberShort.id,
+                name = it.node.memberShort.name!!,
+                profileImage = it.node.memberShort.profileImage ?: ""
               )
             }!!,
           organisations =

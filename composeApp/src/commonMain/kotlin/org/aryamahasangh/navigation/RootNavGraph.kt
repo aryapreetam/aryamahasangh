@@ -14,13 +14,13 @@ import org.aryamahasangh.LocalIsAuthenticated
 import org.aryamahasangh.features.activities.*
 import org.aryamahasangh.features.admin.*
 import org.aryamahasangh.features.arya_nirman.AryaNirmanHomeScreen
-import org.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
-import org.aryamahasangh.features.arya_nirman.SatraRegistrationFormScreen
 import org.aryamahasangh.features.arya_nirman.SatraRegistrationViewModel
 import org.aryamahasangh.features.organisations.NewOrganisationFormScreen
 import org.aryamahasangh.features.organisations.OrgDetailScreen
-import org.aryamahasangh.features.organisations.OrganisationsViewModel
 import org.aryamahasangh.features.organisations.OrgsScreen
+import org.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
+import org.aryamahasangh.features.arya_nirman.SatraRegistrationFormScreen
+import org.aryamahasangh.features.organisations.OrganisationsViewModel
 import org.aryamahasangh.screens.*
 import org.aryamahasangh.viewmodel.AboutUsViewModel
 import org.aryamahasangh.viewmodel.AdmissionsViewModel
@@ -162,6 +162,9 @@ fun RootNavGraph(navController: NavHostController) {
           onNavigateToAddMember = {
             navController.navigate(Screen.AddMemberForm)
           },
+          onNavigateToEditMember = { memberId ->
+            navController.navigate(Screen.EditMemberForm(memberId))
+          },
           onNavigateToAddAryaSamaj = {
             navController.navigate(Screen.AddAryaSamajForm)
           },
@@ -194,6 +197,17 @@ fun RootNavGraph(navController: NavHostController) {
           }
         )
       }
+      composable<Screen.EditMemberForm> {
+        val viewModel = koinInject<AdminViewModel>()
+        val memberId = it.toRoute<Screen.EditMemberForm>().memberId
+        AddMemberFormScreen(
+          viewModel = viewModel,
+          onNavigateBack = {
+            navController.popBackStack()
+          },
+          memberId = memberId
+        )
+      }
       composable<Screen.MemberDetail> {
         val viewModel = koinInject<AdminViewModel>()
         val memberId = it.toRoute<Screen.MemberDetail>().memberId
@@ -213,6 +227,9 @@ fun RootNavGraph(navController: NavHostController) {
           viewModel = viewModel,
           onNavigateBack = {
             navController.popBackStack()
+          },
+          onNavigateToEdit = { memberId ->
+            navController.navigate(Screen.EditMemberForm(memberId))
           }
         )
       }

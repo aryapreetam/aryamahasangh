@@ -31,6 +31,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 fun OrganisationalMembersScreen(
   viewModel: AdminViewModel,
   onNavigateToMemberDetail: (String) -> Unit = {},
+  onNavigateToEditMember: (String) -> Unit = {}, // Add edit navigation
 ) {
   val uiState by viewModel.membersUiState.collectAsState()
   val deleteState by viewModel.deleteMemberState.collectAsState()
@@ -160,7 +161,7 @@ fun OrganisationalMembersScreen(
               MemberItem(
                 member = member,
                 onMemberClick = { onNavigateToMemberDetail(member.id) },
-                onEditClick = { onNavigateToMemberDetail(member.id) },
+                onEditClick = { onNavigateToEditMember(member.id) }, // Update to use edit navigation
                 onDeleteClick = { showDeleteDialog = member },
                 modifier = Modifier.width(450.dp)
               )

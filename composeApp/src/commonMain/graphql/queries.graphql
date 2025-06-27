@@ -92,6 +92,10 @@ query memberDetail($memberId: String!) {
         email
         dob
         joiningDate
+        gender
+        introduction
+        occupation
+        referrerId
         address {
           ...AddressFields
         }
@@ -100,6 +104,11 @@ query memberDetail($memberId: String!) {
         }
         aryaSamaj {
           ...AryaSamajFields
+        }
+        referrer {
+           id
+          name
+          profileImage
         }
         organisationalMemberCollection {
           edges {
@@ -164,9 +173,7 @@ query OrganisationsAndMembers {
   memberCollection {
     edges {
       node {
-        id
-        name
-        profileImage
+        ...MemberShort
       }
     }
   }
@@ -720,6 +727,10 @@ query memberWithAddress($memberId: String!) {
         email
         dob
         joiningDate
+        gender
+        introduction
+        occupation
+        referrerId
         address {
           ...AddressFields
         }
@@ -727,9 +738,7 @@ query memberWithAddress($memberId: String!) {
           ...AddressFields
         }
         aryaSamaj {
-          id
-          name
-          description
+          ...AryaSamajFields
         }
         organisationalMemberCollection {
           edges {
@@ -802,6 +811,19 @@ query searchEkalAryaMembers($nameOrPhoneNumber: String!) {
     edges {
       node {
         ...MemberNotInFamilyShort
+      }
+    }
+  }
+}
+
+# Separate query for referrer details
+query memberReferrer($referrerId: String!) {
+  memberCollection(filter: {id: {eq: $referrerId}}) {
+    edges {
+      node {
+        id
+        name
+        profileImage
       }
     }
   }

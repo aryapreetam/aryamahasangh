@@ -2862,7 +2862,7 @@ type Mutation {
   """
   insertIntoSatrRegistrationCollection(objects: [SatrRegistrationInsertInput!]!): SatrRegistrationInsertResponse
 
-  insertMemberDetails(pName: String!, pPhoneNumber: String!, pProfileImage: String, pEducationalQualification: String, pEmail: String, pDob: Date, pAddressId: String, pAryaSamajId: String, pJoiningDate: Date, pTempAddressId: String, pReferrerId: String, pOccupation: String, pIntroduction: String, pGender: String): JSON
+  insertMemberDetails(pName: String!, pPhoneNumber: String!, pProfileImage: String, pEducationalQualification: String, pEmail: String, pDob: Date, pAddressId: String, pAryaSamajId: String, pJoiningDate: Date, pTempAddressId: String, pReferrerId: String, pOccupation: String, pIntroduction: String, pGender: String, pBasicAddress: String, pState: String, pDistrict: String, pPincode: String, pLatitude: Float, pLongitude: Float, pVidhansabha: String, pTempBasicAddress: String, pTempState: String, pTempDistrict: String, pTempPincode: String, pTempLatitude: Float, pTempLongitude: Float, pTempVidhansabha: String): JSON
 
   """
   Updates zero or more records in the `Activities` collection
@@ -2923,7 +2923,7 @@ type Mutation {
   """
   updateMemberCollection("Fields that are set will be updated for all records matching the `filter`" set: MemberUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: MemberFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): MemberUpdateResponse!
 
-  updateMemberDetails(pMemberId: String!, pName: String, pPhoneNumber: String, pProfileImage: String, pEducationalQualification: String, pEmail: String, pDob: Date, pAddressId: String, pAryaSamajId: String, pJoiningDate: Date, pTempAddressId: String, pReferrerId: String, pOccupation: String, pIntroduction: String, pGender: String): JSON
+  updateMemberDetails(pMemberId: String!, pName: String, pPhoneNumber: String, pProfileImage: String, pEducationalQualification: String, pEmail: String, pDob: Date, pAddressId: String, pAryaSamajId: String, pJoiningDate: Date, pTempAddressId: String, pReferrerId: String, pOccupation: String, pIntroduction: String, pGender: String, pBasicAddress: String, pState: String, pDistrict: String, pPincode: String, pLatitude: Float, pLongitude: Float, pVidhansabha: String, pTempBasicAddress: String, pTempState: String, pTempDistrict: String, pTempPincode: String, pTempLatitude: Float, pTempLongitude: Float, pTempVidhansabha: String): JSON
 
   """
   Updates zero or more records in the `MemberInOrganisation` collection

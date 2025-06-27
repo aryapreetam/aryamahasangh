@@ -34,7 +34,8 @@ import org.aryamahasangh.features.activities.Member
 fun ProfileImageSection(
   selectedProfileImage: PlatformFile?,
   onImageSelected: () -> Unit,
-  onImageRemoved: () -> Unit
+  onImageRemoved: () -> Unit,
+  existingImageUrl: String? = null // Add parameter for existing image URL
 ) {
   Column(
     horizontalAlignment = Alignment.CenterHorizontally
@@ -45,39 +46,78 @@ fun ProfileImageSection(
       modifier = Modifier.size(120.dp),
       contentAlignment = Alignment.Center
     ) {
-      if (selectedProfileImage != null) {
-        // Show selected image with remove button
-        AddMemberProfilePhotoItem(
-          file = selectedProfileImage,
-          onRemoveFile = onImageRemoved,
-          modifier = Modifier.size(100.dp)
-        )
-      } else {
-        // Show placeholder with upload option
-        Box(
-          modifier =
-            Modifier
-              .size(100.dp)
-              .clip(CircleShape)
-              .background(MaterialTheme.colorScheme.surfaceVariant)
-              .clickable { onImageSelected() },
-          contentAlignment = Alignment.Center
-        ) {
-          Column(
-            horizontalAlignment = Alignment.CenterHorizontally
+      when {
+        selectedProfileImage != null -> {
+          // Show selected image with remove button
+          AddMemberProfilePhotoItem(
+            file = selectedProfileImage,
+            onRemoveFile = onImageRemoved,
+            modifier = Modifier.size(100.dp)
+          )
+        }
+
+        !existingImageUrl.isNullOrEmpty() -> {
+          // Show existing image from URL with replace option
+          Box(modifier = Modifier.size(100.dp)) {
+            AsyncImage(
+              model = existingImageUrl,
+              contentDescription = "Profile Image",
+              contentScale = ContentScale.Crop,
+              modifier = Modifier
+                .size(100.dp)
+                .clip(CircleShape)
+                .clickable { onImageSelected() }
+            )
+
+            // Replace button overlay
+            Surface(
+              color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.8f),
+              shape = CircleShape,
+              modifier = Modifier
+                .align(Alignment.TopEnd)
+                .size(32.dp)
+            ) {
+              IconButton(
+                onClick = onImageSelected,
+                modifier = Modifier.size(32.dp)
+              ) {
+                Icon(
+                  Icons.Default.AddAPhoto,
+                  modifier = Modifier.size(16.dp),
+                  contentDescription = "Change Photo",
+                  tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+              }
+            }
+          }
+        }
+        else -> {
+          // Show placeholder with upload option
+          Box(
+            modifier =
+              Modifier
+                .size(100.dp)
+                .clip(CircleShape)
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+                .clickable { onImageSelected() },
+            contentAlignment = Alignment.Center
           ) {
-            Icon(
-              modifier = Modifier.size(32.dp),
-              imageVector = Icons.Default.AddAPhoto,
-              contentDescription = "फोटो अपलोड करें",
-              tint = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-              "फोटो जोड़ें",
-              style = MaterialTheme.typography.labelSmall,
-              color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Column(
+              horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+              Icon(
+                modifier = Modifier.size(32.dp),
+                imageVector = Icons.Default.AddAPhoto,
+                contentDescription = "फोटो अपलोड करें",
+                tint = MaterialTheme.colorScheme.onSurfaceVariant
+              )
+              Spacer(modifier = Modifier.height(4.dp))
+              Text(
+                "फोटो जोड़ें",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+              )
+            }
           }
         }
       }

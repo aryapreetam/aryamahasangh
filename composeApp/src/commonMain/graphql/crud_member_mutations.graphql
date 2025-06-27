@@ -1,22 +1,38 @@
 # Member CRUD Mutations using the comprehensive Supabase functions
 # These mutations call the custom functions that provide full business logic
 
-# Create Member with comprehensive details
+# Create Member with comprehensive details including address fields
 mutation InsertMemberDetails(
   $name: String!,
   $phoneNumber: String!,
-  $profileImage: String = null,
-  $educationalQualification: String = null,
-  $email: String = null,
-  $dob: Date = null,
-  $addressId: String = null,
-  $aryaSamajId: String = null,
-  $joiningDate: Date = null,
-  $tempAddressId: String = null,
-  $referrerId: String = null,
-  $occupation: String = null,
-  $introduction: String = null,
-  $gender: String = null
+  $profileImage: String,
+  $educationalQualification: String,
+  $email: String,
+  $dob: Date,
+  $addressId: String,
+  $aryaSamajId: String,
+  $joiningDate: Date,
+  $tempAddressId: String,
+  $referrerId: String,
+  $occupation: String,
+  $introduction: String,
+  $gender: String,
+  # Main address fields for automatic address creation
+  $basicAddress: String,
+  $state: String,
+  $district: String,
+  $pincode: String,
+  $latitude: Float,
+  $longitude: Float,
+  $vidhansabha: String,
+  # Temporary address fields for automatic temp address creation
+  $tempBasicAddress: String,
+  $tempState: String,
+  $tempDistrict: String,
+  $tempPincode: String,
+  $tempLatitude: Float,
+  $tempLongitude: Float,
+  $tempVidhansabha: String
 ) {
   insertMemberDetails(
     pName: $name,
@@ -32,7 +48,23 @@ mutation InsertMemberDetails(
     pReferrerId: $referrerId,
     pOccupation: $occupation,
     pIntroduction: $introduction,
-    pGender: $gender
+    pGender: $gender,
+    # Main address parameters
+    pBasicAddress: $basicAddress,
+    pState: $state,
+    pDistrict: $district,
+    pPincode: $pincode,
+    pLatitude: $latitude,
+    pLongitude: $longitude,
+    pVidhansabha: $vidhansabha,
+    # Temporary address parameters
+    pTempBasicAddress: $tempBasicAddress,
+    pTempState: $tempState,
+    pTempDistrict: $tempDistrict,
+    pTempPincode: $tempPincode,
+    pTempLatitude: $tempLatitude,
+    pTempLongitude: $tempLongitude,
+    pTempVidhansabha: $tempVidhansabha
   )
 }
 

@@ -5,6 +5,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalFocusManager
@@ -18,6 +19,8 @@ import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import org.aryamahasangh.components.*
+import org.aryamahasangh.features.activities.LatLng
+import org.aryamahasangh.features.activities.Member
 import org.aryamahasangh.navigation.LocalSetBackHandler
 import org.aryamahasangh.navigation.LocalSnackbarHostState
 import org.aryamahasangh.network.bucket
@@ -26,13 +29,18 @@ import org.aryamahasangh.network.bucket
 @Composable
 fun AddMemberFormScreen(
   viewModel: AdminViewModel,
-  onNavigateBack: () -> Unit
+  onNavigateBack: () -> Unit,
+  memberId: String? = null // New parameter for edit mode
 ) {
   val uiState by viewModel.memberDetailUiState.collectAsState()
   val snackbarHostState = LocalSnackbarHostState.current
   val setBackHandler = LocalSetBackHandler.current
   val scope = rememberCoroutineScope()
   val focusManager = LocalFocusManager.current
+
+  // Edit mode state
+  val isEditMode = memberId != null
+  var isLoading by remember { mutableStateOf(false) }
 
   // Focus requesters for form fields
   val nameFocusRequester = remember { FocusRequester() }
@@ -79,6 +87,81 @@ fun AddMemberFormScreen(
   var permanentAddressErrors by remember { mutableStateOf(AddressErrors()) }
   var currentAddressErrors by remember { mutableStateOf(AddressErrors()) }
   var referrerError by remember { mutableStateOf<String?>(null) }
+
+  // Load member data in edit mode
+  LaunchedEffect(memberId) {
+    if (isEditMode) {
+      isLoading = true
+      viewModel.loadMember(memberId)
+    }
+  }
+
+  // Update form fields with loaded member data
+  LaunchedEffect(uiState.member) {
+    if (isEditMode && uiState.member != null) {
+      val member = uiState.member!!
+      name = member.name
+      phoneNumber = member.phoneNumber
+      email = member.email
+      dob = member.dob
+      gender = member.gender
+      educationalQualification = member.educationalQualification
+      occupation = member.occupation
+      joiningDate = member.joiningDate
+      introduction = member.introduction
+      uploadedImageUrl = member.profileImage
+
+      // Set permanent address
+      member.addressFields?.let { addressFields ->
+        permanentAddress = AddressData(
+          address = addressFields.basicAddress ?: "",
+          state = addressFields.state ?: "",
+          district = addressFields.district ?: "",
+          pincode = addressFields.pincode ?: "",
+          vidhansabha = addressFields.vidhansabha ?: "",
+          location = addressFields.latitude?.let { lat ->
+            addressFields.longitude?.let { lng ->
+              LatLng(lat, lng)
+            }
+          }
+        )
+      }
+
+      // Set temp address if different
+      member.tempAddressFields?.let { tempAddressFields ->
+        isDifferentCurrentAddress = true
+        currentAddress = AddressData(
+          address = tempAddressFields.basicAddress ?: "",
+          state = tempAddressFields.state ?: "",
+          district = tempAddressFields.district ?: "",
+          pincode = tempAddressFields.pincode ?: "",
+          vidhansabha = tempAddressFields.vidhansabha ?: "",
+          location = tempAddressFields.latitude?.let { lat ->
+            tempAddressFields.longitude?.let { lng ->
+              LatLng(lat, lng)
+            }
+          }
+        )
+      }
+
+      // Set referrer if available
+      member.referrer?.let { referrer ->
+        referrerState = MembersState(
+          members = mapOf(
+            Member(
+              id = referrer.id,
+              name = referrer.name,
+              profileImage = referrer.profileImage,
+              phoneNumber = "",
+              email = ""
+            ) to Pair("रेफरर", 1)
+          )
+        )
+      }
+
+      isLoading = false
+    }
+  }
 
   // Check if there are unsaved changes
   fun hasUnsavedChanges(): Boolean {
@@ -183,7 +266,7 @@ fun AddMemberFormScreen(
     return isValid
   }
 
-  // Save member function
+  // Save/Update member function
   fun saveMember() {
     if (!validateForm()) {
       scope.launch {
@@ -213,61 +296,56 @@ fun AddMemberFormScreen(
           }
         }
 
-        // Create permanent address
-        val permanentAddressId =
-          viewModel.createAddress(
+        if (isEditMode) {
+          // Update existing member
+          viewModel.updateMember(
+            memberId = memberId,
+            name = name,
+            phoneNumber = phoneNumber,
+            email = email.ifBlank { null },
+            dob = dob,
+            gender = gender,
+            educationalQualification = educationalQualification.ifBlank { null },
+            occupation = occupation.ifBlank { null },
+            joiningDate = joiningDate,
+            introduction = introduction.ifBlank { null },
+            profileImageUrl = finalImageUrl,
+            referrerId = referrerState.members.keys.firstOrNull()?.id,
+            aryaSamajId = selectedAryaSamaj?.id,
+            addressId = "",
+            tempAddressId = ""
+          )
+        } else {
+          // Create new member
+          viewModel.createMember(
+            name = name,
+            phoneNumber = phoneNumber,
+            email = email.ifBlank { null },
+            dob = dob,
+            gender = gender,
+            educationalQualification = educationalQualification.ifBlank { null },
+            occupation = occupation.ifBlank { null },
+            joiningDate = joiningDate,
+            introduction = introduction.ifBlank { null },
+            profileImageUrl = finalImageUrl,
+            referrerId = referrerState.members.keys.firstOrNull()?.id,
+            aryaSamajId = selectedAryaSamaj?.id,
             basicAddress = permanentAddress.address,
             state = permanentAddress.state,
             district = permanentAddress.district,
             pincode = permanentAddress.pincode,
             latitude = permanentAddress.location?.latitude,
             longitude = permanentAddress.location?.longitude,
-            vidhansabha = permanentAddress.vidhansabha
+            vidhansabha = permanentAddress.vidhansabha,
+            tempBasicAddress = currentAddress.address,
+            tempState = currentAddress.state,
+            tempDistrict = currentAddress.district,
+            tempPincode = currentAddress.pincode,
+            tempLatitude = currentAddress.location?.latitude,
+            tempLongitude = currentAddress.location?.longitude,
+            tempVidhansabha = currentAddress.vidhansabha
           )
-
-        if (permanentAddressId == null) {
-          snackbarHostState.showSnackbar("स्थायी पता सहेजने में त्रुटि")
-          return@launch
         }
-
-        // Create current address if different
-        val currentAddressId =
-          if (isDifferentCurrentAddress) {
-            viewModel.createAddress(
-              basicAddress = currentAddress.address,
-              state = currentAddress.state,
-              district = currentAddress.district,
-              pincode = currentAddress.pincode,
-              latitude = currentAddress.location?.latitude,
-              longitude = currentAddress.location?.longitude,
-              vidhansabha = currentAddress.vidhansabha
-            )
-          } else {
-            null
-          }
-
-        if (isDifferentCurrentAddress && currentAddressId == null) {
-          snackbarHostState.showSnackbar("वर्तमान पता सहेजने में त्रुटि")
-          return@launch
-        }
-
-        // Create member
-        viewModel.createMember(
-          name = name,
-          phoneNumber = phoneNumber,
-          email = email.ifBlank { null },
-          dob = dob,
-          gender = gender,
-          educationalQualification = educationalQualification.ifBlank { null },
-          occupation = occupation.ifBlank { null },
-          joiningDate = joiningDate,
-          introduction = introduction.ifBlank { null },
-          profileImageUrl = finalImageUrl,
-          addressId = permanentAddressId,
-          tempAddressId = currentAddressId,
-          referrerId = referrerState.members.keys.firstOrNull()?.id,
-          aryaSamajId = selectedAryaSamaj?.id
-        )
       } catch (e: Exception) {
         snackbarHostState.showSnackbar("Error: ${e.message}")
       }
@@ -293,7 +371,8 @@ fun AddMemberFormScreen(
   // Handle success
   LaunchedEffect(uiState.updateSuccess) {
     if (uiState.updateSuccess) {
-      snackbarHostState.showSnackbar("सदस्य सफलतापूर्वक जोड़ा गया")
+      val message = if (isEditMode) "सदस्य सफलतापूर्वक अपडेट किया गया" else "सदस्य सफलतापूर्वक जोड़ा गया"
+      snackbarHostState.showSnackbar(message)
       viewModel.resetUpdateState()
       onNavigateBack()
     }
@@ -317,6 +396,17 @@ fun AddMemberFormScreen(
       selectedProfileImage = file
       uploadedImageUrl = null
     }
+
+  // Show loading while fetching member data
+  if (isEditMode && isLoading) {
+    Box(
+      modifier = Modifier.fillMaxSize(),
+      contentAlignment = Alignment.Center
+    ) {
+      CircularProgressIndicator()
+      return
+    }
+  }
 
   // Unsaved changes dialog
   if (showUnsavedChangesDialog) {
@@ -384,7 +474,11 @@ fun AddMemberFormScreen(
   ) {
     // Top App Bar
     TopAppBar(
-      title = { Text("नया सदस्य जोड़ें") }
+      title = {
+        Text(
+          if (isEditMode) "सदस्य संपादित करें" else "नया सदस्य जोड़ें"
+        )
+      }
     )
 
     // Form Content
@@ -403,7 +497,8 @@ fun AddMemberFormScreen(
           onImageRemoved = {
             selectedProfileImage = null
             uploadedImageUrl = null
-          }
+          },
+          existingImageUrl = if (isEditMode) uploadedImageUrl else null
         )
       }
 
@@ -482,7 +577,8 @@ fun AddMemberFormScreen(
         Spacer(modifier = Modifier.height(24.dp))
         Button(
           onClick = { saveMember() },
-          enabled = !uiState.isUpdating
+          enabled = !uiState.isUpdating,
+          modifier = Modifier.fillMaxWidth()
         ) {
           if (uiState.isUpdating) {
             CircularProgressIndicator(
@@ -492,7 +588,7 @@ fun AddMemberFormScreen(
             Spacer(modifier = Modifier.width(8.dp))
           }
           Text(
-            text = "सहेजें",
+            text = if (isEditMode) "अपडेट करें" else "सहेजें",
             modifier =
               Modifier
                 .padding(horizontal = 24.dp)
