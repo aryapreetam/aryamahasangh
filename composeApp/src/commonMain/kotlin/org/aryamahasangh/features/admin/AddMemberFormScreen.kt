@@ -127,21 +127,43 @@ fun AddMemberFormScreen(
         )
       }
 
-      // Set temp address if different
-      member.tempAddressFields?.let { tempAddressFields ->
-        isDifferentCurrentAddress = true
-        currentAddress = AddressData(
-          address = tempAddressFields.basicAddress ?: "",
-          state = tempAddressFields.state ?: "",
-          district = tempAddressFields.district ?: "",
-          pincode = tempAddressFields.pincode ?: "",
-          vidhansabha = tempAddressFields.vidhansabha ?: "",
-          location = tempAddressFields.latitude?.let { lat ->
-            tempAddressFields.longitude?.let { lng ->
-              LatLng(lat, lng)
-            }
-          }
+      // Determine if there are two different addresses
+      val mainAddressId = member.addressFields?.id
+      val tempAddressId = member.tempAddressFields?.id
+
+      val tempAddressHasData = member.tempAddressFields?.let { tempFields ->
+        !tempFields.basicAddress.isNullOrBlank() ||
+          !tempFields.state.isNullOrBlank() ||
+          !tempFields.district.isNullOrBlank() ||
+          !tempFields.pincode.isNullOrBlank()
+      } ?: false
+
+      isDifferentCurrentAddress = (
+        mainAddressId != null &&
+          tempAddressId != null &&
+          mainAddressId != tempAddressId &&
+          tempAddressHasData // Only check if temp address has actual data
         )
+
+      // Set temp address if it exists and is different
+      if (isDifferentCurrentAddress) {
+        member.tempAddressFields?.let { tempAddressFields ->
+          currentAddress = AddressData(
+            address = tempAddressFields.basicAddress ?: "",
+            state = tempAddressFields.state ?: "",
+            district = tempAddressFields.district ?: "",
+            pincode = tempAddressFields.pincode ?: "",
+            vidhansabha = tempAddressFields.vidhansabha ?: "",
+            location = tempAddressFields.latitude?.let { lat ->
+              tempAddressFields.longitude?.let { lng ->
+                LatLng(lat, lng)
+              }
+            }
+          )
+        }
+      } else {
+        // Reset current address to empty if not different
+        currentAddress = AddressData()
       }
 
       // Set referrer if available
@@ -297,24 +319,104 @@ fun AddMemberFormScreen(
         }
 
         if (isEditMode) {
-          // Update existing member
-          viewModel.updateMember(
-            memberId = memberId,
-            name = name,
-            phoneNumber = phoneNumber,
-            email = email.ifBlank { null },
-            dob = dob,
-            gender = gender,
-            educationalQualification = educationalQualification.ifBlank { null },
-            occupation = occupation.ifBlank { null },
-            joiningDate = joiningDate,
-            introduction = introduction.ifBlank { null },
-            profileImageUrl = finalImageUrl,
-            referrerId = referrerState.members.keys.firstOrNull()?.id,
-            aryaSamajId = selectedAryaSamaj?.id,
-            addressId = "",
-            tempAddressId = ""
-          )
+          val member = uiState.member!!
+
+          // Helper function to check if address has changed
+          fun hasAddressChanged(): Boolean {
+            val originalAddress = member.addressFields
+            return originalAddress == null || // No original address but now we have one
+              originalAddress.basicAddress != permanentAddress.address ||
+              originalAddress.state != permanentAddress.state ||
+              originalAddress.district != permanentAddress.district ||
+              originalAddress.pincode != permanentAddress.pincode ||
+              originalAddress.latitude != permanentAddress.location?.latitude ||
+              originalAddress.longitude != permanentAddress.location?.longitude ||
+              originalAddress.vidhansabha != permanentAddress.vidhansabha
+          }
+
+          // Helper function to check if temp address has changed
+          fun hasTempAddressChanged(): Boolean {
+            val originalTempAddress = member.tempAddressFields
+            val currentTempAddress = if (isDifferentCurrentAddress) currentAddress else AddressData()
+
+            return if (isDifferentCurrentAddress) {
+              // User wants a different current address
+              originalTempAddress == null || // No original temp address but now we want one
+                originalTempAddress.basicAddress != currentTempAddress.address ||
+                originalTempAddress.state != currentTempAddress.state ||
+                originalTempAddress.district != currentTempAddress.district ||
+                originalTempAddress.pincode != currentTempAddress.pincode ||
+                originalTempAddress.latitude != currentTempAddress.location?.latitude ||
+                originalTempAddress.longitude != currentTempAddress.location?.longitude ||
+                originalTempAddress.vidhansabha != currentTempAddress.vidhansabha
+            } else {
+              // User doesn't want a different current address
+              originalTempAddress != null // Had temp address before but now doesn't want it
+            }
+          }
+
+          val addressChanged = hasAddressChanged()
+          val tempAddressChanged = hasTempAddressChanged()
+
+          // Check if any field has changed
+          val hasAnyChanges = (
+            member.name != name ||
+              member.phoneNumber != phoneNumber ||
+              member.email != email ||
+              member.dob != dob ||
+              member.gender != gender ||
+              member.educationalQualification != educationalQualification ||
+              member.occupation != occupation ||
+              member.joiningDate != joiningDate ||
+              member.introduction != introduction ||
+              finalImageUrl != member.profileImage ||
+              member.referrerId != referrerState.members.keys.firstOrNull()?.id ||
+              member.aryaSamaj?.id != selectedAryaSamaj?.id ||
+              addressChanged ||
+              tempAddressChanged
+            )
+
+          if (hasAnyChanges) {
+            // Only send fields that have actually changed
+            viewModel.updateMember(
+              memberId = memberId!!,
+              name = name, // Always send current name (required field)
+              phoneNumber = phoneNumber, // Always send current phone (required field)
+              email = if (member.email != email) email.ifBlank { null } else null,
+              dob = if (member.dob != dob) dob else null,
+              gender = if (member.gender != gender) gender else null,
+              educationalQualification = if (member.educationalQualification != educationalQualification) educationalQualification.ifBlank { null } else null,
+              occupation = if (member.occupation != occupation) occupation.ifBlank { null } else null,
+              joiningDate = if (member.joiningDate != joiningDate) joiningDate else null,
+              introduction = if (member.introduction != introduction) introduction.ifBlank { null } else null,
+              profileImageUrl = if (finalImageUrl != member.profileImage) finalImageUrl else null,
+              addressId = if (addressChanged) member.addressFields?.id else null,
+              tempAddressId = if (tempAddressChanged) member.tempAddressFields?.id else null,
+              referrerId = if (member.referrerId != referrerState.members.keys.firstOrNull()?.id) referrerState.members.keys.firstOrNull()?.id else null,
+              aryaSamajId = if (member.aryaSamaj?.id != selectedAryaSamaj?.id) selectedAryaSamaj?.id else null,
+              // Main address fields - only send if address has changed
+              basicAddress = if (addressChanged) permanentAddress.address.ifBlank { null } else null,
+              state = if (addressChanged) permanentAddress.state.ifBlank { null } else null,
+              district = if (addressChanged) permanentAddress.district.ifBlank { null } else null,
+              pincode = if (addressChanged) permanentAddress.pincode.ifBlank { null } else null,
+              latitude = if (addressChanged) permanentAddress.location?.latitude else null,
+              longitude = if (addressChanged) permanentAddress.location?.longitude else null,
+              vidhansabha = if (addressChanged) permanentAddress.vidhansabha.ifBlank { null } else null,
+              // Temp address fields - only send if temp address has changed
+              tempBasicAddress = if (tempAddressChanged && isDifferentCurrentAddress) currentAddress.address.ifBlank { null } else null,
+              tempState = if (tempAddressChanged && isDifferentCurrentAddress) currentAddress.state.ifBlank { null } else null,
+              tempDistrict = if (tempAddressChanged && isDifferentCurrentAddress) currentAddress.district.ifBlank { null } else null,
+              tempPincode = if (tempAddressChanged && isDifferentCurrentAddress) currentAddress.pincode.ifBlank { null } else null,
+              tempLatitude = if (tempAddressChanged && isDifferentCurrentAddress) currentAddress.location?.latitude else null,
+              tempLongitude = if (tempAddressChanged && isDifferentCurrentAddress) currentAddress.location?.longitude else null,
+              tempVidhansabha = if (tempAddressChanged && isDifferentCurrentAddress) currentAddress.vidhansabha.ifBlank { null } else null
+            )
+          } else {
+            // No changes detected, show message and navigate back
+            snackbarHostState.showSnackbar("कोई परिवर्तन नहीं किया गया")
+            viewModel.resetUpdateState()
+            onNavigateBack()
+          }
         } else {
           // Create new member
           viewModel.createMember(

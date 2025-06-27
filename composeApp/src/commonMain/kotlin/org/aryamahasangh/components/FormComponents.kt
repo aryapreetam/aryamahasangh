@@ -38,13 +38,13 @@ enum class DatePickerType {
 enum class Gender {
   MALE,
   FEMALE,
-  OTHER;
+  ANY;
 
   fun toDisplayName(): String =
     when (this) {
       MALE -> "पुरुष"
       FEMALE -> "महिला"
-      OTHER -> "अन्य"
+      ANY -> "अन्य"
     }
 
   companion object {

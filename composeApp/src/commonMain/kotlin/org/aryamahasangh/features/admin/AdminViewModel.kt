@@ -441,10 +441,26 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
     joiningDate: LocalDate?,
     introduction: String?,
     profileImageUrl: String?,
-    addressId: String,
+    addressId: String?,
     tempAddressId: String?,
     referrerId: String?,
-    aryaSamajId: String?
+    aryaSamajId: String?,
+    // Main address fields
+    basicAddress: String? = null,
+    state: String? = null,
+    district: String? = null,
+    pincode: String? = null,
+    latitude: Double? = null,
+    longitude: Double? = null,
+    vidhansabha: String? = null,
+    // Temp address fields 
+    tempBasicAddress: String? = null,
+    tempState: String? = null,
+    tempDistrict: String? = null,
+    tempPincode: String? = null,
+    tempLatitude: Double? = null,
+    tempLongitude: Double? = null,
+    tempVidhansabha: String? = null
   ) {
     viewModelScope.launch {
       _memberDetailUiState.value = _memberDetailUiState.value.copy(isUpdating = true)
@@ -465,7 +481,23 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
         addressId = addressId,
         tempAddressId = tempAddressId,
         referrerId = referrerId,
-        aryaSamajId = aryaSamajId
+        aryaSamajId = aryaSamajId,
+        // Main address fields
+        basicAddress = basicAddress,
+        state = state,
+        district = district,
+        pincode = pincode,
+        latitude = latitude,
+        longitude = longitude,
+        vidhansabha = vidhansabha,
+        // Temp address fields
+        tempBasicAddress = tempBasicAddress,
+        tempState = tempState,
+        tempDistrict = tempDistrict,
+        tempPincode = tempPincode,
+        tempLatitude = tempLatitude,
+        tempLongitude = tempLongitude,
+        tempVidhansabha = tempVidhansabha
       ).collect { result ->
         result.handleResult(
           onLoading = {
@@ -595,6 +627,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
             // Refresh members list
             loadMembers()
             getMembersCount()
+            loadEkalAryaMembers()
           },
           onError = { appError ->
             ErrorHandler.logError(appError, "AdminViewModel.deleteMember")
@@ -708,7 +741,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
         tempPincode = tempPincode,
         tempLatitude = tempLatitude,
         tempLongitude = tempLongitude,
-        tempVidhansabha = tempVidhansabha
+        tempVidhansabha = tempVidhansabha,
       ).collect { result ->
         result.handleResult(
           onLoading = {
