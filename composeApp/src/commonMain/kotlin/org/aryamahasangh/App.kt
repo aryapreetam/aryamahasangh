@@ -15,7 +15,6 @@ import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.family_add
 import org.aryamahasangh.auth.SessionManager
 import org.aryamahasangh.di.KoinInitializer
-import org.aryamahasangh.examples.FormComponentsExample
 import org.aryamahasangh.navigation.AppDrawer
 import org.aryamahasangh.utils.WithTooltip
 import org.jetbrains.compose.resources.vectorResource
@@ -54,8 +53,7 @@ fun App() {
     }
   } else {
     AppTheme {
-      // Show the form components example
-      FormComponentsExample()
+
     }
     // ImagePickerExample()
     // ActivityFormImagePickerIntegration()

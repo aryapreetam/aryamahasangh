@@ -52,10 +52,26 @@ interface AdminRepository {
     joiningDate: LocalDate?,
     introduction: String?,
     profileImage: String?,
-    addressId: String? = null,
-    tempAddressId: String? = null,
-    referrerId: String? = null,
-    aryaSamajId: String? = null
+    addressId: String?,
+    tempAddressId: String?,
+    referrerId: String?,
+    aryaSamajId: String?,
+    // Main address fields
+    basicAddress: String?,
+    state: String?,
+    district: String?,
+    pincode: String?,
+    latitude: Double?,
+    longitude: Double?,
+    vidhansabha: String?,
+    // Temp address fields 
+    tempBasicAddress: String?,
+    tempState: String?,
+    tempDistrict: String?,
+    tempPincode: String?,
+    tempLatitude: Double?,
+    tempLongitude: Double?,
+    tempVidhansabha: String?
   ): Flow<Result<Boolean>>
 
   suspend fun updateMemberPhoto(
@@ -262,8 +278,8 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
           val gender = when (memberNode.gender) {
             org.aryamahasangh.type.GenderFilter.MALE -> Gender.MALE
             org.aryamahasangh.type.GenderFilter.FEMALE -> Gender.FEMALE
-            org.aryamahasangh.type.GenderFilter.ANY -> Gender.OTHER
-            org.aryamahasangh.type.GenderFilter.UNKNOWN__ -> Gender.OTHER
+            org.aryamahasangh.type.GenderFilter.ANY -> Gender.ANY
+            org.aryamahasangh.type.GenderFilter.UNKNOWN__ -> Gender.ANY
             null -> null
           }
 
@@ -361,7 +377,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
       emit(Result.Loading)
       val result =
         safeCall {
-          val response = apolloClient.mutation(DeleteMemberComprehensiveMutation(memberId)).execute()
+          val response = apolloClient.mutation(DeleteMemberMutation(memberId)).execute()
           if (response.hasErrors()) {
             throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
           }
@@ -387,46 +403,74 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
     addressId: String?,
     tempAddressId: String?,
     referrerId: String?,
-    aryaSamajId: String?
+    aryaSamajId: String?,
+    // Main address fields
+    basicAddress: String?,
+    state: String?,
+    district: String?,
+    pincode: String?,
+    latitude: Double?,
+    longitude: Double?,
+    vidhansabha: String?,
+    // Temp address fields 
+    tempBasicAddress: String?,
+    tempState: String?,
+    tempDistrict: String?,
+    tempPincode: String?,
+    tempLatitude: Double?,
+    tempLongitude: Double?,
+    tempVidhansabha: String?
   ): Flow<Result<Boolean>> =
     flow {
       emit(Result.Loading)
       val result =
         safeCall {
-          val response =
-            apolloClient.mutation(
-              UpdateMemberDetailsComprehensiveMutation(
-                memberId = memberId,
-                name = Optional.presentIfNotNull(name),
-                phoneNumber = Optional.presentIfNotNull(phoneNumber),
-                educationalQualification = Optional.presentIfNotNull(educationalQualification),
-                email = Optional.presentIfNotNull(email),
-                dob = Optional.presentIfNotNull(dob),
-                gender = Optional.presentIfNotNull(
-                  when (gender) {
-                    Gender.MALE -> "MALE"
-                    Gender.FEMALE -> "FEMALE"
-                    Gender.OTHER -> "OTHER"
-                    null -> null
-                  }
-                ),
-                occupation = Optional.presentIfNotNull(occupation),
-                joiningDate = Optional.presentIfNotNull(joiningDate),
-                introduction = Optional.presentIfNotNull(introduction),
-                profileImage = Optional.presentIfNotNull(profileImage),
-                addressId = Optional.presentIfNotNull(addressId),
-                tempAddressId = Optional.presentIfNotNull(tempAddressId),
-                referrerId = Optional.presentIfNotNull(referrerId),
-                aryaSamajId = Optional.presentIfNotNull(aryaSamajId)
-              )
-            ).execute()
+          val response = apolloClient.mutation(
+            UpdateMemberDetailsComprehensiveMutation(
+              memberId = memberId,
+              name = Optional.presentIfNotNull(name),
+              phoneNumber = Optional.presentIfNotNull(phoneNumber),
+              educationalQualification = Optional.presentIfNotNull(educationalQualification),
+              email = Optional.presentIfNotNull(email),
+              dob = Optional.presentIfNotNull(dob),
+              gender = Optional.presentIfNotNull(
+                when (gender) {
+                  Gender.MALE -> "MALE"
+                  Gender.FEMALE -> "FEMALE"
+                  Gender.ANY -> "ANY"
+                  null -> null
+                }
+              ),
+              occupation = Optional.presentIfNotNull(occupation),
+              joiningDate = Optional.presentIfNotNull(joiningDate),
+              introduction = Optional.presentIfNotNull(introduction),
+              profileImage = Optional.presentIfNotNull(profileImage),
+              addressId = Optional.presentIfNotNull(addressId),
+              tempAddressId = Optional.presentIfNotNull(tempAddressId),
+              referrerId = Optional.presentIfNotNull(referrerId),
+              aryaSamajId = Optional.presentIfNotNull(aryaSamajId),
+              // Main address fields
+              basicAddress = Optional.presentIfNotNull(basicAddress),
+              state = Optional.presentIfNotNull(state),
+              district = Optional.presentIfNotNull(district),
+              pincode = Optional.presentIfNotNull(pincode),
+              latitude = Optional.presentIfNotNull(latitude),
+              longitude = Optional.presentIfNotNull(longitude),
+              vidhansabha = Optional.presentIfNotNull(vidhansabha),
+              // Temp address fields
+              tempBasicAddress = Optional.presentIfNotNull(tempBasicAddress),
+              tempState = Optional.presentIfNotNull(tempState),
+              tempDistrict = Optional.presentIfNotNull(tempDistrict),
+              tempPincode = Optional.presentIfNotNull(tempPincode),
+              tempLatitude = Optional.presentIfNotNull(tempLatitude),
+              tempLongitude = Optional.presentIfNotNull(tempLongitude),
+              tempVidhansabha = Optional.presentIfNotNull(tempVidhansabha)
+            )
+          ).execute()
+
           if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+            throw Exception(response.errors?.firstOrNull()?.message ?: "Update failed")
           }
-
-          // Debug logging for response
-          println("🎉 UpdateMemberDetails Response: ${response.data}")
-
           true
         }
       emit(result)
@@ -454,32 +498,6 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
         }
       emit(result)
     }
-
-//  override suspend fun addMember(
-//    name: String,
-//    phoneNumber: String,
-//    educationalQualification: String?,
-//    profileImageUrl: String?,
-//    email: String?
-//  ): Flow<Result<Boolean>> = flow {
-//    emit(Result.Loading)
-//    val result = safeCall {
-//      val response = apolloClient.mutation(
-//        AddMemberMutation(
-//          name = name,
-//          phoneNumber = phoneNumber,
-//          educationalQualification = Optional.presentIfNotNull(educationalQualification),
-//          profileImageUrl = Optional.presentIfNotNull(profileImageUrl),
-//          email = Optional.presentIfNotNull(email)
-//        )
-//      ).execute()
-//      if (response.hasErrors()) {
-//        throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-//      }
-//      true
-//    }
-//    emit(result)
-//  }
 
   override suspend fun createAddress(
     basicAddress: String,
@@ -520,69 +538,6 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
         }
       emit(result)
     }
-
-//  override suspend fun createMember(
-//    name: String,
-//    phoneNumber: String,
-//    email: String?,
-//    dob: LocalDate?,
-//    gender: Gender?,
-//    educationalQualification: String?,
-//    occupation: String?,
-//    joiningDate: LocalDate?,
-//    introduction: String?,
-//    profileImageUrl: String?,
-//    addressId: String,
-//    tempAddressId: String?,
-//    referrerId: String?,
-//    aryaSamajId: String?
-//  ): Flow<Result<String>> =
-//    flow {
-//      emit(Result.Loading)
-//      val result =
-//        safeCall {
-//          // Convert Gender to GenderFilter
-//          val genderFilter =
-//            when (gender) {
-//              Gender.MALE -> GenderFilter.MALE
-//              Gender.FEMALE -> GenderFilter.FEMALE
-//              Gender.OTHER -> GenderFilter.ANY // Map OTHER to ANY since GenderFilter doesn't have OTHER
-//              null -> null
-//            }
-//
-//          val response =
-//            apolloClient.mutation(
-//              CreateMemberMutation(
-//                name = name,
-//                phoneNumber = phoneNumber,
-//                email = Optional.presentIfNotNull(email),
-//                dob = Optional.presentIfNotNull(dob),
-//                gender = Optional.presentIfNotNull(genderFilter),
-//                educationalQualification = Optional.presentIfNotNull(educationalQualification),
-//                occupation = Optional.presentIfNotNull(occupation),
-//                joiningDate = Optional.presentIfNotNull(joiningDate),
-//                introduction = Optional.presentIfNotNull(introduction),
-//                profileImage = Optional.presentIfNotNull(profileImageUrl),
-//                addressId = Optional.Present(addressId),
-//                tempAddressId = Optional.presentIfNotNull(tempAddressId),
-//                referrerId = Optional.presentIfNotNull(referrerId),
-//                aryaSamajId = Optional.presentIfNotNull(aryaSamajId)
-//              )
-//            ).execute()
-//
-//          if (response.hasErrors()) {
-//            throw Exception(response.errors?.firstOrNull()?.message ?: "Member creation failed")
-//          }
-//
-//          val memberId = response.data?.insertIntoMemberCollection?.records?.firstOrNull()?.id
-//          if (memberId == null) {
-//            throw Exception("Member creation failed - no ID returned")
-//          }
-//
-//          memberId
-//        }
-//      emit(result)
-//    }
 
   override suspend fun getAllAryaSamajs(): Flow<Result<List<AryaSamaj>>> =
     flow {
@@ -743,7 +698,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
                   when (gender) {
                     Gender.MALE -> "MALE"
                     Gender.FEMALE -> "FEMALE"
-                    Gender.OTHER -> "OTHER"
+                    Gender.ANY -> "OTHER"
                     null -> null
                   }
                 ),

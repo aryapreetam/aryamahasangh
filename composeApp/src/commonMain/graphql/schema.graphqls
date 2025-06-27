@@ -2201,6 +2201,10 @@ type Member implements Node {
 
   gender: GenderFilter
 
+  createdAt: Datetime!
+
+  updatedAt: Datetime!
+
   address: Address
 
   aryaSamaj: AryaSamaj
@@ -2279,6 +2283,10 @@ input MemberFilter {
   introduction: StringFilter
 
   gender: GenderFilterFilter
+
+  createdAt: DatetimeFilter
+
+  updatedAt: DatetimeFilter
 
   nodeId: IDFilter
 
@@ -2448,6 +2456,10 @@ input MemberInsertInput {
   introduction: String
 
   gender: GenderFilter
+
+  createdAt: Datetime
+
+  updatedAt: Datetime
 }
 
 type MemberInsertResponse {
@@ -2622,6 +2634,10 @@ input MemberOrderBy {
   introduction: OrderByDirection
 
   gender: OrderByDirection
+
+  createdAt: OrderByDirection
+
+  updatedAt: OrderByDirection
 }
 
 input MemberUpdateInput {
@@ -2654,6 +2670,10 @@ input MemberUpdateInput {
   introduction: String
 
   gender: GenderFilter
+
+  createdAt: Datetime
+
+  updatedAt: Datetime
 }
 
 type MemberUpdateResponse {
@@ -2863,6 +2883,8 @@ type Mutation {
   insertIntoSatrRegistrationCollection(objects: [SatrRegistrationInsertInput!]!): SatrRegistrationInsertResponse
 
   insertMemberDetails(pName: String!, pPhoneNumber: String!, pProfileImage: String, pEducationalQualification: String, pEmail: String, pDob: Date, pAddressId: String, pAryaSamajId: String, pJoiningDate: Date, pTempAddressId: String, pReferrerId: String, pOccupation: String, pIntroduction: String, pGender: String, pBasicAddress: String, pState: String, pDistrict: String, pPincode: String, pLatitude: Float, pLongitude: Float, pVidhansabha: String, pTempBasicAddress: String, pTempState: String, pTempDistrict: String, pTempPincode: String, pTempLatitude: Float, pTempLongitude: Float, pTempVidhansabha: String): JSON
+
+  tempUpdateMember(pMemberId: String!, pName: String, pPhoneNumber: String, pEducationalQualification: String, pEmail: String, pDob: Date, pGender: String, pOccupation: String, pJoiningDate: Date, pIntroduction: String, pProfileImage: String, pReferrerId: String, pAryaSamajId: String): JSON
 
   """
   Updates zero or more records in the `Activities` collection

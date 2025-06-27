@@ -2,6 +2,7 @@ package org.aryamahasangh.features.activities
 
 import kotlinx.datetime.*
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import org.aryamahasangh.OrganisationalActivityDetailByIdQuery
 import org.aryamahasangh.fragment.OrganisationalActivityShort
 import org.aryamahasangh.type.ActivityType
@@ -59,6 +60,7 @@ data class ActivityMember(
   val priority: Int
 )
 
+@Serializable
 data class Member(
   val id: String,
   val name: String,

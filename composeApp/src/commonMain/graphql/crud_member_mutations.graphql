@@ -49,7 +49,7 @@ mutation InsertMemberDetails(
     pOccupation: $occupation,
     pIntroduction: $introduction,
     pGender: $gender,
-    # Main address parameters
+    # Main address parameters - Using camelCase to match GraphQL schema
     pBasicAddress: $basicAddress,
     pState: $state,
     pDistrict: $district,
@@ -57,7 +57,7 @@ mutation InsertMemberDetails(
     pLatitude: $latitude,
     pLongitude: $longitude,
     pVidhansabha: $vidhansabha,
-    # Temporary address parameters
+    # Temporary address parameters - Using camelCase to match GraphQL schema  
     pTempBasicAddress: $tempBasicAddress,
     pTempState: $tempState,
     pTempDistrict: $tempDistrict,
@@ -84,7 +84,23 @@ mutation UpdateMemberDetailsComprehensive(
   $referrerId: String = null,
   $occupation: String = null,
   $introduction: String = null,
-  $gender: String = null
+  $gender: String = null,
+  # Main address fields for automatic address creation
+  $basicAddress: String = null,
+  $state: String = null,
+  $district: String = null,
+  $pincode: String = null,
+  $latitude: Float = null,
+  $longitude: Float = null,
+  $vidhansabha: String = null,
+  # Temporary address fields for automatic temp address creation
+  $tempBasicAddress: String = null,
+  $tempState: String = null,
+  $tempDistrict: String = null,
+  $tempPincode: String = null,
+  $tempLatitude: Float = null,
+  $tempLongitude: Float = null,
+  $tempVidhansabha: String = null
 ) {
   updateMemberDetails(
     pMemberId: $memberId,
@@ -101,11 +117,27 @@ mutation UpdateMemberDetailsComprehensive(
     pReferrerId: $referrerId,
     pOccupation: $occupation,
     pIntroduction: $introduction,
-    pGender: $gender
+    pGender: $gender,
+    # Main address parameters - Using camelCase to match GraphQL schema
+    pBasicAddress: $basicAddress,
+    pState: $state,
+    pDistrict: $district,
+    pPincode: $pincode,
+    pLatitude: $latitude,
+    pLongitude: $longitude,
+    pVidhansabha: $vidhansabha,
+    # Temporary address parameters - Using camelCase to match GraphQL schema  
+    pTempBasicAddress: $tempBasicAddress,
+    pTempState: $tempState,
+    pTempDistrict: $tempDistrict,
+    pTempPincode: $tempPincode,
+    pTempLatitude: $tempLatitude,
+    pTempLongitude: $tempLongitude,
+    pTempVidhansabha: $tempVidhansabha
   )
 }
 
 # Delete Member (comprehensive deletion with cleanup)
-mutation DeleteMemberComprehensive($memberId: String!) {
+mutation DeleteMember($memberId: String!) {
   deleteMember(pMemberId: $memberId)
 }

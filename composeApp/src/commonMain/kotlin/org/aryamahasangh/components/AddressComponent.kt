@@ -23,7 +23,9 @@ import io.ktor.client.statement.*
 import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.aryamahasangh.features.activities.LatLng
 import org.aryamahasangh.features.activities.MapLocationPickerDialog
 import org.aryamahasangh.screens.DistrictDropdown
@@ -557,7 +559,7 @@ fun VidhansabhaDropdown(
     ) {
       OutlinedTextField(
         readOnly = true,
-        modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
+        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
         value = selectedVidhansabha.ifEmpty { "विधानसभा चुनें" },
         label = { Text("विधानसभा") },
         onValueChange = {},

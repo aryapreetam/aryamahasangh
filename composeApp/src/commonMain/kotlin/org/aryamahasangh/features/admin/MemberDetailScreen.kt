@@ -271,7 +271,7 @@ private fun DetailsSection(
           val genderText = when (gender) {
             Gender.MALE -> "पुरुष"
             Gender.FEMALE -> "स्त्री"
-            Gender.OTHER -> "अन्य"
+            Gender.ANY -> "अन्य"
           }
           DetailItem("लिंग", genderText)
         }
