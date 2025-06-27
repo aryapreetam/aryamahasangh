@@ -25,6 +25,7 @@ fun AdminContainerScreen(
   familyViewModel: FamilyViewModel, // Add family view model
   onNavigateToMemberDetail: (String) -> Unit = {},
   onNavigateToAddMember: () -> Unit = {},
+  onNavigateToEditMember: (String) -> Unit = {}, // Add edit member navigation
   onNavigateToAddAryaSamaj: () -> Unit = {},
   onNavigateToAryaSamajDetail: (String) -> Unit = {},
   onEditAryaSamaj: (String) -> Unit = {}, // New parameter for editing
@@ -175,7 +176,8 @@ fun AdminContainerScreen(
         if (it == 0) {
           OrganisationalMembersScreen(
             viewModel = viewModel,
-            onNavigateToMemberDetail = onNavigateToMemberDetail
+            onNavigateToMemberDetail = onNavigateToMemberDetail,
+            onNavigateToEditMember = onNavigateToEditMember // Pass the new handler
           )
         } else if (it == 1) {
           AryaSamajListScreen(

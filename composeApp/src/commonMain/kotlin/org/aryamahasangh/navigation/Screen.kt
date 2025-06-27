@@ -129,6 +129,9 @@ sealed class Screen {
   data object AddMemberForm : Screen()
 
   @Serializable
+  data class EditMemberForm(val memberId: String) : Screen()
+
+  @Serializable
   data object CreateFamilyForm : Screen()
 
   @Serializable

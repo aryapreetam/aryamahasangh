@@ -220,19 +220,19 @@ mutation updateMemberPhoto($memberId: String!, $profileImageUrl: String!) {
     }
 }
 
-mutation updateMemberDetails($memberId: String!, $name: String!, $phoneNumber: String!, $educationalQualification: String, $email: String) {
-    updateMemberCollection(
-        filter: {id: {eq: $memberId}}
-        set: {
-            name: $name,
-            phoneNumber: $phoneNumber,
-            educationalQualification: $educationalQualification,
-            email: $email,
-        }
-    ) {
-        affectedCount
-    }
-}
+#mutation updateMemberDetails($memberId: String!, $name: String!, $phoneNumber: String!, $educationalQualification: String, $email: String) {
+#    updateMemberCollection(
+#        filter: {id: {eq: $memberId}}
+#        set: {
+#            name: $name,
+#            phoneNumber: $phoneNumber,
+#            educationalQualification: $educationalQualification,
+#            email: $email,
+#        }
+#    ) {
+#        affectedCount
+#    }
+#}
 
 mutation UpdateActivity(
     $id: String!,

@@ -157,6 +157,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
           )
         }
       }
+
   }
 
   fun searchOrganisationalMembers(query: String) {
@@ -201,6 +202,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
           )
         }
       }
+
   }
 
   // New method for searching EkalArya members
@@ -246,6 +248,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
           )
         }
       }
+
   }
 
   // New method to load EkalArya members
@@ -423,6 +426,147 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
     }
   }
 
+  // Alias for loadMemberDetail for AddMemberFormScreen
+  fun loadMember(memberId: String) = loadMemberDetail(memberId)
+
+  fun updateMember(
+    memberId: String,
+    name: String,
+    phoneNumber: String,
+    email: String?,
+    dob: LocalDate?,
+    gender: Gender?,
+    educationalQualification: String?,
+    occupation: String?,
+    joiningDate: LocalDate?,
+    introduction: String?,
+    profileImageUrl: String?,
+    addressId: String,
+    tempAddressId: String?,
+    referrerId: String?,
+    aryaSamajId: String?
+  ) {
+    viewModelScope.launch {
+      _memberDetailUiState.value = _memberDetailUiState.value.copy(isUpdating = true)
+
+      // Use the comprehensive update mutation
+      repository.updateMemberDetails(
+        memberId = memberId,
+        name = name,
+        phoneNumber = phoneNumber,
+        educationalQualification = educationalQualification,
+        email = email,
+        dob = dob,
+        gender = gender,
+        occupation = occupation,
+        joiningDate = joiningDate,
+        introduction = introduction,
+        profileImage = profileImageUrl,
+        addressId = addressId,
+        tempAddressId = tempAddressId,
+        referrerId = referrerId,
+        aryaSamajId = aryaSamajId
+      ).collect { result ->
+        result.handleResult(
+          onLoading = {
+            // Already handled above
+          },
+          onSuccess = { _ ->
+            _memberDetailUiState.value =
+              _memberDetailUiState.value.copy(
+                isUpdating = false,
+                updateSuccess = true
+              )
+            // Reload member details
+            loadMemberDetail(memberId)
+          },
+          onError = { appError ->
+            ErrorHandler.logError(appError, "AdminViewModel.updateMember")
+            _memberDetailUiState.value =
+              _memberDetailUiState.value.copy(
+                isUpdating = false,
+                error = appError.getUserMessage(),
+                appError = appError
+              )
+          }
+        )
+      }
+    }
+  }
+
+  fun setEditingProfile(editing: Boolean) {
+    _memberDetailUiState.value = _memberDetailUiState.value.copy(isEditingProfile = editing)
+  }
+
+  fun setEditingDetails(editing: Boolean) {
+    _memberDetailUiState.value = _memberDetailUiState.value.copy(isEditingDetails = editing)
+  }
+
+//  fun updateMemberDetails(
+//    memberId: String,
+//    name: String?,
+//    phoneNumber: String?,
+//    educationalQualification: String?,
+//    email: String?,
+//    dob: LocalDate?,
+//    gender: Gender?,
+//    occupation: String?,
+//    joiningDate: LocalDate?,
+//    introduction: String?,
+//    profileImage: String?,
+//    addressId: String?,
+//    tempAddressId: String?,
+//    referrerId: String?,
+//    aryaSamajId: String?
+//  ) {
+//    viewModelScope.launch {
+//      _memberDetailUiState.value = _memberDetailUiState.value.copy(isUpdating = true)
+//
+//      repository.updateMemberDetails(
+//        memberId = memberId,
+//        name = name,
+//        phoneNumber = phoneNumber,
+//        educationalQualification = educationalQualification,
+//        email = email,
+//        dob = dob,
+//        gender = gender,
+//        occupation = occupation,
+//        joiningDate = joiningDate,
+//        introduction = introduction,
+//        profileImage = profileImage,
+//        addressId = addressId,
+//        tempAddressId = tempAddressId,
+//        referrerId = referrerId,
+//        aryaSamajId = aryaSamajId
+//      ).collect { result ->
+//        result.handleResult(
+//          onLoading = {
+//            // Already handled above
+//          },
+//          onSuccess = { _ ->
+//            _memberDetailUiState.value =
+//              _memberDetailUiState.value.copy(
+//                isUpdating = false,
+//                updateSuccess = true,
+//                isEditingDetails = false
+//              )
+//            // Reload member details
+//            loadMemberDetail(memberId)
+//          },
+//          onError = { appError ->
+//            ErrorHandler.logError(appError, "AdminViewModel.updateMemberDetails")
+//            _memberDetailUiState.value =
+//              _memberDetailUiState.value.copy(
+//                isUpdating = false,
+//                error = appError.getUserMessage(),
+//                appError = appError
+//              )
+//          }
+//        )
+//      }
+//    }
+//  }
+
   fun deleteMember(
     memberId: String,
     memberName: String
@@ -468,59 +612,6 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
 
   fun resetDeleteState() {
     _deleteMemberState.value = DeleteMemberState()
-  }
-
-  fun setEditingProfile(editing: Boolean) {
-    _memberDetailUiState.value = _memberDetailUiState.value.copy(isEditingProfile = editing)
-  }
-
-  fun setEditingDetails(editing: Boolean) {
-    _memberDetailUiState.value = _memberDetailUiState.value.copy(isEditingDetails = editing)
-  }
-
-  fun updateMemberDetails(
-    memberId: String,
-    name: String?,
-    phoneNumber: String?,
-    educationalQualification: String?,
-    email: String?
-  ) {
-    viewModelScope.launch {
-      _memberDetailUiState.value = _memberDetailUiState.value.copy(isUpdating = true)
-
-      repository.updateMemberDetails(
-        memberId,
-        name,
-        phoneNumber,
-        educationalQualification,
-        email
-      ).collect { result ->
-        result.handleResult(
-          onLoading = {
-            // Already handled above
-          },
-          onSuccess = { _ ->
-            _memberDetailUiState.value =
-              _memberDetailUiState.value.copy(
-                isUpdating = false,
-                updateSuccess = true,
-                isEditingDetails = false
-              )
-            // Reload member details
-            loadMemberDetail(memberId)
-          },
-          onError = { appError ->
-            ErrorHandler.logError(appError, "AdminViewModel.updateMemberDetails")
-            _memberDetailUiState.value =
-              _memberDetailUiState.value.copy(
-                isUpdating = false,
-                error = appError.getUserMessage(),
-                appError = appError
-              )
-          }
-        )
-      }
-    }
   }
 
   fun updateMemberPhoto(
@@ -570,15 +661,28 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
     joiningDate: LocalDate?,
     introduction: String?,
     profileImageUrl: String?,
-    addressId: String,
-    tempAddressId: String?,
     referrerId: String?,
-    aryaSamajId: String?
+    aryaSamajId: String?,
+    basicAddress: String,
+    state: String,
+    district: String,
+    pincode: String,
+    latitude: Double?,
+    longitude: Double?,
+    vidhansabha: String?,
+    // Temp address fields 
+    tempBasicAddress: String?,
+    tempState: String?,
+    tempDistrict: String?,
+    tempPincode: String?,
+    tempLatitude: Double?,
+    tempLongitude: Double?,
+    tempVidhansabha: String?
   ) {
     viewModelScope.launch {
       _memberDetailUiState.value = _memberDetailUiState.value.copy(isUpdating = true)
 
-      repository.createMember(
+      repository.createMemberWithAddress(
         name = name,
         phoneNumber = phoneNumber,
         email = email,
@@ -589,10 +693,22 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
         joiningDate = joiningDate,
         introduction = introduction,
         profileImageUrl = profileImageUrl,
-        addressId = addressId,
-        tempAddressId = tempAddressId,
         referrerId = referrerId,
-        aryaSamajId = aryaSamajId
+        aryaSamajId = aryaSamajId,
+        basicAddress = basicAddress,
+        state = state,
+        district = district,
+        pincode = pincode,
+        latitude = latitude,
+        longitude = longitude,
+        vidhansabha = vidhansabha,
+        tempBasicAddress = tempBasicAddress,
+        tempState = tempState,
+        tempDistrict = tempDistrict,
+        tempPincode = tempPincode,
+        tempLatitude = tempLatitude,
+        tempLongitude = tempLongitude,
+        tempVidhansabha = tempVidhansabha
       ).collect { result ->
         result.handleResult(
           onLoading = {
@@ -620,43 +736,6 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
         )
       }
     }
-  }
-
-  // New method to create address
-  suspend fun createAddress(
-    basicAddress: String,
-    state: String,
-    district: String,
-    pincode: String,
-    latitude: Double?,
-    longitude: Double?,
-    vidhansabha: String?
-  ): String? {
-    var addressId: String? = null
-    repository.createAddress(
-      basicAddress,
-      state,
-      district,
-      pincode,
-      latitude,
-      longitude,
-      vidhansabha
-    ).collect { result ->
-      result.handleResult(
-        onSuccess = { id ->
-          addressId = id
-        },
-        onError = { appError ->
-          ErrorHandler.logError(appError, "AdminViewModel.createAddress")
-          _memberDetailUiState.value =
-            _memberDetailUiState.value.copy(
-              error = appError.getUserMessage(),
-              appError = appError
-            )
-        }
-      )
-    }
-    return addressId
   }
 
   fun resetUpdateState() {
