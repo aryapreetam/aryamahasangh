@@ -30,7 +30,8 @@ import org.aryamahasangh.network.bucket
 fun AddMemberFormScreen(
   viewModel: AdminViewModel,
   onNavigateBack: () -> Unit,
-  memberId: String? = null // New parameter for edit mode
+  memberId: String? = null, // New parameter for edit mode
+  onNavigateToMemberDetail: (memberId: String) -> Unit
 ) {
   val uiState by viewModel.memberDetailUiState.collectAsState()
   val snackbarHostState = LocalSnackbarHostState.current
@@ -476,7 +477,8 @@ fun AddMemberFormScreen(
       val message = if (isEditMode) "सदस्य सफलतापूर्वक अपडेट किया गया" else "सदस्य सफलतापूर्वक जोड़ा गया"
       snackbarHostState.showSnackbar(message)
       viewModel.resetUpdateState()
-      onNavigateBack()
+
+      onNavigateToMemberDetail(if(isEditMode) memberId else uiState.memberId!!)
     }
   }
 

@@ -1,5 +1,6 @@
 package org.aryamahasangh.features.admin
 
+import AdminRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Job
@@ -52,7 +53,8 @@ data class MemberDetailUiState(
   val allMembers: List<Member> = emptyList(),
   val searchMembersResults: List<Member> = emptyList(),
   val allAryaSamajs: List<AryaSamaj> = emptyList(),
-  val searchAryaSamajResults: List<AryaSamaj> = emptyList()
+  val searchAryaSamajResults: List<AryaSamaj> = emptyList(),
+  val memberId: String? = null
 ) : ErrorState
 
 data class DeleteMemberState(
@@ -747,11 +749,12 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
           onLoading = {
             // Already handled above
           },
-          onSuccess = { _ ->
+          onSuccess = { id ->
             _memberDetailUiState.value =
               _memberDetailUiState.value.copy(
                 isUpdating = false,
-                updateSuccess = true
+                updateSuccess = true,
+                memberId = id
               )
             // Refresh members list
             loadMembers()

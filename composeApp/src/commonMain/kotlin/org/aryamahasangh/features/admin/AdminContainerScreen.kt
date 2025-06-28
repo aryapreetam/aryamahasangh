@@ -41,10 +41,12 @@ fun AdminContainerScreen(
   val familyUiState by familyViewModel.familiesUiState.collectAsState()
   val snackbarHostState = LocalSnackbarHostState.current
 
+
   LaunchedEffect(Unit) {
     viewModel.getMembersCount()
     viewModel.loadEkalAryaMembers()
     familyViewModel.loadFamilies()
+    aryaSamajViewModel.loadAryaSamajs()
   }
 
   // Show error snackbar for member count loading errors (if any)
@@ -198,7 +200,8 @@ fun AdminContainerScreen(
           EkalAryaListScreen(
             viewModel = viewModel,
             onNavigateToMemberDetail = onNavigateToMemberDetail,
-            onNavigateToAddMember = onNavigateToAddMember
+            onNavigateToAddMember = onNavigateToAddMember,
+            onNavigateToEditMember = onNavigateToEditMember
           )
         }
       }
