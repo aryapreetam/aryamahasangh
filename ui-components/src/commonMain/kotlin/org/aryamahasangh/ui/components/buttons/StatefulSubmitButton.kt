@@ -13,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -65,16 +66,6 @@ fun StatefulSubmitButton(
     }
   }
 
-  val buttonColors = ButtonDefaults.buttonColors(
-    containerColor = when (buttonState) {
-      SubmitButtonState.INITIAL -> MaterialTheme.colorScheme.primary
-      SubmitButtonState.SUBMITTING -> MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
-      SubmitButtonState.SUCCESS -> MaterialTheme.colorScheme.tertiary
-      SubmitButtonState.ERROR -> MaterialTheme.colorScheme.error
-    },
-    disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
-  )
-
   val isClickable = buttonState == SubmitButtonState.INITIAL && enabled
 
   Button(
@@ -92,14 +83,28 @@ fun StatefulSubmitButton(
           }
         }
       }
+      // Ignore clicks in other states - button stays enabled but doesn't respond
     },
     modifier = if (fillMaxWidth) {
       modifier.fillMaxWidth().height(56.dp)
     } else {
       modifier.height(56.dp)
     },
-    enabled = isClickable,
-    colors = buttonColors
+    enabled = enabled, // Always use the enabled parameter, don't disable based on state
+    colors = ButtonDefaults.buttonColors(
+      containerColor = when (buttonState) {
+        SubmitButtonState.INITIAL -> MaterialTheme.colorScheme.primary
+        SubmitButtonState.SUBMITTING -> MaterialTheme.colorScheme.primary.copy(alpha = 0.7f)
+        SubmitButtonState.SUCCESS -> Color(0xFF4CAF50) // Back to green
+        SubmitButtonState.ERROR -> Color(0xFFE53E3E) // Material Red 500
+      },
+      contentColor = when (buttonState) {
+        SubmitButtonState.SUCCESS -> Color.White
+        SubmitButtonState.ERROR -> Color.White
+        else -> MaterialTheme.colorScheme.onPrimary
+      },
+      disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f)
+    )
   ) {
     AnimatedContent(
       targetState = buttonState,
@@ -142,7 +147,7 @@ fun StatefulSubmitButton(
               imageVector = Icons.Default.Check,
               contentDescription = "Success",
               modifier = Modifier.size(16.dp),
-              tint = MaterialTheme.colorScheme.onTertiary
+              tint = Color.White
             )
             Text(
               text = successText,
@@ -160,7 +165,7 @@ fun StatefulSubmitButton(
               imageVector = Icons.Default.Close,
               contentDescription = "Error",
               modifier = Modifier.size(16.dp),
-              tint = MaterialTheme.colorScheme.onError
+              tint = Color.White
             )
             Text(
               text = errorText,
