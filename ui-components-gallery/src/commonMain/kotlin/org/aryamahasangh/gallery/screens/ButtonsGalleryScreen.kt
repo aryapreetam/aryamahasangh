@@ -111,7 +111,7 @@ fun StatefulSubmitButtonDemo() {
     verticalArrangement = Arrangement.spacedBy(16.dp)
   ) {
     Text(
-      text = "Successful submission:",
+      text = "Always successful (green on success):",
       style = MaterialTheme.typography.labelLarge,
       color = MaterialTheme.colorScheme.onSurface
     )
@@ -119,8 +119,25 @@ fun StatefulSubmitButtonDemo() {
     StatefulSubmitButton(
       text = "डेटा संग्रहित करें", // "Save Data" in pure Hindi
       onSubmit = {
-        delay(2000) // Simulate network call
+        delay(1000) // Shorter delay to see result faster
         Result.success(Unit)
+      },
+      fillMaxWidth = false
+    )
+
+    Spacer(modifier = Modifier.height(8.dp))
+
+    Text(
+      text = "Always fails (red on error):",
+      style = MaterialTheme.typography.labelLarge,
+      color = MaterialTheme.colorScheme.onSurface
+    )
+
+    StatefulSubmitButton(
+      text = "त्रुटि परीक्षण", // "Error Test" in pure Hindi
+      onSubmit = {
+        delay(1000)
+        Result.failure(Exception("परीक्षण त्रुटि")) // "Test error" in pure Hindi
       },
       fillMaxWidth = false
     )

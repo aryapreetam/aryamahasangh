@@ -1,13 +1,16 @@
+import org.jetbrains.compose.reload.ComposeHotRun
+
 plugins {
   alias(libs.plugins.kotlinMultiplatform)
   alias(libs.plugins.composeMultiplatform)
   alias(libs.plugins.composeCompiler)
+  alias(libs.plugins.composeHotReload)
 }
 
 kotlin {
   jvmToolchain(11)
 
-  jvm("desktop")
+  jvm()
 
   wasmJs {
     browser()
@@ -28,7 +31,7 @@ kotlin {
       implementation(libs.navigation.compose)
     }
 
-    val desktopMain by getting {
+    val jvmMain by getting {
       dependencies {
         implementation(compose.desktop.currentOs)
         implementation(libs.kotlinx.coroutines.swing)
@@ -56,4 +59,8 @@ compose.desktop {
       packageVersion = "1.0.0"
     }
   }
+}
+
+tasks.withType<ComposeHotRun>().configureEach {
+  mainClass.set("org.aryamahasangh.gallery.MainKt")
 }
