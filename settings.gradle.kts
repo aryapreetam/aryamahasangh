@@ -45,3 +45,5 @@ plugins {
 include(":composeApp")
 // include(":server")
 include(":shared")
+include(":ui-components")
+include(":ui-components-gallery")
