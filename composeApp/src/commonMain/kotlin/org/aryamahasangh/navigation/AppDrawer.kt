@@ -358,6 +358,7 @@ private fun checkIfSelected(
       currentDestination?.contains("AdminContainer") == true ||
         currentDestination?.contains("MemberDetail") == true ||
         currentDestination?.contains("AddMemberForm") == true ||
+        currentDestination?.contains("EditMemberForm") == true ||
         currentDestination?.contains("AddAryaSamajForm") == true ||
         currentDestination?.contains("AryaSamajDetail") == true ||
         currentDestination?.contains("CreateFamilyForm") == true ||
@@ -490,6 +491,7 @@ fun MainContent(
               "AryaNirmanRegistrationForm",
               "MemberDetail",
               "AddMemberForm",
+              "EditMemberForm",
               "AddAryaSamajForm",
               "AryaSamajDetail",
               "CreateFamilyForm",

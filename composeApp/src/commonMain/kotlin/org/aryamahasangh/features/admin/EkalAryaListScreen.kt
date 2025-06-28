@@ -28,6 +28,7 @@ import org.jetbrains.compose.ui.tooling.preview.Preview
 fun EkalAryaListScreen(
   viewModel: AdminViewModel,
   onNavigateToMemberDetail: (String) -> Unit = {},
+  onNavigateToEditMember: (id: String) -> Unit = {},
   onNavigateToAddMember: () -> Unit = {}
 ) {
   val uiState by viewModel.ekalAryaUiState.collectAsState()
@@ -185,7 +186,7 @@ fun EkalAryaListScreen(
               MemberItem(
                 member = member,
                 onMemberClick = { onNavigateToMemberDetail(member.id) },
-                onEditClick = { onNavigateToMemberDetail(member.id) },
+                onEditClick = { onNavigateToEditMember(member.id) },
                 onDeleteClick = { showDeleteDialog = member },
                 modifier = Modifier.width(450.dp)
               )

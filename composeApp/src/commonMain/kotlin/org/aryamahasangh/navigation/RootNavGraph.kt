@@ -7,20 +7,20 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.navigation
+import androidx.navigation.compose.composable
 import androidx.navigation.toRoute
 import org.aryamahasangh.LocalIsAuthenticated
 import org.aryamahasangh.features.activities.*
 import org.aryamahasangh.features.admin.*
 import org.aryamahasangh.features.arya_nirman.AryaNirmanHomeScreen
 import org.aryamahasangh.features.arya_nirman.SatraRegistrationViewModel
-import org.aryamahasangh.features.organisations.NewOrganisationFormScreen
-import org.aryamahasangh.features.organisations.OrgDetailScreen
-import org.aryamahasangh.features.organisations.OrgsScreen
 import org.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
 import org.aryamahasangh.features.arya_nirman.SatraRegistrationFormScreen
+import org.aryamahasangh.features.organisations.NewOrganisationFormScreen
+import org.aryamahasangh.features.organisations.OrgDetailScreen
 import org.aryamahasangh.features.organisations.OrganisationsViewModel
+import org.aryamahasangh.features.organisations.OrgsScreen
 import org.aryamahasangh.screens.*
 import org.aryamahasangh.viewmodel.AboutUsViewModel
 import org.aryamahasangh.viewmodel.AdmissionsViewModel
@@ -194,7 +194,10 @@ fun RootNavGraph(navController: NavHostController) {
           viewModel = viewModel,
           onNavigateBack = {
             navController.popBackStack()
-          }
+          },
+          onNavigateToMemberDetail = { memberId ->
+            navController.navigate(Screen.MemberDetail(memberId))
+          },
         )
       }
       composable<Screen.EditMemberForm> {
@@ -205,7 +208,12 @@ fun RootNavGraph(navController: NavHostController) {
           onNavigateBack = {
             navController.popBackStack()
           },
-          memberId = memberId
+          memberId = memberId,
+          onNavigateToMemberDetail = { memberId ->
+            navController.navigate(Screen.MemberDetail(memberId)) {
+              popUpTo<Screen.EditMemberForm> { inclusive = true }
+            }
+          },
         )
       }
       composable<Screen.MemberDetail> {

@@ -1,4 +1,3 @@
-package org.aryamahasangh.features.admin
 
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
@@ -14,9 +13,11 @@ import org.aryamahasangh.*
 import org.aryamahasangh.components.AryaSamaj
 import org.aryamahasangh.components.Gender
 import org.aryamahasangh.features.activities.Member
+import org.aryamahasangh.features.admin.*
 import org.aryamahasangh.fragment.AryaSamajFields
 import org.aryamahasangh.fragment.MemberInOrganisationShort
 import org.aryamahasangh.network.supabaseClient
+import org.aryamahasangh.type.GenderFilter
 import org.aryamahasangh.util.Result
 import org.aryamahasangh.util.safeCall
 
@@ -170,16 +171,10 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
           }
           response.data?.memberInOrganisationCollection?.edges?.map {
             val member = it.node.memberInOrganisationShort
-            val place =
-              buildString {
-                // TODO: Add district and state info when available from GraphQL
-                // For now, we'll leave it empty
-              }
             MemberShort(
               id = member.id!!,
               name = member.name!!,
               profileImage = member.profileImage ?: "",
-              place = place
             )
           } ?: emptyList()
         }
@@ -193,7 +188,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
         safeCall {
           var count = 0L
           try {
-            count = supabaseClient.from("member_in_organisation").select { count(Count.EXACT) }.countOrNull() ?: 0L
+            count = supabaseClient.from("member_in_organisation").select { Count.EXACT }.countOrNull() ?: 0L
           } catch (e: Exception) {
             throw Exception("Unknown error occurred ${e.message}")
           }
@@ -276,10 +271,10 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
 
           // Convert GenderFilter to Gender enum
           val gender = when (memberNode.gender) {
-            org.aryamahasangh.type.GenderFilter.MALE -> Gender.MALE
-            org.aryamahasangh.type.GenderFilter.FEMALE -> Gender.FEMALE
-            org.aryamahasangh.type.GenderFilter.ANY -> Gender.ANY
-            org.aryamahasangh.type.GenderFilter.UNKNOWN__ -> Gender.ANY
+            GenderFilter.MALE -> Gender.MALE
+            GenderFilter.FEMALE -> Gender.FEMALE
+            GenderFilter.ANY -> Gender.ANY
+            GenderFilter.UNKNOWN__ -> Gender.ANY
             null -> null
           }
 
@@ -382,7 +377,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
             throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
           }
 
-          // Since DeleteMemberComprehensive returns JSON, we'll return true for success
+          // Since DeleteMember returns JSON, we'll return true for success
           true
         }
       emit(result)
@@ -733,9 +728,18 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
             throw Exception(response.errors?.firstOrNull()?.message ?: "Member creation failed")
           }
 
-          // Since InsertMemberDetails returns JSON, we'll return a success indicator
-          // The actual member ID and business logic is handled by the Supabase function
-          "success"
+          // Parse the JSON response from insertMemberDetails function
+          val jsonResponse = response.data?.insertMemberDetails
+          val success = (jsonResponse as? Map<*, *>)?.get("success") as? Boolean ?: false
+          
+          if (!success) {
+            val errorCode = (jsonResponse as? Map<*, *>)?.get("error_code") as? String ?: "UNKNOWN_ERROR"
+            val errorDetails = (jsonResponse as? Map<*, *>)?.get("error_details") as? String
+            throw Exception("Member creation failed: $errorCode ${errorDetails?.let { "- $it" } ?: ""}")
+          }
+          
+          // Return the member ID from the successful response
+          jsonResponse["member_id"] as? String ?: ""
         }
       emit(result)
     }
