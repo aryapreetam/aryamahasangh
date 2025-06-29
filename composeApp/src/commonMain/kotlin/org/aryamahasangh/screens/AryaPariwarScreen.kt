@@ -52,7 +52,7 @@ fun AryaPariwarScreen(familyViewModel: FamilyViewModel? = null) {
 
     // Description
     Text(
-      text = "आर्य परिवार एक उन्नत समाज की मुख्य इकाई है। परिवार ही वह स्थान है जहाँ संस्कार, मूल्य और परंपराओं का स्थानांतरण होता है।",
+      text = "आर्य परिवार एक उन्नत समाज की मुख्य इकाई है।",
       style = MaterialTheme.typography.bodyLarge.copy(
         lineHeight = 24.sp
       ),
@@ -159,7 +159,7 @@ fun AryaPariwarScreen(familyViewModel: FamilyViewModel? = null) {
         verticalArrangement = Arrangement.spacedBy(12.dp)
       ) {
         Text(
-          text = "आर्य महासंघ परिवार सांख्यिकी",
+          text = "आर्य महासंघ परिवार",
           style = MaterialTheme.typography.titleMedium.copy(
             fontWeight = FontWeight.SemiBold
           ),
@@ -168,7 +168,7 @@ fun AryaPariwarScreen(familyViewModel: FamilyViewModel? = null) {
 
         if (!familiesUiState.isLoading) {
           Text(
-            text = "वर्तमान में कुल ${familiesUiState.familyCount} परिवार आर्य महासंघ से जुड़े हैं। कुल मिलाकर, इन सभी परिवारों में ${familiesUiState.familyMemberCount} सदस्य हैं।",
+            text = "वर्तमान में कुल ${familiesUiState.familyCount} परिवार आर्य महासंघ से ${if(familiesUiState.familyCount > 1) "जुड़े" else "जुडा"} हैं। कुल मिलाकर, इन सभी परिवारों में ${familiesUiState.familyMemberCount} सदस्य हैं।",
             style = MaterialTheme.typography.bodyLarge.copy(
               lineHeight = 22.sp
             ),

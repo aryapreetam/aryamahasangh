@@ -118,7 +118,7 @@ private fun QuickLinksSection(
       icon = Icons.Default.Event,
       items = listOf(
         QuickLinkItem("आर्य प्रशिक्षण सत्र", "व्यक्तित्व विकास हेतु प्रशिक्षण", Screen.Activities),
-        QuickLinkItem("बोध सत्र", "ज्ञान वृद्धि हेतु सत्र", Screen.Activities),
+        QuickLinkItem("बोध सत्र", "धार्मिक ज्ञान वृद्धि हेतु सत्र", Screen.Activities),
         QuickLinkItem("क्षात्र प्रशिक्षण", "क्षत्रिय धर्म का प्रशिक्षण", Screen.Activities),
         QuickLinkItem("आर्य वीरांगना प्रशिक्षण", "महिला सशक्तिकरण प्रशिक्षण", Screen.Activities),
         QuickLinkItem("अभियान", "सामाजिक कार्य हेतु अभियान", Screen.Activities)
@@ -132,15 +132,15 @@ private fun QuickLinksSection(
       title = "संलग्न संस्थाएं",
       icon = Icons.Default.Business,
       items = listOf(
-        QuickLinkItem("आर्य गुरुकुल महाविद्यालय", "उच्च शिक्षा संस्थान", Screen.OrgDetails("16e79279-f359-4ee0-a412-bde7ffb70b38")),
-        QuickLinkItem("वानप्रस्थ आयोग", "वृद्धजन कल्यान", Screen.OrgDetails("2629c754-c8aa-4fef-b721-3a2201661b99")),
+        QuickLinkItem("आर्य गुरुकुल महाविद्यालय", "आर्य विद्या का उपक्रम", Screen.OrgDetails("16e79279-f359-4ee0-a412-bde7ffb70b38")),
+        QuickLinkItem("वानप्रस्थ आयोग", "वानप्रस्थ के इच्छुकों हेतु", Screen.OrgDetails("2629c754-c8aa-4fef-b721-3a2201661b99")),
         QuickLinkItem("राष्ट्रीय आर्य निर्मात्री सभा", "आर्य निर्माण संस्था", Screen.OrgDetails("561ab956-97d6-4aae-b696-f0f523b8b2f7")),
         QuickLinkItem("राष्ट्रीय आर्य संरक्षिणी सभा", "आर्य संरक्षण", Screen.OrgDetails("68519c66-9c79-4ed4-a01f-f5a7378f682b")),
         QuickLinkItem("आर्या गुरुकुल महाविद्यालय", "महिला शिक्षा संस्थान", Screen.OrgDetails("68cdd20f-249d-4898-a0df-25858f335022")),
         QuickLinkItem("आर्या परिषद्", "महिला संगठन", Screen.OrgDetails("9435f7d9-1542-49f3-99f0-bc689035734a")),
         QuickLinkItem("राष्ट्रीय आर्य संवर्धिनी सभा", "आर्य संवर्धन", Screen.OrgDetails("a0e4e581-7604-4ee3-aee0-c90440a99327")),
         QuickLinkItem("राष्ट्रीय आर्य क्षत्रिय सभा", "क्षत्रिय संगठन", Screen.OrgDetails("d00df3d1-209e-46d5-a180-0a9b259a1fc9")),
-        QuickLinkItem("राष्ट्रीय दलितोद्धारिणी सभा", "सामाजिक न्याय", Screen.OrgDetails("dad1b814-1c93-4865-ab90-dbb8f6591aa3"))
+        QuickLinkItem("राष्ट्रीय दलितोद्धारिणी सभा", "दलिततोद्धार हेतु", Screen.OrgDetails("dad1b814-1c93-4865-ab90-dbb8f6591aa3"))
       ),
       navigateToScreen = navigateToScreen,
       cardColor = CardBackgroundColor.Green
