@@ -215,10 +215,10 @@ android {
     // Expose version information to the app via BuildConfig
     buildConfigField("String", "VERSION_NAME", "\"${versionName}\"")
     buildConfigField("int", "VERSION_CODE", "$versionCode")
-
+    buildConfigField("String", "ENVIRONMENT", "\"$environment\"")
     // Debug output for development
     println("📱 Android version: $versionName ($versionCode)")
-  }
+    println("🌍 Environment: $environment")  }
 
   buildFeatures {
     buildConfig = true

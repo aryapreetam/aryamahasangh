@@ -27,3 +27,17 @@ actual fun getPlatformVersionCode(): Int {
     1 // Fallback version code
   }
 }
+
+/**
+ * Android implementation for getting environment from BuildConfig
+ */
+actual fun getPlatformEnvironment(): String {
+  return try {
+    // Use reflection to get BuildConfig since it might not be available at compile time
+    val buildConfigClass = Class.forName("org.aryamahasangh.BuildConfig")
+    val environmentField = buildConfigClass.getField("ENVIRONMENT")
+    environmentField.get(null) as String
+  } catch (e: Exception) {
+    "dev" // Fallback environment
+  }
+}

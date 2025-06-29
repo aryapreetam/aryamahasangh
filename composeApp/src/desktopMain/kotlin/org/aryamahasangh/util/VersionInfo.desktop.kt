@@ -38,3 +38,23 @@ actual fun getPlatformVersionCode(): Int {
     1 // Fallback version code
   }
 }
+
+/**
+ * Desktop implementation for getting environment
+ * For desktop, we'll use "dev" as fallback for now
+ */
+actual fun getPlatformEnvironment(): String {
+  return try {
+    // Try to read environment from resources if available
+    val resourceStream = object {}.javaClass.getResourceAsStream("/version.properties")
+    if (resourceStream != null) {
+      val properties = java.util.Properties()
+      properties.load(resourceStream)
+      properties.getProperty("environment", "dev")
+    } else {
+      "dev"
+    }
+  } catch (e: Exception) {
+    "dev" // Fallback environment
+  }
+}
