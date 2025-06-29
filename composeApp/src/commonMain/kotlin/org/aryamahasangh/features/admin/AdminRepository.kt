@@ -186,13 +186,15 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
       emit(Result.Loading)
       val result =
         safeCall {
-          var count = 0L
-          try {
-            count = supabaseClient.from("member_in_organisation").select { Count.EXACT }.countOrNull() ?: 0L
-          } catch (e: Exception) {
-            throw Exception("Unknown error occurred ${e.message}")
-          }
-          count
+          val response = apolloClient.query(MembersInOrganisationCountQuery()).execute()
+//          var count = 0L
+//          try {
+//            count = supabaseClient.from("member_in_organisation").select { Count.EXACT }.countOrNull() ?: 0L
+//          } catch (e: Exception) {
+//            throw Exception("Unknown error occurred ${e.message}")
+//          }
+
+          response.data?.memberInOrganisationCollection?.totalCount?.toLong() ?: 0L
         }
       emit(result)
     }

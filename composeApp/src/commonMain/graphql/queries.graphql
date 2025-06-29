@@ -828,3 +828,8 @@ query memberReferrer($referrerId: String!) {
     }
   }
 }
+query MembersInOrganisationCount{
+  memberInOrganisationCollection{
+    totalCount
+  }
+}

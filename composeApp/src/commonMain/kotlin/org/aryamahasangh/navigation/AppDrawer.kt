@@ -249,7 +249,7 @@ fun DrawerContent(
             Screen.AdminSection.toString()
           ),
         onClick = {
-          navController.navigate(Screen.AdminContainer) {
+          navController.navigate(Screen.AdminContainer(0)) {
             // For admin section, clear back stack completely to root
             popUpTo(Screen.AboutSection) {
               inclusive = true

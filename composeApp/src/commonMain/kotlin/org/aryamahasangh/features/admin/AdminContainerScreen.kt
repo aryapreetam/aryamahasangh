@@ -114,6 +114,7 @@ fun AdminContainerScreen(
     PrimaryScrollableTabRow(
       selectedTabIndex = selectedTabIndex
     ) {
+      println(membersCount)
       val count =
         if (membersUiState.appError == null) {
           "$membersCount".toDevanagariNumerals()

@@ -2335,6 +2335,11 @@ type MemberInOrganisationConnection {
   edges: [MemberInOrganisationEdge!]!
 
   pageInfo: PageInfo!
+
+  """
+  The total number of records matching the `filter` criteria
+  """
+  totalCount: Int!
 }
 
 type MemberInOrganisationDeleteResponse {
