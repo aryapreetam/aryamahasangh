@@ -232,6 +232,7 @@ private fun DatePickerDialog(
         Modifier
           .wrapContentSize()
           .padding(16.dp)
+          .widthIn(max = 360.dp) // Add max width constraint to make it compact
     ) {
       Column(
         modifier = Modifier.padding(16.dp)

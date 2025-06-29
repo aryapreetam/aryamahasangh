@@ -34,13 +34,18 @@ fun AryaSamajHomeScreen(
 
   LaunchedEffect(Unit) {
     viewModel?.loadAryaSamajs()
+    viewModel?.getAryaSamajCount() // Load total count separately
   }
 
   LaunchedEffect(addressData) {
     // Only search when user has actually selected something
     if (hasSearched && (addressData.state.isNotEmpty() || addressData.district.isNotEmpty() || addressData.vidhansabha.isNotEmpty())) {
-      // For now, just reload all - we can implement filtering later
-      viewModel?.loadAryaSamajs()
+      // Call search with address parameters
+      viewModel?.searchAryaSamajByAddress(
+        state = addressData.state.ifBlank { null },
+        district = addressData.district.ifBlank { null },
+        vidhansabha = addressData.vidhansabha.ifBlank { null }
+      )
     }
   }
 
@@ -169,7 +174,7 @@ fun AryaSamajHomeScreen(
                 )
               } else {
                 Text(
-                  text = "${listUiState.aryaSamajs.size}",
+                  text = "${listUiState.totalCount}",
                   style = MaterialTheme.typography.displayMedium.copy(
                     fontWeight = FontWeight.Bold
                   ),
@@ -220,7 +225,7 @@ fun AryaSamajHomeScreen(
               },
               modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
-              Text("आर्य समाज दिखाएं")
+              Text("सभी आर्य समाज दिखाएं")
             }
           }
         }
@@ -320,14 +325,22 @@ private fun AryaSamajListItemComponent(
       verticalAlignment = Alignment.Top
     ) {
       // Photos section (left side)
-      if (aryaSamaj.formattedAddress.isNotEmpty()) {
-        // Placeholder for photos grid (you can add actual photos when available)
-        Box(
-          modifier = Modifier
-            .size(80.dp)
-            .clip(RoundedCornerShape(8.dp)),
-          contentAlignment = Alignment.Center
-        ) {
+      Box(
+        modifier = Modifier
+          .size(80.dp)
+          .clip(RoundedCornerShape(8.dp)),
+        contentAlignment = Alignment.Center
+      ) {
+        if (aryaSamaj.mediaUrls.isNotEmpty()) {
+          // Show the first image if available
+          AsyncImage(
+            model = aryaSamaj.mediaUrls.first(),
+            contentDescription = aryaSamaj.name,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+          )
+        } else {
+          // Fallback to placeholder with name initials
           Surface(
             color = MaterialTheme.colorScheme.primaryContainer,
             modifier = Modifier.fillMaxSize()

@@ -112,12 +112,15 @@ fun AryaSamajDetailScreen(
 
         if (isAuthenticated) {
           Row {
+            // Temporarily hidden - Edit button
+            /*
             IconButton(onClick = { /* TODO: Edit functionality */ }) {
               Icon(
                 Icons.Default.Edit,
                 contentDescription = "संपादित करें"
               )
             }
+            */
             IconButton(onClick = onNavigateBack) {
               Icon(
                 Icons.Default.Close,
@@ -270,6 +273,8 @@ private fun DescriptionSection(
         )
 
         if (isEditable) {
+          // Temporarily hidden - Edit button
+          /*
           IconButton(onClick = { /* TODO: Edit description */ }) {
             Icon(
               Icons.Default.Edit,
@@ -277,6 +282,7 @@ private fun DescriptionSection(
               modifier = Modifier.size(20.dp)
             )
           }
+          */
         }
       }
 
@@ -350,13 +356,17 @@ private fun MembersSection(
         )
 
         if (isEditable) {
+          // Temporarily hidden - Edit button
+          /*
           IconButton(onClick = { /* TODO: Edit members */ }) {
             Icon(
               Icons.Default.Edit,
               contentDescription = "सदस्य संपादित करें",
-              modifier = Modifier.size(20.dp)
+              modifier = Modifier.size(20.dp),
+              tint = MaterialTheme.colorScheme.primary
             )
           }
+          */
         }
       }
 
@@ -396,7 +406,7 @@ private fun MembersSection(
                 Icon(
                   Icons.Default.Person,
                   contentDescription = "Profile",
-                  modifier = Modifier.size(24.dp),
+                  modifier = Modifier.size(20.dp),
                   tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
               }

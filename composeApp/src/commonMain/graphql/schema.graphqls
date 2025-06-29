@@ -1598,6 +1598,11 @@ type FamilyConnection {
   edges: [FamilyEdge!]!
 
   pageInfo: PageInfo!
+
+  """
+  The total number of records matching the `filter` criteria
+  """
+  totalCount: Int!
 }
 
 type FamilyDeleteResponse {
@@ -1702,6 +1707,11 @@ type FamilyMemberConnection {
   edges: [FamilyMemberEdge!]!
 
   pageInfo: PageInfo!
+
+  """
+  The total number of records matching the `filter` criteria
+  """
+  totalCount: Int!
 }
 
 type FamilyMemberDeleteResponse {

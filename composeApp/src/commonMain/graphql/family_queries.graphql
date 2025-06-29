@@ -235,3 +235,27 @@ query GetAllFamilyMemberIds {
     }
   }
 }
+
+# Count queries
+# Get total count of families
+query GetFamiliesCount {
+  familyCollection {
+    totalCount
+  }
+}
+
+# Get total count of family members
+query GetFamilyMembersCount {
+  familyMemberCollection {
+    totalCount
+  }
+}
+
+query GetTotalFamilyAndFamilyMemberCount {
+  familyCollection {
+    totalCount
+  }
+  familyMemberCollection {
+    totalCount
+  }
+}
