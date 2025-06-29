@@ -37,7 +37,10 @@ fun RootNavGraph(navController: NavHostController) {
           showDetailedAboutUs = { organisationId ->
             navController.navigate(Screen.AboutUsDetails(organisationId))
           },
-          viewModel = viewModel
+          viewModel = viewModel,
+          navigateToScreen = { screen ->
+            navController.navigate(screen)
+          }
         )
       }
       composable<Screen.AboutUsDetails> {
@@ -132,11 +135,15 @@ fun RootNavGraph(navController: NavHostController) {
         BookOrderDetailsScreen(viewModel, id, {})
       }
     }
-    navigation<Screen.AdminSection>(startDestination = Screen.AdminContainer) {
+    navigation<Screen.AdminSection>(startDestination = Screen.AdminContainer(0)) {
       composable<Screen.AdminContainer> {
         val viewModel = koinInject<AdminViewModel>()
         val aryaSamajViewModel = koinInject<org.aryamahasangh.features.admin.data.AryaSamajViewModel>()
         val familyViewModel = koinInject<FamilyViewModel>()
+
+        // Extract the tab id from route
+        val route = it.toRoute<Screen.AdminContainer>()
+        val initialTabIndex = route.id
 
         // Navigate to AboutSection if user logs out
         LaunchedEffect(isLoggedIn) {
@@ -152,6 +159,7 @@ fun RootNavGraph(navController: NavHostController) {
           viewModel = viewModel,
           aryaSamajViewModel = aryaSamajViewModel,
           familyViewModel = familyViewModel,
+          initialTabIndex = initialTabIndex,
           onNavigateToMemberDetail = { memberId ->
             navController.navigate(Screen.MemberDetail(memberId))
           },
@@ -246,7 +254,7 @@ fun RootNavGraph(navController: NavHostController) {
           },
           onFamilyCreated = { familyId ->
             navController.navigate(Screen.FamilyDetail(familyId)) {
-              popUpTo(Screen.AdminContainer)
+              popUpTo(Screen.AdminContainer(0))
             }
           }
         )
@@ -261,7 +269,7 @@ fun RootNavGraph(navController: NavHostController) {
           },
           onFamilyCreated = { familyId ->
             navController.navigate(Screen.FamilyDetail(familyId)) {
-              popUpTo(Screen.AdminContainer)
+              popUpTo(Screen.AdminContainer(0))
             }
           },
           editingFamilyId = familyId

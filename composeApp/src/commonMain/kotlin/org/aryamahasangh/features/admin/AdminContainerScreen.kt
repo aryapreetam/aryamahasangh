@@ -23,6 +23,7 @@ fun AdminContainerScreen(
   viewModel: AdminViewModel,
   aryaSamajViewModel: AryaSamajViewModel,
   familyViewModel: FamilyViewModel, // Add family view model
+  initialTabIndex: Int = 0, // Add initial tab index parameter
   onNavigateToMemberDetail: (String) -> Unit = {},
   onNavigateToAddMember: () -> Unit = {},
   onNavigateToEditMember: (String) -> Unit = {}, // Add edit member navigation
@@ -86,7 +87,7 @@ fun AdminContainerScreen(
   }
 
   Column(modifier = Modifier.fillMaxSize()) {
-    var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
+    var selectedTabIndex by rememberSaveable { mutableIntStateOf(initialTabIndex) }
     val pagerState = rememberPagerState { 4 } // Now showing 2 tabs: members and arya samaj
 
     LaunchedEffect(selectedTabIndex) {

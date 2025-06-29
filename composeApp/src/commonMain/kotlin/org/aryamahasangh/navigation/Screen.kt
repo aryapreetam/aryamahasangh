@@ -117,7 +117,7 @@ sealed class Screen {
   data object AdminSection : Screen()
 
   @Serializable
-  data object AdminContainer : Screen()
+  data class AdminContainer(val id: Int = 0) : Screen()
 
   @Serializable
   data class MemberDetail(val memberId: String) : Screen()
