@@ -12,7 +12,8 @@ data class AryaSamajListItem(
   val name: String,
   val description: String,
   val formattedAddress: String,
-  val memberCount: Int = 0
+  val memberCount: Int = 0,
+  val mediaUrls: List<String> = emptyList()
 )
 
 /**

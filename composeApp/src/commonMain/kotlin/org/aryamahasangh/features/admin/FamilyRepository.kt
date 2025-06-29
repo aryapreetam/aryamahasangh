@@ -5,8 +5,6 @@ import com.apollographql.apollo.api.Optional
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import org.aryamahasangh.*
-import org.aryamahasangh.DeleteFamilyMutation
-import org.aryamahasangh.UpdateFamilyMutation
 import org.aryamahasangh.fragment.FamilyFields
 import org.aryamahasangh.fragment.MemberWithoutFamily
 import org.aryamahasangh.type.FamilyMemberInsertInput
@@ -28,6 +26,9 @@ interface FamilyRepository {
 
   // Family detail
   suspend fun getFamilyDetail(familyId: String): Flow<Result<GetFamilyDetailQuery.Node>>
+
+  // Count methods
+  suspend fun getFamilyAndMembersCount(): Flow<Result<Pair<Int,Int>>>
 
   // Member search for family creation
   suspend fun searchMembersWithoutFamily(
@@ -152,6 +153,42 @@ class FamilyRepositoryImpl(private val apolloClient: ApolloClient) : FamilyRepos
         }
       emit(result)
     }
+  /**
+   * Fetches total family and family member counts from the database via GraphQL.
+   *
+   * Executes [GetTotalFamilyAndFamilyMemberCountQuery] to retrieve the total number of families
+   * and associated family members. Returns a [Result] Flow containing a pair of integers:
+   * (familyCount, memberCount). This function is designed for cross-platform use in Compose Multiplatform
+   * and uses [ApolloClient] to communicate with the backend.
+   *
+   * - The [Result] will be:
+   *   - [Result.Success] with the count pair on successful query execution
+   *   - [Result.Error] with a wrapper containing backend error_code messages (using English message codes)
+   *     when the GraphQL response contains errors or when the query execution fails
+   *   - [Result.Loading] emitted first to indicate query in progress
+   *
+   * This method should be called by the domain layer or ViewModel to handle data state transitions.
+   * Errors should be translated to user-facing messages using client-side localization (Hindi).
+   */
+  override suspend fun getFamilyAndMembersCount(): Flow<Result<Pair<Int,Int>>> =
+    flow {
+      emit(Result.Loading)
+      val result =
+        safeCall {
+          val response =
+            apolloClient.query(
+              GetTotalFamilyAndFamilyMemberCountQuery()
+            ).execute()
+
+          if (response.hasErrors()) {
+            throw Exception(response.errors?.firstOrNull()?.message ?: "Failed to fetch family member count")
+          }
+          Pair(
+          response.data?.familyCollection?.totalCount ?: 0,
+          response.data?.familyMemberCollection?.totalCount ?: 0)
+        }
+      emit(result)
+    }
 
   override suspend fun searchMembersWithoutFamily(
     query: String,
@@ -181,7 +218,8 @@ class FamilyRepositoryImpl(private val apolloClient: ApolloClient) : FamilyRepos
             }?.toSet() ?: emptySet()
 
           // Filter out members who are already in families
-          val allMembers = response.data?.memberNotInFamilyCollection?.edges?.map { it.node.memberWithoutFamily } ?: emptyList()
+          val allMembers =
+            response.data?.memberNotInFamilyCollection?.edges?.map { it.node.memberWithoutFamily } ?: emptyList()
           allMembers.filter { member -> member.id !in existingFamilyMemberIds }
         }
       emit(result)
@@ -216,7 +254,7 @@ class FamilyRepositoryImpl(private val apolloClient: ApolloClient) : FamilyRepos
             ).execute()
 
           if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Failed to fetch addresses")
+            throw Exception("Failed to fetch addresses: ${response.errors?.firstOrNull()?.message}")
           }
 
           response.data?.addressCollection?.edges?.map { it.node } ?: emptyList()

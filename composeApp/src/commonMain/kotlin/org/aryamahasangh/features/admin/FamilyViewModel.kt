@@ -7,15 +7,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import org.aryamahasangh.components.AddressData
-import org.aryamahasangh.components.AryaSamaj
-import org.aryamahasangh.components.FamilyRelation
-import org.aryamahasangh.components.ImagePickerState
-import org.aryamahasangh.components.getActiveImageUrls
+import org.aryamahasangh.components.*
 import org.aryamahasangh.features.activities.Member
-import org.aryamahasangh.features.admin.AddressWithMemberId
-import org.aryamahasangh.features.admin.toComponents
-import org.aryamahasangh.features.admin.toGraphQL
 import org.aryamahasangh.fragment.FamilyFields
 import org.aryamahasangh.util.Result
 import org.aryamahasangh.utils.FileUploadUtils
@@ -25,7 +18,9 @@ data class FamiliesUiState(
   val families: List<FamilyShort> = emptyList(),
   val searchQuery: String = "",
   val searchResults: List<FamilyShort> = emptyList(),
-  val error: String? = null
+  val error: String? = null,
+  val familyCount: Int = 0,
+  val familyMemberCount: Int = 0
 )
 
 data class FamilyDetailUiState(
@@ -786,6 +781,36 @@ class FamilyViewModel(
             _familiesUiState.value =
               _familiesUiState.value.copy(
                 error = "परिवार हटाने में त्रुटि: ${result.message}"
+              )
+          }
+        }
+      }
+    }
+  }
+
+  fun loadFamilyAndFamilyMemberCount() {
+    viewModelScope.launch {
+      _familiesUiState.value = _familiesUiState.value.copy(isLoading = true, error = null)
+      familyRepository.getFamilyAndMembersCount().collect { result ->
+        when (result) {
+          is Result.Loading -> {
+            _familiesUiState.value = _familiesUiState.value.copy(isLoading = true, error = null)
+          }
+
+          is Result.Success -> {
+            val (familyCount, memberCount) = result.data
+            _familiesUiState.value = _familiesUiState.value.copy(
+              isLoading = false,
+              familyCount = familyCount,
+              familyMemberCount = memberCount
+            )
+          }
+
+          is Result.Error -> {
+            _familiesUiState.value =
+              _familiesUiState.value.copy(
+                isLoading = false,
+                error = "Counts लोड करने में त्रुटि: ${result.message}"
               )
           }
         }

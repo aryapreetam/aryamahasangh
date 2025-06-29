@@ -70,7 +70,8 @@ class AryaSamajRepositoryImpl(private val apolloClient: ApolloClient) : AryaSama
               name = aryaSamajFields.name ?: "",
               description = aryaSamajFields.description ?: "",
               formattedAddress = formattedAddress,
-              memberCount = 0
+              memberCount = 0,
+              mediaUrls = aryaSamajFields.mediaUrls?.filterNotNull() ?: emptyList()
             )
           } ?: emptyList()
         }
@@ -500,7 +501,8 @@ class AryaSamajRepositoryImpl(private val apolloClient: ApolloClient) : AryaSama
                 name = aryaSamajFields.name ?: "",
                 description = aryaSamajFields.description ?: "",
                 formattedAddress = formattedAddress,
-                memberCount = 0
+                memberCount = 0,
+                mediaUrls = aryaSamajFields.mediaUrls?.filterNotNull() ?: emptyList()
               )
             } ?: emptyList()
           }
@@ -571,7 +573,8 @@ class AryaSamajRepositoryImpl(private val apolloClient: ApolloClient) : AryaSama
               name = aryaSamajFields.name ?: "",
               description = aryaSamajFields.description ?: "",
               formattedAddress = formattedAddress,
-              memberCount = 0
+              memberCount = 0,
+              mediaUrls = aryaSamajFields.mediaUrls?.filterNotNull() ?: emptyList()
             )
           } ?: emptyList()
         }

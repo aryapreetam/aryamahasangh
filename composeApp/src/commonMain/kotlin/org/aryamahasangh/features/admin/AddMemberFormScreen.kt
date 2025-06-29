@@ -681,8 +681,7 @@ fun AddMemberFormScreen(
         Spacer(modifier = Modifier.height(24.dp))
         Button(
           onClick = { saveMember() },
-          enabled = !uiState.isUpdating,
-          modifier = Modifier.fillMaxWidth()
+          enabled = !uiState.isUpdating
         ) {
           if (uiState.isUpdating) {
             CircularProgressIndicator(
