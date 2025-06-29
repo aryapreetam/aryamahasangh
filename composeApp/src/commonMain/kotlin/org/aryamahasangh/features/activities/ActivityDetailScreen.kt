@@ -616,6 +616,12 @@ fun ActivityDisplay(
           )
         }
       }
+    } else if( activity.hasOverview() ){
+      OverviewSection(
+        activity = activity,
+        isLoggedIn = isLoggedIn,
+        onNavigateToCreateOverview = onNavigateToCreateOverview
+      )
     } else if (isLoggedIn) {
       RegisteredUsers(registeredUsers, activity.capacity)
     }
