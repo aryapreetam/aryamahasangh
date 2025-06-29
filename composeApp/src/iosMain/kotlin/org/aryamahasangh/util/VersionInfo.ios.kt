@@ -14,3 +14,11 @@ actual fun getPlatformVersionName(): String {
 actual fun getPlatformVersionCode(): Int {
   return 1 // Fallback version code for iOS
 }
+
+/**
+ * iOS implementation for getting environment
+ * For iOS, we'll use "dev" as fallback for now
+ */
+actual fun getPlatformEnvironment(): String {
+  return "dev" // Fallback environment for iOS
+}

@@ -15,9 +15,27 @@ object VersionInfo {
   fun getVersionCode(): Int = getPlatformVersionCode()
 
   /**
-   * Get formatted version string with 'v' prefix (e.g., "v0.0.1")
+   * Get the current environment (dev or prod)
    */
-  fun getFormattedVersion(): String = "v${getVersionName()}"
+  fun getEnvironment(): String = getPlatformEnvironment()
+
+  /**
+   * Get version with environment suffix (e.g., "0.0.1-dev" for dev, "0.0.1" for prod)
+   */
+  fun getVersionWithEnvironment(): String {
+    val baseVersion = getVersionName()
+    val environment = getEnvironment()
+    return if (environment == "dev") {
+      "$baseVersion-dev"
+    } else {
+      baseVersion
+    }
+  }
+
+  /**
+   * Get formatted version string with 'v' prefix and environment suffix (e.g., "v0.0.1-dev")
+   */
+  fun getFormattedVersion(): String = "v${getVersionWithEnvironment()}"
 }
 
 /**
@@ -29,3 +47,8 @@ expect fun getPlatformVersionName(): String
  * Platform-specific implementation for getting version code
  */
 expect fun getPlatformVersionCode(): Int
+
+/**
+ * Platform-specific implementation for getting environment
+ */
+expect fun getPlatformEnvironment(): String
