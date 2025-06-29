@@ -319,7 +319,7 @@ private fun QuickLinkGroup(
           verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
           Text(
-            text = "🔹 ${subSection.title}",
+            text = "• ${subSection.title}",
             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Medium),
             color = MaterialTheme.colorScheme.secondary,
             modifier = Modifier.padding(start = 8.dp)
