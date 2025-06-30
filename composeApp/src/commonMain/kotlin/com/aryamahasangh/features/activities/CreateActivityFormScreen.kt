@@ -213,7 +213,7 @@ fun MultiSelectDropdown(
         onValueChange = { },
         label = { Text(label) },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-        modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
+        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
         isError = isError,
         supportingText = supportingText
       )
@@ -363,7 +363,7 @@ fun ContactPeopleDropdown(
         onValueChange = { },
         label = { Text(label) },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-        modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable, true),
+        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
         isError = isError,
         supportingText = supportingText
       )

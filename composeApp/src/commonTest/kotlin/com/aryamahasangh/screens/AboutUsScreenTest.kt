@@ -9,6 +9,7 @@ import com.aryamahasangh.util.Result
 import com.aryamahasangh.viewmodel.AboutUsViewModel
 import kotlinx.coroutines.flow.flow
 import kotlin.test.Test
+import kotlin.test.assertTrue
 
 /**
  * Common UI test for verifying the About Us screen across all platforms
@@ -69,7 +70,7 @@ class AboutUsScreenTest {
       onNode(hasClickAction() and hasAnyDescendant(hasText("सनातन धर्म का साक्षात् प्रतिनिधि", substring = true)))
         .performClick()
 
-      kotlin.test.assertTrue(navigationTriggered, "Navigation to organisation details was not triggered")
+      assertTrue(navigationTriggered, "Navigation to organisation details was not triggered")
     }
 }
 

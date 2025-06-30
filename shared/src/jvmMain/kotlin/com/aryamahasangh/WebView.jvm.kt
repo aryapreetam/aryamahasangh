@@ -9,6 +9,7 @@ import androidx.compose.ui.awt.SwingPanel
 import javafx.embed.swing.JFXPanel
 import javafx.scene.Scene
 import javafx.scene.web.WebView
+import java.awt.BorderLayout
 import javax.swing.JPanel
 import javax.swing.SwingUtilities
 import javafx.application.Platform as JavaFXPlatform
@@ -37,8 +38,8 @@ actual fun WebView(
   Box(modifier = Modifier.fillMaxSize()) {
     SwingPanel(
       factory = {
-        val panel = JPanel(java.awt.BorderLayout()).apply {
-          add(jfxPanel, java.awt.BorderLayout.CENTER)
+        val panel = JPanel(BorderLayout()).apply {
+          add(jfxPanel, BorderLayout.CENTER)
         }
 
         JavaFXPlatform.runLater {

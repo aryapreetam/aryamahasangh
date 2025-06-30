@@ -8,13 +8,14 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import kotlinx.coroutines.flow.flow
 import com.aryamahasangh.features.organisations.OrganisationDetail
 import com.aryamahasangh.navigation.LocalSnackbarHostState
 import com.aryamahasangh.repository.AboutUsRepository
+import com.aryamahasangh.repository.OrganisationName
 import com.aryamahasangh.test.UiTest
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.viewmodel.AboutUsViewModel
+import kotlinx.coroutines.flow.flow
 import org.junit.Rule
 import org.junit.Test
 import org.koin.compose.KoinApplication
@@ -119,6 +120,19 @@ class AndroidFakeAboutUsRepository : AboutUsRepository {
             description = "Test description",
             logo = null,
             members = emptyList()
+          )
+        )
+      )
+    }
+
+  override fun getOrganisationNames() =
+    flow {
+      emit(
+        Result.Success(
+          listOf(
+            OrganisationName(id = "test-org-1", name = "Test Organisation 1"),
+            OrganisationName(id = "test-org-2", name = "Test Organisation 2"),
+            OrganisationName(id = "test-org-3", name = "Test Organisation 3")
           )
         )
       )
