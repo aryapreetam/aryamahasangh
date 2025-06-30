@@ -47,7 +47,7 @@ kotlin {
 
 compose.desktop {
   application {
-    mainClass = "org.aryamahasangh.gallery.MainKt"
+    mainClass = "com.aryamahasangh.gallery.MainKt"
 
     nativeDistributions {
       targetFormats(
@@ -62,5 +62,5 @@ compose.desktop {
 }
 
 tasks.withType<ComposeHotRun>().configureEach {
-  mainClass.set("org.aryamahasangh.gallery.MainKt")
+  mainClass.set("com.aryamahasangh.gallery.MainKt")
 }

@@ -1,10 +1,10 @@
-package org.aryamahasangh.gallery
+package com.aryamahasangh.gallery
 
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import org.aryamahasangh.gallery.Gallery
+import com.aryamahasangh.gallery.Gallery
 
 fun main() = application {
   Window(

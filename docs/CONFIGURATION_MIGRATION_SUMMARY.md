@@ -85,7 +85,7 @@ val url = config.supabaseUrl
 ### After (Simple)
 ```kotlin
 // Single object, all platforms
-import org.aryamahasangh.config.AppConfig
+import com.aryamahasangh.config.AppConfig
 
 // Usage
 val url = AppConfig.supabaseUrl

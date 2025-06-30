@@ -25,7 +25,7 @@ This document outlines the comprehensive refactoring of domain classes in the Co
 - `ActivityUseCase.kt`
 
 **Solution**:
-- Updated imports to use correct repository location: `org.aryamahasangh.features.activities.ActivityRepository`
+- Updated imports to use correct repository location: `com.aryamahasangh.features.activities.ActivityRepository`
 - Aligned with current project structure where repositories are organized by feature
 
 ### 3. Mismatched GraphQL Types
@@ -81,12 +81,12 @@ fun handleException(exception: Throwable): AppError {
 ### ActivityUseCase.kt
 ```kotlin
 // Before: Wrong imports and types
-import org.aryamahasangh.repository.ActivityRepository
-import org.aryamahasangh.OrganisationalActivitiesQuery
+import com.aryamahasangh.repository.ActivityRepository
+import com.aryamahasangh.OrganisationalActivitiesQuery
 
 // After: Correct imports and types
-import org.aryamahasangh.features.activities.ActivityRepository
-import org.aryamahasangh.features.activities.OrganisationalActivityShort
+import com.aryamahasangh.features.activities.ActivityRepository
+import com.aryamahasangh.features.activities.OrganisationalActivityShort
 ```
 
 ### AdmissionUseCase.kt
