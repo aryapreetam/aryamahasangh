@@ -10,9 +10,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import coil3.compose.AsyncImage
 import com.aryamahasangh.features.admin.data.AryaSamajListItem
 import com.aryamahasangh.features.admin.data.AryaSamajViewModel
 import com.aryamahasangh.utils.WithTooltip
@@ -165,6 +168,40 @@ private fun AryaSamajListItem(
       modifier = Modifier.padding(16.dp),
       verticalAlignment = Alignment.Top
     ) {
+      // Arya Samaj Photo
+      val aryaSamajPhoto = aryaSamaj.mediaUrls.firstOrNull()
+      if (aryaSamajPhoto != null) {
+        AsyncImage(
+          model = aryaSamajPhoto,
+          contentDescription = "आर्य समाज फोटो",
+          modifier = Modifier
+            .size(60.dp)
+            .clip(RoundedCornerShape(8.dp)),
+          contentScale = ContentScale.Crop
+        )
+      } else {
+        // Placeholder for arya samaj photo
+        Surface(
+          modifier = Modifier.size(60.dp),
+          shape = RoundedCornerShape(8.dp),
+          color = MaterialTheme.colorScheme.surfaceVariant
+        ) {
+          Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.fillMaxSize()
+          ) {
+            Icon(
+              Icons.Default.TempleHindu,
+              contentDescription = "आर्य समाज फोटो",
+              modifier = Modifier.size(36.dp),
+              tint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+          }
+        }
+      }
+
+      Spacer(modifier = Modifier.width(12.dp))
+
       Column(
         modifier = Modifier.weight(1f)
       ) {

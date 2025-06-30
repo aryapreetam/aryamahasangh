@@ -217,7 +217,6 @@ private fun FamilyItem(
     ) {
       // Family Photo (square shape)
       val familyPhoto = family.photos.firstOrNull()
-      println(familyPhoto)
       if (familyPhoto != null) {
         AsyncImage(
           model = familyPhoto,

@@ -19,8 +19,11 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowWidthSizeClass
+import aryamahasangh.composeapp.generated.resources.Res
+import aryamahasangh.composeapp.generated.resources.error_profile_image
 import coil3.compose.AsyncImage
 import com.aryamahasangh.navigation.LocalSnackbarHostState
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
@@ -246,13 +249,14 @@ private fun MemberItem(
     ) {
       // Profile Image
       AsyncImage(
-        model = member.profileImage.ifEmpty { "https://via.placeholder.com/60" },
+        model = member.profileImage,
         contentDescription = "Profile Image",
         modifier =
           Modifier
             .size(60.dp)
             .clip(CircleShape),
-        contentScale = ContentScale.Crop
+        contentScale = ContentScale.Crop,
+        error = painterResource(Res.drawable.error_profile_image)
       )
 
       Spacer(modifier = Modifier.width(12.dp))

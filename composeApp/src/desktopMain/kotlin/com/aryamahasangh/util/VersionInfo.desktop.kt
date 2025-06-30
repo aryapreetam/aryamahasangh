@@ -1,5 +1,7 @@
 package com.aryamahasangh.util
 
+import java.util.Properties
+
 /**
  * Desktop implementation for getting version name
  * For desktop, we'll use a fallback version or try to read from resources
@@ -9,7 +11,7 @@ actual fun getPlatformVersionName(): String {
     // Try to read version from resources if available
     val resourceStream = object {}.javaClass.getResourceAsStream("/version.properties")
     if (resourceStream != null) {
-      val properties = java.util.Properties()
+      val properties = Properties()
       properties.load(resourceStream)
       properties.getProperty("version.name", "0.0.1")
     } else {
@@ -28,7 +30,7 @@ actual fun getPlatformVersionCode(): Int {
     // Try to read version code from resources if available
     val resourceStream = object {}.javaClass.getResourceAsStream("/version.properties")
     if (resourceStream != null) {
-      val properties = java.util.Properties()
+      val properties = Properties()
       properties.load(resourceStream)
       properties.getProperty("version.code", "1").toIntOrNull() ?: 1
     } else {
@@ -48,7 +50,7 @@ actual fun getPlatformEnvironment(): String {
     // Try to read environment from resources if available
     val resourceStream = object {}.javaClass.getResourceAsStream("/version.properties")
     if (resourceStream != null) {
-      val properties = java.util.Properties()
+      val properties = Properties()
       properties.load(resourceStream)
       properties.getProperty("environment", "dev")
     } else {
