@@ -39,7 +39,7 @@ val supabaseUrl = secrets.getProperty("$environment.supabase.url", "")
 val supabaseKey = secrets.getProperty("$environment.supabase.key", "")
 
 // Apply the test reporting configuration
-apply(from = "$rootDir/buildSrc/src/main/kotlin/TestReporting.gradle.kts")
+apply(from = "$rootDir/composeApp/testreporting.gradle.kts")
 
 kotlin {
 

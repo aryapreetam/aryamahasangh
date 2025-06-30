@@ -2709,8 +2709,6 @@ The root type for creating and mutating data
 type Mutation {
   deleteAryaSamaj(pAryaSamajId: String!): JSON
 
-  deleteFamily(pFamilyId: String!): JSON
-
   """
   Deletes zero or more records from the `Activities` collection
   """
@@ -2805,7 +2803,7 @@ type Mutation {
 
   insertAryaSamajDetails(pSamajName: String!, pSamajDescription: String!, pBasicAddress: String!, pState: String!, pDistrict: String!, pSamajMediaUrls: [String], pPincode: String, pLatitude: Float, pLongitude: Float, pVidhansabha: String, pMemberId: String, pPost: String = "प्रधान", pPriority: Int = 1): JSON
 
-  insertFamilyDetails(pFamilyName: String!, pHeadMemberId: String!, pAddressId: String, pAryaSamajId: String, pPhotos: [String]): JSON
+  insertFamilyDetails(pName: String!, pAryaSamajId: String!, pPhotos: [String]!, pFamilyMembers: JSON!, pAddressId: String, pBasicAddress: String, pState: String, pDistrict: String, pPincode: String, pVidhansabha: String, pLatitude: Float, pLongitude: Float): JSON
 
   """
   Adds one or more `Activities` records to the collection
@@ -2940,8 +2938,6 @@ type Mutation {
   Updates zero or more records in the `Family` collection
   """
   updateFamilyCollection("Fields that are set will be updated for all records matching the `filter`" set: FamilyUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: FamilyFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): FamilyUpdateResponse!
-
-  updateFamilyDetails(pFamilyId: String!, pFamilyName: String, pAddressId: String, pAryaSamajId: String, pPhotos: [String]): JSON
 
   """
   Updates zero or more records in the `FamilyMember` collection

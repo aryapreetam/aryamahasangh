@@ -1,41 +1,29 @@
-# Family CRUD Mutations using the comprehensive Supabase functions
-# These mutations call the custom functions that provide full business logic
-
-# Create Family with comprehensive details
 mutation InsertFamilyDetails(
-  $familyName: String!,
-  $headMemberId: String!,
-  $addressId: String = null,
-  $aryaSamajId: String = null,
-  $photos: [String] = null
-) {
+  $name: String!
+  $aryaSamajId: String!
+  $photos: [String!]!
+  $familyMembers: JSON!
+  $addressId: String
+  $basicAddress: String
+  $state: String
+  $district: String
+  $pincode: String
+  $vidhansabha: String
+  $latitude: Float
+  $longitude: Float
+){
   insertFamilyDetails(
-    pFamilyName: $familyName,
-    pHeadMemberId: $headMemberId,
-    pAddressId: $addressId,
+    pName: $name,
     pAryaSamajId: $aryaSamajId,
-    pPhotos: $photos
-  )
-}
-
-# Update Family details
-mutation UpdateFamilyDetails(
-  $familyId: String!,
-  $familyName: String = null,
-  $addressId: String = null,
-  $aryaSamajId: String = null,
-  $photos: [String] = null
-) {
-  updateFamilyDetails(
-    pFamilyId: $familyId,
-    pFamilyName: $familyName,
+    pPhotos: $photos,
+    pFamilyMembers: $familyMembers,
     pAddressId: $addressId,
-    pAryaSamajId: $aryaSamajId,
-    pPhotos: $photos
+    pBasicAddress: $basicAddress,
+    pState: $state,
+    pDistrict: $district,
+    pPincode: $pincode,
+    pVidhansabha: $vidhansabha,
+    pLatitude: $latitude,
+    pLongitude: $longitude
   )
-}
-
-# Delete Family (comprehensive deletion with cleanup)
-mutation DeleteFamilyComprehensive($familyId: String!) {
-  deleteFamily(pFamilyId: $familyId)
 }

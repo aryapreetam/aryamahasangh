@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import org.aryamahasangh.components.*
 import org.aryamahasangh.features.activities.Member
 import org.aryamahasangh.fragment.FamilyFields
@@ -29,6 +30,7 @@ data class FamilyDetailUiState(
   val error: String? = null
 )
 
+@Serializable
 data class FamilyMemberForCreation(
   val member: Member,
   val isHead: Boolean = false,
@@ -607,82 +609,7 @@ class FamilyViewModel(
         // Add existing image URLs
         imageUrls.addAll(currentState.imagePickerState.getActiveImageUrls())
 
-        // Step 2: Create or update address
-        var addressId: String? = null
-
-        if (currentState.selectedAddressIndex == null || currentState.selectedAddressIndex == -1) {
-          // Create new address
-          adminRepository.createAddress(
-            basicAddress = currentState.addressData.address,
-            state = currentState.addressData.state,
-            district = currentState.addressData.district,
-            pincode = currentState.addressData.pincode,
-            latitude = null, // AddressData doesn't have location field
-            longitude = null,
-            vidhansabha = currentState.addressData.vidhansabha.takeIf { it.isNotBlank() }
-          ).collect { result ->
-            when (result) {
-              is Result.Success -> addressId = result.data
-              is Result.Error -> {
-                _createFamilyUiState.value =
-                  _createFamilyUiState.value.copy(
-                    isSubmitting = false,
-                    error = "पता बनाने में त्रुटि: ${result.message}"
-                  )
-                return@collect
-              }
-
-              is Result.Loading -> {}
-            }
-          }
-        } else {
-          // Use existing address
-          val selectedAddress = currentState.memberAddresses.getOrNull(currentState.selectedAddressIndex)
-          addressId = selectedAddress?.addressId
-        }
-
-        if (addressId == null) {
-          _createFamilyUiState.value =
-            _createFamilyUiState.value.copy(
-              isSubmitting = false,
-              error = "पता आईडी प्राप्त नहीं हुई"
-            )
-          return@launch
-        }
-
-        // Step 3: Create family
-        var familyId: String? = null
-        familyRepository.createFamily(
-          name = currentState.familyName,
-          addressId = addressId,
-          aryaSamajId = currentState.selectedAryaSamaj?.id,
-          photos = imageUrls
-        ).collect { result ->
-          when (result) {
-            is Result.Success -> familyId = result.data
-            is Result.Error -> {
-              _createFamilyUiState.value =
-                _createFamilyUiState.value.copy(
-                  isSubmitting = false,
-                  error = "परिवार बनाने में त्रुटि: ${result.message}"
-                )
-              return@collect
-            }
-
-            is Result.Loading -> {}
-          }
-        }
-
-        if (familyId == null) {
-          _createFamilyUiState.value =
-            _createFamilyUiState.value.copy(
-              isSubmitting = false,
-              error = "परिवार आईडी प्राप्त नहीं हुई"
-            )
-          return@launch
-        }
-
-        // Step 4: Add family members
+        // Step 2: Prepare family members data
         val familyMemberData =
           currentState.familyMembers.map { familyMember ->
             FamilyMemberData(
@@ -692,58 +619,67 @@ class FamilyViewModel(
             )
           }
 
-        val finalAddressId = addressId ?: return@launch
-        familyRepository.addMembersToFamily(familyId = familyId, members = familyMemberData)
-          .collect { result ->
-            when (result) {
-              is Result.Success -> {
-                // Step 5: Update member addresses if needed
-                if (currentState.selectedAddressIndex != null && currentState.selectedAddressIndex >= 0) {
-                  val memberIds = currentState.familyMembers.map { it.member.id }
-                  familyRepository.updateMemberAddresses(memberIds, finalAddressId).collect { updateResult ->
-                    when (updateResult) {
-                      is Result.Success -> {
-                        _createFamilyUiState.value =
-                          _createFamilyUiState.value.copy(
-                            isSubmitting = false,
-                            submitSuccess = true
-                          )
-                      }
+        // Step 3: Determine address parameters
+        var addressId: String? = null
+        var basicAddress: String? = null
+        var state: String? = null
+        var district: String? = null
+        var pincode: String? = null
+        var vidhansabha: String? = null
+        var latitude: Double? = null
+        var longitude: Double? = null
 
-                      is Result.Error -> {
-                        // Family was created successfully, but address update failed
-                        // Still consider this a success
-                        _createFamilyUiState.value =
-                          _createFamilyUiState.value.copy(
-                            isSubmitting = false,
-                            submitSuccess = true,
-                            error = "परिवार बनाया गया लेकिन सदस्य पते अपडेट नहीं हुए: ${updateResult.message}"
-                          )
-                      }
+        if (currentState.selectedAddressIndex != null && currentState.selectedAddressIndex >= 0) {
+          // Use existing address
+          val selectedAddress = currentState.memberAddresses.getOrNull(currentState.selectedAddressIndex)
+          addressId = selectedAddress?.addressId
+        } else {
+          // Use new address fields
+          basicAddress = currentState.addressData.address.takeIf { it.isNotBlank() }
+          state = currentState.addressData.state.takeIf { it.isNotBlank() }
+          district = currentState.addressData.district.takeIf { it.isNotBlank() }
+          pincode = currentState.addressData.pincode.takeIf { it.isNotBlank() }
+          vidhansabha = currentState.addressData.vidhansabha.takeIf { it.isNotBlank() }
+          latitude = currentState.addressData.location?.latitude
+          longitude = currentState.addressData.location?.longitude
+        }
 
-                      is Result.Loading -> {}
-                    }
-                  }
-                } else {
-                  _createFamilyUiState.value =
-                    _createFamilyUiState.value.copy(
-                      isSubmitting = false,
-                      submitSuccess = true
-                    )
-                }
-              }
-
-              is Result.Error -> {
-                _createFamilyUiState.value =
-                  _createFamilyUiState.value.copy(
-                    isSubmitting = false,
-                    error = "पारिवारिक सदस्य जोड़ने में त्रुटि: ${result.message}"
-                  )
-              }
-
-              is Result.Loading -> {}
+        // Step 4: Create family using the new repository method
+        familyRepository.createFamily(
+          name = currentState.familyName,
+          aryaSamajId = currentState.selectedAryaSamaj?.id ?: throw Exception("आर्य समाज चुनना आवश्यक है"),
+          photos = imageUrls,
+          familyMembers = familyMemberData,
+          addressId = addressId,
+          basicAddress = basicAddress,
+          state = state,
+          district = district,
+          pincode = pincode,
+          vidhansabha = vidhansabha,
+          latitude = latitude,
+          longitude = longitude
+        ).collect { result ->
+          when (result) {
+            is Result.Success -> {
+              _createFamilyUiState.value =
+                _createFamilyUiState.value.copy(
+                  isSubmitting = false,
+                  submitSuccess = true,
+                  familyId = result.data
+                )
             }
+
+            is Result.Error -> {
+              _createFamilyUiState.value =
+                _createFamilyUiState.value.copy(
+                  isSubmitting = false,
+                  error = "परिवार बनाने में त्रुटि: ${result.message}"
+                )
+            }
+
+            is Result.Loading -> {}
           }
+        }
       } catch (e: Exception) {
         _createFamilyUiState.value =
           _createFamilyUiState.value.copy(

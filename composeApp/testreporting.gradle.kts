@@ -173,10 +173,11 @@ fun checkAndroidDevice(): Boolean {
 
 // Test report generation function
 fun generateConsolidatedTestReport() {
-  val reportDir = file("${buildDir}/reports/allUiTests")
+  val buildDir = project.layout.buildDirectory.get().asFile
+  val reportDir = buildDir.resolve("reports/allUiTests")
   reportDir.mkdirs()
-  val htmlReport = File(reportDir, "index.html")
-  val debugReport = File(reportDir, "debug.txt")
+  val htmlReport = reportDir.resolve("index.html")
+  val debugReport = reportDir.resolve("debug.txt")
 
   val testResults = mutableMapOf<String, TestPlatformResult>()
   val debugInfo = StringBuilder()
@@ -259,10 +260,10 @@ fun parseTestResults(testDir: File, platform: String): TestPlatformResult {
   val xmlFiles = testDir.walkTopDown()
     .filter {
       it.isFile && it.name.endsWith(".xml") && (
-          it.name.startsWith("TEST-") ||
-              it.name.contains("test", ignoreCase = true) ||
-              it.parent.contains("connected", ignoreCase = true)
-          )
+        it.name.startsWith("TEST-") ||
+          it.name.contains("test", ignoreCase = true) ||
+          it.parent.contains("connected", ignoreCase = true)
+        )
     }
     .toList()
 

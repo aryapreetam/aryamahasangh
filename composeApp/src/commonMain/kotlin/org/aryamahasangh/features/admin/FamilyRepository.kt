@@ -4,6 +4,8 @@ import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import org.aryamahasangh.*
 import org.aryamahasangh.fragment.FamilyFields
 import org.aryamahasangh.fragment.MemberWithoutFamily
@@ -11,6 +13,13 @@ import org.aryamahasangh.type.FamilyMemberInsertInput
 import org.aryamahasangh.type.FamilyRelation
 import org.aryamahasangh.util.Result
 import org.aryamahasangh.util.safeCall
+
+@Serializable
+data class FamilyMemberJson(
+  val member_id: String,
+  val is_head: Boolean,
+  val relation_to_head: String
+)
 
 interface FamilyRepository {
   // Family listing and search
@@ -44,17 +53,25 @@ interface FamilyRepository {
   // Family creation and updates
   suspend fun createFamily(
     name: String,
-    addressId: String?,
-    aryaSamajId: String?,
-    photos: List<String>
+    aryaSamajId: String,
+    photos: List<String> = emptyList(),
+    familyMembers: List<FamilyMemberData>,
+    addressId: String? = null,
+    basicAddress: String? = null,
+    state: String? = null,
+    district: String? = null,
+    pincode: String? = null,
+    vidhansabha: String? = null,
+    latitude: Double? = null,
+    longitude: Double? = null
   ): Flow<Result<String>>
 
   suspend fun updateFamily(
     familyId: String,
     name: String,
-    addressId: String?,
-    aryaSamajId: String?,
-    photos: List<String>
+    addressId: String? = null,
+    aryaSamajId: String? = null,
+    photos: List<String> = emptyList()
   ): Flow<Result<Boolean>>
 
   suspend fun addMembersToFamily(
@@ -74,7 +91,7 @@ interface FamilyRepository {
 data class FamilyMemberData(
   val memberId: String,
   val isHead: Boolean,
-  val relationToHead: FamilyRelation?
+  val relationToHead: FamilyRelation? = null
 )
 
 class FamilyRepositoryImpl(private val apolloClient: ApolloClient) : FamilyRepository {
@@ -264,34 +281,98 @@ class FamilyRepositoryImpl(private val apolloClient: ApolloClient) : FamilyRepos
 
   override suspend fun createFamily(
     name: String,
+    aryaSamajId: String,
+    photos: List<String>,
+    familyMembers: List<FamilyMemberData>,
     addressId: String?,
-    aryaSamajId: String?,
-    photos: List<String>
+    basicAddress: String?,
+    state: String?,
+    district: String?,
+    pincode: String?,
+    vidhansabha: String?,
+    latitude: Double?,
+    longitude: Double?
   ): Flow<Result<String>> =
     flow {
       emit(Result.Loading)
       val result =
         safeCall {
+          // Convert family members to JSON format expected by the function
+          val familyMembersJson = familyMembers.map { memberData ->
+            FamilyMemberJson(
+              member_id = memberData.memberId,
+              is_head = memberData.isHead,
+              relation_to_head = memberData.relationToHead?.name ?: "SELF"
+            )
+          }
+
+          val jsonConfig = Json {
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+            isLenient = true
+          }
+          val familyMembersJsonString = jsonConfig.encodeToString(familyMembersJson)
+
           val response =
             apolloClient.mutation(
-              CreateFamilyMutation(
+              InsertFamilyDetailsMutation(
                 name = name,
+                aryaSamajId = aryaSamajId,
+                photos = photos,
+                familyMembers = familyMembersJsonString,
                 addressId = Optional.presentIfNotNull(addressId),
-                aryaSamajId = Optional.presentIfNotNull(aryaSamajId),
-                photos = Optional.present(photos.filterNotNull())
+                basicAddress = Optional.presentIfNotNull(basicAddress),
+                state = Optional.presentIfNotNull(state),
+                district = Optional.presentIfNotNull(district),
+                pincode = Optional.presentIfNotNull(pincode),
+                vidhansabha = Optional.presentIfNotNull(vidhansabha),
+                latitude = Optional.presentIfNotNull(latitude),
+                longitude = Optional.presentIfNotNull(longitude)
               )
             ).execute()
 
           if (response.hasErrors()) {
-            throw Exception("Family creation failed: ${response.errors?.firstOrNull()?.message}")
+            throw Exception(response.errors?.firstOrNull()?.message ?: "Failed to create family")
           }
 
-          val familyId = response.data?.insertIntoFamilyCollection?.records?.firstOrNull()?.id
-          if (familyId == null) {
-            throw Exception("Family creation failed - no ID returned")
+          // Parse the JSON response to extract family_id
+          val responseData = response.data?.insertFamilyDetails
+          if (responseData == null) {
+            throw Exception("No response data received")
           }
 
-          familyId
+          try {
+            val jsonString = responseData.toString()
+            // Parse using the same jsonConfig instance
+            val jsonResponse =
+              jsonConfig.decodeFromString<Map<String, kotlinx.serialization.json.JsonElement>>(jsonString)
+
+            val successElement = jsonResponse["success"]?.toString()
+            val success = successElement?.contains("true") == true
+
+            if (success) {
+              val familyIdElement = jsonResponse["family_id"]?.toString()
+              val familyId =
+                familyIdElement?.removeSurrounding("\"")?.removeSurrounding("JsonPrimitive(")?.removeSurrounding(")")
+              familyId ?: throw Exception("Family created but no family_id returned")
+            } else {
+              val errorCodeElement = jsonResponse["error_code"]?.toString()
+              val errorCode =
+                errorCodeElement?.removeSurrounding("\"")?.removeSurrounding("JsonPrimitive(")?.removeSurrounding(")")
+              throw Exception(errorCode ?: "Failed to create family")
+            }
+          } catch (e: Exception) {
+            // Fallback: treat response as string and try manual parsing
+            val responseString = responseData.toString()
+            if (responseString.contains("\"success\":true") && responseString.contains("\"family_id\"")) {
+              // Extract family_id using regex
+              val familyIdRegex = "\"family_id\"\\s*:\\s*\"([^\"]+)\"".toRegex()
+              val matchResult = familyIdRegex.find(responseString)
+              matchResult?.groupValues?.get(1) ?: throw Exception("Could not extract family_id from response")
+            } else {
+              throw Exception("Failed to create family: ${responseString}")
+            }
+          }
         }
       emit(result)
     }
