@@ -138,7 +138,7 @@ kotlin {
       implementation("io.github.vinceglb:filekit-compose:0.8.8")
 
       // supabase
-      implementation(project.dependencies.platform(libs.supabase.bom)) // 👈 BOM for consistent versions
+      implementation(project.dependencies.platform(libs.supabase.bom)) // 
       implementation(libs.supabase.postgrest)
       implementation(libs.supabase.auth)
       implementation(libs.supabase.realtime)
@@ -196,11 +196,11 @@ kotlin {
 }
 
 android {
-  namespace = "org.aryamahasangh"
+  namespace = "com.aryamahasangh"
   compileSdk = libs.versions.android.compileSdk.get().toInt()
 
   defaultConfig {
-    applicationId = "org.aryamahasangh"
+    applicationId = "com.aryamahasangh"
     minSdk = libs.versions.android.minSdk.get().toInt()
     targetSdk = libs.versions.android.targetSdk.get().toInt()
 
@@ -265,11 +265,11 @@ dependencies {
 
 compose.desktop {
   application {
-    mainClass = "org.aryamahasangh.MainKt"
+    mainClass = "com.aryamahasangh.MainKt"
 
     nativeDistributions {
       targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
-      packageName = "org.aryamahasangh"
+      packageName = "com.aryamahasangh"
       packageVersion = "1.0.0"
 
       linux {
@@ -280,16 +280,16 @@ compose.desktop {
 }
 
 // tasks.register<ComposeHotRun>("runHot") {
-//  mainClass.set("org.aryamahasangh.MainKt")
+//  mainClass.set("com.aryamahasangh.MainKt")
 // }
 
 tasks.withType<ComposeHotRun>().configureEach {
-  mainClass.set("org.aryamahasangh.MainKt")
+  mainClass.set("com.aryamahasangh.MainKt")
 }
 
 apollo {
   service("service") {
-    packageName.set("org.aryamahasangh")
+    packageName.set("com.aryamahasangh")
     mapScalar("Datetime", "kotlinx.datetime.Instant")
     mapScalar("Date", "kotlinx.datetime.LocalDate")
     // If you're using adapters, you can also set this

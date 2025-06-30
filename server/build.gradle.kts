@@ -1,14 +1,16 @@
+import jdk.tools.jlink.resources.plugins
+
 plugins {
-    alias(libs.plugins.kotlinJvm)
-    alias(libs.plugins.ktor)
-    alias(libs.plugins.kotlinx.serialization)
-    application
+  alias(libs.plugins.kotlinJvm)
+  alias(libs.plugins.ktor)
+  alias(libs.plugins.kotlinx.serialization)
+  application
 }
 
-group = "org.aryamahasangh"
+group = "com.aryamahasangh"
 version = "1.0.0"
 application {
-    mainClass.set("org.aryamahasangh.ApplicationKt")
+  mainClass.set("com.aryamahasangh.ApplicationKt")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=${extra["io.ktor.development"] ?: "false"}")
 }
 

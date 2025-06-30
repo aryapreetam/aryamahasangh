@@ -98,7 +98,7 @@ export SERVER_URL=https://your-production-server.com
 ## Usage in Code
 
 ```kotlin
-import org.aryamahasangh.config.AppConfig
+import com.aryamahasangh.config.AppConfig
 
 // Configuration is loaded automatically
 val supabaseUrl = AppConfig.supabaseUrl
@@ -154,10 +154,10 @@ If you're migrating from platform-specific config files:
 2. **Update imports**:
    ```kotlin
    // Old (platform-specific)
-   import org.aryamahasangh.config.getAppConfig
+   import com.aryamahasangh.config.getAppConfig
 
    // New (unified)
-   import org.aryamahasangh.config.AppConfig
+   import com.aryamahasangh.config.AppConfig
    ```
 
 3. **Update usage**:
