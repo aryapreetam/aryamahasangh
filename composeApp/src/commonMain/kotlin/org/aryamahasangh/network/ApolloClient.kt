@@ -97,8 +97,8 @@ class LoggingApolloInterceptor : ApolloInterceptor {
     chain: ApolloInterceptorChain
   ): Flow<ApolloResponse<D>> {
     return chain.proceed(request).onEach {
-       //println("Request: ${request.operation}")
-       //println("Response ${it.data}")
+       println("Request: ${request.operation}")
+       println("Response ${it.data}")
     }
   }
 }

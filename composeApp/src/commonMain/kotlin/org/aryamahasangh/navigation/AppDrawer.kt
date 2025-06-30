@@ -479,27 +479,7 @@ fun MainContent(
         navigationIcon = {
           val currentScreen = currentDestination?.substringAfterLast(".")
           val shouldShowBack =
-            listOf(
-              "AboutUsDetails",
-              "ActivityDetails",
-              "EditActivity",
-              "OrgDetails",
-              "NewOrganisationForm",
-              "VideoDetails",
-              "AdmissionForm",
-              "BookOrderDetails",
-              "AryaNirmanRegistrationForm",
-              "MemberDetail",
-              "AddMemberForm",
-              "EditMemberForm",
-              "AddAryaSamajForm",
-              "AryaSamajDetail",
-              "CreateFamilyForm",
-              "EditFamilyForm",
-              "FamilyDetail"
-            ).any {
-              currentScreen?.startsWith(it) == true
-            }
+            shouldShowBackButtonFor(currentScreen)
           if (shouldShowBack) {
             val backHandler = LocalBackHandler.current
             IconButton(onClick = {
@@ -741,4 +721,27 @@ fun MainContent(
       }
     )
   }
+}
+
+private fun shouldShowBackButtonFor(currentScreen: String?): Boolean = listOf(
+  "AboutUsDetails",
+  "ActivityDetails",
+  "EditActivity",
+  "OrgDetails",
+  "NewOrganisationForm",
+  "VideoDetails",
+  "AdmissionForm",
+  "BookOrderDetails",
+  "AryaNirmanRegistrationForm",
+  "MemberDetail",
+  "AddMemberForm",
+  "EditMemberForm",
+  "AddAryaSamajForm",
+  "EditAryaSamajForm",
+  "AryaSamajDetail",
+  "CreateFamilyForm",
+  "EditFamilyForm",
+  "FamilyDetail"
+).any {
+  currentScreen?.startsWith(it) == true
 }

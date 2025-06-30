@@ -7,7 +7,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -24,13 +25,11 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import kotlinx.datetime.*
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import org.aryamahasangh.components.*
-import org.aryamahasangh.components.MembersChoiceType
-import org.aryamahasangh.components.MembersComponent
-import org.aryamahasangh.components.MembersConfig
-import org.aryamahasangh.components.MembersEditMode
-import org.aryamahasangh.components.MembersState
 import org.aryamahasangh.navigation.LocalSnackbarHostState
 import org.aryamahasangh.utils.WithTooltip
 
@@ -59,6 +58,7 @@ fun CreateAryaParivarFormScreen(
 
   // Form validation states
   var familyNameError by rememberSaveable { mutableStateOf<String?>(null) }
+  var aryaSamajError by rememberSaveable { mutableStateOf<String?>(null) }
   var membersError by rememberSaveable { mutableStateOf<String?>(null) }
   var addressError by rememberSaveable { mutableStateOf<String?>(null) }
 
@@ -123,6 +123,14 @@ fun CreateAryaParivarFormScreen(
       isValid = false
     } else {
       familyNameError = null
+    }
+
+    // Validate Arya Samaj selection (now mandatory)
+    if (uiState.selectedAryaSamaj == null) {
+      aryaSamajError = "आर्य समाज चुनना आवश्यक है"
+      isValid = false
+    } else {
+      aryaSamajError = null
     }
 
     // Validate members
@@ -192,20 +200,35 @@ fun CreateAryaParivarFormScreen(
 
       // Arya Samaj Selection
       item {
-        AryaSamajSelector(
-          selectedAryaSamaj = uiState.selectedAryaSamaj,
-          onAryaSamajSelected = viewModel::updateSelectedAryaSamaj,
-          label = "आर्य समाज",
-          modifier = Modifier.width(400.dp),
-          searchAryaSamaj = { query ->
-            // Search implementation would go here
-            emptyList()
-          },
-          allAryaSamaj = uiState.availableAryaSamajs,
-          onTriggerSearch = { query ->
-            // Trigger search implementation
+        Column {
+          AryaSamajSelector(
+            selectedAryaSamaj = uiState.selectedAryaSamaj,
+            onAryaSamajSelected = { aryaSamaj ->
+              viewModel.updateSelectedAryaSamaj(aryaSamaj)
+              aryaSamajError = null
+            },
+            label = "आर्य समाज *",
+            modifier = Modifier.width(400.dp),
+            searchAryaSamaj = { query ->
+              // Search implementation would go here
+              emptyList()
+            },
+            allAryaSamaj = uiState.availableAryaSamajs,
+            onTriggerSearch = { query ->
+              // Trigger search implementation
+            }
+          )
+
+          // Show error message if validation failed
+          aryaSamajError?.let { error ->
+            Text(
+              text = error,
+              color = MaterialTheme.colorScheme.error,
+              style = MaterialTheme.typography.bodySmall,
+              modifier = Modifier.padding(start = 16.dp, top = 4.dp)
+            )
           }
-        )
+        }
       }
 
       // Family Photos
