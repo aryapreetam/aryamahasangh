@@ -169,6 +169,17 @@ query Organisations {
   }
 }
 
+query OrganisationNames {
+  organisationCollection(orderBy: {priority: AscNullsLast}) {
+    edges {
+      node {
+        id
+        name
+      }
+    }
+  }
+}
+
 query OrganisationsAndMembers {
   memberCollection {
     edges {
