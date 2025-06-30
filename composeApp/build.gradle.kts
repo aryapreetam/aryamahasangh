@@ -150,6 +150,9 @@ kotlin {
       implementation(libs.apollo.adapters.core)
       implementation(libs.apollo.adapters.kotlinx.datetime)
 
+      // apollo normalized cache
+      implementation("com.apollographql.apollo:apollo-normalized-cache:4.1.1")
+
       // logging
       api("com.diamondedge:logging:2.0.3")
       // list reorder

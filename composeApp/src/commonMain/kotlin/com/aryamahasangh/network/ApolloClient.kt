@@ -7,10 +7,15 @@ import com.apollographql.apollo.api.ApolloResponse
 import com.apollographql.apollo.api.Operation
 import com.apollographql.apollo.api.http.HttpRequest
 import com.apollographql.apollo.api.http.HttpResponse
+import com.apollographql.apollo.cache.normalized.api.MemoryCacheFactory
+import com.apollographql.apollo.cache.normalized.normalizedCache
 import com.apollographql.apollo.interceptor.ApolloInterceptor
 import com.apollographql.apollo.interceptor.ApolloInterceptorChain
 import com.apollographql.apollo.network.http.HttpInterceptor
 import com.apollographql.apollo.network.http.HttpInterceptorChain
+import com.aryamahasangh.config.AppConfig
+import com.aryamahasangh.type.Date
+import com.aryamahasangh.type.Datetime
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.FlowType
 import io.github.jan.supabase.createSupabaseClient
@@ -24,9 +29,6 @@ import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.serialization.json.Json
-import com.aryamahasangh.config.AppConfig
-import com.aryamahasangh.type.Date
-import com.aryamahasangh.type.Datetime
 
 /**
  * Supabase client configured using the unified configuration system.
@@ -69,6 +71,12 @@ val supabaseClient =
         addCustomScalarAdapter(
           customScalarType = Date.type,
           customScalarAdapter = KotlinxLocalDateAdapter
+        )
+        normalizedCache(
+          normalizedCacheFactory = MemoryCacheFactory(
+            maxSizeBytes = 10 * 1024 * 1024,
+            expireAfterMillis = 5 * 60 * 1000L // ✅ 5 minutes
+          )
         )
       }
     }
