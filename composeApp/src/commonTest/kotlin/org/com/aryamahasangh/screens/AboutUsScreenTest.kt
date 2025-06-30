@@ -1,12 +1,13 @@
 package com.aryamahasangh.screens
 
 import androidx.compose.ui.test.*
-import kotlinx.coroutines.flow.flow
 import com.aryamahasangh.features.organisations.OrganisationDetail
 import com.aryamahasangh.repository.AboutUsRepository
+import com.aryamahasangh.repository.OrganisationName
 import com.aryamahasangh.test.UiTest
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.viewmodel.AboutUsViewModel
+import kotlinx.coroutines.flow.flow
 import kotlin.test.Test
 
 /**
@@ -86,6 +87,19 @@ class FakeAboutUsRepository : AboutUsRepository {
             description = "Test description",
             logo = null,
             members = emptyList()
+          )
+        )
+      )
+    }
+
+  override fun getOrganisationNames() =
+    flow {
+      emit(
+        Result.Success(
+          listOf(
+            OrganisationName(id = "test-org-1", name = "Test Organisation 1"),
+            OrganisationName(id = "test-org-2", name = "Test Organisation 2"),
+            OrganisationName(id = "test-org-3", name = "Test Organisation 3")
           )
         )
       )

@@ -6,6 +6,7 @@ import com.aryamahasangh.domain.error.getUserMessage
 import com.aryamahasangh.domain.error.toAppError
 import com.aryamahasangh.features.organisations.OrganisationDetail
 import com.aryamahasangh.repository.AboutUsRepository
+import com.aryamahasangh.repository.OrganisationName
 import com.aryamahasangh.util.NetworkUtils
 import com.aryamahasangh.util.Result
 
@@ -14,7 +15,9 @@ import com.aryamahasangh.util.Result
  */
 data class AboutUsUiState(
   val organisation: OrganisationDetail? = null,
+  val organisationNames: List<OrganisationName> = emptyList(),
   val isLoading: Boolean = false,
+  val isLoadingOrganisationNames: Boolean = false,
   val error: String? = null,
   val appError: AppError? = null
 )
@@ -27,6 +30,7 @@ class AboutUsViewModel(
 ) : BaseViewModel<AboutUsUiState>(AboutUsUiState()) {
   init {
     loadOrganisationDetails("आर्य महासंघ")
+    loadOrganisationNames()
   }
 
   /**
@@ -71,6 +75,58 @@ class AboutUsViewModel(
             updateState {
               it.copy(
                 isLoading = false,
+                error = appError.getUserMessage(),
+                appError = appError
+              )
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Load organisation names
+   */
+  fun loadOrganisationNames() {
+    launch {
+      // Clear any previous errors first
+      updateState { it.copy(isLoadingOrganisationNames = true, error = null, appError = null) }
+
+      aboutUsRepository.getOrganisationNames().collect { result ->
+        when (result) {
+          is Result.Loading -> {
+            updateState { it.copy(isLoadingOrganisationNames = true, error = null, appError = null) }
+          }
+          is Result.Success -> {
+            updateState {
+              it.copy(
+                organisationNames = result.data,
+                isLoadingOrganisationNames = false,
+                error = null,
+                appError = null
+              )
+            }
+          }
+          is Result.Error -> {
+            // Enhanced error handling with better network detection
+            val appError =
+              when {
+                NetworkUtils.isLikelyNetworkIssue(result.message, result.exception) ->
+                  AppError.NetworkError.NoConnection
+
+                result.exception != null ->
+                  result.exception.toAppError()
+
+                else ->
+                  AppError.UnknownError(result.message)
+              }
+
+            ErrorHandler.logError(appError, "AboutUsViewModel.loadOrganisationNames")
+
+            updateState {
+              it.copy(
+                isLoadingOrganisationNames = false,
                 error = appError.getUserMessage(),
                 appError = appError
               )
