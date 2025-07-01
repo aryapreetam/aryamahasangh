@@ -6,11 +6,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -88,7 +84,7 @@ fun AryaNirmanHomeScreen(
         modifier = Modifier.fillMaxWidth().height(200.dp),
         contentAlignment = Alignment.Center
       ) {
-        Text("No sessions have been planned!")
+        Text("कोई सत्र नियोजित नहीं है!")
       }
     } else {
       FlowRow(
