@@ -2,6 +2,17 @@ package com.aryamahasangh.features.activities
 
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
+import com.apollographql.apollo.cache.normalized.FetchPolicy
+import com.apollographql.apollo.cache.normalized.cacheInfo
+import com.apollographql.apollo.cache.normalized.fetchPolicy
+import com.apollographql.apollo.cache.normalized.isFromCache
+import com.aryamahasangh.*
+import com.aryamahasangh.fragment.OrganisationalActivityShort
+import com.aryamahasangh.network.supabaseClient
+import com.aryamahasangh.type.ActivitiesInsertInput
+import com.aryamahasangh.type.ActivitiesUpdateInput
+import com.aryamahasangh.util.Result
+import com.aryamahasangh.util.safeCall
 import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.filter.FilterOperation
@@ -12,13 +23,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import com.aryamahasangh.*
-import com.aryamahasangh.fragment.OrganisationalActivityShort
-import com.aryamahasangh.network.supabaseClient
-import com.aryamahasangh.type.ActivitiesInsertInput
-import com.aryamahasangh.type.ActivitiesUpdateInput
-import com.aryamahasangh.util.Result
-import com.aryamahasangh.util.safeCall
 import com.aryamahasangh.type.GenderFilter as ApolloGenderFilter
 
 /**
@@ -33,7 +37,7 @@ interface ActivityRepository {
   /**
    * Get activity details by ID
    */
-  suspend fun getActivityDetail(id: String): Result<OrganisationalActivity>
+  suspend fun getActivityDetail(id: String): Flow<Result<OrganisationalActivity>>
 
   /**
    * Delete an activity by ID
@@ -88,30 +92,54 @@ class ActivityRepositoryImpl(
     flow {
       emit(Result.Loading)
 
-      val result =
-        safeCall {
-          val response = apolloClient.query(OrganisationalActivitiesQuery()).execute()
-          if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+      apolloClient.query(OrganisationalActivitiesQuery())
+        .fetchPolicy(FetchPolicy.CacheAndNetwork)
+        .toFlow()
+        .collect { response ->
+          val cameFromEmptyCache =
+            response.isFromCache && response.cacheInfo?.isCacheHit == false
+          val result = safeCall {
+            if(!cameFromEmptyCache) {
+              if (response.hasErrors()) {
+                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+              }
+            }
+            response.data?.activitiesCollection?.edges?.map { it.node.organisationalActivityShort }
+              ?: emptyList()
           }
-          response.data?.activitiesCollection?.edges?.map { it.node.organisationalActivityShort }
-            ?: emptyList()
+          emit(result)
         }
-
-      emit(result)
     }
 
-  override suspend fun getActivityDetail(id: String): Result<OrganisationalActivity> {
-    return safeCall {
-      val response = apolloClient.query(OrganisationalActivityDetailByIdQuery(id)).execute()
-      if (response.hasErrors()) {
-        throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-      }
-      response.data?.activitiesCollection?.edges?.map {
-        OrganisationalActivity.camelCased(it.node)
-      }[0] ?: throw Exception("Activity not found")
+  override suspend fun getActivityDetail(id: String): Flow<Result<OrganisationalActivity>> =
+    flow {
+      emit(Result.Loading)
+
+      apolloClient.query(OrganisationalActivityDetailByIdQuery(id))
+        .fetchPolicy(FetchPolicy.CacheAndNetwork)
+        .toFlow()
+        .collect { response ->
+          val cameFromEmptyCache =
+            response.isFromCache && response.cacheInfo?.isCacheHit == false
+          val result = safeCall {
+            if(!cameFromEmptyCache) {
+              if (response.hasErrors()) {
+                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+              }
+            }
+            val activities = response.data?.activitiesCollection?.edges?.map {
+              OrganisationalActivity.camelCased(it.node)
+            }
+            if (activities.isNullOrEmpty() && !cameFromEmptyCache) {
+              throw Exception("Activity not found")
+            }
+            activities?.firstOrNull() ?: throw Exception("Activity not found")
+          }
+          if (!cameFromEmptyCache || (result is Result.Success)) {
+            emit(result)
+          }
+        }
     }
-  }
 
   override suspend fun deleteActivity(id: String): Result<Boolean> {
     return safeCall {

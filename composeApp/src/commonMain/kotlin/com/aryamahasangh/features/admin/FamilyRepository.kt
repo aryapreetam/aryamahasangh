@@ -2,10 +2,10 @@ package com.aryamahasangh.features.admin
 
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
+import com.apollographql.apollo.cache.normalized.FetchPolicy
+import com.apollographql.apollo.cache.normalized.cacheInfo
+import com.apollographql.apollo.cache.normalized.fetchPolicy
+import com.apollographql.apollo.cache.normalized.isFromCache
 import com.aryamahasangh.*
 import com.aryamahasangh.fragment.FamilyFields
 import com.aryamahasangh.fragment.MemberWithoutFamily
@@ -13,6 +13,10 @@ import com.aryamahasangh.type.FamilyMemberInsertInput
 import com.aryamahasangh.type.FamilyRelation
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.util.safeCall
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 
 @Serializable
 data class FamilyMemberJson(
@@ -101,25 +105,31 @@ class FamilyRepositoryImpl(private val apolloClient: ApolloClient) : FamilyRepos
   ): Flow<Result<List<FamilyFields>>> =
     flow {
       emit(Result.Loading)
-      val result =
-        safeCall {
-          val response =
-            apolloClient.query(
-              GetFamiliesQuery(
-                first = Optional.present(first),
-                after = Optional.presentIfNotNull(after),
-                filter = Optional.absent(),
-                orderBy = Optional.absent()
-              )
-            ).execute()
 
-          if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+      apolloClient.query(
+        GetFamiliesQuery(
+          first = Optional.present(first),
+          after = Optional.presentIfNotNull(after),
+          filter = Optional.absent(),
+          orderBy = Optional.absent()
+        )
+      )
+        .fetchPolicy(FetchPolicy.CacheAndNetwork)
+        .toFlow()
+        .collect { response ->
+          val cameFromEmptyCache =
+            response.isFromCache && response.cacheInfo?.isCacheHit == false
+          val result = safeCall {
+            if(!cameFromEmptyCache) {
+              if (response.hasErrors()) {
+                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+              }
+            }
+
+            response.data?.familyCollection?.edges?.map { it.node.familyFields } ?: emptyList()
           }
-
-          response.data?.familyCollection?.edges?.map { it.node.familyFields } ?: emptyList()
+          emit(result)
         }
-      emit(result)
     }
 
   override suspend fun searchFamilies(
@@ -150,26 +160,35 @@ class FamilyRepositoryImpl(private val apolloClient: ApolloClient) : FamilyRepos
   override suspend fun getFamilyDetail(familyId: String): Flow<Result<GetFamilyDetailQuery.Node>> =
     flow {
       emit(Result.Loading)
-      val result =
-        safeCall {
-          val response =
-            apolloClient.query(
-              GetFamilyDetailQuery(familyId)
-            ).execute()
 
-          if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+      apolloClient.query(
+        GetFamilyDetailQuery(familyId)
+      )
+        .fetchPolicy(FetchPolicy.CacheAndNetwork)
+        .toFlow()
+        .collect { response ->
+          val cameFromEmptyCache =
+            response.isFromCache && response.cacheInfo?.isCacheHit == false
+          val result = safeCall {
+            if (!cameFromEmptyCache) {
+              if (response.hasErrors()) {
+                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+              }
+            }
+
+            val familyNode = response.data?.familyCollection?.edges?.firstOrNull()?.node
+            if (familyNode == null && !cameFromEmptyCache) {
+              throw Exception("Family not found")
+            }
+
+            familyNode ?: throw Exception("Family not found")
           }
-
-          val familyNode = response.data?.familyCollection?.edges?.firstOrNull()?.node
-          if (familyNode == null) {
-            throw Exception("Family not found")
+          if (!cameFromEmptyCache || (result is Result.Success)) {
+            emit(result)
           }
-
-          familyNode
         }
-      emit(result)
     }
+
   /**
    * Fetches total family and family member counts from the database via GraphQL.
    *

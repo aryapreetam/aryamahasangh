@@ -365,7 +365,7 @@ private fun QuickLinkCard(
         contentAlignment = Alignment.Center
       ) {
         Text(
-          modifier = Modifier.padding(horizontal = 24.dp),
+          modifier = Modifier.padding(horizontal = 12.dp),
           text = item.title,
           style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
           color = cardColor.toTextColor(),

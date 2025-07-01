@@ -1,13 +1,12 @@
 package com.aryamahasangh.domain.usecase
 
+import com.aryamahasangh.domain.error.ErrorHandler
+import com.aryamahasangh.features.activities.ActivityRepository
+import com.aryamahasangh.fragment.OrganisationalActivityShort
+import com.aryamahasangh.util.Result
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
-import com.aryamahasangh.domain.error.ErrorHandler
-import com.aryamahasangh.features.activities.ActivityRepository
-import com.aryamahasangh.features.activities.OrganisationalActivity
-import com.aryamahasangh.fragment.OrganisationalActivityShort
-import com.aryamahasangh.util.Result
 
 /**
  * Use case for getting all activities with additional business logic
@@ -43,18 +42,18 @@ class GetActivitiesUseCase(
 class GetActivityDetailUseCase(
   private val activityRepository: ActivityRepository
 ) {
-  suspend operator fun invoke(id: String): Result<OrganisationalActivity> {
-    return if (id.isBlank()) {
-      Result.Error("Activity ID cannot be empty")
-    } else {
-      try {
-        activityRepository.getActivityDetail(id)
-      } catch (exception: Exception) {
-        val appError = ErrorHandler.handleException(exception)
-        Result.Error(appError.message, exception)
-      }
-    }
-  }
+//  suspend operator fun invoke(id: String): Result<OrganisationalActivity> {
+//    return if (id.isBlank()) {
+//      Result.Error("Activity ID cannot be empty")
+//    } else {
+//      try {
+//        activityRepository.getActivityDetail(id)
+//      } catch (exception: Exception) {
+//        val appError = ErrorHandler.handleException(exception)
+//        Result.Error(appError.message, exception)
+//      }
+//    }
+//  }
 }
 
 /**
