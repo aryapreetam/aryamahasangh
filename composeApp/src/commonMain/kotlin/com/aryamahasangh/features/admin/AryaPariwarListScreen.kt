@@ -13,7 +13,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
@@ -193,6 +199,7 @@ fun AryaPariwarListScreen(
   }
 }
 
+
 @Composable
 private fun FamilyItem(
   family: FamilyShort,
@@ -203,6 +210,23 @@ private fun FamilyItem(
 ) {
   var expanded by remember { mutableStateOf(false) }
   var showDeleteDialog by remember { mutableStateOf(false) }
+
+  // Create a tinted painter for error state
+  val vectorPainter = rememberVectorPainter(Icons.Default.FamilyRestroom)
+  val errorPainter = remember(vectorPainter) {
+    object : Painter() {
+      override val intrinsicSize: Size get() = vectorPainter.intrinsicSize
+
+      override fun DrawScope.onDraw() {
+        with(vectorPainter) {
+          draw(
+            size = size,
+            colorFilter = ColorFilter.tint(Color.Gray)
+          )
+        }
+      }
+    }
+  }
 
   ElevatedCard(
     modifier =
@@ -225,7 +249,9 @@ private fun FamilyItem(
             Modifier
               .size(80.dp)
               .clip(RoundedCornerShape(8.dp)),
-          contentScale = ContentScale.Crop
+          contentScale = ContentScale.Crop,
+          error = errorPainter,
+          fallback = errorPainter
         )
       } else {
         // Placeholder for family photo
