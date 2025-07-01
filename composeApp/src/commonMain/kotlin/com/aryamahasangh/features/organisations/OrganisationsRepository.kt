@@ -2,11 +2,10 @@ package com.aryamahasangh.features.organisations
 
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
-import io.github.jan.supabase.postgrest.from
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import com.apollographql.apollo.cache.normalized.FetchPolicy
+import com.apollographql.apollo.cache.normalized.cacheInfo
+import com.apollographql.apollo.cache.normalized.fetchPolicy
+import com.apollographql.apollo.cache.normalized.isFromCache
 import com.aryamahasangh.*
 import com.aryamahasangh.features.activities.Member
 import com.aryamahasangh.network.supabaseClient
@@ -15,6 +14,11 @@ import com.aryamahasangh.type.OrganisationalMemberInsertInput
 import com.aryamahasangh.type.StringFilter
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.util.safeCall
+import io.github.jan.supabase.postgrest.from
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 /**
  * Repository for handling organisations-related operations
@@ -86,67 +90,84 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
     flow {
       emit(Result.Loading)
 
-      val result =
-        safeCall {
-          val response = apolloClient.query(OrganisationsQuery()).execute()
-          if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+      apolloClient.query(OrganisationsQuery())
+        .fetchPolicy(FetchPolicy.CacheAndNetwork)
+        .toFlow()
+        .collect { response ->
+          val cameFromEmptyCache =
+            response.isFromCache && response.cacheInfo?.isCacheHit == false
+          val result = safeCall {
+            if(!cameFromEmptyCache) {
+              if (response.hasErrors()) {
+                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+              }
+            }
+            response.data?.organisationCollection?.edges?.map {
+              OrganisationWithDescription(id = it.node.id, name = it.node.name!!, description = it.node.description!!)
+            } ?: emptyList()
           }
-          response.data?.organisationCollection?.edges?.map {
-            OrganisationWithDescription(id = it.node.id, name = it.node.name!!, description = it.node.description!!)
-          } ?: emptyList()
+          emit(result)
         }
-
-      emit(result)
     }
 
   override fun getOrganisationById(id: String): Flow<Result<OrganisationDetail>> =
     flow {
       emit(Result.Loading)
 
-      val result =
-        safeCall {
-          val response =
-            apolloClient.query(
-              OrganisationQuery(
-                filter =
-                  Optional.present(
-                    OrganisationFilter(id = Optional.present(StringFilter(eq = Optional.present(id))))
-                  )
-              )
-            ).execute()
-          if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-          }
-          response.data?.organisationCollection?.edges?.map {
-            val node = it.node
-            OrganisationDetail(
-              id = node.id,
-              name = node.name!!,
-              description = node.description!!,
-              logo = node.logo,
-              members =
-                it.node.organisationalMemberCollection?.edges?.map {
-                  val (id, post, priority, _member) = it.node
-                  val member = _member!!
-                  OrganisationalMember(
-                    id = id,
-                    post = post!!,
-                    priority = priority!!,
-                    member =
-                      Member(
-                        id = member.id,
-                        name = member.name!!,
-                        profileImage = member.profileImage ?: "",
-                        phoneNumber = member.phoneNumber ?: ""
-                      )
-                  )
-                }!!
+      apolloClient.query(
+        OrganisationQuery(
+          filter =
+            Optional.present(
+              OrganisationFilter(id = Optional.present(StringFilter(eq = Optional.present(id))))
             )
-          }[0] ?: throw Exception("Organisation not found")
+        )
+      )
+        .fetchPolicy(FetchPolicy.CacheAndNetwork)
+        .toFlow()
+        .collect { response ->
+          val cameFromEmptyCache =
+            response.isFromCache && response.cacheInfo?.isCacheHit == false
+          val result = safeCall {
+            if(!cameFromEmptyCache) {
+              if (response.hasErrors()) {
+                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+              }
+            }
+            val organisations = response.data?.organisationCollection?.edges?.map {
+              val node = it.node
+              OrganisationDetail(
+                id = node.id,
+                name = node.name!!,
+                description = node.description!!,
+                logo = node.logo,
+                members =
+                  it.node.organisationalMemberCollection?.edges?.map {
+                    val (id, post, priority, _member) = it.node
+                    val member = _member!!
+                    OrganisationalMember(
+                      id = id,
+                      post = post!!,
+                      priority = priority!!,
+                      member =
+                        Member(
+                          id = member.id,
+                          name = member.name!!,
+                          profileImage = member.profileImage ?: "",
+                          phoneNumber = member.phoneNumber ?: ""
+                        )
+                    )
+                  }!!
+              )
+            }
+            if (organisations.isNullOrEmpty() && !cameFromEmptyCache) {
+              throw Exception("Organisation not found")
+            }
+            organisations?.firstOrNull() ?: throw Exception("Organisation not found")
+          }
+          if (!cameFromEmptyCache || (result is Result.Success)) {
+            emit(result)
+          }
         }
-
-      emit(result)
     }
 
   override fun updateOrganisationLogo(

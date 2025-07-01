@@ -174,27 +174,36 @@ class ActivitiesViewModel(
       // Start listening for real-time updates
       startListeningForRegistrations(id)
 
-      when (val result = activityRepository.getActivityDetail(id)) {
-        is Result.Success -> {
-          _activityDetailUiState.update {
-            ActivityDetailUiState(
-              activity = result.data,
-              isLoading = false,
-              error = null
-            )
+      // Load activity detail
+      launch {
+        activityRepository.getActivityDetail(id).collect { result ->
+          when (result) {
+            is Result.Success -> {
+              _activityDetailUiState.update {
+                ActivityDetailUiState(
+                  activity = result.data,
+                  isLoading = false,
+                  error = null
+                )
+              }
+            }
+
+            is Result.Error -> {
+              _activityDetailUiState.value =
+                ActivityDetailUiState(
+                  isLoading = false,
+                  error = result.message
+                )
+            }
+
+            is Result.Loading -> {
+              _activityDetailUiState.value =
+                ActivityDetailUiState(
+                  isLoading = true,
+                  error = null
+                )
+            }
           }
-        }
-
-        is Result.Error -> {
-          _activityDetailUiState.value =
-            ActivityDetailUiState(
-              isLoading = false,
-              error = result.message
-            )
-        }
-
-        is Result.Loading -> {
-          // This shouldn't happen with the current implementation
         }
       }
     }

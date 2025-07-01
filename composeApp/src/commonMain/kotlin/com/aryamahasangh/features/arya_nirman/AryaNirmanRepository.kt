@@ -2,6 +2,10 @@ package com.aryamahasangh.features.arya_nirman
 
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
+import com.apollographql.apollo.cache.normalized.FetchPolicy
+import com.apollographql.apollo.cache.normalized.cacheInfo
+import com.apollographql.apollo.cache.normalized.fetchPolicy
+import com.apollographql.apollo.cache.normalized.isFromCache
 import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Count
@@ -37,31 +41,39 @@ class AryaNirmanRepositoryImpl(private val apolloClient: ApolloClient) : AryaNir
   override suspend fun getUpcomingActivities(): Flow<Result<List<UpcomingActivity>>> =
     flow {
       emit(Result.Loading)
-      val result =
-        safeCall {
-          val response = apolloClient.query(UpcomingSatrActivitiesQuery(currentDateTime = Clock.System.now())).execute()
-          if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-          }
-          response.data?.activitiesCollection?.edges?.map { upcomingActivityData ->
-            upcomingActivityData.node.let {
-              UpcomingActivity(
-                id = it.id,
-                name = it.name!!,
-                genderAllowed = it.allowedGender.toDomain(),
-                isFull = (it.satrRegistrationCollection?.edges?.size ?: 0) >= it.capacity!!,
-                startDateTime = it.startDatetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
-                endDateTime = it.endDatetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
-                district = it.district!!,
-                state = it.state!!,
-                latitude = it.latitude!!,
-                longitude = it.longitude!!,
-                capacity = it.capacity
-              )
+
+      apolloClient.query(UpcomingSatrActivitiesQuery(currentDateTime = Clock.System.now()))
+        .fetchPolicy(FetchPolicy.CacheAndNetwork)
+        .toFlow()
+        .collect { response ->
+          val cameFromEmptyCache =
+            response.isFromCache && response.cacheInfo?.isCacheHit == false
+          val result = safeCall {
+            if(!cameFromEmptyCache) {
+              if (response.hasErrors()) {
+                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+              }
             }
-          } ?: emptyList()
+            response.data?.activitiesCollection?.edges?.map { upcomingActivityData ->
+              upcomingActivityData.node.let {
+                UpcomingActivity(
+                  id = it.id,
+                  name = it.name!!,
+                  genderAllowed = it.allowedGender.toDomain(),
+                  isFull = (it.satrRegistrationCollection?.edges?.size ?: 0) >= it.capacity!!,
+                  startDateTime = it.startDatetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
+                  endDateTime = it.endDatetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
+                  district = it.district!!,
+                  state = it.state!!,
+                  latitude = it.latitude!!,
+                  longitude = it.longitude!!,
+                  capacity = it.capacity
+                )
+              }
+            } ?: emptyList()
+          }
+          emit(result)
         }
-      emit(result)
     }
 
   override fun registerForActivity(

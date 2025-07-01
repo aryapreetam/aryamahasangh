@@ -1,8 +1,9 @@
-
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
 import com.apollographql.apollo.cache.normalized.FetchPolicy
+import com.apollographql.apollo.cache.normalized.cacheInfo
 import com.apollographql.apollo.cache.normalized.fetchPolicy
+import com.apollographql.apollo.cache.normalized.isFromCache
 import com.aryamahasangh.*
 import com.aryamahasangh.components.AryaSamaj
 import com.aryamahasangh.components.Gender
@@ -160,25 +161,33 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
   override suspend fun getOrganisationalMembers(): Flow<Result<List<MemberShort>>> =
     flow {
       emit(Result.Loading)
-      val result =
-        safeCall {
-          val response = apolloClient.query(MembersInOrganisationQuery()).execute()
-          if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+
+      apolloClient.query(MembersInOrganisationQuery())
+        .fetchPolicy(FetchPolicy.CacheAndNetwork)
+        .toFlow()
+        .collect { response ->
+          val cameFromEmptyCache =
+            response.isFromCache && response.cacheInfo?.isCacheHit == false
+          val result = safeCall {
+            if(!cameFromEmptyCache) {
+              if (response.hasErrors()) {
+                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+              }
+              if (response.data?.memberInOrganisationCollection?.edges.isNullOrEmpty()) {
+                throw Exception("No results found")
+              }
+            }
+            response.data?.memberInOrganisationCollection?.edges?.map {
+              val member = it.node.memberInOrganisationShort
+              MemberShort(
+                id = member.id!!,
+                name = member.name!!,
+                profileImage = member.profileImage ?: "",
+              )
+            } ?: emptyList()
           }
-          if (response.data?.memberInOrganisationCollection?.edges.isNullOrEmpty()) {
-            throw Exception("No results found")
-          }
-          response.data?.memberInOrganisationCollection?.edges?.map {
-            val member = it.node.memberInOrganisationShort
-            MemberShort(
-              id = member.id!!,
-              name = member.name!!,
-              profileImage = member.profileImage ?: "",
-            )
-          } ?: emptyList()
+          emit(result)
         }
-      emit(result)
     }
 
   override suspend fun getMembersCount(): Flow<Result<Long>> =
@@ -202,121 +211,135 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
   override suspend fun getMember(id: String): Flow<Result<MemberDetail>> =
     flow {
       emit(Result.Loading)
-      val result =
-        safeCall {
-          val response = apolloClient.query(MemberDetailQuery(id)).execute()
-          if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-          }
-          val memberNode = response.data?.memberCollection?.edges?.firstOrNull()?.node
-          if (memberNode == null) {
-            throw Exception("Member not found")
-          }
 
-          val organisations =
-            memberNode.organisationalMemberCollection?.edges?.map {
-              val organisation = it.node.organisation!!
-              OrganisationInfo(
-                id = organisation.id,
-                name = organisation.name!!,
-                logo = organisation.logo ?: ""
-              )
+      apolloClient.query(MemberDetailQuery(id))
+        .fetchPolicy(FetchPolicy.CacheAndNetwork)
+        .toFlow()
+        .collect { response ->
+          val cameFromEmptyCache =
+            response.isFromCache && response.cacheInfo?.isCacheHit == false
+          val result = safeCall {
+            if (!cameFromEmptyCache) {
+              if (response.hasErrors()) {
+                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+              }
             }
-          val activities =
-            memberNode.activityMemberCollection?.edges?.map {
-              val activity = it.node.activity!!
-              ActivityInfo(
-                id = activity.id,
-                name = activity.name!!,
-                district = activity.district!!,
-                state = activity.state!!,
-                startDatetime = activity.startDatetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
-                endDatetime = activity.endDatetime!!.toLocalDateTime(TimeZone.currentSystemDefault())
-              )
+            val memberNode = response.data?.memberCollection?.edges?.firstOrNull()?.node
+            if (memberNode == null && !cameFromEmptyCache) {
+              throw Exception("Member not found")
             }
 
-          val samajPositions =
-            memberNode.samajMemberCollection?.edges?.map { edge ->
-              SamajPositionInfo(
-                id = edge.node.id,
-                post = edge.node.post ?: "",
-                priority = edge.node.priority ?: 0,
-                aryaSamaj = AryaSamajFields(
-                  id = edge.node.aryaSamaj?.id ?: "",
-                  name = edge.node.aryaSamaj?.name ?: "",
-                  description = edge.node.aryaSamaj?.description ?: "",
-                  mediaUrls = emptyList(),
-                  addressId = null,
-                  address = null,
-                  createdAt = Clock.System.now()
+            if (memberNode == null) {
+              throw Exception("Member not found")
+            }
+
+            val organisations =
+              memberNode.organisationalMemberCollection?.edges?.map {
+                val organisation = it.node.organisation!!
+                OrganisationInfo(
+                  id = organisation.id,
+                  name = organisation.name!!,
+                  logo = organisation.logo ?: ""
                 )
+              }
+            val activities =
+              memberNode.activityMemberCollection?.edges?.map {
+                val activity = it.node.activity!!
+                ActivityInfo(
+                  id = activity.id,
+                  name = activity.name!!,
+                  district = activity.district!!,
+                  state = activity.state!!,
+                  startDatetime = activity.startDatetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
+                  endDatetime = activity.endDatetime!!.toLocalDateTime(TimeZone.currentSystemDefault())
+                )
+              }
+
+            val samajPositions =
+              memberNode.samajMemberCollection?.edges?.map { edge ->
+                SamajPositionInfo(
+                  id = edge.node.id,
+                  post = edge.node.post ?: "",
+                  priority = edge.node.priority ?: 0,
+                  aryaSamaj = AryaSamajFields(
+                    id = edge.node.aryaSamaj?.id ?: "",
+                    name = edge.node.aryaSamaj?.name ?: "",
+                    description = edge.node.aryaSamaj?.description ?: "",
+                    mediaUrls = emptyList(),
+                    addressId = null,
+                    address = null,
+                    createdAt = Clock.System.now()
+                  )
+                )
+              } ?: emptyList()
+
+            val aryaSamaj = memberNode.aryaSamaj?.aryaSamajFields
+
+            val address = memberNode.address
+            val addressInfo =
+              if (address != null) {
+                "${address.addressFields.basicAddress ?: ""}, ${address.addressFields.district ?: ""}, ${address.addressFields.state ?: ""} ${address.addressFields.pincode ?: ""}"
+              } else {
+                ""
+              }
+
+            val tempAddress = memberNode.tempAddress
+            val tempAddressInfo =
+              if (tempAddress != null) {
+                "${tempAddress.addressFields.basicAddress ?: ""}, ${tempAddress.addressFields.district ?: ""}, ${tempAddress.addressFields.state ?: ""} ${tempAddress.addressFields.pincode ?: ""}"
+              } else {
+                ""
+              }
+
+            // Convert GenderFilter to Gender enum
+            val gender = when (memberNode.gender) {
+              GenderFilter.MALE -> Gender.MALE
+              GenderFilter.FEMALE -> Gender.FEMALE
+              GenderFilter.ANY -> Gender.ANY
+              GenderFilter.UNKNOWN__ -> Gender.ANY
+              null -> null
+            }
+
+            // Map referrer info
+            val referrer = memberNode.referrer?.let {
+              ReferrerInfo(
+                id = it.id,
+                name = it.name,
+                profileImage = it.profileImage ?: ""
               )
-            } ?: emptyList()
-
-          val aryaSamaj = memberNode.aryaSamaj?.aryaSamajFields
-
-          val address = memberNode.address
-          val addressInfo =
-            if (address != null) {
-              "${address.addressFields.basicAddress ?: ""}, ${address.addressFields.district ?: ""}, ${address.addressFields.state ?: ""} ${address.addressFields.pincode ?: ""}"
-            } else {
-              ""
             }
 
-          val tempAddress = memberNode.tempAddress
-          val tempAddressInfo =
-            if (tempAddress != null) {
-              "${tempAddress.addressFields.basicAddress ?: ""}, ${tempAddress.addressFields.district ?: ""}, ${tempAddress.addressFields.state ?: ""} ${tempAddress.addressFields.pincode ?: ""}"
-            } else {
-              ""
-            }
-
-          // Convert GenderFilter to Gender enum
-          val gender = when (memberNode.gender) {
-            GenderFilter.MALE -> Gender.MALE
-            GenderFilter.FEMALE -> Gender.FEMALE
-            GenderFilter.ANY -> Gender.ANY
-            GenderFilter.UNKNOWN__ -> Gender.ANY
-            null -> null
-          }
-
-          // Map referrer info
-          val referrer = memberNode.referrer?.let {
-            ReferrerInfo(
-              id = it.id,
-              name = it.name,
-              profileImage = it.profileImage ?: ""
+            MemberDetail(
+              id = memberNode.id,
+              name = memberNode.name ?: "",
+              profileImage = memberNode.profileImage ?: "",
+              phoneNumber = memberNode.phoneNumber ?: "",
+              educationalQualification = memberNode.educationalQualification ?: "",
+              email = memberNode.email ?: "",
+              dob = memberNode.dob,
+              joiningDate = memberNode.joiningDate,
+              gender = gender,
+              introduction = memberNode.introduction ?: "",
+              occupation = memberNode.occupation ?: "",
+              referrerId = memberNode.referrerId,
+              referrer = referrer,
+              address = addressInfo,
+              addressFields = address?.addressFields,
+              tempAddress = tempAddressInfo,
+              tempAddressFields = tempAddress?.addressFields,
+              district = address?.addressFields?.district ?: "",
+              state = address?.addressFields?.state ?: "",
+              pincode = address?.addressFields?.pincode ?: "",
+              organisations = organisations ?: emptyList(),
+              activities = activities ?: emptyList(),
+              samajPositions = samajPositions,
+              aryaSamaj = aryaSamaj
             )
           }
-
-          MemberDetail(
-            id = memberNode.id,
-            name = memberNode.name ?: "",
-            profileImage = memberNode.profileImage ?: "",
-            phoneNumber = memberNode.phoneNumber ?: "",
-            educationalQualification = memberNode.educationalQualification ?: "",
-            email = memberNode.email ?: "",
-            dob = memberNode.dob,
-            joiningDate = memberNode.joiningDate,
-            gender = gender,
-            introduction = memberNode.introduction ?: "",
-            occupation = memberNode.occupation ?: "",
-            referrerId = memberNode.referrerId,
-            referrer = referrer,
-            address = addressInfo,
-            addressFields = address?.addressFields,
-            tempAddress = tempAddressInfo,
-            tempAddressFields = tempAddress?.addressFields,
-            district = address?.addressFields?.district ?: "",
-            state = address?.addressFields?.state ?: "",
-            pincode = address?.addressFields?.pincode ?: "",
-            organisations = organisations ?: emptyList(),
-            activities = activities ?: emptyList(),
-            samajPositions = samajPositions,
-            aryaSamaj = aryaSamaj
-          )
+          if (!cameFromEmptyCache || (result is Result.Success)) {
+            emit(result)
+          }
         }
-      emit(result)
     }
 
   override suspend fun searchMembers(query: String): Flow<Result<List<MemberShort>>> =
@@ -604,27 +627,33 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
   override suspend fun getEkalAryaMembers(): Flow<Result<List<MemberShort>>> =
     flow {
       emit(Result.Loading)
-      val result =
-        safeCall {
-          val response = apolloClient.query(EkalAryaMembersQuery())
-            .fetchPolicy(FetchPolicy.CacheAndNetwork)
-            .execute()
-          if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+
+      apolloClient.query(EkalAryaMembersQuery())
+        .fetchPolicy(FetchPolicy.CacheAndNetwork)
+        .toFlow()
+        .collect { response ->
+          val cameFromEmptyCache =
+            response.isFromCache && response.cacheInfo?.isCacheHit == false
+          val result = safeCall {
+            if(!cameFromEmptyCache) {
+              if (response.hasErrors()) {
+                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+              }
+              if (response.data?.memberNotInFamilyCollection?.edges.isNullOrEmpty()) {
+                throw Exception("No results found")
+              }
+            }
+            response.data?.memberNotInFamilyCollection?.edges?.map {
+              val member = it.node.memberNotInFamilyShort
+              MemberShort(
+                id = member.id!!,
+                name = member.name!!,
+                profileImage = member.profileImage ?: "",
+              )
+            } ?: emptyList()
           }
-          if (response.data?.memberNotInFamilyCollection?.edges.isNullOrEmpty()) {
-            throw Exception("No results found")
-          }
-          response.data?.memberNotInFamilyCollection?.edges?.map {
-            val member = it.node.memberNotInFamilyShort
-            MemberShort(
-              id = member.id!!,
-              name = member.name!!,
-              profileImage = member.profileImage ?: "",
-            )
-          } ?: emptyList()
+          emit(result)
         }
-      emit(result)
     }
 
   override suspend fun searchEkalAryaMembers(query: String): Flow<Result<List<MemberShort>>> =
