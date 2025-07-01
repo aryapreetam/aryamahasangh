@@ -22,16 +22,16 @@ import com.aryamahasangh.navigation.LocalSnackbarHostState
 fun AdminContainerScreen(
   viewModel: AdminViewModel,
   aryaSamajViewModel: AryaSamajViewModel,
-  familyViewModel: FamilyViewModel, // Add family view model
-  initialTabIndex: Int = 0, // Add initial tab index parameter
+  familyViewModel: FamilyViewModel,
+  initialTabIndex: Int = 0,
   onNavigateToMemberDetail: (String) -> Unit = {},
   onNavigateToAddMember: () -> Unit = {},
-  onNavigateToEditMember: (String) -> Unit = {}, // Add edit member navigation
+  onNavigateToEditMember: (String) -> Unit = {},
   onNavigateToAddAryaSamaj: () -> Unit = {},
   onNavigateToAryaSamajDetail: (String) -> Unit = {},
-  onEditAryaSamaj: (String) -> Unit = {}, // New parameter for editing
-  onNavigateToCreateFamily: () -> Unit = {}, // Fixed parameter name
-  onNavigateToFamilyDetail: (String) -> Unit = {}, // Add navigation for family detail
+  onEditAryaSamaj: (String) -> Unit = {},
+  onNavigateToCreateFamily: () -> Unit = {},
+  onNavigateToFamilyDetail: (String) -> Unit = {},
   onEditFamily: (String) -> Unit = {},
   onDeleteFamily: (String) -> Unit = {}
 ) {
@@ -180,14 +180,14 @@ fun AdminContainerScreen(
           OrganisationalMembersScreen(
             viewModel = viewModel,
             onNavigateToMemberDetail = onNavigateToMemberDetail,
-            onNavigateToEditMember = onNavigateToEditMember // Pass the new handler
+            onNavigateToEditMember = { id -> onNavigateToEditMember(id) }
           )
         } else if (it == 1) {
           AryaSamajListScreen(
             viewModel = aryaSamajViewModel,
             onNavigateToAddAryaSamaj = onNavigateToAddAryaSamaj,
             onNavigateToAryaSamajDetail = onNavigateToAryaSamajDetail,
-            onEditAryaSamaj = onEditAryaSamaj // Pass the new handler
+            onEditAryaSamaj = onEditAryaSamaj
           )
         } else if (it == 2) {
           AryaPariwarListScreen(
@@ -201,8 +201,8 @@ fun AdminContainerScreen(
           EkalAryaListScreen(
             viewModel = viewModel,
             onNavigateToMemberDetail = onNavigateToMemberDetail,
-            onNavigateToAddMember = onNavigateToAddMember,
-            onNavigateToEditMember = onNavigateToEditMember
+            onNavigateToAddMember = { onNavigateToAddMember() },
+            onNavigateToEditMember = { id -> onNavigateToEditMember(id) }
           )
         }
       }

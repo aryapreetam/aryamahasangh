@@ -195,19 +195,27 @@ fun RootNavGraph(navController: NavHostController) {
       }
       composable<Screen.AddMemberForm> {
         val viewModel = koinInject<AdminViewModel>()
+
         AddMemberFormScreen(
           viewModel = viewModel,
           onNavigateBack = {
             navController.popBackStack()
           },
           onNavigateToMemberDetail = { memberId ->
-            navController.navigate(Screen.MemberDetail(memberId))
+            navController.navigate(Screen.MemberDetail(memberId)) {
+              // Clear the AddMemberForm from back stack, AdminContainer will preserve its tab state
+              popUpTo<Screen.AdminContainer> {
+                inclusive = false
+              }
+            }
           },
         )
       }
       composable<Screen.EditMemberForm> {
         val viewModel = koinInject<AdminViewModel>()
-        val memberId = it.toRoute<Screen.EditMemberForm>().memberId
+        val route = it.toRoute<Screen.EditMemberForm>()
+        val memberId = route.memberId
+
         AddMemberFormScreen(
           viewModel = viewModel,
           onNavigateBack = {
@@ -216,7 +224,10 @@ fun RootNavGraph(navController: NavHostController) {
           memberId = memberId,
           onNavigateToMemberDetail = { memberId ->
             navController.navigate(Screen.MemberDetail(memberId)) {
-              popUpTo<Screen.EditMemberForm> { inclusive = true }
+              // Clear the EditMemberForm from back stack, AdminContainer will preserve its tab state
+              popUpTo<Screen.AdminContainer> {
+                inclusive = false
+              }
             }
           },
         )
