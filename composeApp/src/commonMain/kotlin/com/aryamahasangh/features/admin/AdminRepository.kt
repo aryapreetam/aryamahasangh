@@ -1,14 +1,8 @@
 
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
-import io.github.jan.supabase.postgrest.from
-import io.github.jan.supabase.postgrest.query.Count
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import kotlinx.datetime.Clock
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
+import com.apollographql.apollo.cache.normalized.FetchPolicy
+import com.apollographql.apollo.cache.normalized.fetchPolicy
 import com.aryamahasangh.*
 import com.aryamahasangh.components.AryaSamaj
 import com.aryamahasangh.components.Gender
@@ -16,10 +10,16 @@ import com.aryamahasangh.features.activities.Member
 import com.aryamahasangh.features.admin.*
 import com.aryamahasangh.fragment.AryaSamajFields
 import com.aryamahasangh.fragment.MemberInOrganisationShort
-import com.aryamahasangh.network.supabaseClient
 import com.aryamahasangh.type.GenderFilter
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.util.safeCall
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.serialization.json.Json
 
 interface AdminRepository {
   // Member methods
@@ -606,7 +606,9 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
       emit(Result.Loading)
       val result =
         safeCall {
-          val response = apolloClient.query(EkalAryaMembersQuery()).execute()
+          val response = apolloClient.query(EkalAryaMembersQuery())
+            .fetchPolicy(FetchPolicy.CacheAndNetwork)
+            .execute()
           if (response.hasErrors()) {
             throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
           }
@@ -731,17 +733,52 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
           }
 
           // Parse the JSON response from insertMemberDetails function
-          val jsonResponse = response.data?.insertMemberDetails
-          val success = (jsonResponse as? Map<*, *>)?.get("success") as? Boolean ?: false
-          
-          if (!success) {
-            val errorCode = (jsonResponse as? Map<*, *>)?.get("error_code") as? String ?: "UNKNOWN_ERROR"
-            val errorDetails = (jsonResponse as? Map<*, *>)?.get("error_details") as? String
-            throw Exception("Member creation failed: $errorCode ${errorDetails?.let { "- $it" } ?: ""}")
+          val responseData = response.data?.insertMemberDetails
+          if (responseData == null) {
+            throw Exception("No response data received")
           }
-          
-          // Return the member ID from the successful response
-          jsonResponse["member_id"] as? String ?: ""
+
+          try {
+            val jsonConfig = Json {
+              ignoreUnknownKeys = true
+              encodeDefaults = true
+              isLenient = true
+            }
+            val jsonString = responseData.toString()
+            // Parse using the same jsonConfig instance
+            val jsonResponse =
+              jsonConfig.decodeFromString<Map<String, kotlinx.serialization.json.JsonElement>>(jsonString)
+
+            val successElement = jsonResponse["success"]?.toString()
+            val success = successElement?.contains("true") == true
+
+            if (success) {
+              val memberIdElement = jsonResponse["member_id"]?.toString()
+              val memberId =
+                memberIdElement?.removeSurrounding("\"")?.removeSurrounding("JsonPrimitive(")?.removeSurrounding(")")
+              memberId ?: throw Exception("Member created but no member_id returned")
+            } else {
+              val errorCodeElement = jsonResponse["error_code"]?.toString()
+              val errorCode =
+                errorCodeElement?.removeSurrounding("\"")?.removeSurrounding("JsonPrimitive(")?.removeSurrounding(")")
+              val errorDetailsElement = jsonResponse["error_details"]?.toString()
+              val errorDetails =
+                errorDetailsElement?.removeSurrounding("\"")?.removeSurrounding("JsonPrimitive(")
+                  ?.removeSurrounding(")")
+              throw Exception("Member creation failed: ${errorCode ?: "UNKNOWN_ERROR"}${errorDetails?.let { " - $it" } ?: ""}")
+            }
+          } catch (e: Exception) {
+            // Fallback: treat response as string and try manual parsing
+            val responseString = responseData.toString()
+            if (responseString.contains("\"success\":true") && responseString.contains("\"member_id\"")) {
+              // Extract member_id using regex
+              val memberIdRegex = "\"member_id\"\\s*:\\s*\"([^\"]+)\"".toRegex()
+              val matchResult = memberIdRegex.find(responseString)
+              matchResult?.groupValues?.get(1) ?: throw Exception("Could not extract member_id from response")
+            } else {
+              throw Exception("Member creation failed: ${responseString}")
+            }
+          }
         }
       emit(result)
     }
