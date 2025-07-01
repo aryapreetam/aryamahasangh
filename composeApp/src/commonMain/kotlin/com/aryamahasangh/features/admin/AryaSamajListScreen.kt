@@ -7,6 +7,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -15,6 +16,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.window.core.layout.WindowWidthSizeClass
 import coil3.compose.AsyncImage
 import com.aryamahasangh.features.admin.data.AryaSamajListItem
 import com.aryamahasangh.features.admin.data.AryaSamajViewModel
@@ -34,31 +36,56 @@ fun AryaSamajListScreen(
     viewModel.loadAryaSamajs()
   }
 
+  val windowInfo = currentWindowAdaptiveInfo()
+  val isCompact = windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT
+
   Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
     // Search bar and add button
     Row(
       modifier = Modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.spacedBy(8.dp),
-      verticalAlignment = Alignment.CenterVertically
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = if (isCompact) Arrangement.SpaceBetween else Arrangement.Start
     ) {
+      // Search Bar
       OutlinedTextField(
         value = listUiState.searchQuery,
         onValueChange = viewModel::searchAryaSamajs,
-        modifier = Modifier.weight(1f),
+        modifier = if (isCompact) Modifier.weight(1f) else Modifier.widthIn(max = 600.dp),
         placeholder = { Text("आर्य समाज खोजें") },
-        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+        leadingIcon = { Icon(Icons.Default.Search, contentDescription = "खोजें") },
         singleLine = true
       )
 
-      // button to add new arya samaj with tooltip
-      WithTooltip(tooltip = "नया आर्य समाज जोड़ें") {
-        IconButton(
+      if (!isCompact) {
+        Spacer(modifier = Modifier.weight(1f))
+      } else {
+        Spacer(modifier = Modifier.width(16.dp))
+      }
+
+      if (isCompact) {
+        // Tooltip for IconButton on compact screens
+        WithTooltip(tooltip = "नया आर्य समाज जोड़ें") {
+          IconButton(
+            onClick = onNavigateToAddAryaSamaj
+          ) {
+            Icon(
+              Icons.Default.AddHomeWork,
+              contentDescription = "नया आर्य समाज जोड़ें"
+            )
+          }
+        }
+      } else {
+        // Button with text for larger screens
+        Button(
           onClick = onNavigateToAddAryaSamaj
         ) {
           Icon(
-            Icons.Default.AddHomeWork,
-            contentDescription = "नया आर्य समाज जोड़ें"
+            modifier = Modifier.size(24.dp),
+            imageVector = Icons.Default.AddHomeWork,
+            contentDescription = null
           )
+          Spacer(modifier = Modifier.width(8.dp))
+          Text("नया आर्य समाज जोड़ें")
         }
       }
     }
