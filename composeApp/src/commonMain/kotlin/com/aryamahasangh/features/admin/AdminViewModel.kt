@@ -92,8 +92,25 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
 
   private var searchJob: Job? = null
 
+  // Flag to track if pagination should be preserved (e.g., when navigating back)
+  private var shouldPreservePagination = false
+
   // Expose repository flow for Compose-managed lifecycle
   fun listenToAdminCountChanges(): Flow<Unit> = repository.listenToAdminCountChanges()
+
+  // Method to check if we have existing data and should preserve it
+  fun hasExistingEkalAryaData(): Boolean {
+    return _ekalAryaUiState.value.members.isNotEmpty()
+  }
+
+  // Method to preserve pagination state when navigating back
+  fun preserveEkalAryaPagination(savedMembers: List<MemberShort>, savedPaginationState: PaginationState<MemberShort>) {
+    _ekalAryaUiState.value = _ekalAryaUiState.value.copy(
+      members = savedMembers,
+      paginationState = savedPaginationState
+    )
+    shouldPreservePagination = true
+  }
 
   fun loadMembers() {
     viewModelScope.launch {
@@ -870,14 +887,28 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
     viewModelScope.launch {
       val currentState = _ekalAryaUiState.value.paginationState
 
-      // If resetting pagination, clear current state
-      val cursor = if (resetPagination) null else currentState.endCursor
+      // Only preserve pagination when explicitly requested AND it's a reset operation
+      val shouldPreserveExistingData = shouldPreservePagination && resetPagination && hasExistingEkalAryaData()
+
+      // Reset the preservation flag after checking
+      if (shouldPreservePagination) {
+        shouldPreservePagination = false
+      }
+
+      // Only skip loading if we're preserving existing data from navigation
+      if (shouldPreserveExistingData) {
+        return@launch
+      }
+
+      // For normal pagination (resetPagination=false), always proceed with loading
+      val shouldReset = resetPagination
+      val cursor = if (shouldReset) null else currentState.endCursor
 
       // Set loading state
       _ekalAryaUiState.value = _ekalAryaUiState.value.copy(
         paginationState = currentState.copy(
-          isInitialLoading = resetPagination || currentState.items.isEmpty(),
-          isLoadingNextPage = !resetPagination && currentState.items.isNotEmpty(),
+          isInitialLoading = shouldReset || currentState.items.isEmpty(),
+          isLoadingNextPage = !shouldReset && currentState.items.isNotEmpty(),
           error = null
         )
       )
@@ -889,7 +920,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
           }
 
           is PaginationResult.Success -> {
-            val newItems = if (resetPagination) {
+            val newItems = if (shouldReset) {
               result.data
             } else {
               currentState.items + result.data
@@ -995,6 +1026,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
 
   fun loadNextEkalAryaPage() {
     val currentState = _ekalAryaUiState.value.paginationState
+
     if (currentState.hasNextPage && !currentState.isLoadingNextPage) {
       if (currentState.currentSearchTerm.isNotBlank()) {
         searchEkalAryaMembersPaginated(
@@ -1004,6 +1036,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
       } else {
         loadEkalAryaMembersPaginated(resetPagination = false)
       }
+    } else {
     }
   }
 

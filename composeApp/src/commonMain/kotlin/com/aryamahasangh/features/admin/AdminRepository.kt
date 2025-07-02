@@ -788,6 +788,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
               } ?: emptyList()
 
               val pageInfo = response.data?.memberNotInFamilyCollection?.pageInfo
+
               PaginationResult.Success(
                 data = members,
                 hasNextPage = pageInfo?.hasNextPage ?: false,
@@ -796,8 +797,12 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
             }
 
             when (result) {
-              is Result.Success -> emit(result.data)
-              is Result.Error -> emit(PaginationResult.Error(result.exception?.message ?: "Unknown error"))
+              is Result.Success -> {
+                emit(result.data)
+              }
+              is Result.Error -> {
+                emit(PaginationResult.Error(result.exception?.message ?: "Unknown error"))
+              }
               is Result.Loading -> {
                 // Already emitted loading state above
               }

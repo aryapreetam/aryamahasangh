@@ -134,7 +134,7 @@ object LocalizationManager {
     "PHONE_NUMBER_REQUIRED" to "फोन नंबर आवश्यक है",
     "ADDRESS_REQUIRED" to "पता आवश्यक है",
     "FAMILY_NAME_REQUIRED" to "परिवार का नाम आवश्यक है",
-    "HEAD_MEMBER_REQUIRED" to "मुखिया सदस्य आवश्यक है",
+    "HEAD_MEMBER_REQUIRED" to "प्रमुख सदस्य आवश्यक है",
 
     // Business logic errors
     "MEMBER_ALREADY_IN_FAMILY" to "सदस्य पहले से ही परिवार में है",
@@ -143,7 +143,7 @@ object LocalizationManager {
     "CANNOT_DELETE_ARYA_SAMAJ_WITH_MEMBERS" to "सदस्यों वाले आर्य समाज को नहीं हटाया जा सकता",
     "DUPLICATE_PHONE_NUMBER" to "यह फोन नंबर पहले से मौजूद है",
     "DUPLICATE_EMAIL" to "यह ईमेल पता पहले से मौजूद है",
-    "HEAD_MEMBER_NOT_IN_FAMILY" to "मुखिया सदस्य परिवार में नहीं है",
+    "HEAD_MEMBER_NOT_IN_FAMILY" to "प्रमुख सदस्य परिवार में नहीं है",
 
     // Permission errors
     "INSUFFICIENT_PERMISSIONS" to "अपर्याप्त अनुमतियां",

@@ -334,7 +334,7 @@ private fun FamilyMemberCard(
               color = MaterialTheme.colorScheme.primary
             ) {
               Text(
-                text = "मुखिया",
+                text = "प्रमुख",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onPrimary,
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
