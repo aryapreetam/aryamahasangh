@@ -4,6 +4,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -15,14 +16,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowWidthSizeClass
 import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.error_profile_image
 import coil3.compose.AsyncImage
 import com.aryamahasangh.navigation.LocalSnackbarHostState
+import kotlinx.coroutines.flow.distinctUntilChanged
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -40,9 +44,45 @@ fun EkalAryaListScreen(
   val scope = rememberCoroutineScope()
   var showDeleteDialog by remember { mutableStateOf<MemberShort?>(null) }
   val keyboardController = LocalSoftwareKeyboardController.current
+  val windowInfo = currentWindowAdaptiveInfo()
+  val isCompact = windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT
+  val listState = rememberLazyListState()
+  val density = LocalDensity.current
+
+  // Calculate responsive page size
+  val screenWidthDp = with(density) {
+    windowInfo.windowSizeClass.windowWidthSizeClass.let {
+      when (it) {
+        WindowWidthSizeClass.COMPACT -> 600f
+        WindowWidthSizeClass.MEDIUM -> 800f
+        WindowWidthSizeClass.EXPANDED -> 1200f
+        else -> 600f
+      }
+    }
+  }
+  val pageSize = viewModel.calculatePageSize(screenWidthDp)
 
   LaunchedEffect(Unit) {
-    viewModel.loadEkalAryaMembers()
+    viewModel.loadEkalAryaMembersPaginated(pageSize = pageSize, resetPagination = true)
+  }
+
+  // Scroll detection for pagination (90% threshold)
+  LaunchedEffect(listState) {
+    snapshotFlow {
+      val layoutInfo = listState.layoutInfo
+      val totalItems = layoutInfo.totalItemsCount
+      val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+
+      // Trigger pagination when user scrolls past 90% of loaded items
+      val threshold = (totalItems * 0.9).toInt()
+      lastVisibleItem >= threshold && totalItems > 0
+    }
+      .distinctUntilChanged()
+      .collect { shouldLoadMore ->
+        if (shouldLoadMore && uiState.paginationState.hasNextPage && !uiState.paginationState.isLoadingNextPage) {
+          viewModel.loadNextEkalAryaPage()
+        }
+      }
   }
 
   // Handle delete state changes
@@ -73,9 +113,6 @@ fun EkalAryaListScreen(
     }
   }
 
-  val windowInfo = currentWindowAdaptiveInfo()
-  val isCompact = windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT
-
   Column(
     modifier = Modifier.fillMaxSize().padding(16.dp)
   ) {
@@ -84,13 +121,21 @@ fun EkalAryaListScreen(
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = if (isCompact) Arrangement.SpaceBetween else Arrangement.Start
     ) {
-      // Search Bar
+      // Search Bar with loading indicator
       OutlinedTextField(
         value = uiState.searchQuery,
-        onValueChange = viewModel::searchEkalAryaMembers,
+        onValueChange = viewModel::searchEkalAryaMembersWithDebounce,
         modifier = if (isCompact) Modifier.weight(1f) else Modifier.widthIn(max = 600.dp),
         placeholder = { Text("आर्य का नाम/दूरभाष") },
         leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+        trailingIcon = {
+          if (uiState.paginationState.isSearching) {
+            CircularProgressIndicator(
+              modifier = Modifier.size(20.dp),
+              strokeWidth = 2.dp
+            )
+          }
+        },
         singleLine = true
       )
 
@@ -101,7 +146,6 @@ fun EkalAryaListScreen(
       }
 
       if (isCompact) {
-        // Tooltip for IconButton on compact screens
         TooltipBox(
           positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
           tooltip = {
@@ -118,7 +162,6 @@ fun EkalAryaListScreen(
           }
         }
       } else {
-        // Button with text for larger screens
         Button(
           onClick = onNavigateToAddMember
         ) {
@@ -131,8 +174,10 @@ fun EkalAryaListScreen(
 
     Spacer(modifier = Modifier.height(16.dp))
 
-    // Loading state
-    if (uiState.isLoading) {
+    // TODO: Add offline indicator here when network state is available
+
+    // Initial loading state
+    if (uiState.paginationState.isInitialLoading) {
       Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -143,32 +188,37 @@ fun EkalAryaListScreen(
     }
 
     // Error state
-    uiState.error?.let { error ->
+    uiState.paginationState.error?.let { error ->
       Card(
         modifier = Modifier.fillMaxWidth(),
-        colors =
-          CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer
-          )
-      ) {
-        Text(
-          text = error,
-          modifier = Modifier.padding(16.dp),
-          color = MaterialTheme.colorScheme.onErrorContainer
+        colors = CardDefaults.cardColors(
+          containerColor = MaterialTheme.colorScheme.errorContainer
         )
+      ) {
+        Column(
+          modifier = Modifier.padding(16.dp)
+        ) {
+          Text(
+            text = error,
+            color = MaterialTheme.colorScheme.onErrorContainer
+          )
+          if (uiState.paginationState.showRetryButton) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+              onClick = { viewModel.retryEkalAryaLoad() }
+            ) {
+              Text("पुनः प्रयास करें")
+            }
+          }
+        }
       }
       return@Column
     }
 
     // Members List
-    val membersToShow =
-      if (uiState.searchQuery.isNotBlank()) {
-        uiState.searchResults
-      } else {
-        uiState.ekalAryaMembers
-      }
+    val membersToShow = uiState.members
 
-    if (membersToShow.isEmpty()) {
+    if (membersToShow.isEmpty() && !uiState.paginationState.isInitialLoading) {
       Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
@@ -177,23 +227,63 @@ fun EkalAryaListScreen(
       }
     } else {
       LazyColumn(
+        state = listState,
         verticalArrangement = Arrangement.spacedBy(8.dp)
       ) {
-        items(membersToShow.chunked(2)) { chunk ->
-          FlowRow(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-          ) {
-            chunk.forEach { member ->
-              MemberItem(
-                member = member,
-                onMemberClick = { onNavigateToMemberDetail(member.id) },
-                onEditClick = { onNavigateToEditMember(member.id) },
-                onDeleteClick = { showDeleteDialog = member },
-                modifier = Modifier.width(450.dp)
-              )
+        if (isCompact) {
+          // Mobile: Single column layout
+          items(membersToShow) { member ->
+            MemberItem(
+              member = member,
+              onMemberClick = { onNavigateToMemberDetail(member.id) },
+              onEditClick = { onNavigateToEditMember(member.id) },
+              onDeleteClick = { showDeleteDialog = member },
+              modifier = Modifier.fillMaxWidth()
+            )
+          }
+        } else {
+          // Tablet+: Two column layout with FlowRow
+          items(membersToShow.chunked(2)) { chunk ->
+            FlowRow(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.spacedBy(8.dp),
+              verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+              chunk.forEach { member ->
+                MemberItem(
+                  member = member,
+                  onMemberClick = { onNavigateToMemberDetail(member.id) },
+                  onEditClick = { onNavigateToEditMember(member.id) },
+                  onDeleteClick = { showDeleteDialog = member },
+                  modifier = Modifier.width(450.dp)
+                )
+              }
             }
+          }
+        }
+
+        // Loading indicator for next page
+        if (uiState.paginationState.isLoadingNextPage) {
+          item {
+            Box(
+              modifier = Modifier.fillMaxWidth().padding(16.dp),
+              contentAlignment = Alignment.Center
+            ) {
+              CircularProgressIndicator()
+            }
+          }
+        }
+
+        // End of list indicator
+        if (uiState.paginationState.hasReachedEnd && !uiState.paginationState.hasNextPage && membersToShow.isNotEmpty()) {
+          item {
+            Text(
+              text = "सभी आर्य सदस्य दिखाए गए",
+              modifier = Modifier.fillMaxWidth().padding(16.dp),
+              textAlign = TextAlign.Center,
+              style = MaterialTheme.typography.bodyMedium,
+              color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
           }
         }
       }

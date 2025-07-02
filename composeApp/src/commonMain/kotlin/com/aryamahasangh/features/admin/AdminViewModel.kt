@@ -1,15 +1,9 @@
 package com.aryamahasangh.features.admin
 
+import AdminCounts
 import AdminRepository
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import kotlinx.datetime.LocalDate
 import com.aryamahasangh.components.AryaSamaj
 import com.aryamahasangh.components.Gender
 import com.aryamahasangh.domain.error.AppError
@@ -19,6 +13,21 @@ import com.aryamahasangh.features.activities.Member
 import com.aryamahasangh.fragment.MemberInOrganisationShort
 import com.aryamahasangh.viewmodel.ErrorState
 import com.aryamahasangh.viewmodel.handleResult
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
+
+data class AdminCountsUiState(
+  val counts: AdminCounts = AdminCounts(),
+  override val isLoading: Boolean = false,
+  override val error: String? = null,
+  override val appError: AppError? = null
+) : ErrorState
 
 data class MembersUiState(
   val members: List<MemberShort> = emptyList(),
@@ -32,12 +41,12 @@ data class MembersUiState(
 ) : ErrorState
 
 data class EkalAryaUiState(
-  val ekalAryaMembers: List<MemberShort> = emptyList(),
+  val members: List<MemberShort> = emptyList(),
+  val paginationState: PaginationState<MemberShort> = PaginationState(),
   override val isLoading: Boolean = false,
   override val error: String? = null,
   override val appError: AppError? = null,
   val searchQuery: String = "",
-  val searchResults: List<MemberShort> = emptyList(),
   val isSearching: Boolean = false
 ) : ErrorState
 
@@ -68,6 +77,9 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
   private val _membersCount = MutableStateFlow(0L)
   val membersCount: StateFlow<Long> = _membersCount.asStateFlow()
 
+  private val _adminCounts = MutableStateFlow(AdminCountsUiState())
+  val adminCounts: StateFlow<AdminCountsUiState> = _adminCounts.asStateFlow()
+
   private val _membersUiState = MutableStateFlow(MembersUiState())
   val membersUiState: StateFlow<MembersUiState> = _membersUiState.asStateFlow()
 
@@ -81,6 +93,9 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
   val deleteMemberState: StateFlow<DeleteMemberState> = _deleteMemberState.asStateFlow()
 
   private var searchJob: Job? = null
+
+  // Expose repository flow for Compose-managed lifecycle
+  fun listenToAdminCountChanges(): Flow<Unit> = repository.listenToAdminCountChanges()
 
   fun loadMembers() {
     viewModelScope.launch {
@@ -217,7 +232,6 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
         if (query.isBlank()) {
           _ekalAryaUiState.value =
             _ekalAryaUiState.value.copy(
-              searchResults = emptyList(),
               isSearching = false
             )
           return@launch
@@ -234,7 +248,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
             onSuccess = { searchResults ->
               _ekalAryaUiState.value =
                 _ekalAryaUiState.value.copy(
-                  searchResults = searchResults,
+                  members = searchResults,
                   isSearching = false
                 )
             },
@@ -266,10 +280,10 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
                 appError = null
               )
           },
-          onSuccess = { ekalAryaMembers ->
+          onSuccess = { members ->
             _ekalAryaUiState.value =
               _ekalAryaUiState.value.copy(
-                ekalAryaMembers = ekalAryaMembers,
+                members = members,
                 isLoading = false,
                 error = null,
                 appError = null
@@ -799,6 +813,41 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
     }
   }
 
+  fun loadAdminCounts() {
+    viewModelScope.launch {
+      repository.getAdminCounts().collect { result ->
+        result.handleResult(
+          onLoading = {
+            _adminCounts.value =
+              _adminCounts.value.copy(
+                isLoading = true,
+                error = null,
+                appError = null
+              )
+          },
+          onSuccess = { counts ->
+            _adminCounts.value =
+              _adminCounts.value.copy(
+                counts = counts,
+                isLoading = false,
+                error = null,
+                appError = null
+              )
+          },
+          onError = { appError ->
+            ErrorHandler.logError(appError, "AdminViewModel.loadAdminCounts")
+            _adminCounts.value =
+              _adminCounts.value.copy(
+                isLoading = false,
+                error = appError.getUserMessage(),
+                appError = appError
+              )
+          }
+        )
+      }
+    }
+  }
+
   /**
    * Clear error states
    */
@@ -813,4 +862,196 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
   fun clearMemberDetailError() {
     _memberDetailUiState.value = _memberDetailUiState.value.copy(error = null, appError = null)
   }
+
+  fun clearAdminCountsError() {
+    _adminCounts.value = _adminCounts.value.copy(error = null, appError = null)
+  }
+
+  // NEW: Pagination methods using the new repository interface
+  fun loadEkalAryaMembersPaginated(pageSize: Int = 30, resetPagination: Boolean = false) {
+    viewModelScope.launch {
+      val currentState = _ekalAryaUiState.value.paginationState
+
+      // If resetting pagination, clear current state
+      val cursor = if (resetPagination) null else currentState.endCursor
+
+      // Set loading state
+      _ekalAryaUiState.value = _ekalAryaUiState.value.copy(
+        paginationState = currentState.copy(
+          isInitialLoading = resetPagination || currentState.items.isEmpty(),
+          isLoadingNextPage = !resetPagination && currentState.items.isNotEmpty(),
+          error = null
+        )
+      )
+
+      repository.getEkalAryaMembersPaginated(pageSize = pageSize, cursor = cursor).collect { result ->
+        when (result) {
+          is PaginationResult.Loading -> {
+            // Loading state already set above
+          }
+
+          is PaginationResult.Success -> {
+            val newItems = if (resetPagination) {
+              result.data
+            } else {
+              currentState.items + result.data
+            }
+
+            _ekalAryaUiState.value = _ekalAryaUiState.value.copy(
+              members = newItems,
+              paginationState = currentState.copy(
+                items = newItems,
+                isInitialLoading = false,
+                isLoadingNextPage = false,
+                hasNextPage = result.hasNextPage,
+                endCursor = result.endCursor,
+                hasReachedEnd = !result.hasNextPage,
+                error = null
+              )
+            )
+          }
+
+          is PaginationResult.Error -> {
+            _ekalAryaUiState.value = _ekalAryaUiState.value.copy(
+              paginationState = currentState.copy(
+                isInitialLoading = false,
+                isLoadingNextPage = false,
+                error = result.message,
+                showRetryButton = true
+              )
+            )
+          }
+        }
+      }
+    }
+  }
+
+  fun searchEkalAryaMembersPaginated(searchTerm: String, pageSize: Int = 30, resetPagination: Boolean = true) {
+    viewModelScope.launch {
+      val currentState = _ekalAryaUiState.value.paginationState
+
+      // Clear cache on search change
+      if (resetPagination && searchTerm != currentState.currentSearchTerm) {
+        // TODO: Clear Apollo cache for this query
+      }
+
+      val cursor = if (resetPagination) null else currentState.endCursor
+
+      // Set loading state
+      _ekalAryaUiState.value = _ekalAryaUiState.value.copy(
+        searchQuery = searchTerm,
+        paginationState = currentState.copy(
+          isSearching = resetPagination,
+          isLoadingNextPage = !resetPagination,
+          error = null,
+          currentSearchTerm = searchTerm
+        )
+      )
+
+      repository.searchEkalAryaMembersPaginated(
+        searchTerm = searchTerm,
+        pageSize = pageSize,
+        cursor = cursor
+      ).collect { result ->
+        when (result) {
+          is PaginationResult.Loading -> {
+            // Loading state already set above
+          }
+
+          is PaginationResult.Success -> {
+            val newItems = if (resetPagination) {
+              result.data
+            } else {
+              currentState.items + result.data
+            }
+
+            _ekalAryaUiState.value = _ekalAryaUiState.value.copy(
+              members = newItems,
+              paginationState = currentState.copy(
+                items = newItems,
+                isSearching = false,
+                isLoadingNextPage = false,
+                hasNextPage = result.hasNextPage,
+                endCursor = result.endCursor,
+                hasReachedEnd = !result.hasNextPage,
+                error = null,
+                currentSearchTerm = searchTerm
+              )
+            )
+          }
+
+          is PaginationResult.Error -> {
+            _ekalAryaUiState.value = _ekalAryaUiState.value.copy(
+              paginationState = currentState.copy(
+                isSearching = false,
+                isLoadingNextPage = false,
+                error = result.message,
+                showRetryButton = true
+              )
+            )
+          }
+        }
+      }
+    }
+  }
+
+  fun loadNextEkalAryaPage() {
+    val currentState = _ekalAryaUiState.value.paginationState
+    if (currentState.hasNextPage && !currentState.isLoadingNextPage) {
+      if (currentState.currentSearchTerm.isNotBlank()) {
+        searchEkalAryaMembersPaginated(
+          searchTerm = currentState.currentSearchTerm,
+          resetPagination = false
+        )
+      } else {
+        loadEkalAryaMembersPaginated(resetPagination = false)
+      }
+    }
+  }
+
+  fun retryEkalAryaLoad() {
+    val currentState = _ekalAryaUiState.value.paginationState
+    _ekalAryaUiState.value = _ekalAryaUiState.value.copy(
+      paginationState = currentState.copy(showRetryButton = false)
+    )
+
+    if (currentState.currentSearchTerm.isNotBlank()) {
+      searchEkalAryaMembersPaginated(
+        searchTerm = currentState.currentSearchTerm,
+        resetPagination = currentState.items.isEmpty()
+      )
+    } else {
+      loadEkalAryaMembersPaginated(resetPagination = currentState.items.isEmpty())
+    }
+  }
+
+  // NEW: Debounced search method
+  fun searchEkalAryaMembersWithDebounce(query: String) {
+    _ekalAryaUiState.value = _ekalAryaUiState.value.copy(searchQuery = query)
+
+    searchJob?.cancel()
+    searchJob = viewModelScope.launch {
+      if (query.isBlank()) {
+        // Load regular members when search is cleared
+        loadEkalAryaMembersPaginated(resetPagination = true)
+        return@launch
+      }
+
+      // Debounce search by 1 second
+      delay(1000)
+
+      searchEkalAryaMembersPaginated(searchTerm = query.trim(), resetPagination = true)
+    }
+  }
+
+  // NEW: Calculate page size based on screen width  
+  fun calculatePageSize(screenWidthDp: Float): Int {
+    return when {
+      screenWidthDp < 600f -> 15      // Mobile portrait
+      screenWidthDp < 840f -> 25      // Tablet, mobile landscape
+      else -> 35                      // Desktop, large tablets
+    }
+  }
+
+  // NEW method for searching members for selection component
 }

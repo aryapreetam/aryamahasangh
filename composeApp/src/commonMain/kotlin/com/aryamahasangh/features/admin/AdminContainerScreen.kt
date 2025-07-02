@@ -35,7 +35,7 @@ fun AdminContainerScreen(
   onEditFamily: (String) -> Unit = {},
   onDeleteFamily: (String) -> Unit = {}
 ) {
-  val membersCount by viewModel.membersCount.collectAsState()
+  val adminCounts by viewModel.adminCounts.collectAsState()
   val membersUiState by viewModel.membersUiState.collectAsState()
   val ekalAryaUiState by viewModel.ekalAryaUiState.collectAsState()
   val aryaSamajUiState by aryaSamajViewModel.listUiState.collectAsState()
@@ -44,11 +44,29 @@ fun AdminContainerScreen(
 
 
   LaunchedEffect(Unit) {
-    viewModel.getMembersCount()
-    viewModel.loadEkalAryaMembers()
-    familyViewModel.loadFamilies()
-    aryaSamajViewModel.loadAryaSamajs()
+    viewModel.loadAdminCounts()
+    //viewModel.loadEkalAryaMembers()
+    //familyViewModel.loadFamilies()
+    //aryaSamajViewModel.loadAryaSamajs()
   }
+
+  // Listen to real-time admin count changes - Compose-managed lifecycle
+  LaunchedEffect(Unit) {
+    viewModel.listenToAdminCountChanges().collect {
+      viewModel.loadAdminCounts()
+    }
+  }
+
+  // Show error snackbar for admin counts loading errors (if any)
+  ErrorSnackbar(
+    error = adminCounts.appError,
+    snackbarHostState = snackbarHostState,
+    onRetry = {
+      viewModel.clearAdminCountsError()
+      viewModel.loadAdminCounts()
+    },
+    onDismiss = { viewModel.clearAdminCountsError() }
+  )
 
   // Show error snackbar for member count loading errors (if any)
   ErrorSnackbar(
@@ -114,30 +132,30 @@ fun AdminContainerScreen(
     PrimaryScrollableTabRow(
       selectedTabIndex = selectedTabIndex
     ) {
-      val count =
-        if (membersUiState.appError == null) {
-          "$membersCount".toDevanagariNumerals()
+      val organisationalMembersCount =
+        if (adminCounts.appError == null) {
+          "${adminCounts.counts.organisationalMembersCount}".toDevanagariNumerals()
         } else {
           "?" // Show question mark if count couldn't be loaded
         }
 
       val aryaSamajCount =
-        if (aryaSamajUiState.appError == null) {
-          "${aryaSamajUiState.aryaSamajs.size}".toDevanagariNumerals()
+        if (adminCounts.appError == null) {
+          "${adminCounts.counts.aryaSamajCount}".toDevanagariNumerals()
         } else {
           "?"
         }
 
       val ekalAryaCount =
-        if (ekalAryaUiState.appError == null) {
-          "${ekalAryaUiState.ekalAryaMembers.size}".toDevanagariNumerals()
+        if (adminCounts.appError == null) {
+          "${adminCounts.counts.ekalAryaCount}".toDevanagariNumerals()
         } else {
           "?"
         }
 
       val familyCount =
-        if (familyUiState.error == null) {
-          "${familyUiState.families.size}".toDevanagariNumerals()
+        if (adminCounts.appError == null) {
+          "${adminCounts.counts.familyCount}".toDevanagariNumerals()
         } else {
           "?"
         }
@@ -145,7 +163,7 @@ fun AdminContainerScreen(
       Tab(
         selected = selectedTabIndex == 0,
         onClick = { selectedTabIndex = 0 },
-        text = { Text("पदाधिकारी ($count)") }
+        text = { Text("पदाधिकारी ($organisationalMembersCount)") }
       )
       Tab(
         selected = selectedTabIndex == 1,
