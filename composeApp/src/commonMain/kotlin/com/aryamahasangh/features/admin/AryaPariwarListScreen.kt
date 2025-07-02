@@ -189,7 +189,6 @@ fun AryaPariwarListScreen(
                 onFamilyClick = { onNavigateToFamilyDetail(family.id) },
                 onEditFamily = { onEditFamily(family.id) },
                 onDeleteFamily = { onDeleteFamily(family.id) },
-                modifier = Modifier.width(450.dp)
               )
             }
           }
@@ -232,7 +231,7 @@ private fun FamilyItem(
     modifier =
       modifier
         .clickable { onFamilyClick() }
-        .width(500.dp),
+        .width(490.dp),
     shape = RoundedCornerShape(8.dp)
   ) {
     Row(

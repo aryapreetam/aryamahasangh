@@ -247,7 +247,7 @@ fun EkalAryaListScreen(
                 onMemberClick = { onNavigateToMemberDetail(member.id) },
                 onEditClick = { onNavigateToEditMember(member.id) },
                 onDeleteClick = { showDeleteDialog = member },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.width(490.dp)
               )
             }
           } else {
@@ -264,7 +264,7 @@ fun EkalAryaListScreen(
                     onMemberClick = { onNavigateToMemberDetail(member.id) },
                     onEditClick = { onNavigateToEditMember(member.id) },
                     onDeleteClick = { showDeleteDialog = member },
-                    modifier = Modifier.width(450.dp)
+                    modifier = Modifier.width(490.dp)
                   )
                 }
               }
@@ -407,7 +407,7 @@ private fun MemberItem(
     modifier =
       modifier
         .clickable { onMemberClick() }
-        .width(500.dp),
+        .width(490.dp),
     shape = RoundedCornerShape(4.dp)
   ) {
     Row(

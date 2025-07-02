@@ -12,6 +12,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
+import androidx.compose.material3.MenuAnchorType.Companion.PrimaryNotEditable
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
@@ -304,7 +305,7 @@ fun GenderDropdown(
       trailingIcon = {
         ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
       },
-      modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
+      modifier = Modifier.menuAnchor(PrimaryNotEditable, true),
       isError = isError,
       supportingText = supportingText
     )
@@ -359,7 +360,7 @@ fun FamilyRelationDropdown(
       trailingIcon = {
         ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
       },
-      modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
+      modifier = Modifier.menuAnchor(PrimaryNotEditable, true),
       isError = isError,
       supportingText = supportingText
     )

@@ -16,7 +16,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.aryamahasangh.features.admin.FamiliesUiState
 import com.aryamahasangh.features.admin.FamilyViewModel
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AryaPariwarScreen(familyViewModel: FamilyViewModel? = null) {
   val familiesUiState by familyViewModel?.familiesUiState?.collectAsStateWithLifecycle()

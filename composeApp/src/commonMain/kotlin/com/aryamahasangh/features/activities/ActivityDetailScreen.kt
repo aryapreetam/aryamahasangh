@@ -297,7 +297,7 @@ fun RegisteredUsers(
 //  }
 // }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ActivityDisplay(
   activity: OrganisationalActivity,

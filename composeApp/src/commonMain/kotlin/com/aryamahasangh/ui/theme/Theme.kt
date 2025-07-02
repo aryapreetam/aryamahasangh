@@ -258,7 +258,7 @@ val unspecified_scheme =
     Color.Unspecified
   )
 
-@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+//@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AppTheme(
   darkTheme: Boolean = isSystemInDarkTheme(),
@@ -279,9 +279,9 @@ fun AppTheme(
     LocalThemeIsDark provides isDarkState
   ) {
     val isDark by isDarkState
-    MaterialExpressiveTheme(
+    MaterialTheme(
       colorScheme = colorScheme, // if (isDark) darkScheme else lightScheme,
-      motionScheme = MotionScheme.expressive(),
+      //motionScheme = MotionScheme.expressive(),
       typography = AppTypography(),
       content = content
     )

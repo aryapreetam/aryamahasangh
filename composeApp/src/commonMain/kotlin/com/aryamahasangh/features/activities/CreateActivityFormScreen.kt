@@ -12,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.material3.MenuAnchorType.Companion.PrimaryNotEditable
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -213,7 +214,7 @@ fun MultiSelectDropdown(
         onValueChange = { },
         label = { Text(label) },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
+        modifier = Modifier.fillMaxWidth().menuAnchor(PrimaryNotEditable, true),
         isError = isError,
         supportingText = supportingText
       )
@@ -363,7 +364,7 @@ fun ContactPeopleDropdown(
         onValueChange = { },
         label = { Text(label) },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
+        modifier = Modifier.fillMaxWidth().menuAnchor(PrimaryNotEditable, true),
         isError = isError,
         supportingText = supportingText
       )
@@ -1482,7 +1483,7 @@ private fun CreateActivityScreenContent(
               label = { Text("सत्र में प्रवेश") },
               placeholder = { Text("लिंग अनुमति चुनें") },
               trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = genderAllowedExpanded) },
-              modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
+              modifier = Modifier.fillMaxWidth().menuAnchor(PrimaryNotEditable, true),
               isError = genderAllowedError != null,
               supportingText = { genderAllowedError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
             )

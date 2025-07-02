@@ -163,7 +163,6 @@ fun OrganisationalMembersScreen(
                 onMemberClick = { onNavigateToMemberDetail(member.id) },
                 onEditClick = { onNavigateToEditMember(member.id) }, // Update to use edit navigation
                 onDeleteClick = { showDeleteDialog = member },
-                modifier = Modifier.width(450.dp)
               )
             }
           }
@@ -212,7 +211,7 @@ private fun MemberItem(
     modifier =
       modifier
         .clickable { onMemberClick() }
-        .width(500.dp),
+        .width(490.dp),
     shape = RoundedCornerShape(4.dp)
   ) {
     Row(

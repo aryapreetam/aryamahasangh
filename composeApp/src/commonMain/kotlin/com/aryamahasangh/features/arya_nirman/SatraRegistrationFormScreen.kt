@@ -9,6 +9,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.material3.MenuAnchorType.Companion.PrimaryNotEditable
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -488,7 +489,7 @@ fun SatraRegistrationFormScreen(
             label = { Text("लिंग") },
             placeholder = { Text("लिंग चुनें") },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = genderExpanded) },
-            modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
+            modifier = Modifier.fillMaxWidth().menuAnchor(PrimaryNotEditable, true),
             isError = genderError != null,
             supportingText = { genderError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
           )
@@ -594,7 +595,7 @@ fun SatraRegistrationFormScreen(
           label = { Text("प्रेरणा का स्रोत चुनें") },
           trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = inspirationSourceExpanded) },
           modifier =
-            Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true).focusRequester(
+            Modifier.fillMaxWidth().menuAnchor(PrimaryNotEditable, true).focusRequester(
               remember {
                 FocusRequester()
               } // Dummy focus for dropdown
