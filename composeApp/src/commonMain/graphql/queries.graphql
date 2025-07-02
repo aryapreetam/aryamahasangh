@@ -800,17 +800,56 @@ fragment MemberNotInFamilyShort on MemberNotInFamily {
   addressId
 }
 
-query ekalAryaMembers {
-  memberNotInFamilyCollection {
+query ekalAryaMembers($first: Int!, $after: Cursor) {
+  memberNotInFamilyCollection(
+    first: $first
+    after: $after
+    orderBy: {name: AscNullsLast}
+  ) {
     edges {
       node {
         ...MemberNotInFamilyShort
       }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
     }
   }
 }
 
-query searchEkalAryaMembers($nameOrPhoneNumber: String!) {
+query searchEkalAryaMembers($first: Int!, $after: Cursor, $searchTerm: String!) {
+  memberNotInFamilyCollection(
+    first: $first
+    after: $after
+    filter: {
+      or: [
+        {name: {ilike: $searchTerm}},
+        {phoneNumber: {ilike: $searchTerm}}
+      ]
+    }
+    orderBy: {name: AscNullsLast}
+  ) {
+    edges {
+      node {
+        ...MemberNotInFamilyShort
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+  }
+}
+
+# Legacy query - keeping for backward compatibility
+query searchEkalAryaMembersLegacy($nameOrPhoneNumber: String!) {
   memberNotInFamilyCollection(
     filter: {
       or: [
@@ -839,8 +878,18 @@ query memberReferrer($referrerId: String!) {
     }
   }
 }
-query MembersInOrganisationCount{
+
+query CountsForAdminContainer{
   memberInOrganisationCollection{
+    totalCount
+  }
+  aryaSamajCollection{
+    totalCount
+  }
+  familyCollection{
+    totalCount
+  }
+  memberNotInFamilyCollection{
     totalCount
   }
 }

@@ -1,3 +1,4 @@
+
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
 import com.apollographql.apollo.cache.normalized.FetchPolicy
@@ -11,18 +12,44 @@ import com.aryamahasangh.features.activities.Member
 import com.aryamahasangh.features.admin.*
 import com.aryamahasangh.fragment.AryaSamajFields
 import com.aryamahasangh.fragment.MemberInOrganisationShort
+import com.aryamahasangh.network.supabaseClient
 import com.aryamahasangh.type.GenderFilter
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.util.safeCall
+import io.github.jan.supabase.annotations.SupabaseExperimental
+import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.realtime.selectAsFlow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.json.Json
 
+// Simple data classes for realtime change tracking
+@kotlinx.serialization.Serializable
+data class AdminTableChange(
+  val id: String
+)
+
+// Data class for consolidated admin counts
+data class AdminCounts(
+  val organisationalMembersCount: Long = 0L,
+  val aryaSamajCount: Long = 0L,
+  val familyCount: Long = 0L,
+  val ekalAryaCount: Long = 0L
+)
+
 interface AdminRepository {
+  // NEW: Consolidated counts method
+  suspend fun getAdminCounts(): Flow<Result<AdminCounts>>
+
+  // NEW: Real-time listener for admin count changes
+  fun listenToAdminCountChanges(): Flow<Unit>
+
   // Member methods
   suspend fun getOrganisationalMembers(): Flow<Result<List<MemberShort>>>
 
@@ -41,6 +68,18 @@ interface AdminRepository {
   suspend fun getEkalAryaMembers(): Flow<Result<List<MemberShort>>>
 
   suspend fun searchEkalAryaMembers(query: String): Flow<Result<List<MemberShort>>>
+
+  // NEW: Paginated EkalArya methods
+  suspend fun getEkalAryaMembersPaginated(
+    pageSize: Int = 30,
+    cursor: String? = null
+  ): Flow<PaginationResult<MemberShort>>
+
+  suspend fun searchEkalAryaMembersPaginated(
+    searchTerm: String,
+    pageSize: Int = 30,
+    cursor: String? = null
+  ): Flow<PaginationResult<MemberShort>>
 
   suspend fun updateMemberDetails(
     memberId: String,
@@ -141,7 +180,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
           val response =
             apolloClient.query(SearchOrganisationalMembersQuery("%$query%")).execute()
           if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+            throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Unknown error occurred")
           }
           if (response.data?.memberInOrganisationCollection?.edges.isNullOrEmpty()) {
             throw Exception("No results found")
@@ -154,6 +193,29 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
               profileImage = member.profileImage ?: "",
             )
           } ?: emptyList()
+        }
+      emit(result)
+    }
+
+  override suspend fun getAdminCounts(): Flow<Result<AdminCounts>> =
+    flow {
+      emit(Result.Loading)
+      val result =
+        safeCall {
+          val response = apolloClient.query(CountsForAdminContainerQuery()).execute()
+          if (response.hasErrors()) {
+            throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Unknown error occurred")
+          }
+          val organisationalMembersCount = response.data?.memberInOrganisationCollection?.totalCount?.toLong() ?: 0L
+          val aryaSamajCount = response.data?.aryaSamajCollection?.totalCount?.toLong() ?: 0L
+          val familyCount = response.data?.familyCollection?.totalCount?.toLong() ?: 0L
+          val ekalAryaCount = response.data?.memberNotInFamilyCollection?.totalCount?.toLong() ?: 0L
+          AdminCounts(
+            organisationalMembersCount = organisationalMembersCount,
+            aryaSamajCount = aryaSamajCount,
+            familyCount = familyCount,
+            ekalAryaCount = ekalAryaCount
+          )
         }
       emit(result)
     }
@@ -171,7 +233,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
           val result = safeCall {
             if(!cameFromEmptyCache) {
               if (response.hasErrors()) {
-                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+                throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Unknown error occurred")
               }
               if (response.data?.memberInOrganisationCollection?.edges.isNullOrEmpty()) {
                 throw Exception("No results found")
@@ -195,7 +257,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
       emit(Result.Loading)
       val result =
         safeCall {
-          val response = apolloClient.query(MembersInOrganisationCountQuery()).execute()
+          val response = apolloClient.query(MembersCountQuery()).execute()
 //          var count = 0L
 //          try {
 //            count = supabaseClient.from("member_in_organisation").select { Count.EXACT }.countOrNull() ?: 0L
@@ -203,7 +265,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
 //            throw Exception("Unknown error occurred ${e.message}")
 //          }
 
-          response.data?.memberInOrganisationCollection?.totalCount?.toLong() ?: 0L
+          response.data?.memberCollection?.totalCount?.toLong() ?: 0L
         }
       emit(result)
     }
@@ -221,7 +283,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
           val result = safeCall {
             if (!cameFromEmptyCache) {
               if (response.hasErrors()) {
-                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+                throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Unknown error occurred")
               }
             }
             val memberNode = response.data?.memberCollection?.edges?.firstOrNull()?.node
@@ -349,7 +411,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
         safeCall {
           val response = apolloClient.query(SearchMembersQuery("%$query%")).execute()
           if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+            throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Unknown error occurred")
           }
           if (response.data?.memberCollection?.edges.isNullOrEmpty()) {
             throw Exception("No results found")
@@ -375,7 +437,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
             apolloClient.query(SearchMembersQuery("%$query%")).execute()
 
           if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+            throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Unknown error occurred")
           }
           if (response.data?.memberCollection?.edges.isNullOrEmpty()) {
             throw Exception("No results found")
@@ -399,7 +461,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
         safeCall {
           val response = apolloClient.mutation(DeleteMemberMutation(memberId)).execute()
           if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+            throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Unknown error occurred")
           }
 
           // Since DeleteMember returns JSON, we'll return true for success
@@ -489,7 +551,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
           ).execute()
 
           if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Update failed")
+            throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Update failed")
           }
           true
         }
@@ -512,7 +574,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
               )
             ).execute()
           if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+            throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Unknown error occurred")
           }
           true
         }
@@ -546,7 +608,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
             ).execute()
 
           if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Address creation failed")
+            throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Address creation failed")
           }
 
           val addressId = response.data?.insertIntoAddressCollection?.records?.firstOrNull()?.id
@@ -566,7 +628,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
         safeCall {
           val response = apolloClient.query(AryaSamajsQuery()).execute()
           if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+            throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Unknown error occurred")
           }
           if (response.data?.aryaSamajCollection?.edges.isNullOrEmpty()) {
             throw Exception("No results found")
@@ -595,7 +657,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
           // You can implement a proper search query later if needed
           val response = apolloClient.query(AryaSamajsQuery()).execute()
           if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+            throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Unknown error occurred")
           }
           if (response.data?.aryaSamajCollection?.edges.isNullOrEmpty()) {
             throw Exception("No results found")
@@ -628,7 +690,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
     flow {
       emit(Result.Loading)
 
-      apolloClient.query(EkalAryaMembersQuery())
+      apolloClient.query(EkalAryaMembersQuery(first = 1000, after = Optional.Absent))
         .fetchPolicy(FetchPolicy.CacheAndNetwork)
         .toFlow()
         .collect { response ->
@@ -649,6 +711,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
                 id = member.id!!,
                 name = member.name!!,
                 profileImage = member.profileImage ?: "",
+                place = ""
               )
             } ?: emptyList()
           }
@@ -661,7 +724,13 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
       emit(Result.Loading)
       val result =
         safeCall {
-          val response = apolloClient.query(SearchEkalAryaMembersQuery("%$query%")).execute()
+          val response = apolloClient.query(
+            SearchEkalAryaMembersQuery(
+              first = 1000,
+              after = Optional.Absent,
+              searchTerm = "%$query%"
+            )
+          ).execute()
           if (response.hasErrors()) {
             throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
           }
@@ -674,10 +743,91 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
               id = member.id!!,
               name = member.name!!,
               profileImage = member.profileImage ?: "",
+              place = ""
             )
           } ?: emptyList()
         }
       emit(result)
+    }
+
+  override suspend fun getEkalAryaMembersPaginated(
+    pageSize: Int,
+    cursor: String?
+  ): Flow<PaginationResult<MemberShort>> =
+    flow {
+      emit(PaginationResult.Loading())
+      val result = safeCall {
+        val response = apolloClient.query(
+          EkalAryaMembersQuery(
+            first = pageSize,
+            after = Optional.presentIfNotNull(cursor)
+          )
+        ).execute()
+        if (response.hasErrors()) {
+          throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+        }
+        val members = response.data?.memberNotInFamilyCollection?.edges?.map {
+          val member = it.node.memberNotInFamilyShort
+          MemberShort(
+            id = member.id!!,
+            name = member.name!!,
+            profileImage = member.profileImage ?: "",
+            place = ""
+          )
+        } ?: emptyList()
+        val pageInfo = response.data?.memberNotInFamilyCollection?.pageInfo
+        PaginationResult.Success(
+          data = members,
+          hasNextPage = pageInfo?.hasNextPage ?: false,
+          endCursor = pageInfo?.endCursor
+        )
+      }
+      when (result) {
+        is Result.Success -> emit(result.data)
+        is Result.Error -> emit(PaginationResult.Error(result.exception?.message?.let { "$it" } ?: "Unknown error"))
+        is Result.Loading -> emit(PaginationResult.Loading())
+      }
+    }
+
+  override suspend fun searchEkalAryaMembersPaginated(
+    searchTerm: String,
+    pageSize: Int,
+    cursor: String?
+  ): Flow<PaginationResult<MemberShort>> =
+    flow {
+      emit(PaginationResult.Loading())
+      val result = safeCall {
+        val response = apolloClient.query(
+          SearchEkalAryaMembersQuery(
+            first = pageSize,
+            after = Optional.presentIfNotNull(cursor),
+            searchTerm = "%$searchTerm%"
+          )
+        ).execute()
+        if (response.hasErrors()) {
+          throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+        }
+        val members = response.data?.memberNotInFamilyCollection?.edges?.map {
+          val member = it.node.memberNotInFamilyShort
+          MemberShort(
+            id = member.id!!,
+            name = member.name!!,
+            profileImage = member.profileImage ?: "",
+            place = ""
+          )
+        } ?: emptyList()
+        val pageInfo = response.data?.memberNotInFamilyCollection?.pageInfo
+        PaginationResult.Success(
+          data = members,
+          hasNextPage = pageInfo?.hasNextPage ?: false,
+          endCursor = pageInfo?.endCursor
+        )
+      }
+      when (result) {
+        is Result.Success -> emit(result.data)
+        is Result.Error -> emit(PaginationResult.Error(result.exception?.message?.let { "$it" } ?: "Unknown error"))
+        is Result.Loading -> emit(PaginationResult.Loading())
+      }
     }
 
   override suspend fun createMemberWithAddress(
@@ -758,7 +908,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
             ).execute()
 
           if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Member creation failed")
+            throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Member creation failed")
           }
 
           // Parse the JSON response from insertMemberDetails function
@@ -811,4 +961,30 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
         }
       emit(result)
     }
+
+  @OptIn(SupabaseExperimental::class)
+  override fun listenToAdminCountChanges(): Flow<Unit> {
+    return merge(
+      // Listen to organisational_member table (not member_in_organisation view)
+      supabaseClient.from("organisational_member").selectAsFlow(
+        primaryKeys = listOf(AdminTableChange::id)
+      ),
+      // Listen to arya_samaj table
+      supabaseClient.from("arya_samaj").selectAsFlow(
+        primaryKeys = listOf(AdminTableChange::id)
+      ),
+      // Listen to family table
+      supabaseClient.from("family").selectAsFlow(
+        primaryKeys = listOf(AdminTableChange::id)
+      ),
+      // Listen to family_member table (for family count changes)
+      supabaseClient.from("family_member").selectAsFlow(
+        primaryKeys = listOf(AdminTableChange::id)
+      ),
+      // Listen to member table (affects member_not_in_family view)
+      supabaseClient.from("member").selectAsFlow(
+        primaryKeys = listOf(AdminTableChange::id)
+      )
+    ).map { Unit }
+  }
 }

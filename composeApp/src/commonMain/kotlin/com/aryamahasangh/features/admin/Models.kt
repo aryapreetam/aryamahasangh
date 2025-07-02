@@ -13,6 +13,39 @@ data class MemberShort(
   val place: String = ""
 )
 
+// Pagination state for managing paginated data
+data class PaginationState<T>(
+  val items: List<T> = emptyList(),
+  val isInitialLoading: Boolean = false,
+  val isLoadingNextPage: Boolean = false,
+  val isSearching: Boolean = false,
+  val hasNextPage: Boolean = false,
+  val hasReachedEnd: Boolean = false,
+  val error: String? = null,
+  val nextPageError: String? = null,
+  val showRetryButton: Boolean = false,
+  val endCursor: String? = null,
+  val currentSearchTerm: String = ""
+)
+
+// Result wrapper for pagination operations
+sealed class PaginationResult<T> {
+  data class Success<T>(val data: List<T>, val hasNextPage: Boolean, val endCursor: String?) : PaginationResult<T>()
+  data class Error<T>(val message: String) : PaginationResult<T>()
+  class Loading<T> : PaginationResult<T>()
+}
+
+// Retry policy configuration
+data class RetryConfig(
+  val maxRetries: Int = 3,
+  val baseDelayMs: Long = 1000L,
+  val currentRetryCount: Int = 0
+) {
+  fun nextRetry(): RetryConfig = copy(currentRetryCount = currentRetryCount + 1)
+  fun canRetry(): Boolean = currentRetryCount < maxRetries
+  fun getDelayMs(): Long = baseDelayMs * (2 * currentRetryCount) // Exponential backoff
+}
+
 data class MemberDetail(
   val id: String,
   val name: String,

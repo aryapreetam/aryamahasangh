@@ -2510,6 +2510,11 @@ type MemberNotInFamilyConnection {
   edges: [MemberNotInFamilyEdge!]!
 
   pageInfo: PageInfo!
+
+  """
+  The total number of records matching the `filter` criteria
+  """
+  totalCount: Int!
 }
 
 type MemberNotInFamilyDeleteResponse {
