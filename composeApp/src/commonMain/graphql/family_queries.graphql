@@ -180,16 +180,24 @@ query GetFamiliesByLocation(
 }
 
 # Search families by name
-query SearchFamilies($searchTerm: String!, $first: Int) {
+query SearchFamilies($searchTerm: String!, $first: Int, $after: Cursor) {
   familyCollection(
     filter: { name: { ilike: $searchTerm } }
     first: $first
-    orderBy: [{ name: AscNullsFirst }]
+    after: $after
+    orderBy: [{ createdAt: DescNullsLast }]
   ) {
     edges {
       node {
         ...FamilyFields
       }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
     }
   }
 }

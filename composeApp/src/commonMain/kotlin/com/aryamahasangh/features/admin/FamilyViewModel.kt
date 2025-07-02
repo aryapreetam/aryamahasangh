@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
 
 data class FamiliesUiState(
@@ -21,7 +23,9 @@ data class FamiliesUiState(
   val searchResults: List<FamilyShort> = emptyList(),
   val error: String? = null,
   val familyCount: Int = 0,
-  val familyMemberCount: Int = 0
+  val familyMemberCount: Int = 0,
+  val paginationState: PaginationState<FamilyShort> = PaginationState(),
+  val hasLoadedOnce: Boolean = false
 )
 
 data class FamilyDetailUiState(
@@ -69,32 +73,232 @@ class FamilyViewModel(
   private val _familyDetailUiState = MutableStateFlow(FamilyDetailUiState())
   val familyDetailUiState: StateFlow<FamilyDetailUiState> = _familyDetailUiState.asStateFlow()
 
+  private var searchJob: Job? = null
+
+  // Flag to track if pagination should be preserved (e.g., when navigating back)
+  private var shouldPreservePagination = false
+
+  // Method to check if we have existing data and should preserve it
+  fun hasExistingFamilyData(): Boolean {
+    return _familiesUiState.value.families.isNotEmpty()
+  }
+
+  // Method to preserve pagination state when navigating back
+  fun preserveFamilyPagination(savedFamilies: List<FamilyShort>, savedPaginationState: PaginationState<FamilyShort>) {
+    _familiesUiState.value = _familiesUiState.value.copy(
+      families = savedFamilies,
+      paginationState = savedPaginationState
+    )
+    shouldPreservePagination = true
+  }
+
   // Load families
   fun loadFamilies() {
+    loadFamiliesPaginated(resetPagination = true)
+  }
+
+  fun loadFamiliesPaginated(pageSize: Int = 30, resetPagination: Boolean = false) {
     viewModelScope.launch {
-      familyRepository.getFamilies().collect { result ->
+      val currentState = _familiesUiState.value.paginationState
+
+      // Only preserve pagination when explicitly requested AND it's a reset operation
+      val shouldPreserveExistingData = shouldPreservePagination && resetPagination && hasExistingFamilyData()
+
+      // Reset the preservation flag after checking
+      if (shouldPreservePagination) {
+        shouldPreservePagination = false
+      }
+
+      // Only skip loading if we're preserving existing data from navigation
+      if (shouldPreserveExistingData) {
+        return@launch
+      }
+
+      // For normal pagination (resetPagination=false), always proceed with loading
+      val shouldReset = resetPagination
+      val cursor = if (shouldReset) null else currentState.endCursor
+
+      // Set loading state
+      _familiesUiState.value = _familiesUiState.value.copy(
+        paginationState = currentState.copy(
+          isInitialLoading = shouldReset || currentState.items.isEmpty(),
+          isLoadingNextPage = !shouldReset && currentState.items.isNotEmpty(),
+          error = null
+        )
+      )
+
+      familyRepository.getFamiliesPaginated(pageSize = pageSize, cursor = cursor).collect { result ->
         when (result) {
-          is Result.Loading -> {
-            _familiesUiState.value = _familiesUiState.value.copy(isLoading = true, error = null)
+          is PaginationResult.Loading -> {
+            // Loading state already set above
           }
 
-          is Result.Success -> {
-            val families =
-              result.data.map { familyFields ->
-                familyFields.toFamilyShort()
-              }
-            _familiesUiState.value = _familiesUiState.value.copy(isLoading = false, families = families)
-          }
+          is PaginationResult.Success -> {
+            val familyShorts = result.data.map { it.toFamilyShort() }
+            val newItems = if (shouldReset) {
+              familyShorts
+            } else {
+              currentState.items + familyShorts
+            }
 
-          is Result.Error -> {
-            _familiesUiState.value =
-              _familiesUiState.value.copy(
-                isLoading = false,
-                error = "परिवार लोड करने में त्रुटि: ${result.message}"
+            _familiesUiState.value = _familiesUiState.value.copy(
+              families = newItems,
+              hasLoadedOnce = true,
+              paginationState = currentState.copy(
+                items = newItems,
+                isInitialLoading = false,
+                isLoadingNextPage = false,
+                hasNextPage = result.hasNextPage,
+                endCursor = result.endCursor,
+                hasReachedEnd = !result.hasNextPage,
+                error = null
               )
+            )
+          }
+
+          is PaginationResult.Error -> {
+            _familiesUiState.value = _familiesUiState.value.copy(
+              paginationState = currentState.copy(
+                isInitialLoading = false,
+                isLoadingNextPage = false,
+                error = result.message,
+                showRetryButton = true
+              )
+            )
           }
         }
       }
+    }
+  }
+
+  // Search families
+  fun searchFamiliesPaginated(searchTerm: String, pageSize: Int = 30, resetPagination: Boolean = true) {
+    viewModelScope.launch {
+      val currentState = _familiesUiState.value.paginationState
+
+      // Clear cache on search change
+      if (resetPagination && searchTerm != currentState.currentSearchTerm) {
+        // TODO: Clear Apollo cache for this query
+      }
+
+      val cursor = if (resetPagination) null else currentState.endCursor
+
+      // Set loading state
+      _familiesUiState.value = _familiesUiState.value.copy(
+        searchQuery = searchTerm,
+        paginationState = currentState.copy(
+          isSearching = resetPagination,
+          isLoadingNextPage = !resetPagination,
+          error = null,
+          currentSearchTerm = searchTerm
+        )
+      )
+
+      familyRepository.searchFamiliesPaginated(
+        searchTerm = searchTerm,
+        pageSize = pageSize,
+        cursor = cursor
+      ).collect { result ->
+        when (result) {
+          is PaginationResult.Loading -> {
+            // Loading state already set above
+          }
+
+          is PaginationResult.Success -> {
+            val familyShorts = result.data.map { it.toFamilyShort() }
+            val newItems = if (resetPagination) {
+              familyShorts
+            } else {
+              currentState.items + familyShorts
+            }
+
+            _familiesUiState.value = _familiesUiState.value.copy(
+              families = newItems,
+              hasLoadedOnce = true,
+              paginationState = currentState.copy(
+                items = newItems,
+                isSearching = false,
+                isLoadingNextPage = false,
+                hasNextPage = result.hasNextPage,
+                endCursor = result.endCursor,
+                hasReachedEnd = !result.hasNextPage,
+                error = null,
+                currentSearchTerm = searchTerm
+              )
+            )
+          }
+
+          is PaginationResult.Error -> {
+            _familiesUiState.value = _familiesUiState.value.copy(
+              paginationState = currentState.copy(
+                isSearching = false,
+                isLoadingNextPage = false,
+                error = result.message,
+                showRetryButton = true
+              )
+            )
+          }
+        }
+      }
+    }
+  }
+
+  fun loadNextFamilyPage() {
+    val currentState = _familiesUiState.value.paginationState
+
+    if (currentState.hasNextPage && !currentState.isLoadingNextPage) {
+      if (currentState.currentSearchTerm.isNotBlank()) {
+        searchFamiliesPaginated(
+          searchTerm = currentState.currentSearchTerm,
+          resetPagination = false
+        )
+      } else {
+        loadFamiliesPaginated(resetPagination = false)
+      }
+    }
+  }
+
+  fun retryFamilyLoad() {
+    val currentState = _familiesUiState.value.paginationState
+    _familiesUiState.value = _familiesUiState.value.copy(
+      paginationState = currentState.copy(showRetryButton = false)
+    )
+
+    if (currentState.currentSearchTerm.isNotBlank()) {
+      searchFamiliesPaginated(
+        searchTerm = currentState.currentSearchTerm,
+        resetPagination = currentState.items.isEmpty()
+      )
+    } else {
+      loadFamiliesPaginated(resetPagination = currentState.items.isEmpty())
+    }
+  }
+
+  // Debounced search method
+  fun searchFamiliesWithDebounce(query: String) {
+    _familiesUiState.value = _familiesUiState.value.copy(searchQuery = query)
+
+    searchJob?.cancel()
+    searchJob = viewModelScope.launch {
+      if (query.isBlank()) {
+        // Load regular families when search is cleared
+        loadFamiliesPaginated(resetPagination = true)
+        return@launch
+      }
+
+      // Debounce search by 1 second
+      delay(1000)
+
+      searchFamiliesPaginated(searchTerm = query.trim(), resetPagination = true)
+    }
+  }
+
+  // Calculate page size based on screen width  
+  fun calculatePageSize(screenWidthDp: Float): Int {
+    return when {
+      screenWidthDp < 600f -> 15      // Mobile portrait
+      screenWidthDp < 840f -> 25      // Tablet, mobile landscape
+      else -> 35                      // Desktop, large tablets
     }
   }
 
@@ -121,38 +325,6 @@ class FamilyViewModel(
                 isLoading = false,
                 error = "परिवार विवरण प्राप्त करने में त्रुटि: ${result.message}"
               )
-          }
-        }
-      }
-    }
-  }
-
-  // Search families
-  fun searchFamilies(query: String) {
-    _familiesUiState.value = _familiesUiState.value.copy(searchQuery = query)
-
-    if (query.isBlank()) {
-      _familiesUiState.value = _familiesUiState.value.copy(searchResults = emptyList())
-      return
-    }
-
-    viewModelScope.launch {
-      familyRepository.searchFamilies(query).collect { result ->
-        when (result) {
-          is Result.Success -> {
-            val searchResults =
-              result.data.map { familyFields ->
-                familyFields.toFamilyShort()
-              }
-            _familiesUiState.value = _familiesUiState.value.copy(searchResults = searchResults)
-          }
-
-          is Result.Error -> {
-            // Handle search errors silently
-          }
-
-          is Result.Loading -> {
-            // Don't show loading for search
           }
         }
       }
@@ -710,7 +882,7 @@ class FamilyViewModel(
 
           is Result.Success -> {
             // Refresh the families list
-            loadFamilies()
+            loadFamiliesPaginated(resetPagination = true)
           }
 
           is Result.Error -> {

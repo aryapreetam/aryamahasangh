@@ -10,7 +10,9 @@ import com.aryamahasangh.*
 import com.aryamahasangh.fragment.FamilyFields
 import com.aryamahasangh.fragment.MemberWithoutFamily
 import com.aryamahasangh.type.FamilyMemberInsertInput
+import com.aryamahasangh.type.FamilyOrderBy
 import com.aryamahasangh.type.FamilyRelation
+import com.aryamahasangh.type.OrderByDirection
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.util.safeCall
 import kotlinx.coroutines.flow.Flow
@@ -34,8 +36,21 @@ interface FamilyRepository {
 
   suspend fun searchFamilies(
     query: String,
-    first: Int = 50
+    first: Int = 50,
+    after: String? = null
   ): Flow<Result<List<FamilyFields>>>
+
+  // NEW: Paginated methods for infinite scroll
+  suspend fun getFamiliesPaginated(
+    pageSize: Int = 30,
+    cursor: String? = null
+  ): Flow<PaginationResult<FamilyFields>>
+
+  suspend fun searchFamiliesPaginated(
+    searchTerm: String,
+    pageSize: Int = 30,
+    cursor: String? = null
+  ): Flow<PaginationResult<FamilyFields>>
 
   // Family detail
   suspend fun getFamilyDetail(familyId: String): Flow<Result<GetFamilyDetailQuery.Node>>
@@ -111,7 +126,7 @@ class FamilyRepositoryImpl(private val apolloClient: ApolloClient) : FamilyRepos
           first = Optional.present(first),
           after = Optional.presentIfNotNull(after),
           filter = Optional.absent(),
-          orderBy = Optional.absent()
+          orderBy = Optional.present(listOf(FamilyOrderBy(createdAt = Optional.present(OrderByDirection.DescNullsLast))))
         )
       )
         .fetchPolicy(FetchPolicy.CacheAndNetwork)
@@ -134,7 +149,8 @@ class FamilyRepositoryImpl(private val apolloClient: ApolloClient) : FamilyRepos
 
   override suspend fun searchFamilies(
     query: String,
-    first: Int
+    first: Int,
+    after: String?
   ): Flow<Result<List<FamilyFields>>> =
     flow {
       emit(Result.Loading)
@@ -144,7 +160,8 @@ class FamilyRepositoryImpl(private val apolloClient: ApolloClient) : FamilyRepos
             apolloClient.query(
               SearchFamiliesQuery(
                 searchTerm = "%$query%",
-                first = Optional.present(first)
+                first = Optional.present(first),
+                after = Optional.presentIfNotNull(after)
               )
             ).execute()
 
@@ -518,6 +535,98 @@ class FamilyRepositoryImpl(private val apolloClient: ApolloClient) : FamilyRepos
           true
         }
       emit(result)
+    }
+
+  override suspend fun getFamiliesPaginated(
+    pageSize: Int,
+    cursor: String?
+  ): Flow<PaginationResult<FamilyFields>> =
+    flow {
+      emit(PaginationResult.Loading())
+
+      apolloClient.query(
+        GetFamiliesQuery(
+          first = Optional.present(pageSize),
+          after = Optional.presentIfNotNull(cursor),
+          filter = Optional.absent(),
+          orderBy = Optional.present(listOf(FamilyOrderBy(createdAt = Optional.present(OrderByDirection.DescNullsLast))))
+        )
+      )
+        .fetchPolicy(FetchPolicy.CacheAndNetwork)
+        .toFlow()
+        .collect { response ->
+          // Skip only cache MISSES with empty data - cache HITS with empty data should be shown
+          if (response.isFromCache && response.cacheInfo?.isCacheHit == false && response.data?.familyCollection?.edges.isNullOrEmpty()) {
+            // Skip emitting empty cache miss - wait for network
+          } else {
+            val result = safeCall {
+              if (response.hasErrors()) {
+                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+              }
+
+              val families = response.data?.familyCollection?.edges?.map {
+                it.node.familyFields
+              } ?: emptyList()
+
+              val pageInfo = response.data?.familyCollection?.pageInfo
+
+              PaginationResult.Success(
+                data = families,
+                hasNextPage = pageInfo?.hasNextPage ?: false,
+                endCursor = pageInfo?.endCursor
+              )
+            }
+
+            when (result) {
+              is Result.Success -> {
+                emit(result.data)
+              }
+              is Result.Error -> {
+                emit(PaginationResult.Error(result.exception?.message ?: "Unknown error"))
+              }
+              is Result.Loading -> {
+                // Already emitted loading state above
+              }
+            }
+          }
+        }
+    }
+
+  override suspend fun searchFamiliesPaginated(
+    searchTerm: String,
+    pageSize: Int,
+    cursor: String?
+  ): Flow<PaginationResult<FamilyFields>> =
+    flow {
+      emit(PaginationResult.Loading())
+      val result =
+        safeCall {
+          val response =
+            apolloClient.query(
+              SearchFamiliesQuery(
+                searchTerm = "%$searchTerm%",
+                first = Optional.present(pageSize),
+                after = Optional.presentIfNotNull(cursor)
+              )
+            ).execute()
+
+          if (response.hasErrors()) {
+            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+          }
+
+          val edges = response.data?.familyCollection?.edges ?: emptyList()
+          val familyFields = edges.map { it.node.familyFields }
+          val hasNextPage = response.data?.familyCollection?.pageInfo?.hasNextPage ?: false
+          val endCursor = response.data?.familyCollection?.pageInfo?.endCursor
+
+          PaginationResult.Success(data = familyFields, hasNextPage = hasNextPage, endCursor = endCursor)
+        }
+
+      when (result) {
+        is Result.Success -> emit(result.data)
+        is Result.Error -> emit(PaginationResult.Error(result.message))
+        is Result.Loading -> {} // Already emitted Loading above
+      }
     }
 
   // Extension function to convert GetFamilyDetailQuery.Node to FamilyShort
