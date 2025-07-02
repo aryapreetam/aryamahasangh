@@ -344,7 +344,7 @@ private fun FamilyMemberCard(
         }
 
         // Relation to head
-        if (!isHead && member.relationToHead != null) {
+        if (!isHead) {
           val relation =
             try {
               member.relationToHead.toComponents().toDisplayName()

@@ -162,13 +162,21 @@ fun AryaSamajListScreen(
       LazyColumn(
         verticalArrangement = Arrangement.spacedBy(8.dp)
       ) {
-        items(filteredAryaSamajs) { aryaSamaj ->
-          AryaSamajListItem(
-            aryaSamaj = aryaSamaj,
-            onItemClick = { onNavigateToAryaSamajDetail(aryaSamaj.id) },
-            onDeleteClick = { viewModel.deleteAryaSamaj(aryaSamaj.id) },
-            onEditClick = { onEditAryaSamaj(aryaSamaj.id) } // Updated to pass the id
-          )
+        items(filteredAryaSamajs.chunked(2)) { chunk ->
+          FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+          ) {
+            chunk.forEach { aryaSamaj ->
+              AryaSamajListItem(
+                aryaSamaj = aryaSamaj,
+                onItemClick = { onNavigateToAryaSamajDetail(aryaSamaj.id) },
+                onDeleteClick = { viewModel.deleteAryaSamaj(aryaSamaj.id) },
+                onEditClick = { onEditAryaSamaj(aryaSamaj.id) } // Updated to pass the id
+              )
+            }
+          }
         }
       }
     }
@@ -188,7 +196,7 @@ private fun AryaSamajListItem(
 
   Card(
     onClick = onItemClick,
-    modifier = Modifier.fillMaxWidth(),
+    modifier = Modifier.width(490.dp),
     shape = RoundedCornerShape(12.dp)
   ) {
     Row(

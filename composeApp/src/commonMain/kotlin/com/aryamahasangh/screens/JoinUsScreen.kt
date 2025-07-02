@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material3.MenuAnchorType.Companion.PrimaryNotEditable
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -322,7 +323,7 @@ fun StateDropdown(
     ) {
       OutlinedTextField(
         readOnly = true,
-        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
+        modifier = Modifier.fillMaxWidth().menuAnchor(PrimaryNotEditable, true),
         value = selectedState ?: "राज्य चुनें",
         label = { Text("राज्य") },
         onValueChange = {},
@@ -373,7 +374,7 @@ fun DistrictDropdown(
     ) {
       OutlinedTextField(
         readOnly = true,
-        modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
+        modifier = Modifier.fillMaxWidth().menuAnchor(PrimaryNotEditable, true),
         value = selectedDistrict ?: if (isMandatory) "जनपद चुनें" else "जनपद चुनें (वैकल्पिक)",
         label = { Text("जनपद") },
         onValueChange = {

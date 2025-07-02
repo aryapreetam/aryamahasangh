@@ -3,10 +3,7 @@ package com.aryamahasangh.features.admin
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material3.PrimaryScrollableTabRow
-import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Tab
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
@@ -18,6 +15,7 @@ import com.aryamahasangh.features.activities.toDevanagariNumerals
 import com.aryamahasangh.features.admin.data.AryaSamajViewModel
 import com.aryamahasangh.navigation.LocalSnackbarHostState
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminContainerScreen(
   viewModel: AdminViewModel,

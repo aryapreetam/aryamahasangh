@@ -4,6 +4,7 @@ import AppTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material3.MenuAnchorType.Companion.PrimaryNotEditable
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -338,7 +339,7 @@ fun PhysicalTrainingForm(
                 )
               }
             },
-            modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true),
+            modifier = Modifier.menuAnchor(PrimaryNotEditable, true),
             isError = eventError != null,
             supportingText = { eventError?.let { Text(it) } },
             enabled = availableEvents.isNotEmpty() // Enable only if events are loaded
