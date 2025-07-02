@@ -1,3 +1,4 @@
+package com.aryamahasangh.features.admin
 
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
@@ -168,6 +169,7 @@ interface AdminRepository {
     tempLongitude: Double?,
     tempVidhansabha: String?
   ): Flow<Result<String>>
+
 }
 
 class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminRepository {
@@ -756,37 +758,52 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
   ): Flow<PaginationResult<MemberShort>> =
     flow {
       emit(PaginationResult.Loading())
-      val result = safeCall {
-        val response = apolloClient.query(
-          EkalAryaMembersQuery(
-            first = pageSize,
-            after = Optional.presentIfNotNull(cursor)
-          )
-        ).execute()
-        if (response.hasErrors()) {
-          throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-        }
-        val members = response.data?.memberNotInFamilyCollection?.edges?.map {
-          val member = it.node.memberNotInFamilyShort
-          MemberShort(
-            id = member.id!!,
-            name = member.name!!,
-            profileImage = member.profileImage ?: "",
-            place = ""
-          )
-        } ?: emptyList()
-        val pageInfo = response.data?.memberNotInFamilyCollection?.pageInfo
-        PaginationResult.Success(
-          data = members,
-          hasNextPage = pageInfo?.hasNextPage ?: false,
-          endCursor = pageInfo?.endCursor
+
+      apolloClient.query(
+        EkalAryaMembersQuery(
+          first = pageSize,
+          after = Optional.presentIfNotNull(cursor)
         )
-      }
-      when (result) {
-        is Result.Success -> emit(result.data)
-        is Result.Error -> emit(PaginationResult.Error(result.exception?.message?.let { "$it" } ?: "Unknown error"))
-        is Result.Loading -> emit(PaginationResult.Loading())
-      }
+      )
+        .fetchPolicy(FetchPolicy.CacheAndNetwork)
+        .toFlow()
+        .collect { response ->
+          // Skip only cache MISSES with empty data - cache HITS with empty data should be shown
+          if (response.isFromCache && response.cacheInfo?.isCacheHit == false && response.data?.memberNotInFamilyCollection?.edges.isNullOrEmpty()) {
+            // Skip emitting empty cache miss - wait for network
+          } else {
+            val result = safeCall {
+              if (response.hasErrors()) {
+                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+              }
+
+              val members = response.data?.memberNotInFamilyCollection?.edges?.map {
+                val member = it.node.memberNotInFamilyShort
+                MemberShort(
+                  id = member.id!!,
+                  name = member.name!!,
+                  profileImage = member.profileImage ?: "",
+                  place = ""
+                )
+              } ?: emptyList()
+
+              val pageInfo = response.data?.memberNotInFamilyCollection?.pageInfo
+              PaginationResult.Success(
+                data = members,
+                hasNextPage = pageInfo?.hasNextPage ?: false,
+                endCursor = pageInfo?.endCursor
+              )
+            }
+
+            when (result) {
+              is Result.Success -> emit(result.data)
+              is Result.Error -> emit(PaginationResult.Error(result.exception?.message ?: "Unknown error"))
+              is Result.Loading -> {
+                // Already emitted loading state above
+              }
+            }
+          }
+        }
     }
 
   override suspend fun searchEkalAryaMembersPaginated(
