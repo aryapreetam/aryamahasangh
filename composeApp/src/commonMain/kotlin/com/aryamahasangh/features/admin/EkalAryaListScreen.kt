@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -29,9 +30,31 @@ import aryamahasangh.composeapp.generated.resources.error_profile_image
 import coil3.compose.AsyncImage
 import com.aryamahasangh.features.activities.toDevanagariNumerals
 import com.aryamahasangh.navigation.LocalSnackbarHostState
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+
+// Global object to persist pagination state across ViewModel recreation
+private object EkalAryaPageState {
+  var members: List<MemberShort> = emptyList()
+  var paginationState: PaginationState<MemberShort> = PaginationState()
+  var lastSearchQuery: String = ""
+
+  fun clear() {
+    members = emptyList()
+    paginationState = PaginationState()
+    lastSearchQuery = ""
+  }
+
+  fun saveState(newMembers: List<MemberShort>, newPaginationState: PaginationState<MemberShort>, searchQuery: String) {
+    members = newMembers
+    paginationState = newPaginationState
+    lastSearchQuery = searchQuery
+  }
+
+  fun hasData(): Boolean = members.isNotEmpty()
+}
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -49,10 +72,25 @@ fun EkalAryaListScreen(
   val keyboardController = LocalSoftwareKeyboardController.current
   val windowInfo = currentWindowAdaptiveInfo()
   val isCompact = windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT
-  val listState = rememberLazyListState()
+
+  val listState = rememberSaveable(
+    key = "admin_ekal_arya_list_state",
+    saver = LazyListState.Saver
+  ) {
+    LazyListState()
+  }
+
+  // Reset scroll to top when user searches
+  LaunchedEffect(uiState.searchQuery) {
+    if (uiState.searchQuery.isNotEmpty()) {
+      // Clear saved state when user searches
+      EkalAryaPageState.clear()
+      listState.animateScrollToItem(0)
+    }
+  }
+
   val density = LocalDensity.current
 
-  // Calculate responsive page size
   val screenWidthDp = with(density) {
     windowInfo.windowSizeClass.windowWidthSizeClass.let {
       when (it) {
@@ -66,17 +104,21 @@ fun EkalAryaListScreen(
   val pageSize = viewModel.calculatePageSize(screenWidthDp)
 
   LaunchedEffect(Unit) {
+    // Preserve pagination if we have existing data (user navigated back)
+    if (EkalAryaPageState.hasData() && EkalAryaPageState.lastSearchQuery == uiState.searchQuery) {
+      viewModel.preserveEkalAryaPagination(EkalAryaPageState.members, EkalAryaPageState.paginationState)
+    }
+
+    // Load data (will be skipped if preserved)
     viewModel.loadEkalAryaMembersPaginated(pageSize = pageSize, resetPagination = true)
   }
 
-  // Scroll detection for pagination (90% threshold)
   LaunchedEffect(listState) {
     snapshotFlow {
       val layoutInfo = listState.layoutInfo
       val totalItems = layoutInfo.totalItemsCount
       val lastVisibleItem = layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
 
-      // Trigger pagination when user scrolls past 90% of loaded items
       val threshold = (totalItems * 0.9).toInt()
       lastVisibleItem >= threshold && totalItems > 0
     }
@@ -88,7 +130,6 @@ fun EkalAryaListScreen(
       }
   }
 
-  // Handle delete state changes
   LaunchedEffect(deleteState.isDeleting) {
     if (deleteState.isDeleting) {
       snackbarHostState.showSnackbar("सदस्य हटाया जा रहा है...")
@@ -116,6 +157,10 @@ fun EkalAryaListScreen(
     }
   }
 
+  LaunchedEffect(uiState) {
+    EkalAryaPageState.saveState(uiState.members, uiState.paginationState, uiState.searchQuery)
+  }
+
   Column(
     modifier = Modifier.fillMaxSize().padding(16.dp)
   ) {
@@ -124,7 +169,6 @@ fun EkalAryaListScreen(
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = if (isCompact) Arrangement.SpaceBetween else Arrangement.Start
     ) {
-      // Search Bar with loading indicator
       OutlinedTextField(
         value = uiState.searchQuery,
         onValueChange = viewModel::searchEkalAryaMembersWithDebounce,
@@ -177,9 +221,6 @@ fun EkalAryaListScreen(
 
     Spacer(modifier = Modifier.height(16.dp))
 
-    // TODO: Add offline indicator here when network state is available
-
-    // Initial loading state
     if (uiState.paginationState.isInitialLoading) {
       Box(
         modifier = Modifier.fillMaxSize(),
@@ -190,7 +231,6 @@ fun EkalAryaListScreen(
       return@Column
     }
 
-    // Error state
     uiState.paginationState.error?.let { error ->
       Card(
         modifier = Modifier.fillMaxWidth(),
@@ -218,7 +258,6 @@ fun EkalAryaListScreen(
       return@Column
     }
 
-    // Members List
     val membersToShow = uiState.members
 
     if (membersToShow.isEmpty() && !uiState.paginationState.isInitialLoading) {
@@ -240,7 +279,6 @@ fun EkalAryaListScreen(
           modifier = Modifier.fillMaxSize()
         ) {
           if (isCompact) {
-            // Mobile: Single column layout
             items(membersToShow) { member ->
               MemberItem(
                 member = member,
@@ -251,7 +289,6 @@ fun EkalAryaListScreen(
               )
             }
           } else {
-            // Tablet+: Two column layout with FlowRow
             items(membersToShow.chunked(2)) { chunk ->
               FlowRow(
                 modifier = Modifier.fillMaxWidth(),
@@ -271,7 +308,6 @@ fun EkalAryaListScreen(
             }
           }
 
-          // Loading indicator for next page
           if (uiState.paginationState.isLoadingNextPage) {
             item {
               Box(
@@ -283,7 +319,6 @@ fun EkalAryaListScreen(
             }
           }
 
-          // End of list indicator
           if (uiState.paginationState.hasReachedEnd && !uiState.paginationState.hasNextPage && membersToShow.isNotEmpty()) {
             item {
               val totalItemsDisplayed = "${uiState.members.size}".toDevanagariNumerals()
@@ -306,7 +341,6 @@ fun EkalAryaListScreen(
     }
   }
 
-  // Delete Confirmation Dialog
   showDeleteDialog?.let { member ->
     AlertDialog(
       onDismissRequest = { showDeleteDialog = null },
@@ -343,12 +377,10 @@ private fun CustomScrollbar(
   if (totalItems > 0 && visibleItems.isNotEmpty()) {
     val firstVisibleIndex = visibleItems.first().index
 
-    // Calculate scroll progress (0.0 to 1.0)
     val scrollProgress = if (totalItems > 1) {
       firstVisibleIndex.toFloat() / (totalItems - 1).coerceAtLeast(1)
     } else 0f
 
-    // Calculate scrollbar thumb size based on visible content ratio
     val thumbSize = if (totalItems > 0) {
       (visibleItems.size.toFloat() / totalItems).coerceIn(0.1f, 1.0f)
     } else 0.1f
@@ -359,7 +391,6 @@ private fun CustomScrollbar(
         .fillMaxHeight()
         .padding(2.dp)
     ) {
-      // Scrollbar track
       Box(
         modifier = Modifier
           .fillMaxSize()
@@ -369,7 +400,6 @@ private fun CustomScrollbar(
           )
       )
 
-      // Scrollbar thumb
       BoxWithConstraints(
         modifier = Modifier.fillMaxSize()
       ) {
@@ -414,7 +444,6 @@ private fun MemberItem(
       modifier = Modifier.fillMaxWidth().padding(16.dp),
       verticalAlignment = Alignment.CenterVertically
     ) {
-      // Profile Image
       AsyncImage(
         model = member.profileImage,
         contentDescription = "Profile Image",
@@ -428,7 +457,6 @@ private fun MemberItem(
 
       Spacer(modifier = Modifier.width(12.dp))
 
-      // Member Info
       Column(
         modifier = Modifier.weight(1f)
       ) {
@@ -446,7 +474,6 @@ private fun MemberItem(
         }
       }
 
-      // Options Menu
       Box {
         IconButton(onClick = { showOptionsMenu = true }) {
           Icon(Icons.Default.MoreVert, contentDescription = "Options")
