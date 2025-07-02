@@ -1,8 +1,10 @@
 package com.aryamahasangh.features.admin
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -25,6 +27,7 @@ import androidx.window.core.layout.WindowWidthSizeClass
 import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.error_profile_image
 import coil3.compose.AsyncImage
+import com.aryamahasangh.features.activities.toDevanagariNumerals
 import com.aryamahasangh.navigation.LocalSnackbarHostState
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.jetbrains.compose.resources.painterResource
@@ -226,66 +229,79 @@ fun EkalAryaListScreen(
         Text("कोई एकल आर्य नहीं मिले")
       }
     } else {
-      LazyColumn(
-        state = listState,
-        verticalArrangement = Arrangement.spacedBy(8.dp)
+      Box(
+        modifier = Modifier
+          .fillMaxSize()
+          .padding(0.dp)
       ) {
-        if (isCompact) {
-          // Mobile: Single column layout
-          items(membersToShow) { member ->
-            MemberItem(
-              member = member,
-              onMemberClick = { onNavigateToMemberDetail(member.id) },
-              onEditClick = { onNavigateToEditMember(member.id) },
-              onDeleteClick = { showDeleteDialog = member },
-              modifier = Modifier.fillMaxWidth()
-            )
-          }
-        } else {
-          // Tablet+: Two column layout with FlowRow
-          items(membersToShow.chunked(2)) { chunk ->
-            FlowRow(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.spacedBy(8.dp),
-              verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-              chunk.forEach { member ->
-                MemberItem(
-                  member = member,
-                  onMemberClick = { onNavigateToMemberDetail(member.id) },
-                  onEditClick = { onNavigateToEditMember(member.id) },
-                  onDeleteClick = { showDeleteDialog = member },
-                  modifier = Modifier.width(450.dp)
-                )
+        LazyColumn(
+          state = listState,
+          verticalArrangement = Arrangement.spacedBy(8.dp),
+          modifier = Modifier.fillMaxSize()
+        ) {
+          if (isCompact) {
+            // Mobile: Single column layout
+            items(membersToShow) { member ->
+              MemberItem(
+                member = member,
+                onMemberClick = { onNavigateToMemberDetail(member.id) },
+                onEditClick = { onNavigateToEditMember(member.id) },
+                onDeleteClick = { showDeleteDialog = member },
+                modifier = Modifier.fillMaxWidth()
+              )
+            }
+          } else {
+            // Tablet+: Two column layout with FlowRow
+            items(membersToShow.chunked(2)) { chunk ->
+              FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+              ) {
+                chunk.forEach { member ->
+                  MemberItem(
+                    member = member,
+                    onMemberClick = { onNavigateToMemberDetail(member.id) },
+                    onEditClick = { onNavigateToEditMember(member.id) },
+                    onDeleteClick = { showDeleteDialog = member },
+                    modifier = Modifier.width(450.dp)
+                  )
+                }
               }
             }
           }
-        }
 
-        // Loading indicator for next page
-        if (uiState.paginationState.isLoadingNextPage) {
-          item {
-            Box(
-              modifier = Modifier.fillMaxWidth().padding(16.dp),
-              contentAlignment = Alignment.Center
-            ) {
-              CircularProgressIndicator()
+          // Loading indicator for next page
+          if (uiState.paginationState.isLoadingNextPage) {
+            item {
+              Box(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                contentAlignment = Alignment.Center
+              ) {
+                CircularProgressIndicator()
+              }
+            }
+          }
+
+          // End of list indicator
+          if (uiState.paginationState.hasReachedEnd && !uiState.paginationState.hasNextPage && membersToShow.isNotEmpty()) {
+            item {
+              val totalItemsDisplayed = "${uiState.members.size}".toDevanagariNumerals()
+              Text(
+                text = "सभी आर्य सदस्य दिखाए गए(${totalItemsDisplayed})",
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+              )
             }
           }
         }
-
-        // End of list indicator
-        if (uiState.paginationState.hasReachedEnd && !uiState.paginationState.hasNextPage && membersToShow.isNotEmpty()) {
-          item {
-            Text(
-              text = "सभी आर्य सदस्य दिखाए गए",
-              modifier = Modifier.fillMaxWidth().padding(16.dp),
-              textAlign = TextAlign.Center,
-              style = MaterialTheme.typography.bodyMedium,
-              color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-          }
-        }
+        CustomScrollbar(
+          modifier = Modifier.align(Alignment.CenterEnd)
+            .fillMaxHeight(),
+          scrollState = listState
+        )
       }
     }
   }
@@ -312,6 +328,67 @@ fun EkalAryaListScreen(
         }
       }
     )
+  }
+}
+
+@Composable
+private fun CustomScrollbar(
+  modifier: Modifier = Modifier,
+  scrollState: LazyListState
+) {
+  val layoutInfo = scrollState.layoutInfo
+  val totalItems = layoutInfo.totalItemsCount
+  val visibleItems = layoutInfo.visibleItemsInfo
+
+  if (totalItems > 0 && visibleItems.isNotEmpty()) {
+    val firstVisibleIndex = visibleItems.first().index
+
+    // Calculate scroll progress (0.0 to 1.0)
+    val scrollProgress = if (totalItems > 1) {
+      firstVisibleIndex.toFloat() / (totalItems - 1).coerceAtLeast(1)
+    } else 0f
+
+    // Calculate scrollbar thumb size based on visible content ratio
+    val thumbSize = if (totalItems > 0) {
+      (visibleItems.size.toFloat() / totalItems).coerceIn(0.1f, 1.0f)
+    } else 0.1f
+
+    Box(
+      modifier = modifier
+        .width(8.dp)
+        .fillMaxHeight()
+        .padding(2.dp)
+    ) {
+      // Scrollbar track
+      Box(
+        modifier = Modifier
+          .fillMaxSize()
+          .background(
+            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.3f),
+            shape = RoundedCornerShape(4.dp)
+          )
+      )
+
+      // Scrollbar thumb
+      BoxWithConstraints(
+        modifier = Modifier.fillMaxSize()
+      ) {
+        val trackHeight = maxHeight
+        val thumbHeight = trackHeight * thumbSize
+        val thumbOffset = (trackHeight - thumbHeight) * scrollProgress
+
+        Box(
+          modifier = Modifier
+            .width(8.dp)
+            .height(thumbHeight)
+            .offset(y = thumbOffset)
+            .background(
+              color = MaterialTheme.colorScheme.outline.copy(alpha = 0.7f),
+              shape = RoundedCornerShape(4.dp)
+            )
+        )
+      }
+    }
   }
 }
 
