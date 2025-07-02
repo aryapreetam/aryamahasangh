@@ -330,89 +330,7 @@ fun calculatePageSize(screenWidthDp: Float): Int {
 - **Error Recovery**: Graceful handling of network failures with retry options
 - **Search State Isolation**: Keeping search separate from main pagination flow
 
-### Phase 5: Real-Time Admin Counts Implementation ✅
-
-**Date Extension:** January 02, 2025  
-**Session Focus:** Real-time Admin Counts with Consolidated GraphQL Queries and Supabase Realtime Integration
-
-### 🎯 Session Objectives
-
-1. **Consolidate Admin Counts**: Replace individual count queries with single efficient GraphQL query
-2. **Real-time Updates**: Implement automatic count refreshes when data changes
-3. **Proper Lifecycle Management**: Ensure real-time listeners start/stop appropriately
-4. **Clean MVVM Architecture**: Maintain separation of concerns while adding real-time capabilities
-
-### 🔍 Problem Analysis
-
-#### Initial Implementation Issues
-
-- **Multiple Count Queries**: Separate queries for each count type caused performance overhead
-- **Manual Refresh**: Counts only updated on screen navigation, not when data changed
-- **No Real-time Updates**: Users had to manually refresh to see updated counts
-- **Poor User Experience**: Stale data displayed in admin dashboard
-
-#### Requirements
-
-- Single consolidated query for all admin counts (`CountsForAdminContainerQuery`)
-- Automatic count updates when underlying data changes
-- Proper lifecycle management (start/stop listeners with screen visibility)
-- Clean MVVM architecture with repository pattern
-
-### 🏗️ Implementation Phases
-
-#### Phase 1: Consolidated Counts Query ✅
-
-**Problem**: Multiple individual queries causing performance overhead  
-**Solution**: Single GraphQL query for all counts
-
-```kotlin
-// NEW: Consolidated data structure
-data class AdminCounts(
-  val organisationalMembersCount: Long = 0L,
-  val aryaSamajCount: Long = 0L,
-  val familyCount: Long = 0L,
-  val ekalAryaCount: Long = 0L
-)
-
-// Repository method using CountsForAdminContainerQuery
-override suspend fun getAdminCounts(): Flow<Result<AdminCounts>> = flow {
-  emit(Result.Loading)
-  val result = safeCall {
-    val response = apolloClient.query(CountsForAdminContainerQuery()).execute()
-    if (response.hasErrors()) {
-      throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-    }
-    
-    AdminCounts(
-      organisationalMembersCount = response.data?.memberInOrganisationCollection?.totalCount?.toLong() ?: 0L,
-      aryaSamajCount = response.data?.aryaSamajCollection?.totalCount?.toLong() ?: 0L,
-      familyCount = response.data?.familyCollection?.totalCount?.toLong() ?: 0L,
-      ekalAryaCount = response.data?.memberNotInFamilyCollection?.totalCount?.toLong() ?: 0L
-    )
-  }
-  emit(result)
-}
-```
-
-**GraphQL Query Structure**:
-```graphql
-query CountsForAdminContainer{
-  memberInOrganisationCollection{
-    totalCount
-  }
-  aryaSamajCollection{
-    totalCount
-  }
-  familyCollection{
-    totalCount
-  }
-  memberNotInFamilyCollection{
-    totalCount
-  }
-}
-```
-
-#### Phase 2: Supabase Realtime Integration ✅
+### Phase 2: Supabase Realtime Integration ✅
 
 **Challenge**: Supabase realtime doesn't work with views, only base tables  
 **Discovery**: `member_in_organisation` and `member_not_in_family` are views, not tables
@@ -459,60 +377,6 @@ override fun listenToAdminCountChanges(): Flow<Unit> {
     )
   ).map { Unit }
 }
-```
-
-#### Phase 3: Lifecycle Management Architecture ✅
-
-**Initial Approach Problems**:
-
-- Started listener in ViewModel `init` block
-- Would run for entire ViewModel lifecycle
-- No control over when listening starts/stops
-- Potential memory leaks if ViewModel shared across screens
-
-**Architecture Decision**: Compose-managed lifecycle with MVVM compliance
-
-```kotlin
-// ViewModel: Expose repository flow (maintains MVVM)
-fun listenToAdminCountChanges(): Flow<Unit> = repository.listenToAdminCountChanges()
-
-// Composable: Manage lifecycle (UI controls when to listen)
-LaunchedEffect(Unit) {
-  viewModel.listenToAdminCountChanges().collect {
-    viewModel.loadAdminCounts() // Refresh counts on change
-  }
-}
-```
-
-**Benefits of This Approach**:
-
-- ✅ **MVVM Compliance**: UI only talks to ViewModel, never repository directly
-- ✅ **Automatic Lifecycle**: LaunchedEffect auto-cancels when Composable leaves composition
-- ✅ **No Memory Leaks**: Subscription tied to screen visibility
-- ✅ **Clean Separation**: Repository encapsulated, flow exposed through ViewModel
-- ✅ **Testable**: Can mock ViewModel methods for testing
-
-### Phase 4: Error Handling & User Experience ✅
-
-**Comprehensive Error Management**:
-```kotlin
-data class AdminCountsUiState(
-  val counts: AdminCounts = AdminCounts(),
-  override val isLoading: Boolean = false,
-  override val error: String? = null,
-  override val appError: AppError? = null
-) : ErrorState
-
-// Error handling in AdminContainerScreen
-ErrorSnackbar(
-  error = adminCounts.appError,
-  snackbarHostState = snackbarHostState,
-  onRetry = {
-    viewModel.clearAdminCountsError()
-    viewModel.loadAdminCounts()
-  },
-  onDismiss = { viewModel.clearAdminCountsError() }
-)
 ```
 
 ## 🐛 Challenges & Solutions
@@ -564,67 +428,6 @@ ErrorSnackbar(
 - **Test Coverage**: Comprehensive ViewModel tests with mock repositories
 - **Maintainability**: Clear separation of concerns across layers
 - **Scalability**: Architecture supports any list size or complexity
-
-## 🚀 Production Readiness Features
-
-### 1. Comprehensive Error Handling
-
-```kotlin
-class PaginationRetryPolicy {
-  suspend fun executeWithRetry(action: suspend () -> Unit): Result<Unit> {
-    repeat(maxRetries) { attempt ->
-      try {
-        action()
-        return Result.success(Unit)
-      } catch (e: Exception) {
-        when (e) {
-          is NetworkException -> {
-            if (attempt < maxRetries - 1) {
-              delay(baseDelayMs * (2 * attempt)) // Exponential backoff
-              continue
-            }
-          }
-          is ServerException -> return Result.failure(e) // Don't retry server errors
-        }
-      }
-    }
-    return Result.failure(Exception("Max retries exceeded"))
-  }
-}
-```
-
-### 2. Accessibility & Internationalization
-
-- **Screen Reader Support**: Proper content descriptions for loading states
-- **Pure Hindi Interface**: Sanskrit-based Hindi terms for all user-facing text
-- **Keyboard Navigation**: Full keyboard support for search and navigation
-
-### 3. Offline Support Foundation
-
-- **Cache Strategy**: Existing Apollo cache provides offline reading
-- **Network State Detection**: Infrastructure for offline indicators
-- **Graceful Degradation**: App remains functional with cached data
-
-## 📊 Real-Time Admin Counts Results & Benefits
-
-#### Performance Improvements
-
-- **Query Consolidation**: Single query instead of 4 separate queries (75% reduction in requests)
-- **Real-time Updates**: Instant count updates without manual refresh
-- **Efficient Caching**: Apollo cache reused across count queries
-
-#### User Experience Enhancements
-
-- **Live Data**: Counts update immediately when data changes
-- **Visual Feedback**: Loading states and error handling for counts
-- **Reliability**: Automatic retry mechanism for failed count loads
-
-#### Architecture Benefits
-
-- **MVVM Compliance**: Clean separation maintained
-- **Lifecycle Safety**: No memory leaks from background listeners
-- **Testability**: Repository flows easily mockable
-- **Scalability**: Pattern reusable for other real-time features
 
 ## 🔮 Future Enhancements
 
@@ -718,6 +521,94 @@ establishing patterns for future feature development.
 
 This implementation serves as a foundation for future pagination needs across the platform and demonstrates the power of
 modern Compose Multiplatform development practices.
+
+## 🔧 Cache Logic Refinement - Empty UI Flash Prevention
+
+**Date:** January 02, 2025  
+**Issue:** Empty UI state briefly flashing before network data loads in pagination
+
+### Problem Identification
+
+Despite implementing `FetchPolicy.CacheAndNetwork` for `getEkalAryaMembersPaginated`, users were still experiencing:
+
+1. **Loading indicator** appears initially ✅
+2. **Empty state UI** flashes briefly ❌
+3. **Empty state persists** until network returns ❌
+
+### Root Cause Analysis
+
+The issue was with the cache detection logic for skipping empty cache responses:
+
+**Original Implementation (Incorrect):**
+
+```kotlin
+if (response.cacheInfo?.isCacheHit == true && response.data?.memberNotInFamilyCollection?.edges.isNullOrEmpty()) {
+  // Skip emitting - wait for network
+}
+```
+
+**Problems:**
+
+- Only checked cache **hits** with empty data
+- Cache **misses** with empty data still caused empty UI flash
+- Incorrect condition compared to established codebase patterns
+
+### Final Solution
+
+**Implemented Pattern:**
+
+```kotlin
+if (response.isFromCache && response.cacheInfo?.isCacheHit == false && response.data?.memberNotInFamilyCollection?.edges.isNullOrEmpty()) {
+  // Skip emitting empty cache miss - wait for network
+} else {
+  // Process and emit response
+}
+```
+
+### Logic Explanation
+
+**Cache Hit with Empty Data:**
+
+- Cache successfully found data, but it's legitimately empty
+- **Action**: Show empty state (user has no members)
+- **Reasoning**: Cache has confirmed "no data exists"
+
+**Cache Miss with Empty Data:**
+
+- Cache doesn't have data yet, returns placeholder empty response
+- **Action**: Skip emission, wait for network
+- **Reasoning**: Cache simply doesn't know yet, prevents UI flash
+
+**Network Response:**
+
+- Always process and emit (even if empty)
+- **Reasoning**: Network response is authoritative
+
+### Consistency with Codebase
+
+This pattern aligns with existing cache detection throughout the repository:
+
+```kotlin
+// Established pattern in AdminRepository, ActivityRepository, etc.
+val cameFromEmptyCache = response.isFromCache && response.cacheInfo?.isCacheHit == false
+```
+
+### Result
+
+- ✅ **Loading indicator** shows initially and persists
+- ✅ **Empty cache misses** are properly skipped
+- ✅ **Legitimate empty data** from cache hits still displays correctly
+- ✅ **Network responses** always process normally
+- ✅ **No more empty UI flashes** during pagination loads
+
+### Technical Learning
+
+**Key Insight**: Distinguish between cache semantic states:
+
+- **Cache Hit**: "I found the data you requested" (even if empty)
+- **Cache Miss**: "I don't have this data yet" (placeholder response)
+
+This distinction is crucial for proper UX in cache-and-network patterns.
 
 ---
 

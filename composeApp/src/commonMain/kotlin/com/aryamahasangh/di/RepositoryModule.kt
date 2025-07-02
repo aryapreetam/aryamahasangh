@@ -1,9 +1,9 @@
 package com.aryamahasangh.di
 
-import AdminRepository
-import AdminRepositoryImpl
 import com.aryamahasangh.features.activities.ActivityRepository
 import com.aryamahasangh.features.activities.ActivityRepositoryImpl
+import com.aryamahasangh.features.admin.AdminRepository
+import com.aryamahasangh.features.admin.AdminRepositoryImpl
 import com.aryamahasangh.features.admin.FamilyRepository
 import com.aryamahasangh.features.admin.FamilyRepositoryImpl
 import com.aryamahasangh.features.admin.data.AryaSamajRepository
