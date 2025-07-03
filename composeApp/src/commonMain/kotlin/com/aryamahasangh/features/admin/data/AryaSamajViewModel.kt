@@ -8,9 +8,13 @@ import com.aryamahasangh.domain.error.AppError
 import com.aryamahasangh.domain.error.ErrorHandler
 import com.aryamahasangh.domain.error.getUserMessage
 import com.aryamahasangh.features.activities.Member
+import com.aryamahasangh.features.admin.PaginationState
+import com.aryamahasangh.fragment.AryaSamajWithAddress
 import com.aryamahasangh.network.bucket
 import com.aryamahasangh.viewmodel.ErrorState
 import com.aryamahasangh.viewmodel.handleResult
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,7 +27,8 @@ data class AryaSamajListUiState(
   override val error: String? = null,
   override val appError: AppError? = null,
   val searchQuery: String = "",
-  val totalCount: Int = 0
+  val totalCount: Int = 0,
+  val paginationState: PaginationState<AryaSamajWithAddress> = PaginationState()
 ) : ErrorState
 
 data class AryaSamajDetailUiState(
@@ -62,6 +67,40 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
 
   private val _formUiState = MutableStateFlow(AryaSamajFormUiState())
   val formUiState: StateFlow<AryaSamajFormUiState> = _formUiState.asStateFlow()
+
+  private var searchJob: Job? = null
+
+  // Flag to track if pagination should be preserved (e.g., when navigating back)
+  private var shouldPreservePagination = false
+
+  // Method to check if we have existing data and should preserve it
+  fun hasExistingAryaSamajData(): Boolean {
+    return _listUiState.value.aryaSamajs.isNotEmpty()
+  }
+
+  // Method to preserve pagination state when navigating back
+  fun preserveAryaSamajPagination(
+    savedAryaSamajs: List<AryaSamajWithAddress>,
+    savedPaginationState: PaginationState<AryaSamajWithAddress>
+  ) {
+    // Convert AryaSamajWithAddress to AryaSamajListItem for display
+    val listItems = savedAryaSamajs.map { aryaSamaj ->
+      AryaSamajListItem(
+        id = aryaSamaj.aryaSamajFields.id,
+        name = aryaSamaj.aryaSamajFields.name ?: "",
+        description = aryaSamaj.aryaSamajFields.description ?: "",
+        formattedAddress = aryaSamaj.getFormattedAddress(),
+        memberCount = 0, // We don't have member count in AryaSamajWithAddress
+        mediaUrls = aryaSamaj.aryaSamajFields.mediaUrls?.filterNotNull() ?: emptyList()
+      )
+    }
+
+    _listUiState.value = _listUiState.value.copy(
+      aryaSamajs = listItems,
+      paginationState = savedPaginationState
+    )
+    shouldPreservePagination = true
+  }
 
   // List operations
   fun loadAryaSamajs() {
@@ -175,18 +214,8 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
     val currentState = _formUiState.value
     val formData = currentState.formData
 
-    // Debug: Log the current form data to understand the validation issue
-    println("DEBUG: Submitting form with data:")
-    println("  Name: ${formData.name}")
-    println("  Description: ${formData.description}")
-    println("  Location: ${formData.addressData.location}")
-    println("  Address: ${formData.addressData.address}")
-    println("  State: ${formData.addressData.state}")
-    println("  District: ${formData.addressData.district}")
-
     // Validate form
     val validationErrors = validateForm(formData)
-    println("DEBUG: Validation errors: $validationErrors")
 
     if (validationErrors.isNotEmpty()) {
       _formUiState.value =
@@ -228,14 +257,10 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
               )
             val publicUrl = bucket.publicUrl(uploadResponse.path)
             uploadedImageUrls.add(publicUrl)
-            println("DEBUG: Successfully uploaded image: $publicUrl")
           } catch (e: Exception) {
-            println("DEBUG: Failed to upload image ${file.name}: ${e.message}")
             throw Exception("चित्र अपलोड करने में त्रुटि: ${e.message}")
           }
         }
-
-        println("DEBUG: Final uploaded image URLs: $uploadedImageUrls")
 
         // Step 2: Create/Update AryaSamaj with uploaded image URLs
         val updatedFormData =
@@ -307,7 +332,6 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
           }
         }
       } catch (e: Exception) {
-        println("DEBUG: Exception in submitForm: ${e.message}")
         _formUiState.value =
           _formUiState.value.copy(
             isSubmitting = false,
@@ -480,6 +504,230 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
           }
         )
       }
+    }
+  }
+
+  // NEW: Pagination methods for infinite scroll
+  fun loadAryaSamajsPaginated(pageSize: Int = 30, resetPagination: Boolean = false) {
+    viewModelScope.launch {
+      val currentState = _listUiState.value.paginationState
+
+      // Only preserve pagination when explicitly requested AND it's a reset operation
+      val shouldPreserveExistingData = shouldPreservePagination && resetPagination && hasExistingAryaSamajData()
+
+      // Reset the preservation flag after checking
+      if (shouldPreservePagination) {
+        shouldPreservePagination = false
+      }
+
+      // Only skip loading if we're preserving existing data from navigation
+      if (shouldPreserveExistingData) {
+        return@launch
+      }
+
+      // For normal pagination (resetPagination=false), always proceed with loading
+      val shouldReset = resetPagination
+      val cursor = if (shouldReset) null else currentState.endCursor
+
+      // Set loading state
+      _listUiState.value = _listUiState.value.copy(
+        paginationState = currentState.copy(
+          isInitialLoading = shouldReset || currentState.items.isEmpty(),
+          isLoadingNextPage = !shouldReset && currentState.items.isNotEmpty(),
+          error = null
+        )
+      )
+
+      repository.getItemsPaginated(pageSize = pageSize, cursor = cursor).collect { result ->
+        when (result) {
+          is com.aryamahasangh.features.admin.PaginationResult.Loading -> {
+            // Loading state already set above
+          }
+
+          is com.aryamahasangh.features.admin.PaginationResult.Success -> {
+            val newItems = if (shouldReset) {
+              result.data
+            } else {
+              currentState.items + result.data
+            }
+
+            // Convert to AryaSamajListItem for display
+            val listItems = newItems.map { aryaSamaj ->
+              AryaSamajListItem(
+                id = aryaSamaj.aryaSamajFields.id,
+                name = aryaSamaj.aryaSamajFields.name ?: "",
+                description = aryaSamaj.aryaSamajFields.description ?: "",
+                formattedAddress = aryaSamaj.getFormattedAddress(),
+                memberCount = 0,
+                mediaUrls = aryaSamaj.aryaSamajFields.mediaUrls?.filterNotNull() ?: emptyList()
+              )
+            }
+
+            _listUiState.value = _listUiState.value.copy(
+              aryaSamajs = listItems,
+              paginationState = currentState.copy(
+                items = newItems,
+                isInitialLoading = false,
+                isLoadingNextPage = false,
+                hasNextPage = result.hasNextPage,
+                endCursor = result.endCursor,
+                hasReachedEnd = !result.hasNextPage,
+                error = null
+              )
+            )
+          }
+
+          is com.aryamahasangh.features.admin.PaginationResult.Error -> {
+            _listUiState.value = _listUiState.value.copy(
+              paginationState = currentState.copy(
+                isInitialLoading = false,
+                isLoadingNextPage = false,
+                error = result.message,
+                showRetryButton = true
+              )
+            )
+          }
+        }
+      }
+    }
+  }
+
+  fun searchAryaSamajsPaginated(searchTerm: String, pageSize: Int = 30, resetPagination: Boolean = true) {
+    viewModelScope.launch {
+      val currentState = _listUiState.value.paginationState
+
+      // Clear cache on search change
+      if (resetPagination && searchTerm != currentState.currentSearchTerm) {
+        // TODO: Clear Apollo cache for this query
+      }
+
+      val cursor = if (resetPagination) null else currentState.endCursor
+
+      // Set loading state
+      _listUiState.value = _listUiState.value.copy(
+        searchQuery = searchTerm,
+        paginationState = currentState.copy(
+          isSearching = resetPagination,
+          isLoadingNextPage = !resetPagination,
+          error = null,
+          currentSearchTerm = searchTerm
+        )
+      )
+
+      repository.searchItemsPaginated(
+        searchTerm = searchTerm,
+        pageSize = pageSize,
+        cursor = cursor
+      ).collect { result ->
+        when (result) {
+          is com.aryamahasangh.features.admin.PaginationResult.Loading -> {
+            // Loading state already set above
+          }
+
+          is com.aryamahasangh.features.admin.PaginationResult.Success -> {
+            val newItems = if (resetPagination) {
+              result.data
+            } else {
+              currentState.items + result.data
+            }
+
+            // Convert to AryaSamajListItem for display
+            val listItems = newItems.map { aryaSamaj ->
+              AryaSamajListItem(
+                id = aryaSamaj.aryaSamajFields.id,
+                name = aryaSamaj.aryaSamajFields.name ?: "",
+                description = aryaSamaj.aryaSamajFields.description ?: "",
+                formattedAddress = aryaSamaj.getFormattedAddress(),
+                memberCount = 0,
+                mediaUrls = aryaSamaj.aryaSamajFields.mediaUrls?.filterNotNull() ?: emptyList()
+              )
+            }
+
+            _listUiState.value = _listUiState.value.copy(
+              aryaSamajs = listItems,
+              paginationState = currentState.copy(
+                items = newItems,
+                isSearching = false,
+                isLoadingNextPage = false,
+                hasNextPage = result.hasNextPage,
+                endCursor = result.endCursor,
+                hasReachedEnd = !result.hasNextPage,
+                error = null,
+                currentSearchTerm = searchTerm
+              )
+            )
+          }
+
+          is com.aryamahasangh.features.admin.PaginationResult.Error -> {
+            _listUiState.value = _listUiState.value.copy(
+              paginationState = currentState.copy(
+                isSearching = false,
+                isLoadingNextPage = false,
+                error = result.message,
+                showRetryButton = true
+              )
+            )
+          }
+        }
+      }
+    }
+  }
+
+  fun loadNextAryaSamajPage() {
+    val currentState = _listUiState.value.paginationState
+    if (currentState.hasNextPage && !currentState.isLoadingNextPage) {
+      if (currentState.currentSearchTerm.isNotBlank()) {
+        searchAryaSamajsPaginated(
+          searchTerm = currentState.currentSearchTerm,
+          resetPagination = false
+        )
+      } else {
+        loadAryaSamajsPaginated(resetPagination = false)
+      }
+    }
+  }
+
+  fun retryAryaSamajLoad() {
+    val currentState = _listUiState.value.paginationState
+    _listUiState.value = _listUiState.value.copy(
+      paginationState = currentState.copy(showRetryButton = false)
+    )
+
+    if (currentState.currentSearchTerm.isNotBlank()) {
+      searchAryaSamajsPaginated(
+        searchTerm = currentState.currentSearchTerm,
+        resetPagination = currentState.items.isEmpty()
+      )
+    } else {
+      loadAryaSamajsPaginated(resetPagination = currentState.items.isEmpty())
+    }
+  }
+
+  // Debounced search method
+  fun searchAryaSamajsWithDebounce(query: String) {
+    _listUiState.value = _listUiState.value.copy(searchQuery = query)
+
+    searchJob?.cancel()
+    searchJob = viewModelScope.launch {
+      if (query.isBlank()) {
+        // Load regular AryaSamajs when search is cleared
+        loadAryaSamajsPaginated(resetPagination = true)
+        return@launch
+      }
+
+      // Debounce search by 1 second
+      delay(1000)
+
+      searchAryaSamajsPaginated(searchTerm = query.trim(), resetPagination = true)
+    }
+  }
+
+  // Calculate page size based on screen width  
+  fun calculatePageSize(screenWidthDp: Float): Int {
+    return when {
+      screenWidthDp < 600f -> 15      // Mobile portrait
+      screenWidthDp < 840f -> 25      // Tablet, mobile landscape
+      else -> 35                      // Desktop, large tablets
     }
   }
 }

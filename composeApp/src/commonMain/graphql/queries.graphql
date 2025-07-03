@@ -605,6 +605,13 @@ fragment AryaSamajFields on AryaSamaj {
   createdAt
 }
 
+fragment AryaSamajWithAddress on AryaSamaj {
+  ...AryaSamajFields
+  address {
+    ...AddressFields
+  }
+}
+
 query aryaSamajs($filter: AryaSamajFilter) {
   aryaSamajCollection(filter: $filter) {
     edges {
@@ -654,6 +661,58 @@ query aryaSamajDetail($aryaSamajId: String!) {
           }
         }
       }
+    }
+  }
+}
+
+query aryaSamajCount {
+  aryaSamajCollection {
+    totalCount
+  }
+}
+
+query getAryaSamajs($first: Int!, $after: Cursor, $filter: AryaSamajFilter, $orderBy: [AryaSamajOrderBy!]) {
+  aryaSamajCollection(
+    first: $first
+    after: $after
+    filter: $filter
+    orderBy: $orderBy
+  ) {
+    edges {
+      node {
+        ...AryaSamajWithAddress
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+  }
+}
+
+query searchAryaSamajs($first: Int!, $after: Cursor, $searchTerm: String!) {
+  aryaSamajCollection(
+    first: $first
+    after: $after
+    filter: {
+      name: {ilike: $searchTerm}
+    }
+    orderBy: {createdAt: DescNullsLast}
+  ) {
+    edges {
+      node {
+        ...AryaSamajWithAddress
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
     }
   }
 }
@@ -781,13 +840,6 @@ query memberWithAddress($memberId: String!) {
         }
       }
     }
-  }
-}
-
-# AryaSamaj count query
-query aryaSamajCount {
-  aryaSamajCollection {
-    totalCount
   }
 }
 

@@ -1,10 +1,11 @@
 package com.aryamahasangh.features.admin
 
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
 import com.aryamahasangh.components.Gender
 import com.aryamahasangh.fragment.AddressFields
 import com.aryamahasangh.fragment.AryaSamajFields
+import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 
 data class MemberShort(
   val id: String,
@@ -13,7 +14,9 @@ data class MemberShort(
   val place: String = ""
 )
 
-// Pagination state for managing paginated data
+/**
+ * Pagination state for lists
+ */
 data class PaginationState<T>(
   val items: List<T> = emptyList(),
   val isInitialLoading: Boolean = false,
@@ -28,14 +31,58 @@ data class PaginationState<T>(
   val currentSearchTerm: String = ""
 )
 
-// Result wrapper for pagination operations
+/**
+ * Generic repository interface for paginated data
+ */
+interface PaginatedRepository<T> {
+  suspend fun getItemsPaginated(
+    pageSize: Int,
+    cursor: String? = null,
+    filter: Any? = null
+  ): Flow<PaginationResult<T>>
+
+  suspend fun searchItemsPaginated(
+    searchTerm: String,
+    pageSize: Int,
+    cursor: String? = null
+  ): Flow<PaginationResult<T>>
+}
+
+/**
+ * Base interface for paginated ViewModels
+ */
+interface PaginatedViewModel<T> {
+  val searchQuery: String
+  val paginationState: PaginationState<T>
+
+  fun loadItemsPaginated(pageSize: Int = 30, resetPagination: Boolean = false)
+  fun searchItemsWithDebounce(query: String)
+  fun loadNextPage()
+  fun retryLoad()
+  fun calculatePageSize(screenWidthDp: Float): Int
+}
+
+/**
+ * Generic component state for pagination screens
+ */
+data class PaginatedUiState<T>(
+  val items: List<T> = emptyList(),
+  val paginationState: PaginationState<T> = PaginationState(),
+  val searchQuery: String = ""
+)
+
+/**
+ * Result wrapper for pagination operations
+ */
 sealed class PaginationResult<T> {
   data class Success<T>(val data: List<T>, val hasNextPage: Boolean, val endCursor: String?) : PaginationResult<T>()
   data class Error<T>(val message: String) : PaginationResult<T>()
   class Loading<T> : PaginationResult<T>()
 }
 
-// Retry policy configuration
+/**
+ * Retry policy configuration
+ */
 data class RetryConfig(
   val maxRetries: Int = 3,
   val baseDelayMs: Long = 1000L,
