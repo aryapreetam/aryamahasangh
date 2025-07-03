@@ -217,7 +217,7 @@ fun EventListItem(
           )
         }
 
-        Button(
+        OutlinedButton(
           onClick = { onRegisterClick(event.id) },
           enabled = !event.isFull,
           contentPadding = PaddingValues(horizontal = 20.dp, vertical = 10.dp),

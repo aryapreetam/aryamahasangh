@@ -13,7 +13,8 @@ data class OrganisationDetail(
 data class OrganisationWithDescription(
   val id: String,
   val name: String,
-  val description: String
+  val logo: String? = null,
+  val description: String,
 )
 
 data class OrganisationalMember(

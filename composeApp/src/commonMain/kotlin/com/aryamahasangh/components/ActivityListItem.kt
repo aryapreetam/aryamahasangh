@@ -180,19 +180,24 @@ fun ActivityListItem(
 //          Spacer(modifier = Modifier.width(4.dp))
 //          Text(text = "समाप्ति: $endDate", style = MaterialTheme.typography.bodySmall)
         }
+        
         Spacer(modifier = Modifier.height(4.dp))
         Row(
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.SpaceBetween,
           modifier = Modifier.fillMaxWidth().padding(end = 8.dp)
         ) {
-          Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Place", tint = Color.Gray)
-            Spacer(modifier = Modifier.width(4.dp))
-            Text(
-              text = "${activity.district}, ${activity.state}",
-              style = MaterialTheme.typography.bodySmall
-            )
+          if(!(activity.district.isNullOrBlank() && activity.state.isNullOrBlank())){
+            Row(verticalAlignment = Alignment.CenterVertically) {
+              Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Place", tint = Color.Gray)
+              Spacer(modifier = Modifier.width(4.dp))
+              Text(
+                text = "${activity.district}, ${activity.state}",
+                style = MaterialTheme.typography.bodySmall
+              )
+            }
+          }else{
+            Spacer(modifier = Modifier.width(24.dp))
           }
           WithTooltip(activityStatus.toDisplayName()) {
             // Activity status indicator

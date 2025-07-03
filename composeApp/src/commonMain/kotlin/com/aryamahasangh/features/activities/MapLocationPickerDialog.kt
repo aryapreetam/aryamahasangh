@@ -14,6 +14,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.aryamahasangh.WebView
+import com.aryamahasangh.utils.logger
 import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
@@ -23,8 +25,6 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.doubleOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import com.aryamahasangh.WebView
-import com.aryamahasangh.utils.logger
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -118,18 +118,17 @@ data class LatLng(val latitude: Double, val longitude: Double)
 // FIXME use https://compass.jordond.dev/ to get the current location
 suspend fun getCurrentLocation(): LatLng? {
   val client = HttpClient()
-  val response = client.get("http://ip-api.com/json/")
+  val response = client.get("https://ipapi.co/latlong/")
   var s = ""
   if (response.status == HttpStatusCode.OK) {
     s = response.bodyAsText()
   }
-  println(s)
-  val json = Json.parseToJsonElement(s).jsonObject
-
-  return LatLng(
-    json["lat"]?.jsonPrimitive?.doubleOrNull ?: return null,
-    json["lon"]?.jsonPrimitive?.doubleOrNull ?: return null
-  )
+  if(s.isNotEmpty()) {
+    val location = s.split(",").map { it.toDouble() }
+    return LatLng(location[0], location[1])
+  }else{
+    return LatLng(28.644800, 77.216721)
+  }
 }
 
 // FIXME migrate leaflet to 2.0 once stable

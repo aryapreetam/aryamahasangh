@@ -103,7 +103,7 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
               }
             }
             response.data?.organisationCollection?.edges?.map {
-              OrganisationWithDescription(id = it.node.id, name = it.node.name!!, description = it.node.description!!)
+              OrganisationWithDescription(id = it.node.id, name = it.node.name!!, logo = it.node.logo, description = it.node.description!!)
             } ?: emptyList()
           }
           emit(result)
