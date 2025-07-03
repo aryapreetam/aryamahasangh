@@ -3,6 +3,7 @@ package com.aryamahasangh.features.admin.data
 import com.aryamahasangh.components.AddressData
 import com.aryamahasangh.components.ImagePickerState
 import com.aryamahasangh.components.MembersState
+import com.aryamahasangh.fragment.AryaSamajWithAddress
 
 /**
  * Arya Samaj list item for display in list
@@ -56,3 +57,19 @@ data class AryaSamajFormData(
     return this != initialData
   }
 }
+
+// Extension functions for generated AryaSamajWithAddress type
+fun AryaSamajWithAddress.getFormattedAddress(): String {
+  return address?.addressFields?.let { addr ->
+    val parts = listOfNotNull(
+      addr.basicAddress?.takeIf { it.isNotBlank() },
+      addr.district?.takeIf { it.isNotBlank() },
+      addr.state?.takeIf { it.isNotBlank() }
+    )
+    parts.joinToString(", ")
+  } ?: ""
+}
+
+// Optional: Extension to get district/state separately if needed
+fun AryaSamajWithAddress.getDistrict(): String = address?.addressFields?.district ?: ""
+fun AryaSamajWithAddress.getState(): String = address?.addressFields?.state ?: ""

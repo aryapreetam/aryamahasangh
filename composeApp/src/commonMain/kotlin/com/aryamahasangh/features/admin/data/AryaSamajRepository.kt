@@ -10,16 +10,16 @@ import com.aryamahasangh.*
 import com.aryamahasangh.components.AddressData
 import com.aryamahasangh.components.getActiveImageUrls
 import com.aryamahasangh.features.activities.LatLng
-import com.aryamahasangh.type.AddressFilter
-import com.aryamahasangh.type.AryaSamajFilter
-import com.aryamahasangh.type.SamajMemberInsertInput
-import com.aryamahasangh.type.StringFilter
+import com.aryamahasangh.features.admin.PaginatedRepository
+import com.aryamahasangh.features.admin.PaginationResult
+import com.aryamahasangh.fragment.AryaSamajWithAddress
+import com.aryamahasangh.type.*
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.util.safeCall
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-interface AryaSamajRepository {
+interface AryaSamajRepository : PaginatedRepository<AryaSamajWithAddress> {
   suspend fun getAryaSamajs(): Flow<Result<List<AryaSamajListItem>>>
 
   suspend fun getAryaSamajDetail(id: String): Flow<Result<AryaSamajDetail>>
@@ -608,5 +608,100 @@ class AryaSamajRepositoryImpl(private val apolloClient: ApolloClient) : AryaSama
           } ?: emptyList()
         }
       emit(result)
+    }
+
+  override suspend fun getItemsPaginated(
+    pageSize: Int,
+    cursor: String?,
+    filter: Any?
+  ): Flow<PaginationResult<AryaSamajWithAddress>> =
+    flow {
+      emit(PaginationResult.Loading())
+
+      apolloClient.query(
+        GetAryaSamajsQuery(
+          first = pageSize,
+          after = Optional.presentIfNotNull(cursor),
+          filter = Optional.presentIfNotNull(filter as? AryaSamajFilter),
+          orderBy = Optional.present(listOf(AryaSamajOrderBy(createdAt = Optional.present(OrderByDirection.DescNullsLast))))
+        )
+      )
+        .fetchPolicy(FetchPolicy.CacheAndNetwork)
+        .toFlow()
+        .collect { response ->
+          // Skip only cache MISSES with empty data - cache HITS with empty data should be shown
+          if (response.isFromCache && response.cacheInfo?.isCacheHit == false && response.data?.aryaSamajCollection?.edges.isNullOrEmpty()) {
+            // Skip emitting empty cache miss - wait for network
+          } else {
+            val result = safeCall {
+              if (response.hasErrors()) {
+                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+              }
+
+              val aryaSamajs = response.data?.aryaSamajCollection?.edges?.map {
+                it.node.aryaSamajWithAddress
+              } ?: emptyList()
+
+              val pageInfo = response.data?.aryaSamajCollection?.pageInfo
+
+              PaginationResult.Success(
+                data = aryaSamajs,
+                hasNextPage = pageInfo?.hasNextPage ?: false,
+                endCursor = pageInfo?.endCursor
+              )
+            }
+
+            when (result) {
+              is Result.Success -> {
+                emit(result.data)
+              }
+
+              is Result.Error -> {
+                emit(PaginationResult.Error(result.exception?.message ?: "Unknown error"))
+              }
+
+              is Result.Loading -> {
+                // Already emitted loading state above
+              }
+            }
+          }
+        }
+    }
+
+  override suspend fun searchItemsPaginated(
+    searchTerm: String,
+    pageSize: Int,
+    cursor: String?
+  ): Flow<PaginationResult<AryaSamajWithAddress>> =
+    flow {
+      emit(PaginationResult.Loading())
+      val result =
+        safeCall {
+          val response =
+            apolloClient.query(
+              SearchAryaSamajsQuery(
+                searchTerm = "%$searchTerm%",
+                first = pageSize,
+                after = Optional.presentIfNotNull(cursor)
+              )
+            ).execute()
+
+          if (response.hasErrors()) {
+            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+          }
+
+          val edges = response.data?.aryaSamajCollection?.edges ?: emptyList()
+          val aryaSamajs = edges.map { it.node as AryaSamajWithAddress }
+          val hasNextPage = response.data?.aryaSamajCollection?.pageInfo?.hasNextPage ?: false
+          val endCursor = response.data?.aryaSamajCollection?.pageInfo?.endCursor
+
+          PaginationResult.Success(data = aryaSamajs, hasNextPage = hasNextPage, endCursor = endCursor)
+        }
+
+      when (result) {
+        is Result.Success -> emit(result.data)
+        is Result.Error -> emit(PaginationResult.Error(result.message))
+        is Result.Loading -> {} // Already emitted Loading above
+      }
     }
 }
