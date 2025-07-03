@@ -2,6 +2,11 @@ package com.aryamahasangh.features.activities
 
 import androidx.lifecycle.viewModelScope
 import com.apollographql.apollo.api.Optional
+import com.aryamahasangh.fragment.OrganisationalActivityShort
+import com.aryamahasangh.type.ActivitiesInsertInput
+import com.aryamahasangh.util.Result
+import com.aryamahasangh.viewmodel.AdmissionFormSubmissionState
+import com.aryamahasangh.viewmodel.BaseViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,11 +17,6 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
-import com.aryamahasangh.fragment.OrganisationalActivityShort
-import com.aryamahasangh.type.ActivitiesInsertInput
-import com.aryamahasangh.util.Result
-import com.aryamahasangh.viewmodel.AdmissionFormSubmissionState
-import com.aryamahasangh.viewmodel.BaseViewModel
 
 /**
  * UI state for the Activities screen
@@ -229,7 +229,9 @@ class ActivitiesViewModel(
         capacity = Optional.present(input.capacity),
         latitude = Optional.present(input.latitude),
         longitude = Optional.present(input.longitude),
-        allowedGender = Optional.present(input.allowedGender.toApollo())
+        allowedGender = Optional.present(input.allowedGender.toApollo()),
+        overviewDescription = Optional.absent(),
+        overviewMediaUrls = Optional.absent()
       )
     launch {
       _formSubmissionState.value = AdmissionFormSubmissionState(isSubmitting = true)

@@ -28,7 +28,6 @@ import androidx.compose.ui.unit.dp
 import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.error_profile_image
 import coil3.compose.AsyncImage
-import kotlinx.coroutines.launch
 import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.components.activityTypeData
 import com.aryamahasangh.isWeb
@@ -36,6 +35,7 @@ import com.aryamahasangh.navigation.LocalSnackbarHostState
 import com.aryamahasangh.utils.format
 import com.aryamahasangh.utils.openDirections
 import com.aryamahasangh.utils.toHumanReadable
+import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import org.koin.compose.koinInject
@@ -321,7 +321,8 @@ fun ActivityDisplay(
       Text(
         text = activity.name,
         style = MaterialTheme.typography.headlineSmall,
-        fontWeight = FontWeight.Bold
+        fontWeight = FontWeight.Bold,
+        modifier = Modifier.padding(top = 1.dp)
       )
       Spacer(modifier = Modifier.width(8.dp))
       Text(

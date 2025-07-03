@@ -10,11 +10,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
 import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.components.OrgItem
 import com.aryamahasangh.navigation.LocalSnackbarHostState
 import com.aryamahasangh.utils.WithTooltip
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -113,6 +113,7 @@ fun OrgsScreen(
           OrgItem(
             name = org.name,
             description = org.description,
+            logo = org.logo,
             navigateToOrgDetails = {
               onNavigateToOrgDetails(org.id)
             },

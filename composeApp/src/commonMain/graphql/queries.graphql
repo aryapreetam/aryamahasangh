@@ -163,6 +163,7 @@ query Organisations {
       node {
         id
         name
+        logo
         description
       }
     }
