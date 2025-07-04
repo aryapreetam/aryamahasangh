@@ -115,7 +115,7 @@ fun AryaSamajHomeScreen(
           ) {
             // Maharshi Dayanand photo
             AsyncImage(
-              model = "https://shikshanam.in/wp-content/uploads/2024/09/Firefly-20240902150138-1.png",
+              model = "https://afjtpdeohgdgkrwayayn.supabase.co/storage/v1/object/public/images//rishi_dayanand.webp",
               contentDescription = "महर्षि दयानंद सरस्वती",
               modifier = Modifier
                 .size(200.dp)

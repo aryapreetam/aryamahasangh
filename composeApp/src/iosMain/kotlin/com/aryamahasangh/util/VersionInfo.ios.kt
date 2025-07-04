@@ -2,23 +2,25 @@ package com.aryamahasangh.util
 
 /**
  * iOS implementation for getting version name
- * For iOS, we'll use a fallback version since we can't easily access build configuration
+ * For iOS, we use hardcoded version that matches gradle.properties
+ * This is a simple approach to avoid iOS build complexity
  */
 actual fun getPlatformVersionName(): String {
-  return "0.0.1" // Fallback version for iOS
+  return "1.0.0" // This should match appVersion in gradle.properties
 }
 
 /**
  * iOS implementation for getting version code
+ * Calculated from version 0.0.1 -> 1
  */
 actual fun getPlatformVersionCode(): Int {
-  return 1 // Fallback version code for iOS
+  return 10000 // Version code for 1.0.0
 }
 
 /**
  * iOS implementation for getting environment
- * For iOS, we'll use "dev" as fallback for now
+ * For iOS, we use "dev" as default environment
  */
 actual fun getPlatformEnvironment(): String {
-  return "dev" // Fallback environment for iOS
+  return "dev" // Default environment for iOS
 }

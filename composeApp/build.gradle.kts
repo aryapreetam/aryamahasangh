@@ -34,7 +34,11 @@ fun loadSecrets(): Properties {
 }
 
 val secrets = loadSecrets()
-val environment = secrets.getProperty("environment", "dev")
+// Get version from gradle.properties
+val appVersion: String by project
+
+// Get environment from project properties (can be passed via -Penv=dev/staging/prod)
+val environment = project.findProperty("env")?.toString() ?: secrets.getProperty("environment", "dev")
 val supabaseUrl = secrets.getProperty("$environment.supabase.url", "")
 val supabaseKey = secrets.getProperty("$environment.supabase.key", "")
 
@@ -98,6 +102,53 @@ kotlin {
       }
     }
     binaries.executable()
+  }
+
+// ============================================================================
+// WASM/WEB: Generate version info JS for browser builds
+// ============================================================================
+
+  val generateWebVersionInfo by tasks.registering {
+    group = "build"
+    description = "Generate version info JS file for web (Wasm) build"
+
+  val buildDir = layout.buildDirectory
+  val outputDir = buildDir.dir("processedResources/wasmJs/main")
+  // Always run when building a web distribution
+  outputs.file(outputDir.map { it.file("web-version-info.js") })
+
+  doLast {
+    val versionCodeCalculated = appVersion.split(".").let { parts ->
+      when (parts.size) {
+        3 -> parts[0].toInt() * 10000 + parts[1].toInt() * 100 + parts[2].toInt()
+        2 -> parts[0].toInt() * 100 + parts[1].toInt()
+        1 -> parts[0].toInt()
+        else -> 1
+      }
+    }
+    val js = """
+      |window.APP_VERSION_NAME = "${appVersion}";
+      |window.APP_VERSION_CODE = ${versionCodeCalculated};
+      |window.APP_ENVIRONMENT = "${environment}";
+      |console.log("Web version info loaded:", window.APP_VERSION_NAME, window.APP_VERSION_CODE, window.APP_ENVIRONMENT);
+    """.trimMargin()
+    val dir = outputDir.get().asFile
+    if (!dir.exists()) {
+      dir.mkdirs()
+    }
+    val outFile = dir.resolve("web-version-info.js")
+    outFile.writeText(js)
+    println("✅ Generated web-version-info.js at ${outFile.absolutePath}")
+  }
+}
+
+// Ensure version info is generated before processing resources and build
+  tasks.matching { it.name.startsWith("processWasmJs") }.configureEach {
+    dependsOn(generateWebVersionInfo)
+  }
+  tasks.matching { it.name == "wasmJsBrowserProductionWebpack" || it.name == "wasmJsBrowserDevelopmentWebpack" }
+    .configureEach {
+    dependsOn(generateWebVersionInfo)
   }
 
   sourceSets {
@@ -207,11 +258,19 @@ android {
     minSdk = libs.versions.android.minSdk.get().toInt()
     targetSdk = libs.versions.android.targetSdk.get().toInt()
 
-    // Use environment variables for version, fallback to defaults
-    // During CI builds, VERSION_NAME and VERSION_CODE are set by the workflow
-    // During local development, defaults are used (0.0.1 and 1)
-    versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 1
-    versionName = System.getenv("VERSION_NAME") ?: "0.0.1"
+    // Use appVersion from gradle.properties as base version
+    // Version code calculation: convert version to integer (e.g., 0.0.1 -> 1, 0.0.10 -> 10, 1.2.3 -> 10203)
+    val versionParts = appVersion.split(".")
+    val versionCodeCalculated = when (versionParts.size) {
+      3 -> versionParts[0].toInt() * 10000 + versionParts[1].toInt() * 100 + versionParts[2].toInt()
+      2 -> versionParts[0].toInt() * 100 + versionParts[1].toInt()
+      1 -> versionParts[0].toInt()
+      else -> 1
+    }
+    
+    // CI can override these via environment variables
+    versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: versionCodeCalculated
+    versionName = System.getenv("VERSION_NAME") ?: appVersion
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -219,9 +278,11 @@ android {
     buildConfigField("String", "VERSION_NAME", "\"${versionName}\"")
     buildConfigField("int", "VERSION_CODE", "$versionCode")
     buildConfigField("String", "ENVIRONMENT", "\"$environment\"")
+    
     // Debug output for development
     println("📱 Android version: $versionName ($versionCode)")
-    println("🌍 Environment: $environment")  }
+    println("🌍 Environment: $environment")
+  }
 
   buildFeatures {
     buildConfig = true
@@ -273,12 +334,28 @@ compose.desktop {
     nativeDistributions {
       targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
       packageName = "com.aryamahasangh"
-      packageVersion = "1.0.0"
+      packageVersion = appVersion
 
       linux {
         modules("jdk.security.auth")
       }
     }
+
+    // Set JVM arguments to pass version information
+    val versionCodeCalculated = appVersion.split(".").let { parts ->
+      when (parts.size) {
+        3 -> parts[0].toInt() * 10000 + parts[1].toInt() * 100 + parts[2].toInt()
+        2 -> parts[0].toInt() * 100 + parts[1].toInt()
+        1 -> parts[0].toInt()
+        else -> 1
+      }
+    }
+
+    jvmArgs += listOf(
+      "-Dapp.version.name=$appVersion",
+      "-Dapp.version.code=$versionCodeCalculated",
+      "-Dapp.environment=$environment"
+    )
   }
 }
 

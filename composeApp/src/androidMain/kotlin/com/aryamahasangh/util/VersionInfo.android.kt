@@ -6,7 +6,7 @@ package com.aryamahasangh.util
 actual fun getPlatformVersionName(): String {
   return try {
     // Use reflection to get BuildConfig since it might not be available at compile time
-    val buildConfigClass = Class.forName("org.aryamahasangh.BuildConfig")
+    val buildConfigClass = Class.forName("com.aryamahasangh.BuildConfig")
     val versionNameField = buildConfigClass.getField("VERSION_NAME")
     versionNameField.get(null) as String
   } catch (e: Exception) {
@@ -20,7 +20,7 @@ actual fun getPlatformVersionName(): String {
 actual fun getPlatformVersionCode(): Int {
   return try {
     // Use reflection to get BuildConfig since it might not be available at compile time
-    val buildConfigClass = Class.forName("org.aryamahasangh.BuildConfig")
+    val buildConfigClass = Class.forName("com.aryamahasangh.BuildConfig")
     val versionCodeField = buildConfigClass.getField("VERSION_CODE")
     versionCodeField.get(null) as Int
   } catch (e: Exception) {
@@ -34,7 +34,7 @@ actual fun getPlatformVersionCode(): Int {
 actual fun getPlatformEnvironment(): String {
   return try {
     // Use reflection to get BuildConfig since it might not be available at compile time
-    val buildConfigClass = Class.forName("org.aryamahasangh.BuildConfig")
+    val buildConfigClass = Class.forName("com.aryamahasangh.BuildConfig")
     val environmentField = buildConfigClass.getField("ENVIRONMENT")
     environmentField.get(null) as String
   } catch (e: Exception) {
