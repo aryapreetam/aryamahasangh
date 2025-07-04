@@ -1056,7 +1056,7 @@ private fun CreateActivityScreenContent(
 
         // Submit form using ViewModel
         if (editingActivityId != null) {
-          viewModel.updateActivity(editingActivityId, inp)
+          viewModel.updateActivitySmart(editingActivityId, inp)
         } else {
           viewModel.createActivity(inp)
         }

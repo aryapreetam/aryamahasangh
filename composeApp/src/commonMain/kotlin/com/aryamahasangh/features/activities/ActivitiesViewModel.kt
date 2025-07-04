@@ -85,6 +85,10 @@ class ActivitiesViewModel(
   private var currentActivityId: String? = null
   private var registrationListenerJob: Job? = null
 
+  // Store original activity data for smart updates
+  private val _originalActivityData = MutableStateFlow<OrganisationalActivity?>(null)
+  val originalActivityData: StateFlow<OrganisationalActivity?> = _originalActivityData.asStateFlow()
+
   init {
     loadActivities()
   }
@@ -186,6 +190,7 @@ class ActivitiesViewModel(
                   error = null
                 )
               }
+              _originalActivityData.value = result.data
             }
 
             is Result.Error -> {
@@ -334,6 +339,107 @@ class ActivitiesViewModel(
         }
       }
     }
+  }
+
+  /**
+   * Smart update an existing activity using differential updates
+   */
+  fun updateActivitySmart(
+    id: String,
+    input: ActivityInputData
+  ) {
+    launch {
+      _formSubmissionState.value = AdmissionFormSubmissionState(isSubmitting = true)
+
+      when (
+        val result = activityRepository.updateActivitySmart(
+          activityId = id,
+          originalActivity = _originalActivityData.value,
+          newActivityData = input
+        )
+      ) {
+        is Result.Success -> {
+          _formSubmissionState.value =
+            AdmissionFormSubmissionState(
+              isSubmitting = false,
+              isSuccess = result.data,
+              error = null
+            )
+          // Reload activity detail to reflect the update
+          loadActivityDetail(id)
+        }
+
+        is Result.Error -> {
+          _formSubmissionState.value =
+            AdmissionFormSubmissionState(
+              isSubmitting = false,
+              isSuccess = false,
+              error = result.message
+            )
+        }
+
+        is Result.Loading -> {
+          // This shouldn't happen with the current implementation
+        }
+      }
+    }
+  }
+
+  /**
+   * Check if activity data has changed compared to original
+   */
+  fun hasActivityDataChanged(newData: ActivityInputData): Boolean {
+    val original = _originalActivityData.value ?: return true
+
+    return original.name != newData.name ||
+      original.type.name != newData.type.name ||
+      original.shortDescription != newData.shortDescription ||
+      original.longDescription != newData.longDescription ||
+      original.address != newData.address ||
+      original.state != newData.state ||
+      original.district != newData.district ||
+      original.startDatetime != newData.startDatetime ||
+      original.endDatetime != newData.endDatetime ||
+      original.mediaFiles != newData.mediaFiles ||
+      original.additionalInstructions != newData.additionalInstructions ||
+      original.capacity != newData.capacity ||
+      original.latitude != newData.latitude ||
+      original.longitude != newData.longitude ||
+      original.allowedGender != newData.allowedGender.name ||
+      !areOrganisationsEqual(
+        original.associatedOrganisations.map { it.organisation },
+        newData.associatedOrganisations
+      ) ||
+      !areMembersEqual(original.contactPeople, newData.contactPeople)
+  }
+
+  /**
+   * Compare organisations for equality
+   */
+  private fun areOrganisationsEqual(
+    original: List<Organisation>,
+    new: List<Organisation>
+  ): Boolean {
+    if (original.size != new.size) return false
+    val originalIds = original.map { it.id }.toSet()
+    val newIds = new.map { it.id }.toSet()
+    return originalIds == newIds
+  }
+
+  /**
+   * Compare members for equality
+   */
+  private fun areMembersEqual(
+    original: List<ActivityMember>,
+    new: List<ActivityMember>
+  ): Boolean {
+    if (original.size != new.size) return false
+
+    // Create comparable lists
+    val originalComparable = original.map { Triple(it.member.id, it.post, it.priority) }.sortedBy { it.first }
+    val newComparable = new.map { Triple(it.member.id, it.post, it.priority) }.sortedBy { it.first }
+
+    return originalComparable == newComparable
   }
 
   /**

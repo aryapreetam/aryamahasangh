@@ -1,0 +1,7 @@
+# Activity CRUD Mutations using comprehensive Supabase functions
+# These mutations call the custom functions that provide full business logic
+
+# Smart update mutation using the new Postgres function
+mutation UpdateActivityDetailsSmart($request: JSON!) {
+  updateActivityDetails(pRequest: $request)
+}
