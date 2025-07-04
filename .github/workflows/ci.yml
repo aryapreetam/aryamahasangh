@@ -85,45 +85,45 @@ jobs:
         with:
           fetch-depth: 0  # Fetch full history for version calculation
 
-      - name: Generate version number
+      - name: Read version from gradle.properties
         id: version
         run: |
-          # Get the latest release tag
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          # Read version from gradle.properties
+          APP_VERSION=$(grep "^appVersion=" gradle.properties | cut -d'=' -f2 | tr -d ' ')
           
-          if [ -z "$LATEST_TAG" ]; then
-            # If no previous tags, start with v0.0.1
-            NEW_VERSION="v0.0.1"
-            VERSION_CODE="1"
-          else
-            # Extract version numbers from latest tag (e.g., v0.0.1 -> 0.0.1)
-            if [[ $LATEST_TAG =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
-              MAJOR=${BASH_REMATCH[1]}
-              MINOR=${BASH_REMATCH[2]}
-              PATCH=${BASH_REMATCH[3]}
-              # Increment patch version
-              NEW_PATCH=$((PATCH + 1))
-              NEW_VERSION="v${MAJOR}.${MINOR}.${NEW_PATCH}"
-              # Calculate version code (major*10000 + minor*100 + patch)
-              VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + NEW_PATCH))
-            else
-              # If tag doesn't match semantic versioning, start fresh
-              NEW_VERSION="v0.0.1"
-              VERSION_CODE="1"
-            fi
+          if [ -z "$APP_VERSION" ]; then
+            echo "❌ appVersion not found in gradle.properties!"
+            exit 1
           fi
+          
+          # Check if this version already has a tag
+          if git tag -l "v$APP_VERSION" | grep -q "v$APP_VERSION"; then
+            echo "⚠️ Tag v$APP_VERSION already exists. Using build number suffix."
+            # Get build number based on current commits since tag
+            BUILD_NUM=$(git rev-list --count HEAD)
+            NEW_VERSION="v${APP_VERSION}-build.${BUILD_NUM}"
+            VERSION_NAME="${APP_VERSION}-build.${BUILD_NUM}"
+          else
+            NEW_VERSION="v${APP_VERSION}"
+            VERSION_NAME="${APP_VERSION}"
+          fi
+          
+          # Calculate version code from semantic version (major*10000 + minor*100 + patch)
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$APP_VERSION"
+          VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
           
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
-          echo "version_name=${NEW_VERSION#v}" >> $GITHUB_OUTPUT  # Remove 'v' prefix for version name
+          echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
           echo "tag_name=$NEW_VERSION" >> $GITHUB_OUTPUT
           
           # Generate release name
           RELEASE_NAME="AryaMahasangh $NEW_VERSION - $(date +'%Y-%m-%d')"
           echo "release_name=$RELEASE_NAME" >> $GITHUB_OUTPUT
           
-          echo "Generated version: $NEW_VERSION (code: $VERSION_CODE)"
-          echo "Release name: $RELEASE_NAME"
+          echo "📱 Using version from gradle.properties: $APP_VERSION"
+          echo "🏷️ Tag: $NEW_VERSION (code: $VERSION_CODE)"
+          echo "📦 Release name: $RELEASE_NAME"
 
   code-quality:
     name: Code Quality Checks
