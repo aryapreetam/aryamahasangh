@@ -37,7 +37,7 @@ val LocalSnackbarHostState =
 val LocalBackHandler = compositionLocalOf<(() -> Unit)?> { null }
 
 // CompositionLocal for setting custom back handler
-val LocalSetBackHandler = compositionLocalOf<(((() -> Unit)?) -> Unit)?> { null }
+val LocalSetBackHandler = compositionLocalOf<((() -> Unit)?) -> Unit> { {} }
 
 @Composable
 fun AppDrawer() {
@@ -443,6 +443,7 @@ fun MainContent(
   var showLoginDialog by remember { mutableStateOf(false) }
   var showLogoutDialog by remember { mutableStateOf(false) }
   var showOverflowMenu by remember { mutableStateOf(false) }
+  var showPrivacyDialog by remember { mutableStateOf(false) }
   val snackbarHostState = remember { SnackbarHostState() }
 
   val backStackEntry by navController.currentBackStackEntryAsState()
@@ -574,6 +575,13 @@ fun MainContent(
                 },
                 onClick = { showOverflowMenu = false }
               )
+              DropdownMenuItem(
+                text = { Text("Privacy Policy") },
+                onClick = {
+                  showOverflowMenu = false
+                  showPrivacyDialog = true
+                }
+              )
             }
           }
         }
@@ -589,7 +597,7 @@ fun MainContent(
         CompositionLocalProvider(
           LocalSnackbarHostState provides snackbarHostState,
           LocalBackHandler provides customBackHandler, // Provide the mutable state for the back handler
-          LocalSetBackHandler provides { setCustomBackHandler(it) } // Provide the setter for the back handler
+          LocalSetBackHandler provides { handler -> setCustomBackHandler(handler) } // Provide the setter for the back handler
         ) {
           // Platform-specific back button handling
           PlatformBackHandler(
@@ -718,6 +726,42 @@ fun MainContent(
           ) {
             Text(if (showRetryOption) "Cancel" else "No")
           }
+        }
+      }
+    )
+  }
+
+  // Privacy Policy Dialog
+  if (showPrivacyDialog) {
+    AlertDialog(
+      onDismissRequest = { showPrivacyDialog = false },
+      title = { Text("Privacy Policy") },
+      text = {
+        Column(
+          modifier = Modifier.verticalScroll(rememberScrollState())
+        ) {
+          Text("Our Privacy Policy:")
+          Spacer(modifier = Modifier.height(8.dp))
+          Text("• This application is purely for educational purpose.")
+          Spacer(modifier = Modifier.height(8.dp))
+          Text("• This application does not collect any user data of any kind.")
+          Spacer(modifier = Modifier.height(4.dp))
+          Text("• The intended audience is anyone 16+ years old.")
+          Spacer(modifier = Modifier.height(4.dp))
+          Text("• We fully respect user privacy.")
+          Spacer(modifier = Modifier.height(8.dp))
+          Text("Contact Information:")
+          Spacer(modifier = Modifier.height(4.dp))
+          Text("Email: mahasangharya@gmail.com")
+          Spacer(modifier = Modifier.height(4.dp))
+          Text("Website: https://aryamahasangh.com")
+        }
+      },
+      confirmButton = {
+        TextButton(
+          onClick = { showPrivacyDialog = false }
+        ) {
+          Text("OK")
         }
       }
     )

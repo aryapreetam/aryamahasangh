@@ -23,6 +23,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import com.aryamahasangh.type.GenderFilter as ApolloGenderFilter
 
 /**
@@ -61,6 +62,15 @@ interface ActivityRepository {
     input: ActivitiesInsertInput,
     contactMembers: List<ActivityMember>,
     organisations: List<Organisation>
+  ): Result<Boolean>
+
+  /**
+   * Smart update an activity using differential updates
+   */
+  suspend fun updateActivitySmart(
+    activityId: String,
+    originalActivity: OrganisationalActivity?,
+    newActivityData: ActivityInputData
   ): Result<Boolean>
 
   /**
@@ -278,6 +288,196 @@ class ActivityRepositoryImpl(
     }
   }
 
+  override suspend fun updateActivitySmart(
+    activityId: String,
+    originalActivity: OrganisationalActivity?,
+    newActivityData: ActivityInputData
+  ): Result<Boolean> {
+    return safeCall {
+      // Build the update request with only changed fields
+      val updateRequest = buildActivityUpdateRequest(
+        activityId = activityId,
+        originalActivity = originalActivity,
+        newActivityData = newActivityData
+      )
+
+      // If no changes detected, return success without making API call
+      if (isActivityUpdateRequestEmpty(updateRequest)) {
+        return@safeCall true
+      }
+
+      // Convert to JSON string
+      val requestJson = Json.encodeToString(updateRequest)
+
+      // Execute the mutation
+      val response = apolloClient.mutation(
+        UpdateActivityDetailsSmartMutation(requestJson)
+      ).execute()
+
+      if (response.hasErrors()) {
+        throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+      }
+
+      // Parse the response
+      val responseData = response.data?.updateActivityDetails
+      if (responseData == null) {
+        throw Exception("No response data received")
+      }
+
+      // Parse the JSON response
+      try {
+        val jsonConfig = Json {
+          ignoreUnknownKeys = true
+          encodeDefaults = true
+          isLenient = true
+        }
+        val jsonString = responseData.toString()
+        val parsedResponse = jsonConfig.decodeFromString<ActivityUpdateResponse>(jsonString)
+
+        if (parsedResponse.success) {
+          true
+        } else {
+          throw Exception("Update failed: ${parsedResponse.error_code ?: "UNKNOWN_ERROR"}${parsedResponse.error_details?.let { " - $it" } ?: ""}")
+        }
+      } catch (e: Exception) {
+        // Fallback: check for success in raw response string
+        val responseString = responseData.toString()
+        if (responseString.contains("\"success\":true")) {
+          true
+        } else {
+          throw Exception("Activity update failed: $responseString")
+        }
+      }
+    }
+  }
+
+  /**
+   * Build update request with only changed fields
+   */
+  private fun buildActivityUpdateRequest(
+    activityId: String,
+    originalActivity: OrganisationalActivity?,
+    newActivityData: ActivityInputData
+  ): ActivityUpdateRequest {
+    // If no original data, send all fields
+    if (originalActivity == null) {
+      return ActivityUpdateRequest(
+        activityId = activityId,
+        name = newActivityData.name,
+        type = newActivityData.type.name,
+        shortDescription = newActivityData.shortDescription,
+        longDescription = newActivityData.longDescription,
+        address = newActivityData.address,
+        state = newActivityData.state,
+        district = newActivityData.district,
+        startDatetime = newActivityData.startDatetime.convertToInstant().toString(),
+        endDatetime = newActivityData.endDatetime.convertToInstant().toString(),
+        mediaFiles = newActivityData.mediaFiles,
+        additionalInstructions = newActivityData.additionalInstructions,
+        capacity = newActivityData.capacity,
+        latitude = newActivityData.latitude,
+        longitude = newActivityData.longitude,
+        allowedGender = newActivityData.allowedGender.name,
+        organisations = newActivityData.associatedOrganisations.map { it.id },
+        members = newActivityData.contactPeople.map { member ->
+          ActivityMemberUpdateRequest(
+            memberId = member.member.id,
+            post = member.post,
+            priority = member.priority
+          )
+        }
+      )
+    }
+
+    // Compare and include only changed fields
+    return ActivityUpdateRequest(
+      activityId = activityId,
+      name = if (originalActivity.name != newActivityData.name) newActivityData.name else null,
+      type = if (originalActivity.type.name != newActivityData.type.name) newActivityData.type.name else null,
+      shortDescription = if (originalActivity.shortDescription != newActivityData.shortDescription) newActivityData.shortDescription else null,
+      longDescription = if (originalActivity.longDescription != newActivityData.longDescription) newActivityData.longDescription else null,
+      address = if (originalActivity.address != newActivityData.address) newActivityData.address else null,
+      state = if (originalActivity.state != newActivityData.state) newActivityData.state else null,
+      district = if (originalActivity.district != newActivityData.district) newActivityData.district else null,
+      startDatetime = if (originalActivity.startDatetime != newActivityData.startDatetime.convertToInstant()) newActivityData.startDatetime.convertToInstant().toString() else null,
+      endDatetime = if (originalActivity.endDatetime != newActivityData.endDatetime.convertToInstant()) newActivityData.endDatetime.convertToInstant().toString() else null,
+      mediaFiles = if (originalActivity.mediaFiles != newActivityData.mediaFiles) newActivityData.mediaFiles else null,
+      additionalInstructions = if (originalActivity.additionalInstructions != newActivityData.additionalInstructions) newActivityData.additionalInstructions else null,
+      capacity = if (originalActivity.capacity != newActivityData.capacity) newActivityData.capacity else null,
+      latitude = if (originalActivity.latitude != newActivityData.latitude) newActivityData.latitude else null,
+      longitude = if (originalActivity.longitude != newActivityData.longitude) newActivityData.longitude else null,
+      allowedGender = if (originalActivity.allowedGender != newActivityData.allowedGender.name) newActivityData.allowedGender.name else null,
+      organisations = if (!areOrganisationsEqual(
+          originalActivity.associatedOrganisations.map { it.organisation },
+          newActivityData.associatedOrganisations
+        )
+      ) {
+        newActivityData.associatedOrganisations.map { it.id }
+      } else null,
+      members = if (!areMembersEqual(originalActivity.contactPeople, newActivityData.contactPeople)) {
+        newActivityData.contactPeople.map { member ->
+          ActivityMemberUpdateRequest(
+            memberId = member.member.id,
+            post = member.post,
+            priority = member.priority
+          )
+        }
+      } else null
+    )
+  }
+
+  /**
+   * Check if update request has any changes
+   */
+  private fun isActivityUpdateRequestEmpty(request: ActivityUpdateRequest): Boolean {
+    return request.name == null &&
+      request.type == null &&
+      request.shortDescription == null &&
+      request.longDescription == null &&
+      request.address == null &&
+      request.state == null &&
+      request.district == null &&
+      request.startDatetime == null &&
+      request.endDatetime == null &&
+      request.mediaFiles == null &&
+      request.additionalInstructions == null &&
+      request.capacity == null &&
+      request.latitude == null &&
+      request.longitude == null &&
+      request.allowedGender == null &&
+      request.organisations == null &&
+      request.members == null
+  }
+
+  /**
+   * Compare organisations for equality
+   */
+  private fun areOrganisationsEqual(
+    original: List<Organisation>,
+    new: List<Organisation>
+  ): Boolean {
+    if (original.size != new.size) return false
+    val originalIds = original.map { it.id }.toSet()
+    val newIds = new.map { it.id }.toSet()
+    return originalIds == newIds
+  }
+
+  /**
+   * Compare members for equality
+   */
+  private fun areMembersEqual(
+    original: List<ActivityMember>,
+    new: List<ActivityMember>
+  ): Boolean {
+    if (original.size != new.size) return false
+    
+    // Create comparable lists
+    val originalComparable = original.map { Triple(it.member.id, it.post, it.priority) }.sortedBy { it.first }
+    val newComparable = new.map { Triple(it.member.id, it.post, it.priority) }.sortedBy { it.first }
+    
+    return originalComparable == newComparable
+  }
+
   override suspend fun getOrganisationsAndMembers(): Result<OrganisationsAndMembers> {
     return safeCall {
       val response = apolloClient.query(OrganisationsAndMembersQuery()).execute()
@@ -373,6 +573,61 @@ class ActivityRepositoryImpl(
     }
   }
 }
+
+/**
+ * Response type for smart activity updates
+ */
+@Serializable
+data class ActivityUpdateResponse(
+  val success: Boolean,
+  val message_code: String? = null,
+  val error_code: String? = null,
+  val error_details: String? = null
+)
+
+/**
+ * Data class for smart activity update requests
+ */
+@Serializable
+data class ActivityUpdateRequest(
+  @SerialName("activity_id")
+  val activityId: String,
+  val name: String? = null,
+  val type: String? = null,
+  @SerialName("shortDescription")
+  val shortDescription: String? = null,
+  @SerialName("longDescription")
+  val longDescription: String? = null,
+  val address: String? = null,
+  val state: String? = null,
+  val district: String? = null,
+  @SerialName("startDatetime")
+  val startDatetime: String? = null,
+  @SerialName("endDatetime")
+  val endDatetime: String? = null,
+  @SerialName("mediaFiles")
+  val mediaFiles: List<String>? = null,
+  @SerialName("additionalInstructions")
+  val additionalInstructions: String? = null,
+  val capacity: Int? = null,
+  val latitude: Double? = null,
+  val longitude: Double? = null,
+  @SerialName("allowedGender")
+  val allowedGender: String? = null,
+  val organisations: List<String>? = null,
+  val members: List<ActivityMemberUpdateRequest>? = null
+)
+
+/**
+ * Data class for activity member update requests
+ */
+@Serializable
+data class ActivityMemberUpdateRequest(
+  @SerialName("memberId")
+  val memberId: String,
+  val post: String = "",
+  val priority: Int = 1
+)
 
 @Serializable
 data class SatrRegistration(

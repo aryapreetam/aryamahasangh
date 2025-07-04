@@ -2907,10 +2907,14 @@ type Mutation {
   """
   updateActivitiesCollection("Fields that are set will be updated for all records matching the `filter`" set: ActivitiesUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: ActivitiesFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): ActivitiesUpdateResponse!
 
+  updateActivityDetails(pRequest: JSON!): JSON
+
   """
   Updates zero or more records in the `ActivityMember` collection
   """
   updateActivityMemberCollection("Fields that are set will be updated for all records matching the `filter`" set: ActivityMemberUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: ActivityMemberFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): ActivityMemberUpdateResponse!
+
+  updateActivityWithRelations(pActivityId: String!, pActivityData: JSON!, pOrganisations: JSON, pContactPeople: JSON): JSON
 
   """
   Updates zero or more records in the `Address` collection
