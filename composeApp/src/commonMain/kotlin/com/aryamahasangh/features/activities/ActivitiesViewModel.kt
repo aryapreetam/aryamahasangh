@@ -317,7 +317,7 @@ class ActivitiesViewModel(
               error = null
             )
           // Reload activities to reflect the update
-          loadActivities()
+          loadActivityDetail(id)
         }
 
         is Result.Error -> {

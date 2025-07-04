@@ -232,14 +232,14 @@ class ActivityRepositoryImpl(
       supabaseClient.from("organisational_activity")
         .delete {
           filter {
-            eq("activityId", id)
+            eq("activity_id", id)
           }
         }
 
       supabaseClient.from("activity_member")
         .delete {
           filter {
-            eq("activityId", id)
+            eq("activity_id", id)
           }
         }
 
@@ -284,14 +284,14 @@ class ActivityRepositoryImpl(
       if (response.hasErrors()) {
         throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
       }
-      response.data.let {
+      response.data.let { it ->
         OrganisationsAndMembers(
           members =
-            it?.memberCollection?.edges?.map {
+            it?.memberInOrganisationCollection?.edges?.map {
               Member(
-                id = it.node.memberShort.id,
-                name = it.node.memberShort.name!!,
-                profileImage = it.node.memberShort.profileImage ?: ""
+                id = it.node.memberInOrganisationShort.id!!,
+                name = it.node.memberInOrganisationShort.name!!,
+                profileImage = it.node.memberInOrganisationShort.profileImage ?: ""
               )
             }!!,
           organisations =
