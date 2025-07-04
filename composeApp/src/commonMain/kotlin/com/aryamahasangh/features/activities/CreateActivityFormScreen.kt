@@ -747,8 +747,8 @@ private fun CreateActivityScreenContent(
   }
 
   // Populate form with editing activity data
-  LaunchedEffect(editingActivity) {
-    if (editingActivity != null) {
+  LaunchedEffect(editingActivity, members) {
+    if (editingActivity != null && members.isNotEmpty()) {
       val activity = editingActivity!!
       name = activity.name
       selectedType = activity.type
@@ -782,7 +782,7 @@ private fun CreateActivityScreenContent(
       endDateText = TextFieldValue(dateFormatter(endDate!!))
       endTimeText = TextFieldValue(timeFormatter(endTime!!))
 
-      // Contact people - Fix: Map the Member objects correctly
+      // Contact people - Map the Member objects only when both activity and members list are loaded
       contactPeople =
         activity.contactPeople.map { activityMember ->
           // Find the full member object from the members list if available
