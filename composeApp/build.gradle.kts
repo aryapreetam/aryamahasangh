@@ -17,30 +17,40 @@ plugins {
   alias(libs.plugins.kotlinx.serialization)
   alias(libs.plugins.apollo)
   alias(libs.plugins.ktlint)
+  id("io.github.tarasovvp.kmp-secrets-plugin") version "1.2.0"
 }
 
-// Load secrets from properties file
-fun loadSecrets(): Properties {
-  val secretsFile = rootProject.file("secrets.properties")
-  val secrets = Properties()
-
-  if (secretsFile.exists()) {
-    secretsFile.inputStream().use { secrets.load(it) }
-  } else {
-    println("Warning: secrets.properties file not found. Using fallback values.")
+// Load secrets from local.properties for build-time operations
+fun loadLocalProperties(): Properties {
+  val localPropsFile = rootProject.file("local.properties")
+  val props = Properties()
+  
+  if (localPropsFile.exists()) {
+    localPropsFile.inputStream().use { props.load(it) }
   }
-
-  return secrets
+  
+  return props
 }
 
-val secrets = loadSecrets()
-// Get version from gradle.properties
-val appVersion: String by project
+val localProps = loadLocalProperties()
+
+// Get version from local.properties and derive both name and code
+val appVersion: String = localProps.getProperty("app_version", "1.0.0")
+val appVersionCode: Int = calculateVersionCode(appVersion)
+
+// Function to calculate version code from semantic version
+fun calculateVersionCode(version: String): Int {
+  val parts = version.split(".")
+  return when (parts.size) {
+    3 -> parts[0].toInt() * 10000 + parts[1].toInt() * 100 + parts[2].toInt()
+    2 -> parts[0].toInt() * 100 + parts[1].toInt()
+    1 -> parts[0].toInt()
+    else -> 1
+  }
+}
 
 // Get environment from project properties (can be passed via -Penv=dev/staging/prod)
-val environment = project.findProperty("env")?.toString() ?: secrets.getProperty("environment", "dev")
-val supabaseUrl = secrets.getProperty("$environment.supabase.url", "")
-val supabaseKey = secrets.getProperty("$environment.supabase.key", "")
+val environment = project.findProperty("env")?.toString() ?: localProps.getProperty("environment", "dev")
 
 // Apply the test reporting configuration
 apply(from = "$rootDir/composeApp/testreporting.gradle.kts")
@@ -258,18 +268,8 @@ android {
     minSdk = libs.versions.android.minSdk.get().toInt()
     targetSdk = libs.versions.android.targetSdk.get().toInt()
 
-    // Use appVersion from gradle.properties as base version
-    // Version code calculation: convert version to integer (e.g., 0.0.1 -> 1, 0.0.10 -> 10, 1.2.3 -> 10203)
-    val versionParts = appVersion.split(".")
-    val versionCodeCalculated = when (versionParts.size) {
-      3 -> versionParts[0].toInt() * 10000 + versionParts[1].toInt() * 100 + versionParts[2].toInt()
-      2 -> versionParts[0].toInt() * 100 + versionParts[1].toInt()
-      1 -> versionParts[0].toInt()
-      else -> 1
-    }
-    
-    // CI can override these via environment variables
-    versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: versionCodeCalculated
+    // Use appVersion and appVersionCode from local.properties, with CI override
+    versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: appVersionCode
     versionName = System.getenv("VERSION_NAME") ?: appVersion
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -342,26 +342,13 @@ compose.desktop {
     }
 
     // Set JVM arguments to pass version information
-    val versionCodeCalculated = appVersion.split(".").let { parts ->
-      when (parts.size) {
-        3 -> parts[0].toInt() * 10000 + parts[1].toInt() * 100 + parts[2].toInt()
-        2 -> parts[0].toInt() * 100 + parts[1].toInt()
-        1 -> parts[0].toInt()
-        else -> 1
-      }
-    }
-
     jvmArgs += listOf(
       "-Dapp.version.name=$appVersion",
-      "-Dapp.version.code=$versionCodeCalculated",
+      "-Dapp.version.code=$appVersionCode",
       "-Dapp.environment=$environment"
     )
   }
 }
-
-// tasks.register<ComposeHotRun>("runHot") {
-//  mainClass.set("com.aryamahasangh.MainKt")
-// }
 
 tasks.withType<ComposeHotRun>().configureEach {
   mainClass.set("com.aryamahasangh.MainKt")
@@ -374,23 +361,19 @@ apollo {
     mapScalar("Date", "kotlinx.datetime.LocalDate")
     // If you're using adapters, you can also set this
     generateKotlinModels.set(true)
+
+    // Read Supabase credentials directly from local.properties based on environment
+    val supabaseUrl = localProps.getProperty("${environment}_supabase_url", "")
+    val supabaseKey = localProps.getProperty("${environment}_supabase_key", "")
+
     introspection {
       endpointUrl.set("$supabaseUrl/graphql/v1")
-      // do not write composeApp here, as that will be take care by downloadSchema task
       schemaFile.set(file("src/commonMain/graphql/schema.graphqls"))
       headers.put("Authorization", "Bearer $supabaseKey")
       headers.put("apikey", supabaseKey)
     }
   }
 }
-
-// not generating all models properly. needs refactoring. until that time don't use
-// tasks.register<GenerateKto>("generateKtoModels") {
-//  dependsOn("generateApolloSources")
-//  doLast {
-//    println("Generating DTO models...")
-//  }
-// }
 
 tasks.withType(ApolloGenerateSourcesTask::class.java).configureEach {
   doNotTrackState("i don't know")
@@ -424,189 +407,3 @@ ktlint {
     exclude("**/ActualResourceCollectors.kt")
   }
 }
-
-// ============================================================================
-// AUTOMATED SECRETS SETUP TASKS
-// ============================================================================
-
-/**
- * Task to automatically run the setup-secrets.sh script
- * This ensures secrets are properly configured for all platforms before compilation
- */
-tasks.register<Exec>("setupSecrets") {
-  group = "secrets"
-  description = "Setup secrets for all platforms (Desktop, Android, Web, iOS)"
-
-  // Configuration cache compatible - capture values at configuration time
-  val rootDir = rootProject.projectDir
-  val secretsFile = File(rootDir, "secrets.properties")
-  val isWindows = System.getProperty("os.name").lowercase().contains("windows")
-
-  workingDir = rootDir
-
-  // Use appropriate shell based on OS
-  if (isWindows) {
-    commandLine("cmd", "/c", "bash", "setup-secrets.sh")
-  } else {
-    commandLine("bash", "setup-secrets.sh")
-  }
-
-  // Only run if secrets.properties exists
-  onlyIf {
-    secretsFile.exists()
-  }
-
-  doFirst {
-    println("🔧 Running automated secrets setup...")
-  }
-
-  doLast {
-    println("✅ Automated secrets setup completed")
-  }
-}
-
-/**
- * Task to check if secrets.properties exists and warn if not
- */
-tasks.register("checkSecrets") {
-  group = "secrets"
-  description = "Check if secrets.properties file exists"
-
-  // Configuration cache compatible - capture values at configuration time
-  val secretsFilePath = File(rootProject.projectDir, "secrets.properties").absolutePath
-
-  doLast {
-    val secretsFile = File(secretsFilePath)
-    if (!secretsFile.exists()) {
-      logger.warn(
-        """
-        ⚠️  WARNING: secrets.properties file not found!
-
-        To set up secrets for all platforms:
-        1. Copy the template: cp secrets.properties.template secrets.properties
-        2. Fill in your actual values in secrets.properties
-        3. Run: ./setup-secrets.sh
-
-        Or the setup will run automatically when you build.
-        """.trimIndent()
-      )
-    } else {
-      println("✅ secrets.properties file found")
-    }
-  }
-}
-
-// ============================================================================
-// PLATFORM-SPECIFIC SETUP TASKS
-// ============================================================================
-
-// Hook setupSecrets to run before compilation tasks for all platforms
-tasks.matching { task ->
-  task.name.startsWith("compile") ||
-    task.name.contains("Compile") ||
-    task.name == "preBuild" ||
-    task.name.startsWith("assemble") ||
-    task.name.startsWith("bundle") ||
-    task.name == "run" ||
-    task.name == "runDebug" ||
-    task.name == "runRelease"
-}.configureEach {
-  dependsOn("setupSecrets")
-}
-
-// Android specific tasks
-tasks.matching { it.name.startsWith("assemble") }.configureEach {
-  dependsOn("setupSecrets")
-}
-
-// Desktop specific tasks
-tasks.matching { it.name.contains("Desktop") || it.name == "run" }.configureEach {
-  dependsOn("setupSecrets")
-}
-
-// Web specific tasks
-tasks.matching { it.name.contains("Js") || it.name.contains("Wasm") }.configureEach {
-  dependsOn("setupSecrets")
-}
-
-// iOS specific tasks
-tasks.matching { it.name.contains("Ios") || it.name.contains("iOS") }.configureEach {
-  dependsOn("setupSecrets")
-}
-
-// Make checkSecrets run early in the build process
-tasks.named("preBuild") {
-  dependsOn("checkSecrets")
-}
-
-// Also run checkSecrets before setupSecrets
-tasks.named("setupSecrets") {
-  dependsOn("checkSecrets")
-}
-//
-// abstract class AddWasmPreloadLinksTask : DefaultTask() {
-//    @get:Internal
-//    abstract val buildDirectory: DirectoryProperty
-//
-//    init {
-//        description = "Adds preload links for WASM files to index.html"
-//        group = "wasm"
-//    }
-//
-//    @TaskAction
-//    fun execute() {
-//        val distDir = buildDirectory.get().dir("dist/wasmJs/productionExecutable").asFile
-//        println("Checking for WASM files in: ${distDir.absolutePath}")
-//
-//        if (!distDir.exists()) {
-//            throw GradleException("Distribution directory not found at ${distDir.absolutePath}")
-//        }
-//
-//        val indexFile = File(distDir, "index.html")
-//        if (!indexFile.exists()) {
-//            throw GradleException("index.html not found in ${distDir.absolutePath}")
-//        }
-//
-//        // Find all .wasm files in the directory
-//        val wasmFiles = distDir.listFiles { file -> file.name.endsWith(".wasm") }
-//            ?: throw GradleException("No .wasm files found in ${distDir.absolutePath}")
-//
-//        if (wasmFiles.isEmpty()) {
-//            throw GradleException("No .wasm files found in ${distDir.absolutePath}")
-//        }
-//
-//        // Read the current content of index.html
-//        var content = indexFile.readText()
-//
-//        // Check if preload links already exist to avoid duplicates
-//        if (content.contains("""rel="preload" href="/.+\.wasm"""".toRegex())) {
-//            println("WASM preload links already exist in index.html, skipping...")
-//            return
-//        }
-//
-//        // Create preload links for each .wasm file
-//        val preloadLinks = wasmFiles.joinToString("\n") { wasmFile ->
-//            """    <link rel="preload" href="/${wasmFile.name}" as="fetch" type="application/wasm" crossorigin="anonymous" />"""
-//        }
-//
-//        // Insert the preload links after the opening <head> tag
-//        content = content.replace("<head>", "<head>\n$preloadLinks")
-//
-//        // Write the modified content back to the file
-//        indexFile.writeText(content)
-//
-//        println("✅ Successfully added preload links for ${wasmFiles.size} WASM files to index.html:")
-//        wasmFiles.forEach { file ->
-//            println("  - ${file.name}")
-//        }
-//    }
-// }
-//
-// tasks.register<AddWasmPreloadLinksTask>("addWasmPreloadLinks") {
-//    buildDirectory.set(layout.buildDirectory)
-// }
-//
-// // Hook the task to run after wasmJsBrowserDistribution
-// tasks.named("wasmJsBrowserDistribution") {
-//    finalizedBy("addWasmPreloadLinks")
-// }
