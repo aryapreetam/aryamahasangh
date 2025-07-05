@@ -1,134 +1,43 @@
-name: CI Pipeline
+name: 🔨 Continuous Integration
 
 on:
   push:
-    branches: [ master, dev ]
+    branches: [ main, master, develop, dev ]
   pull_request:
-    branches: [ master, dev ]
-
-permissions:
-  security-events: write    # Required for uploading security scan results
-  contents: write          # Required for creating releases and artifacts
-  actions: write          # Required for workflow operations
-  checks: write           # Required for status checks
-  pull-requests: write    # Required for PR comments
-  issues: write           # Required for issue comments
+    branches: [ main, master, dev ]
 
 env:
-  ENVIRONMENT: dev
-  SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://placeholder.supabase.co' }}
-  SUPABASE_KEY: ${{ secrets.SUPABASE_KEY || 'placeholder-key' }}
+  GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2
 
-# disabling test tasks for now, will enable it when we'll have actual tests.
 jobs:
-  #  test:
-  #    name: Run Tests
-  #    runs-on: ubuntu-latest
-  #
-  #    steps:
-  #      - name: Checkout code
-  #        uses: actions/checkout@v4
-  #
-  #      - name: Set up JDK 17
-  #        uses: actions/setup-java@v4
-  #        with:
-  #          java-version: '17'
-  #          distribution: 'temurin'
-  #
-  #      - name: Cache Gradle packages
-  #        uses: actions/cache@v3
-  #        with:
-  #          path: |
-  #            ~/.gradle/caches
-  #            ~/.gradle/wrapper
-  #          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-  #          restore-keys: |
-  #            ${{ runner.os }}-gradle-
-  #
-  #      - name: Create secrets.properties
-  #        run: |
-  #          cp secrets.properties.template secrets.properties
-  #          sed -i 's|dev.supabase.url=|dev.supabase.url=https://placeholder.supabase.co|' secrets.properties
-  #          sed -i 's|dev.supabase.key=|dev.supabase.key=placeholder-key|' secrets.properties
-  #          sed -i 's|prod.supabase.url=|prod.supabase.url=https://placeholder.supabase.co|' secrets.properties
-  #          sed -i 's|prod.supabase.key=|prod.supabase.key=placeholder-key|' secrets.properties
-  #
-  #      - name: Make gradlew executable
-  #        run: chmod +x ./gradlew
-  #
-  #      - name: Run tests
-  #        run: ./gradlew test --no-daemon
-  #
-  #      - name: Upload test results
-  #        if: always()
-  #        uses: actions/upload-artifact@v4  # Update to v4
-  #        with:
-  #          name: test-results
-  #          path: |
-  #            **/build/test-results/
-  #            **/build/reports/
-
   generate-version:
-    name: Generate Version Number
-    if: github.ref == 'refs/heads/dev'
+    name: 📋 Generate Version
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.version.outputs.version }}
-      version_code: ${{ steps.version.outputs.version_code }}
       version_name: ${{ steps.version.outputs.version_name }}
-      tag_name: ${{ steps.version.outputs.tag_name }}
-      release_name: ${{ steps.version.outputs.release_name }}
-    
+      version_code: ${{ steps.version.outputs.version_code }}
+      build_number: ${{ steps.version.outputs.build_number }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Fetch full history for version calculation
-
-      - name: Read version from gradle.properties
+      - name: Generate build version
         id: version
         run: |
-          # Read version from gradle.properties
-          APP_VERSION=$(grep "^appVersion=" gradle.properties | cut -d'=' -f2 | tr -d ' ')
+          BUILD_NUMBER=${{ github.run_number }}
+          VERSION_NAME="1.0.$BUILD_NUMBER"
+          VERSION_CODE=$((10000 + BUILD_NUMBER))
           
-          if [ -z "$APP_VERSION" ]; then
-            echo "❌ appVersion not found in gradle.properties!"
-            exit 1
-          fi
-          
-          # Check if this version already has a tag
-          if git tag -l "v$APP_VERSION" | grep -q "v$APP_VERSION"; then
-            echo "⚠️ Tag v$APP_VERSION already exists. Using build number suffix."
-            # Get build number based on current commits since tag
-            BUILD_NUM=$(git rev-list --count HEAD)
-            NEW_VERSION="v${APP_VERSION}-build.${BUILD_NUM}"
-            VERSION_NAME="${APP_VERSION}-build.${BUILD_NUM}"
-          else
-            NEW_VERSION="v${APP_VERSION}"
-            VERSION_NAME="${APP_VERSION}"
-          fi
-          
-          # Calculate version code from semantic version (major*10000 + minor*100 + patch)
-          IFS='.' read -r MAJOR MINOR PATCH <<< "$APP_VERSION"
-          VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
-          
-          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
-          echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
           echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
-          echo "tag_name=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
           
-          # Generate release name
-          RELEASE_NAME="AryaMahasangh $NEW_VERSION - $(date +'%Y-%m-%d')"
-          echo "release_name=$RELEASE_NAME" >> $GITHUB_OUTPUT
-          
-          echo "📱 Using version from gradle.properties: $APP_VERSION"
-          echo "🏷️ Tag: $NEW_VERSION (code: $VERSION_CODE)"
-          echo "📦 Release name: $RELEASE_NAME"
+          echo "🏷️ Version: $VERSION_NAME ($VERSION_CODE)"
 
-  code-quality:
-    name: Code Quality Checks
+  build-and-test:
+    name: 🏗️ Build & Test
     runs-on: ubuntu-latest
-    
+    needs: generate-version
+    strategy:
+      matrix:
+        target: [android, web, desktop]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -139,276 +48,63 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Cache Gradle packages
-        uses: actions/cache@v3
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
         with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+          gradle-home-cache-cleanup: true
 
-      - name: Create secrets.properties
+      - name: Create local.properties
         run: |
-          cp secrets.properties.template secrets.properties
-          sed -i 's|dev.supabase.url=|dev.supabase.url=https://placeholder.supabase.co|' secrets.properties
-          sed -i 's|dev.supabase.key=|dev.supabase.key=placeholder-key|' secrets.properties
-          sed -i 's|prod.supabase.url=|prod.supabase.url=https://placeholder.supabase.co|' secrets.properties
-          sed -i 's|prod.supabase.key=|prod.supabase.key=placeholder-key|' secrets.properties
+          echo "app_version=${{ needs.generate-version.outputs.version_name }}" >> local.properties
+          echo "environment=dev" >> local.properties
+          echo "dev_supabase_url=${{ secrets.SUPABASE_URL }}" >> local.properties
+          echo "dev_supabase_key=${{ secrets.SUPABASE_KEY }}" >> local.properties
+          echo "dev_server_url=https://your-api-server.com" >> local.properties
+          echo "dev_googlemaps_apikey=${{ secrets.GOOGLE_MAPS_API_KEY }}" >> local.properties
 
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
-
-  #      - name: Run ktlint
-  #        run: ./gradlew ktlintCheck --no-daemon
-  #
-  #      - name: Upload code quality reports
-  #        uses: actions/upload-artifact@v4
-  #        if: always()
-  #        with:
-  #          name: code-quality-reports
-  #          path: |
-  #            **/build/reports/ktlint/
-  #            **/build/reports/detekt/
-
-  build-web:
-    name: Build Web Distribution
-    if: github.ref == 'refs/heads/dev'
-    needs: [ generate-version, code-quality ]
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Cache Gradle packages
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Create secrets.properties
+      - name: Build Android APK
+        if: matrix.target == 'android'
         run: |
-          cp secrets.properties.template secrets.properties
-          sed -i 's|dev.supabase.url=|dev.supabase.url=${{ secrets.SUPABASE_URL }}|' secrets.properties
-          sed -i 's|dev.supabase.key=|dev.supabase.key=${{ secrets.SUPABASE_KEY }}|' secrets.properties
-          sed -i 's|prod.supabase.url=|prod.supabase.url=${{ secrets.SUPABASE_URL }}|' secrets.properties
-          sed -i 's|prod.supabase.key=|prod.supabase.key=${{ secrets.SUPABASE_KEY }}|' secrets.properties
+          ./gradlew assembleDebug assembleRelease
+          echo "📱 Android build completed"
 
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
-
-      - name: Build WasmJs
-        run: ./gradlew wasmJsBrowserDistribution
-        env:
-          VERSION_NAME: ${{ needs.generate-version.outputs.version_name }}
-          VERSION_CODE: ${{ needs.generate-version.outputs.version_code }}
-
-      - name: Create Web Archive
+      - name: Build Web Distribution
+        if: matrix.target == 'web'
         run: |
-          cd composeApp/build/dist/wasmJs/productionExecutable
-          zip -r ../../../../../Archive.zip .
+          ./gradlew wasmJsBrowserDistribution
+          echo "🌐 Web build completed"
 
-      - name: Upload Web Archive
+      - name: Build Desktop Distribution
+        if: matrix.target == 'desktop'
+        run: |
+          ./gradlew createDistributable packageDistributionForCurrentOS
+          echo "🖥️ Desktop build completed"
+
+      - name: Run Tests
+        run: ./gradlew test --continue
+
+      - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: web-archive
-          path: Archive.zip
-          retention-days: 7
-
-  build-android:
-    name: Build Android APK
-    if: github.ref == 'refs/heads/dev'
-    needs: [ generate-version, code-quality ]
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Cache Gradle packages
-        uses: actions/cache@v3
-        with:
+          name: ${{ matrix.target }}-artifacts-${{ needs.generate-version.outputs.version_name }}
           path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+            composeApp/build/outputs/
+            composeApp/build/dist/
+            composeApp/build/compose/binaries/
+          retention-days: 30
 
-      - name: Decode Keystore
-        run: |
-          echo ${{ secrets.KEYSTORE_BASE64 }} | base64 -d > aryamahasangh.jks
-
-      - name: Create secrets.properties
-        run: |
-          cp secrets.properties.template secrets.properties
-          sed -i 's|dev.supabase.url=|dev.supabase.url=${{ secrets.SUPABASE_URL }}|' secrets.properties
-          sed -i 's|dev.supabase.key=|dev.supabase.key=${{ secrets.SUPABASE_KEY }}|' secrets.properties
-          sed -i 's|prod.supabase.url=|prod.supabase.url=${{ secrets.SUPABASE_URL }}|' secrets.properties
-          sed -i 's|prod.supabase.key=|prod.supabase.key=${{ secrets.SUPABASE_KEY }}|' secrets.properties
-
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
-
-      - name: Build Release APK
-        run: ./gradlew :composeApp:assembleRelease
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-          VERSION_NAME: ${{ needs.generate-version.outputs.version_name }}
-          VERSION_CODE: ${{ needs.generate-version.outputs.version_code }}
-
-      - name: Rename APK
-        run: |
-          mkdir -p release-artifacts
-          cp composeApp/build/outputs/apk/release/composeApp-release.apk release-artifacts/AryaMahasangh_${{ needs.generate-version.outputs.version }}.apk
-
-      - name: Upload Android APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: android-apk
-          path: release-artifacts/AryaMahasangh_${{ needs.generate-version.outputs.version }}.apk
-          retention-days: 7
-
-  create-release:
-    name: Create Unified Release
-    if: github.ref == 'refs/heads/dev'
-    needs: [ generate-version, build-web, build-android ]
+  # Build Report Job
+  build-report:
+    name: 📊 Build Report
     runs-on: ubuntu-latest
-    
+    needs: [generate-version, build-and-test]
+    if: always()
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0  # Fetch full history for commit messages
-
-      - name: Download Web Archive
-        uses: actions/download-artifact@v4
-        with:
-          name: web-archive
-          path: ./artifacts
-
-      - name: Download Android APK
-        uses: actions/download-artifact@v4
-        with:
-          name: android-apk
-          path: ./artifacts
-
-      - name: Get commit messages since last release
-        id: changelog
+      - name: Build Status Report
         run: |
-          # Get version from previous step
-          NEW_VERSION="${{ needs.generate-version.outputs.version }}"
-          
-          # Get the latest release tag
-          LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          
-          if [ -z "$LATEST_TAG" ]; then
-            # If no previous tags, get all commits
-            COMMITS=$(git log --oneline --pretty=format:"- %s (%h)" HEAD~10..HEAD)
-            echo "## Changes in this release:" > changelog.md
-            echo "" >> changelog.md
-            echo "$COMMITS" >> changelog.md
-          else
-            # Get commits since last tag
-            COMMITS=$(git log --oneline --pretty=format:"- %s (%h)" ${LATEST_TAG}..HEAD)
-            echo "## Changes since ${LATEST_TAG}:" > changelog.md
-            echo "" >> changelog.md
-            if [ -z "$COMMITS" ]; then
-              echo "- No new commits since last release" >> changelog.md
-            else
-              echo "$COMMITS" >> changelog.md
-            fi
-          fi
-          
-          echo "" >> changelog.md
-          echo "## Release Contents:" >> changelog.md
-          echo "- 📱 **AryaMahasangh_$NEW_VERSION.apk** - Android application" >> changelog.md
-          echo "- 🌐 **Archive.zip** - Web application files" >> changelog.md
-          echo "" >> changelog.md
-          echo "### Installation Instructions:" >> changelog.md
-          echo "- **Android**: Download the APK file and install on your Android device" >> changelog.md
-          echo "- **Web**: Extract Archive.zip and serve the files using a web server" >> changelog.md
-          echo "" >> changelog.md
-          echo "### Version Information:" >> changelog.md
-          echo "- **Version**: $NEW_VERSION" >> changelog.md
-          echo "- **Build Date**: $(date +'%Y-%m-%d %H:%M:%S UTC')" >> changelog.md
-          echo "- **Commit**: $(git rev-parse HEAD)" >> changelog.md
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            ./artifacts/Archive.zip
-            ./artifacts/AryaMahasangh_*.apk
-          tag_name: ${{ needs.generate-version.outputs.tag_name }}
-          name: ${{ needs.generate-version.outputs.release_name }}
-          body_path: changelog.md
-          draft: false
-          prerelease: false
-          generate_release_notes: false
-          make_latest: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  deploy-web:
-    name: Deploy Web to Netlify
-    if: github.ref == 'refs/heads/dev'
-    needs: [ build-web ]
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Create secrets.properties
-        run: |
-          cp secrets.properties.template secrets.properties
-          sed -i 's|dev.supabase.url=|dev.supabase.url=${{ secrets.SUPABASE_URL }}|' secrets.properties
-          sed -i 's|dev.supabase.key=|dev.supabase.key=${{ secrets.SUPABASE_KEY }}|' secrets.properties
-          sed -i 's|prod.supabase.url=|prod.supabase.url=${{ secrets.SUPABASE_URL }}|' secrets.properties
-          sed -i 's|prod.supabase.key=|prod.supabase.key=${{ secrets.SUPABASE_KEY }}|' secrets.properties
-
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
-
-      - name: Build WasmJs for Netlify
-        run: ./gradlew wasmJsBrowserDistribution
-
-      - name: Deploy to Netlify
-        uses: nwtgck/actions-netlify@v2.0
-        with:
-          publish-dir: './composeApp/build/dist/wasmJs/productionExecutable'
-          production-branch: dev
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: 'Deploy from GitHub Actions - ${{ github.sha }}'
-          enable-pull-request-comment: false
-          enable-commit-comment: false
-          enable-commit-status: false
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          echo "## 🚀 Build Report for ${{ needs.generate-version.outputs.version_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ needs.generate-version.outputs.version_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Number**: ${{ needs.generate-version.outputs.build_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ needs.build-and-test.result }}" >> $GITHUB_STEP_SUMMARY
