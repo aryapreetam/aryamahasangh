@@ -18,11 +18,8 @@ captures
 **/xcshareddata/WorkspaceSettings.xcsettings
 
 # Configuration secrets (never commit)
-secrets.properties
-composeApp/src/androidMain/assets/secrets.properties
-iosApp/iosApp/secrets.properties
-composeApp/src/wasmJsMain/resources/config.json
-
+composeApp/src/commonMain/kotlin/secrets/Secrets.kt
 
 # Firebender AI config
 firebender.json
+

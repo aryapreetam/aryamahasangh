@@ -1,26 +1,28 @@
 package com.aryamahasangh.util
 
+import com.aryamahasangh.config.AppConfig
+
 /**
  * Version information for the application
  */
 object VersionInfo {
   /**
-   * Get the current app version string (e.g., "0.0.1")
+   * Get the current app version string (e.g., "1.0.6")
    */
-  fun getVersionName(): String = getPlatformVersionName()
+  fun getVersionName(): String = AppConfig.versionName
 
   /**
    * Get the current app version code
    */
-  fun getVersionCode(): Int = getPlatformVersionCode()
+  fun getVersionCode(): Int = AppConfig.versionCode
 
   /**
    * Get the current environment (dev or prod)
    */
-  fun getEnvironment(): String = getPlatformEnvironment()
+  fun getEnvironment(): String = AppConfig.environment
 
   /**
-   * Get version with environment suffix (e.g., "0.0.1-dev" for dev, "0.0.1" for prod)
+   * Get version with environment suffix (e.g., "1.0.6-dev" for dev, "1.0.6" for prod)
    */
   fun getVersionWithEnvironment(): String {
     val baseVersion = getVersionName()
@@ -33,22 +35,7 @@ object VersionInfo {
   }
 
   /**
-   * Get formatted version string with 'v' prefix and environment suffix (e.g., "v0.0.1-dev")
+   * Get formatted version string with 'v' prefix and environment suffix (e.g., "v1.0.6-dev")
    */
   fun getFormattedVersion(): String = "v${getVersionWithEnvironment()}"
 }
-
-/**
- * Platform-specific implementation for getting version name
- */
-expect fun getPlatformVersionName(): String
-
-/**
- * Platform-specific implementation for getting version code
- */
-expect fun getPlatformVersionCode(): Int
-
-/**
- * Platform-specific implementation for getting environment
- */
-expect fun getPlatformEnvironment(): String

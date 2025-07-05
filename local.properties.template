@@ -1,0 +1,30 @@
+# Secrets Configuration Template for KMP-Secrets-Plugin
+# Copy this file to local.properties and fill in your actual values
+# local.properties is gitignored and should never be committed
+
+# App version (semantic versioning) - Update this for releases
+app_version=1.0.6
+
+# Development Configuration (use underscores for valid Kotlin identifiers)
+dev_supabase_url=
+dev_supabase_key=
+dev_server_url=http://localhost:4000
+dev_googlemaps_apikey=
+dev_keystore_password=
+dev_key_alias=
+dev_key_password=
+
+# Production Configuration  
+prod_supabase_url=
+prod_supabase_key=
+prod_server_url=https://your-production-server.com
+prod_googlemaps_apikey=
+prod_keystore_password=
+prod_key_alias=
+prod_key_password=
+
+# Current environment (dev or prod)
+environment=dev
+
+# GitHub Personal Access Token
+github_pat=

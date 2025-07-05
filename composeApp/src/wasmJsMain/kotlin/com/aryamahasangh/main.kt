@@ -16,7 +16,6 @@ import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.mahasangh_logo_without_background
 import aryamahasangh.composeapp.generated.resources.noto_sans_devanagari
 import kotlinx.browser.document
-import com.aryamahasangh.config.ConfigInitializer
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.configureWebResources
 import org.jetbrains.compose.resources.painterResource
@@ -24,8 +23,7 @@ import org.jetbrains.compose.resources.preloadFont
 
 @OptIn(ExperimentalComposeUiApi::class, ExperimentalResourceApi::class, InternalComposeUiApi::class)
 fun main() {
-  // Initialize cross-platform configuration
-  ConfigInitializer.initializeBlocking()
+  // No longer need ConfigInitializer - secrets are loaded automatically via KMP-Secrets-Plugin
 
   configureWebResources {
     // Overrides the resource location

@@ -62,9 +62,9 @@ This is a Kotlin Multiplatform project targeting Android, iOS, Web, Desktop, Ser
 ### Setup
 
 1. Clone the repository
-2. Copy `secrets.properties.template` to `secrets.properties`
-3. Fill in your configuration values in `secrets.properties`
-4. Run the setup script: `./setup-secrets.sh`
+2. Copy `local.properties.template` to `local.properties` (or run `./setup-dev.sh`)
+3. Fill in your configuration values in `local.properties`
+4. Run: `./gradlew compileKotlinMetadata` to generate the Secrets object
 
 ## 🛠️ Build Commands
 
@@ -77,19 +77,17 @@ This is a Kotlin Multiplatform project targeting Android, iOS, Web, Desktop, Ser
 ### Download GraphQL Schema
 
 ```bash
-./gradlew downloadApolloSchema --endpoint="http://localhost:4000/graphql" --schema="composeApp/src/commonMain/graphql/schema.json"
+./gradlew downloadApolloSchema
 ```
 
 ## 📦 Release Management
 
-This project uses automated semantic versioning for releases. Every push to the `dev` branch triggers a new release with
-an incremented version number.
+This project uses version management where both local development and CI use the same version number defined in the
+template.
 
 ### Creating a New Release
 
-#### Option 1: Automatic (Recommended)
-
-Simply push your changes to the `dev` branch:
+Push your changes to the `dev` branch:
 
 ```bash
 git checkout dev
@@ -100,37 +98,42 @@ git push origin dev
 
 The GitHub Actions workflow will automatically:
 
-1. Generate a new version number (incrementing patch version)
+1. Read version from `local.properties.template` (e.g., 1.0.6)
 2. Build Android APK and Web distribution
 3. Create a GitHub release with artifacts
 4. Deploy web app to Netlify
 
-#### Option 2: Manual Version Control
+### Version Management
 
-Use the version bump script for more control:
+- **Single Source**: Version defined in `local.properties.template` as `app_version=1.0.6`
+- **Consistent**: Same version used locally and in CI builds
+- **Manual Updates**: Update `app_version` in template when you want a new release version
+- **Fallback**: If no version found in template, CI generates from commit count
 
-```bash
-# Bump patch version (0.0.1 -> 0.0.2)
-./version-bump.sh patch
+### Updating Version for Release
 
-# Bump minor version (0.0.1 -> 0.1.0)
-./version-bump.sh minor
+To create a new version:
 
-# Bump major version (0.0.1 -> 1.0.0)
-./version-bump.sh major
-```
+1. **Update the template:**
+   ```bash
+   # Edit local.properties.template
+   app_version=1.0.7
+   ```
 
-### Version Numbering
+2. **Commit and push:**
+   ```bash
+   git add local.properties.template
+   git commit -m "Bump version to 1.0.7"
+   git push origin dev
+   ```
 
-- **Major**: Breaking changes or significant new features
-- **Minor**: New features that are backward compatible
-- **Patch**: Bug fixes and small improvements
+3. **CI automatically creates release** with version 1.0.7
 
 ### Release Artifacts
 
 Each release includes:
 
-- 📱 **AryaMahasangh_vX.X.X.apk** - Android application
+- 📱 **AryaMahasangh_v1.0.7.apk** - Android application
 - 🌐 **Archive.zip** - Web application files
 
 ### Monitoring Builds

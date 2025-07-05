@@ -16,8 +16,6 @@ permissions:
 
 env:
   ENVIRONMENT: dev
-  SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'https://placeholder.supabase.co' }}
-  SUPABASE_KEY: ${{ secrets.SUPABASE_KEY || 'placeholder-key' }}
 
 # disabling test tasks for now, will enable it when we'll have actual tests.
 jobs:
@@ -45,13 +43,20 @@ jobs:
   #          restore-keys: |
   #            ${{ runner.os }}-gradle-
   #
-  #      - name: Create secrets.properties
+  #      - name: Create local.properties
   #        run: |
-  #          cp secrets.properties.template secrets.properties
-  #          sed -i 's|dev.supabase.url=|dev.supabase.url=https://placeholder.supabase.co|' secrets.properties
-  #          sed -i 's|dev.supabase.key=|dev.supabase.key=placeholder-key|' secrets.properties
-  #          sed -i 's|prod.supabase.url=|prod.supabase.url=https://placeholder.supabase.co|' secrets.properties
-  #          sed -i 's|prod.supabase.key=|prod.supabase.key=placeholder-key|' secrets.properties
+  #          echo "app_version=1.0.0" >> local.properties
+  #          echo "environment=dev" >> local.properties
+  #          echo "dev_supabase_url=https://placeholder.supabase.co" >> local.properties
+  #          echo "dev_supabase_key=placeholder-key" >> local.properties
+  #          echo "prod_supabase_url=https://placeholder.supabase.co" >> local.properties
+  #          echo "prod_supabase_key=placeholder-key" >> local.properties
+  #          echo "dev_server_url=http://localhost:4000" >> local.properties
+  #          echo "prod_server_url=https://placeholder.com" >> local.properties
+  #          echo "dev_googlemaps_apikey=" >> local.properties
+  #          echo "prod_googlemaps_apikey=" >> local.properties
+  #          echo "github_pat=" >> local.properties
+  #          echo "github_token=" >> local.properties
   #
   #      - name: Make gradlew executable
   #        run: chmod +x ./gradlew
@@ -85,45 +90,73 @@ jobs:
         with:
           fetch-depth: 0  # Fetch full history for version calculation
 
-      - name: Read version from gradle.properties
+      - name: Read version from template
         id: version
         run: |
-          # Read version from gradle.properties
-          APP_VERSION=$(grep "^appVersion=" gradle.properties | cut -d'=' -f2 | tr -d ' ')
-          
-          if [ -z "$APP_VERSION" ]; then
-            echo "❌ appVersion not found in gradle.properties!"
-            exit 1
+          # Read app_version from local.properties.template (which is committed to git)
+          if [ -f "local.properties.template" ] && grep -q "^app_version=" local.properties.template; then
+            APP_VERSION=$(grep "^app_version=" local.properties.template | cut -d'=' -f2 | tr -d ' ')
+            echo "📖 Using version from local.properties.template: $APP_VERSION"
+          else
+            # Fallback to commit-based versioning if template doesn't exist or doesn't have app_version
+            MAJOR=1
+            MINOR=0
+            PATCH=$(git rev-list --count HEAD)
+            APP_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+            echo "📊 Generated version from commit count: $APP_VERSION"
           fi
           
-          # Check if this version already has a tag
+          # Check if this version already has a tag (duplicate version safeguard)
           if git tag -l "v$APP_VERSION" | grep -q "v$APP_VERSION"; then
-            echo "⚠️ Tag v$APP_VERSION already exists. Using build number suffix."
-            # Get build number based on current commits since tag
-            BUILD_NUM=$(git rev-list --count HEAD)
-            NEW_VERSION="v${APP_VERSION}-build.${BUILD_NUM}"
-            VERSION_NAME="${APP_VERSION}-build.${BUILD_NUM}"
+            echo "⚠️ WARNING: Tag v$APP_VERSION already exists!"
+            echo "🤔 This usually means you forgot to bump the version in local.properties.template"
+          
+            # Option 1: Auto-increment patch version
+            IFS='.' read -r MAJOR MINOR PATCH <<< "$APP_VERSION"
+            NEW_PATCH=$((PATCH + 1))
+            AUTO_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}"
+          
+            # Check if auto-incremented version also exists
+            if git tag -l "v$AUTO_VERSION" | grep -q "v$AUTO_VERSION"; then
+              echo "🔄 Auto-incremented version v$AUTO_VERSION also exists, using build suffix instead"
+              BUILD_NUM=$(git rev-list --count HEAD)
+              FINAL_VERSION="v${APP_VERSION}-build.${BUILD_NUM}"
+              VERSION_NAME="${APP_VERSION}-build.${BUILD_NUM}"
+            else
+              echo "✅ Auto-incremented to v$AUTO_VERSION"
+              FINAL_VERSION="v$AUTO_VERSION"
+              VERSION_NAME="$AUTO_VERSION"
+              APP_VERSION="$AUTO_VERSION"
+            fi
           else
-            NEW_VERSION="v${APP_VERSION}"
-            VERSION_NAME="${APP_VERSION}"
+            echo "✅ Version v$APP_VERSION is unique"
+            FINAL_VERSION="v$APP_VERSION"
+            VERSION_NAME="$APP_VERSION"
           fi
           
           # Calculate version code from semantic version (major*10000 + minor*100 + patch)
           IFS='.' read -r MAJOR MINOR PATCH <<< "$APP_VERSION"
           VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
           
-          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "version=$FINAL_VERSION" >> $GITHUB_OUTPUT
           echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
           echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
-          echo "tag_name=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "tag_name=$FINAL_VERSION" >> $GITHUB_OUTPUT
           
           # Generate release name
-          RELEASE_NAME="AryaMahasangh $NEW_VERSION - $(date +'%Y-%m-%d')"
+          RELEASE_NAME="AryaMahasangh $FINAL_VERSION - $(date +'%Y-%m-%d')"
           echo "release_name=$RELEASE_NAME" >> $GITHUB_OUTPUT
           
-          echo "📱 Using version from gradle.properties: $APP_VERSION"
-          echo "🏷️ Tag: $NEW_VERSION (code: $VERSION_CODE)"
+          echo "🏷️ Final Tag: $FINAL_VERSION (code: $VERSION_CODE)"
           echo "📦 Release name: $RELEASE_NAME"
+          
+          # Add helpful message for next time
+          if [[ "$FINAL_VERSION" != "v$APP_VERSION" ]]; then
+            echo ""
+            echo "💡 REMINDER: Next time, update app_version in local.properties.template before pushing!"
+            echo "   Current: app_version=$APP_VERSION"
+            echo "   Suggested for next release: app_version=${MAJOR}.${MINOR}.$((PATCH + 1))"
+          fi
 
   code-quality:
     name: Code Quality Checks
@@ -149,13 +182,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Create secrets.properties
+      - name: Create local.properties for build
         run: |
-          cp secrets.properties.template secrets.properties
-          sed -i 's|dev.supabase.url=|dev.supabase.url=https://placeholder.supabase.co|' secrets.properties
-          sed -i 's|dev.supabase.key=|dev.supabase.key=placeholder-key|' secrets.properties
-          sed -i 's|prod.supabase.url=|prod.supabase.url=https://placeholder.supabase.co|' secrets.properties
-          sed -i 's|prod.supabase.key=|prod.supabase.key=placeholder-key|' secrets.properties
+          echo "app_version=0.0.1" >> local.properties
+          echo "environment=dev" >> local.properties
+          echo "dev_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "dev_supabase_key=placeholder-key" >> local.properties
+          echo "prod_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "prod_supabase_key=placeholder-key" >> local.properties
+          echo "dev_server_url=http://localhost:4000" >> local.properties
+          echo "prod_server_url=https://placeholder.com" >> local.properties
+          echo "dev_googlemaps_apikey=" >> local.properties
+          echo "prod_googlemaps_apikey=" >> local.properties
+          echo "github_pat=" >> local.properties
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
@@ -198,13 +237,19 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
-      - name: Create secrets.properties
+      - name: Create local.properties with secrets
         run: |
-          cp secrets.properties.template secrets.properties
-          sed -i 's|dev.supabase.url=|dev.supabase.url=${{ secrets.SUPABASE_URL }}|' secrets.properties
-          sed -i 's|dev.supabase.key=|dev.supabase.key=${{ secrets.SUPABASE_KEY }}|' secrets.properties
-          sed -i 's|prod.supabase.url=|prod.supabase.url=${{ secrets.SUPABASE_URL }}|' secrets.properties
-          sed -i 's|prod.supabase.key=|prod.supabase.key=${{ secrets.SUPABASE_KEY }}|' secrets.properties
+          echo "app_version=${{ needs.generate-version.outputs.version_name }}" >> local.properties
+          echo "environment=dev" >> local.properties
+          echo "dev_supabase_url=${{ secrets.SUPABASE_URL || 'https://placeholder.supabase.co' }}" >> local.properties
+          echo "dev_supabase_key=${{ secrets.SUPABASE_KEY || 'placeholder-key' }}" >> local.properties
+          echo "prod_supabase_url=${{ secrets.PROD_SUPABASE_URL || secrets.SUPABASE_URL || 'https://placeholder.supabase.co' }}" >> local.properties
+          echo "prod_supabase_key=${{ secrets.PROD_SUPABASE_KEY || secrets.SUPABASE_KEY || 'placeholder-key' }}" >> local.properties
+          echo "dev_server_url=http://localhost:4000" >> local.properties
+          echo "prod_server_url=${{ secrets.PROD_SERVER_URL || 'https://placeholder.com' }}" >> local.properties
+          echo "dev_googlemaps_apikey=${{ secrets.DEV_GOOGLEMAPS_APIKEY || '' }}" >> local.properties
+          echo "prod_googlemaps_apikey=${{ secrets.PROD_GOOGLEMAPS_APIKEY || '' }}" >> local.properties
+          echo "github_pat=${{ secrets.GITHUB_PAT || '' }}" >> local.properties
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
@@ -257,13 +302,19 @@ jobs:
         run: |
           echo ${{ secrets.KEYSTORE_BASE64 }} | base64 -d > aryamahasangh.jks
 
-      - name: Create secrets.properties
+      - name: Create local.properties with secrets
         run: |
-          cp secrets.properties.template secrets.properties
-          sed -i 's|dev.supabase.url=|dev.supabase.url=${{ secrets.SUPABASE_URL }}|' secrets.properties
-          sed -i 's|dev.supabase.key=|dev.supabase.key=${{ secrets.SUPABASE_KEY }}|' secrets.properties
-          sed -i 's|prod.supabase.url=|prod.supabase.url=${{ secrets.SUPABASE_URL }}|' secrets.properties
-          sed -i 's|prod.supabase.key=|prod.supabase.key=${{ secrets.SUPABASE_KEY }}|' secrets.properties
+          echo "app_version=${{ needs.generate-version.outputs.version_name }}" >> local.properties
+          echo "environment=dev" >> local.properties
+          echo "dev_supabase_url=${{ secrets.SUPABASE_URL || 'https://placeholder.supabase.co' }}" >> local.properties
+          echo "dev_supabase_key=${{ secrets.SUPABASE_KEY || 'placeholder-key' }}" >> local.properties
+          echo "prod_supabase_url=${{ secrets.PROD_SUPABASE_URL || secrets.SUPABASE_URL || 'https://placeholder.supabase.co' }}" >> local.properties
+          echo "prod_supabase_key=${{ secrets.PROD_SUPABASE_KEY || secrets.SUPABASE_KEY || 'placeholder-key' }}" >> local.properties
+          echo "dev_server_url=http://localhost:4000" >> local.properties
+          echo "prod_server_url=${{ secrets.PROD_SERVER_URL || 'https://placeholder.com' }}" >> local.properties
+          echo "dev_googlemaps_apikey=${{ secrets.DEV_GOOGLEMAPS_APIKEY || '' }}" >> local.properties
+          echo "prod_googlemaps_apikey=${{ secrets.PROD_GOOGLEMAPS_APIKEY || '' }}" >> local.properties
+          echo "github_pat=${{ secrets.GITHUB_PAT || '' }}" >> local.properties
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
@@ -372,40 +423,32 @@ jobs:
   deploy-web:
     name: Deploy Web to Netlify
     if: github.ref == 'refs/heads/dev'
-    needs: [ build-web ]
+    needs: [ generate-version, build-web ]
     runs-on: ubuntu-latest
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - name: Download Web Archive
+        uses: actions/download-artifact@v4
         with:
-          java-version: '17'
-          distribution: 'temurin'
+          name: web-archive
+          path: ./web-dist
 
-      - name: Create secrets.properties
+      - name: Extract Web Archive
         run: |
-          cp secrets.properties.template secrets.properties
-          sed -i 's|dev.supabase.url=|dev.supabase.url=${{ secrets.SUPABASE_URL }}|' secrets.properties
-          sed -i 's|dev.supabase.key=|dev.supabase.key=${{ secrets.SUPABASE_KEY }}|' secrets.properties
-          sed -i 's|prod.supabase.url=|prod.supabase.url=${{ secrets.SUPABASE_URL }}|' secrets.properties
-          sed -i 's|prod.supabase.key=|prod.supabase.key=${{ secrets.SUPABASE_KEY }}|' secrets.properties
-
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
-
-      - name: Build WasmJs for Netlify
-        run: ./gradlew wasmJsBrowserDistribution
+          cd web-dist
+          unzip Archive.zip -d ./extracted
+          ls -la ./extracted
 
       - name: Deploy to Netlify
         uses: nwtgck/actions-netlify@v2.0
         with:
-          publish-dir: './composeApp/build/dist/wasmJs/productionExecutable'
+          publish-dir: './web-dist/extracted'
           production-branch: dev
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: 'Deploy from GitHub Actions - ${{ github.sha }}'
+          deploy-message: 'Deploy ${{ needs.generate-version.outputs.version }} from GitHub Actions - ${{ github.sha }}'
           enable-pull-request-comment: false
           enable-commit-comment: false
           enable-commit-status: false

@@ -1,52 +1,50 @@
 package com.aryamahasangh.config
 
+import secrets.Secrets
+
 /**
- * Application configuration that loads secrets from secrets.properties file during development
- * and from environment variables in production/CI.
- *
- * This approach eliminates the need for platform-specific configuration files.
+ * Application configuration using the generated Secrets object from KMP-Secrets-Plugin.
+ * All secrets are loaded from local.properties and converted to type-safe constants.
  */
 object AppConfig {
-  private var config: Map<String, String> = emptyMap()
-  private var isInitialized = false
-
-  /**
-   * Initialize configuration with provided values
-   */
-  fun initialize(configValues: Map<String, String>) {
-    config = configValues
-    isInitialized = true
-  }
-
-  /**
-   * Legacy init method for backward compatibility
-   */
-  fun init(configValues: Map<String, String>) {
-    initialize(configValues)
-  }
-
-  /**
-   * Get current configuration (throws if not initialized)
-   */
-  val current: AppConfig
-    get() {
-      if (!isInitialized) {
-        error("AppConfig not initialized. Call AppConfig.initialize() first.")
-      }
-      return this
-    }
 
   val environment: String
-    get() = config["environment"] ?: "dev"
+    get() = Secrets.environment
+
+  // Version information derived from single app_version property
+  val versionName: String
+    get() = Secrets.app_version
+
+  val versionCode: Int
+    get() = calculateVersionCode(Secrets.app_version)
+
+  private fun calculateVersionCode(version: String): Int {
+    val parts = version.split(".")
+    return when (parts.size) {
+      3 -> parts[0].toInt() * 10000 + parts[1].toInt() * 100 + parts[2].toInt()
+      2 -> parts[0].toInt() * 100 + parts[1].toInt()
+      1 -> parts[0].toInt()
+      else -> 1
+    }
+  }
 
   val supabaseUrl: String
-    get() = get("supabase.url") ?: error("Supabase URL not configured")
+    get() = when (environment) {
+      "prod" -> Secrets.prod_supabase_url
+      else -> Secrets.dev_supabase_url
+    }
 
   val supabaseKey: String
-    get() = get("supabase.key") ?: error("Supabase key not configured")
+    get() = when (environment) {
+      "prod" -> Secrets.prod_supabase_key
+      else -> Secrets.dev_supabase_key
+    }
 
   val serverUrl: String
-    get() = get("server.url") ?: error("Server URL not configured")
+    get() = when (environment) {
+      "prod" -> Secrets.prod_server_url.ifEmpty { supabaseUrl }
+      else -> Secrets.dev_server_url
+    }
 
   val graphqlUrl: String
     get() = "$serverUrl/graphql"
@@ -56,12 +54,36 @@ object AppConfig {
 
   const val STORAGE_BUCKET = "documents"
 
-  private fun get(key: String): String? {
-    return config["$environment.$key"] ?: config[key]
-  }
+  val googleMapsApiKey: String
+    get() = when (environment) {
+      "prod" -> Secrets.prod_googlemaps_apikey
+      else -> Secrets.dev_googlemaps_apikey
+    }
+
+  val keystorePassword: String
+    get() = when (environment) {
+      "prod" -> Secrets.prod_keystore_password
+      else -> Secrets.dev_keystore_password
+    }
+
+  val keyAlias: String
+    get() = when (environment) {
+      "prod" -> Secrets.prod_key_alias
+      else -> Secrets.dev_key_alias
+    }
+
+  val keyPassword: String
+    get() = when (environment) {
+      "prod" -> Secrets.prod_key_password
+      else -> Secrets.dev_key_password
+    }
+
+  val githubPat: String
+    get() = Secrets.github_pat
 
   fun getConfigInfo(): String =
     """
+    Version: $versionName ($versionCode)
     Environment: $environment
     Supabase URL: ${supabaseUrl.take(20)}...
     Server URL: $serverUrl

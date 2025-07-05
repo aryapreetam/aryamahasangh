@@ -6,12 +6,10 @@ import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import com.aryamahasangh.config.ConfigInitializer
 
 fun main() =
   application {
-    // Initialize cross-platform configuration
-    ConfigInitializer.initializeBlocking()
+    // No longer need ConfigInitializer - secrets are loaded automatically via KMP-Secrets-Plugin
 
     Window(
       onCloseRequest = ::exitApplication,

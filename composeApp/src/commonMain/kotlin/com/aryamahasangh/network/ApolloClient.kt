@@ -38,8 +38,8 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.serialization.json.Json
 
 /**
- * Supabase client configured using the unified configuration system.
- * No hard-coded secrets - all configuration loaded from AppConfig.
+ * Supabase client configured using the generated Secrets object.
+ * No hard-coded secrets - all configuration loaded from local.properties via KMP-Secrets-Plugin.
  */
 val supabaseClient =
   createSupabaseClient(
