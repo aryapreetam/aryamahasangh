@@ -1,0 +1,220 @@
+name: 🚀 Release Deployment
+
+on:
+  release:
+    types: [published]
+  
+  # Manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2
+
+jobs:
+  # Parse release version (semantic versioning for releases)
+  parse-version:
+    name: 📋 Parse Version
+    runs-on: ubuntu-latest
+    outputs:
+      version_name: ${{ steps.version.outputs.version_name }}
+      version_code: ${{ steps.version.outputs.version_code }}
+      is_prerelease: ${{ steps.version.outputs.is_prerelease }}
+      environment: ${{ steps.version.outputs.environment }}
+    steps:
+      - name: Parse release version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            VERSION_NAME="${{ github.event.release.tag_name }}"
+            IS_PRERELEASE="${{ github.event.release.prerelease }}"
+          else
+            VERSION_NAME="manual-${{ github.run_number }}"
+            IS_PRERELEASE="true"
+          fi
+          
+          # Remove 'v' prefix if present
+          VERSION_NAME=${VERSION_NAME#v}
+          
+          # Calculate version code from semantic version
+          IFS='.' read -ra VERSION_PARTS <<< "$VERSION_NAME"
+          MAJOR=${VERSION_PARTS[0]:-1}
+          MINOR=${VERSION_PARTS[1]:-0}
+          PATCH=${VERSION_PARTS[2]:-0}
+          VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
+          
+          # Determine environment
+          if [ "$IS_PRERELEASE" = "true" ] || [ "${{ github.event.inputs.environment }}" = "staging" ]; then
+            ENVIRONMENT="staging"
+          else
+            ENVIRONMENT="production"
+          fi
+          
+          echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
+          echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
+          echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
+          
+          echo "🏷️ Release Version: $VERSION_NAME ($VERSION_CODE)"
+          echo "🎯 Environment: $ENVIRONMENT"
+
+  # Build release artifacts
+  build-release:
+    name: 🏗️ Build Release
+    runs-on: ubuntu-latest
+    needs: parse-version
+    strategy:
+      matrix:
+        target: [android, web, desktop]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-home-cache-cleanup: true
+
+      - name: Create local.properties
+        run: |
+          echo "app_version=${{ needs.parse-version.outputs.version_name }}" >> local.properties
+          echo "environment=${{ needs.parse-version.outputs.environment }}" >> local.properties
+          
+          if [ "${{ needs.parse-version.outputs.environment }}" = "production" ]; then
+            echo "prod_supabase_url=${{ secrets.PROD_SUPABASE_URL }}" >> local.properties
+            echo "prod_supabase_key=${{ secrets.PROD_SUPABASE_KEY }}" >> local.properties
+            echo "prod_googlemaps_apikey=${{ secrets.PROD_GOOGLE_MAPS_API_KEY }}" >> local.properties
+          else
+            echo "dev_supabase_url=${{ secrets.SUPABASE_URL }}" >> local.properties
+            echo "dev_supabase_key=${{ secrets.SUPABASE_KEY }}" >> local.properties
+            echo "dev_googlemaps_apikey=${{ secrets.GOOGLE_MAPS_API_KEY }}" >> local.properties
+          fi
+
+      - name: Build Android Release
+        if: matrix.target == 'android'
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          VERSION_NAME: ${{ needs.parse-version.outputs.version_name }}
+          VERSION_CODE: ${{ needs.parse-version.outputs.version_code }}
+        run: |
+          ./gradlew assembleRelease bundleRelease
+          echo "📱 Android release build completed"
+
+      - name: Build Web Production
+        if: matrix.target == 'web'
+        run: |
+          ./gradlew wasmJsBrowserDistribution
+          echo "🌐 Web production build completed"
+
+      - name: Build Desktop Release
+        if: matrix.target == 'desktop'
+        run: |
+          ./gradlew createDistributable packageDistributionForCurrentOS
+          echo "🖥️ Desktop release build completed"
+
+      - name: Upload Release Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.target }}-release-${{ needs.parse-version.outputs.version_name }}
+          path: |
+            composeApp/build/outputs/
+            composeApp/build/dist/
+            composeApp/build/compose/binaries/
+          retention-days: 90
+
+  # Deploy to staging
+  deploy-staging:
+    name: 🧪 Deploy Staging
+    runs-on: ubuntu-latest
+    needs: [parse-version, build-release]
+    if: needs.parse-version.outputs.environment == 'staging'
+    environment: staging
+    steps:
+      - name: Download Web Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: web-release-${{ needs.parse-version.outputs.version_name }}
+          path: ./artifacts
+
+      - name: Deploy to Netlify Staging
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_STAGING_SITE_ID }}
+        run: |
+          npx netlify-cli deploy \
+            --dir=./artifacts/wasmJs/productionExecutable \
+            --message="Staging deployment v${{ needs.parse-version.outputs.version_name }}"
+          
+          echo "🧪 Staging deployed: v${{ needs.parse-version.outputs.version_name }}"
+
+  # Deploy to production (manual approval on free plan)
+  deploy-production:
+    name: 🚀 Deploy Production
+    runs-on: ubuntu-latest
+    needs: [parse-version, build-release]
+    if: needs.parse-version.outputs.environment == 'production'
+    environment: production
+    steps:
+      - name: Download Web Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: web-release-${{ needs.parse-version.outputs.version_name }}
+          path: ./artifacts
+
+      - name: Download Android Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: android-release-${{ needs.parse-version.outputs.version_name }}
+          path: ./artifacts
+
+      - name: Deploy Web to Netlify Production
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+        run: |
+          npx netlify-cli deploy --prod \
+            --dir=./artifacts/wasmJs/productionExecutable \
+            --message="Production deployment v${{ needs.parse-version.outputs.version_name }}"
+          
+          echo "🚀 Production deployed: v${{ needs.parse-version.outputs.version_name }}"
+
+      - name: Upload to Google Play Internal Testing
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
+          packageName: com.aryamahasangh
+          releaseFiles: ./artifacts/outputs/bundle/release/composeApp-release.aab
+          track: internal
+          status: completed
+
+  # Notification
+  notify:
+    name: 📢 Notify
+    runs-on: ubuntu-latest
+    needs: [parse-version, deploy-staging, deploy-production]
+    if: always()
+    steps:
+      - name: Slack Notification
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          channel: '#releases'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          fields: repo,message,commit,author,action,eventName,ref,workflow
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
