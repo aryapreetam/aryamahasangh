@@ -226,7 +226,12 @@ fun AdminContainerScreen(
             viewModel = viewModel,
             onNavigateToMemberDetail = onNavigateToMemberDetail,
             onNavigateToAddMember = { onNavigateToAddMember() },
-            onNavigateToEditMember = { id -> onNavigateToEditMember(id) }
+            onEditMember = { id -> onNavigateToEditMember(id) },
+            onDeleteMember = { /* onDeleteMember(id) */ },
+            onDataChanged = {
+              // Refresh admin counts when EkalArya data changes
+              viewModel.loadAdminCounts()
+            }
           )
         }
       }

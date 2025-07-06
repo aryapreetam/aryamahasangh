@@ -632,7 +632,8 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
 
   fun deleteMember(
     memberId: String,
-    memberName: String
+    memberName: String? = null,
+    onSuccess: (() -> Unit)? = null
   ) {
     viewModelScope.launch {
       _deleteMemberState.value =
@@ -658,7 +659,9 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
             // Refresh members list
             loadMembers()
             getMembersCount()
-            loadEkalAryaMembers()
+            loadEkalAryaMembersPaginated()
+            // Call success callback
+            onSuccess?.invoke()
           },
           onError = { appError ->
             ErrorHandler.logError(appError, "AdminViewModel.deleteMember")
@@ -787,6 +790,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
               )
             // Refresh members list
             loadMembers()
+            loadEkalAryaMembersPaginated()
             getMembersCount()
           },
           onError = { appError ->
@@ -913,7 +917,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
         )
       )
 
-      repository.getEkalAryaMembersPaginated(pageSize = pageSize, cursor = cursor).collect { result ->
+      repository.getItemsPaginated(pageSize = pageSize, cursor = cursor, filter = null).collect { result ->
         when (result) {
           is PaginationResult.Loading -> {
             // Loading state already set above
@@ -977,7 +981,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
         )
       )
 
-      repository.searchEkalAryaMembersPaginated(
+      repository.searchItemsPaginated(
         searchTerm = searchTerm,
         pageSize = pageSize,
         cursor = cursor

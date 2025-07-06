@@ -207,6 +207,8 @@ fun RootNavGraph(navController: NavHostController) {
             navController.popBackStack()
           },
           onNavigateToMemberDetail = { memberId ->
+            // Mark EkalArya list for refresh when member is created
+            EkalAryaPageState.markForRefresh()
             navController.navigate(Screen.MemberDetail(memberId)) {
               // Clear the AddMemberForm from back stack, AdminContainer will preserve its tab state
               popUpTo<Screen.AdminContainer> {
@@ -228,6 +230,8 @@ fun RootNavGraph(navController: NavHostController) {
           },
           memberId = memberId,
           onNavigateToMemberDetail = { memberId ->
+            // Mark EkalArya list for refresh when member is edited
+            EkalAryaPageState.markForRefresh()
             navController.navigate(Screen.MemberDetail(memberId)) {
               // Clear the EditMemberForm from back stack, AdminContainer will preserve its tab state
               popUpTo<Screen.AdminContainer> {

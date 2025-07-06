@@ -2,15 +2,11 @@ package com.aryamahasangh.features.admin
 
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
-import com.apollographql.apollo.cache.normalized.FetchPolicy
-import com.apollographql.apollo.cache.normalized.cacheInfo
-import com.apollographql.apollo.cache.normalized.fetchPolicy
-import com.apollographql.apollo.cache.normalized.isFromCache
+import com.apollographql.apollo.cache.normalized.*
 import com.aryamahasangh.*
 import com.aryamahasangh.components.AryaSamaj
 import com.aryamahasangh.components.Gender
 import com.aryamahasangh.features.activities.Member
-import com.aryamahasangh.features.admin.*
 import com.aryamahasangh.fragment.AryaSamajFields
 import com.aryamahasangh.fragment.MemberInOrganisationShort
 import com.aryamahasangh.network.supabaseClient
@@ -44,11 +40,9 @@ data class AdminCounts(
   val ekalAryaCount: Long = 0L
 )
 
-interface AdminRepository {
-  // NEW: Consolidated counts method
+interface AdminRepository : PaginatedRepository<MemberShort> {
+  // NEW: Admin counts and change listener
   suspend fun getAdminCounts(): Flow<Result<AdminCounts>>
-
-  // NEW: Real-time listener for admin count changes
   fun listenToAdminCountChanges(): Flow<Unit>
 
   // Member methods
@@ -65,17 +59,20 @@ interface AdminRepository {
   // Search members that returns Member list for MembersComponent
   suspend fun searchMembersForSelection(query: String): Flow<Result<List<Member>>>
 
-  // EkalArya (Member not in family) methods
+  // EkalArya (Member not in family) methods - DEPRECATED: Use PaginatedRepository interface methods instead
+  @Deprecated("Use getItemsPaginated() instead", ReplaceWith("getItemsPaginated()"))
   suspend fun getEkalAryaMembers(): Flow<Result<List<MemberShort>>>
 
+  @Deprecated("Use searchItemsPaginated() instead", ReplaceWith("searchItemsPaginated()"))
   suspend fun searchEkalAryaMembers(query: String): Flow<Result<List<MemberShort>>>
 
-  // NEW: Paginated EkalArya methods
+  @Deprecated("Use getItemsPaginated() instead", ReplaceWith("getItemsPaginated()"))
   suspend fun getEkalAryaMembersPaginated(
     pageSize: Int = 30,
     cursor: String? = null
   ): Flow<PaginationResult<MemberShort>>
 
+  @Deprecated("Use searchItemsPaginated() instead", ReplaceWith("searchItemsPaginated()"))
   suspend fun searchEkalAryaMembersPaginated(
     searchTerm: String,
     pageSize: Int = 30,
@@ -466,6 +463,9 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
             throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Unknown error occurred")
           }
 
+          // CRITICAL: Clear Apollo cache after successful deletion
+          apolloClient.apolloStore.clearAll()
+
           // Since DeleteMember returns JSON, we'll return true for success
           true
         }
@@ -555,6 +555,8 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
           if (response.hasErrors()) {
             throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Update failed")
           }
+          // CRITICAL: Clear Apollo cache after successful deletion
+          apolloClient.apolloStore.clearAll()
           true
         }
       emit(result)
@@ -1009,4 +1011,107 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
       )
     ).map { Unit }
   }
+
+  override suspend fun getItemsPaginated(
+    pageSize: Int,
+    cursor: String?,
+    filter: Any?
+  ): Flow<PaginationResult<MemberShort>> =
+    flow {
+      emit(PaginationResult.Loading())
+
+      apolloClient.query(
+        EkalAryaMembersQuery(
+          first = pageSize,
+          after = Optional.presentIfNotNull(cursor)
+        )
+      )
+        .fetchPolicy(FetchPolicy.CacheAndNetwork)
+        .toFlow()
+        .collect { response ->
+          // Skip only cache MISSES with empty data - cache HITS with empty data should be shown
+          if (response.isFromCache && response.cacheInfo?.isCacheHit == false && response.data?.memberNotInFamilyCollection?.edges.isNullOrEmpty()) {
+            // Skip emitting empty cache miss - wait for network
+          } else {
+            val result = safeCall {
+              if (response.hasErrors()) {
+                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+              }
+
+              val members = response.data?.memberNotInFamilyCollection?.edges?.map {
+                val member = it.node.memberNotInFamilyShort
+                MemberShort(
+                  id = member.id!!,
+                  name = member.name!!,
+                  profileImage = member.profileImage ?: "",
+                  place = ""
+                )
+              } ?: emptyList()
+
+              val pageInfo = response.data?.memberNotInFamilyCollection?.pageInfo
+
+              PaginationResult.Success(
+                data = members,
+                hasNextPage = pageInfo?.hasNextPage ?: false,
+                endCursor = pageInfo?.endCursor
+              )
+            }
+
+            when (result) {
+              is Result.Success -> {
+                emit(result.data)
+              }
+
+              is Result.Error -> {
+                emit(PaginationResult.Error(result.exception?.message ?: "Unknown error"))
+              }
+
+              is Result.Loading -> {
+                // Already emitted loading state above
+              }
+            }
+          }
+        }
+    }
+
+  override suspend fun searchItemsPaginated(
+    searchTerm: String,
+    pageSize: Int,
+    cursor: String?
+  ): Flow<PaginationResult<MemberShort>> =
+    flow {
+      emit(PaginationResult.Loading())
+      val result = safeCall {
+        val response = apolloClient.query(
+          SearchEkalAryaMembersQuery(
+            first = pageSize,
+            after = Optional.presentIfNotNull(cursor),
+            searchTerm = "%$searchTerm%"
+          )
+        ).execute()
+        if (response.hasErrors()) {
+          throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+        }
+        val members = response.data?.memberNotInFamilyCollection?.edges?.map {
+          val member = it.node.memberNotInFamilyShort
+          MemberShort(
+            id = member.id!!,
+            name = member.name!!,
+            profileImage = member.profileImage ?: "",
+            place = ""
+          )
+        } ?: emptyList()
+        val pageInfo = response.data?.memberNotInFamilyCollection?.pageInfo
+        PaginationResult.Success(
+          data = members,
+          hasNextPage = pageInfo?.hasNextPage ?: false,
+          endCursor = pageInfo?.endCursor
+        )
+      }
+      when (result) {
+        is Result.Success -> emit(result.data)
+        is Result.Error -> emit(PaginationResult.Error(result.exception?.message?.let { "$it" } ?: "Unknown error"))
+        is Result.Loading -> emit(PaginationResult.Loading())
+      }
+    }
 }
