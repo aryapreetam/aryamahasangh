@@ -24,6 +24,9 @@ import aryamahasangh.composeapp.generated.resources.*
 import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.auth.SessionManager
 import com.aryamahasangh.components.LoginDialog
+import com.aryamahasangh.util.GlobalMessage
+import com.aryamahasangh.util.GlobalMessageDuration
+import com.aryamahasangh.util.GlobalMessageManager
 import com.aryamahasangh.util.PlatformBackHandler
 import com.aryamahasangh.util.VersionInfo
 import kotlinx.coroutines.launch
@@ -462,6 +465,26 @@ fun MainContent(
   LaunchedEffect(currentDestination) {
     println("currentRoute: $currentDestination")
     customBackHandler = null // Clear any custom back handler when destination changes
+  }
+
+  // Global message observation
+  val globalMessage by GlobalMessageManager.currentMessage.collectAsState()
+  LaunchedEffect(globalMessage) {
+    globalMessage?.let { message ->
+      val duration = when (message.duration) {
+        GlobalMessageDuration.SHORT -> SnackbarDuration.Short
+        GlobalMessageDuration.LONG -> SnackbarDuration.Long
+        GlobalMessageDuration.INDEFINITE -> SnackbarDuration.Indefinite
+      }
+
+      snackbarHostState.showSnackbar(
+        message = message.message,
+        duration = duration
+      )
+
+      // Clear the message after showing
+      GlobalMessageManager.clearMessage()
+    }
   }
 
   Scaffold(

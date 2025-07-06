@@ -11,6 +11,7 @@ import com.aryamahasangh.features.activities.Member
 import com.aryamahasangh.features.admin.PaginationState
 import com.aryamahasangh.fragment.AryaSamajWithAddress
 import com.aryamahasangh.network.bucket
+import com.aryamahasangh.util.GlobalMessageManager
 import com.aryamahasangh.viewmodel.ErrorState
 import com.aryamahasangh.viewmodel.handleResult
 import kotlinx.coroutines.Job
@@ -28,7 +29,10 @@ data class AryaSamajListUiState(
   override val appError: AppError? = null,
   val searchQuery: String = "",
   val totalCount: Int = 0,
-  val paginationState: PaginationState<AryaSamajWithAddress> = PaginationState()
+  val paginationState: PaginationState<AryaSamajWithAddress> = PaginationState(),
+  val isDeletingId: String? = null,
+  val deleteError: String? = null,
+  val deleteSuccess: String? = null
 ) : ErrorState
 
 data class AryaSamajDetailUiState(
@@ -59,7 +63,9 @@ data class AryaSamajFormUiState(
   val isEditMode: Boolean get() = editingAryaSamajId != null
 }
 
-class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewModel() {
+class AryaSamajViewModel(
+  private val repository: AryaSamajRepository
+) : ViewModel() {
   private val _listUiState = MutableStateFlow(AryaSamajListUiState())
   val listUiState: StateFlow<AryaSamajListUiState> = _listUiState.asStateFlow()
 
@@ -148,7 +154,11 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
       repository.deleteAryaSamaj(id).collect { result ->
         result.handleResult(
           onLoading = {
-            // Could add a loading state for delete if needed
+            _listUiState.value = _listUiState.value.copy(
+              isDeletingId = id,
+              deleteError = null,
+              deleteSuccess = null
+            )
           },
           onSuccess = { success ->
             // Clear any pagination preservation flags that might interfere
@@ -164,14 +174,19 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
 
             // Call the success callback
             onSuccess?.invoke()
+            _listUiState.value = _listUiState.value.copy(
+              isDeletingId = null,
+              deleteError = null,
+              deleteSuccess = "आर्य समाज सफलतापूर्वक हटा दिया गया"
+            )
           },
           onError = { appError ->
             ErrorHandler.logError(appError, "AryaSamajViewModel.deleteAryaSamaj")
-            _listUiState.value =
-              _listUiState.value.copy(
-                error = appError.getUserMessage(),
-                appError = appError
-              )
+            _listUiState.value = _listUiState.value.copy(
+              isDeletingId = null,
+              deleteError = "आर्य समाज हटाने में त्रुटि: ${appError.getUserMessage()}",
+              deleteSuccess = null
+            )
           }
         )
       }
@@ -300,6 +315,7 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
                     editingAryaSamajId = null,
                     originalFormData = null
                   )
+                GlobalMessageManager.showSuccess("आर्य समाज सफलतापूर्वक संपादित किया गया")
                 // Refresh the list
                 loadAryaSamajsPaginated(resetPagination = true)
               },
@@ -330,7 +346,7 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
                     originalFormData = null,
                     createdAryaSamajId = aryaSamajId
                   )
-
+                GlobalMessageManager.showSuccess("आर्य समाज सफलतापूर्वक जोड़ा गया")
                 // Refresh the list
                 loadAryaSamajsPaginated(resetPagination = true)
               },
@@ -392,7 +408,8 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
 
   // Error handling
   fun clearListError() {
-    _listUiState.value = _listUiState.value.copy(error = null, appError = null)
+    _listUiState.value =
+      _listUiState.value.copy(error = null, appError = null, deleteError = null, deleteSuccess = null)
   }
 
   fun clearDetailError() {
@@ -743,5 +760,15 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
       screenWidthDp < 840f -> 25      // Tablet, mobile landscape
       else -> 35                      // Desktop, large tablets
     }
+  }
+
+  // NEW: Method to set delete error state
+  fun setDeleteError(error: String) {
+    _listUiState.value = _listUiState.value.copy(deleteError = error)
+  }
+
+  // NEW: Method to set delete success state
+  fun setDeleteSuccess(message: String) {
+    _listUiState.value = _listUiState.value.copy(deleteSuccess = message)
   }
 }

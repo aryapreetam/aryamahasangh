@@ -253,14 +253,33 @@ class AryaSamajRepositoryImpl(private val apolloClient: ApolloClient) : AryaSama
         safeCall {
           val response = apolloClient.mutation(DeleteAryaSamajMutation(id)).execute()
           if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+            val errorMessage = response.errors?.firstOrNull()?.message ?: "Unknown error occurred"
+            val userFriendlyMessage = when {
+              errorMessage.contains("foreign key", ignoreCase = true) ||
+                errorMessage.contains("constraint", ignoreCase = true) -> {
+                "इस आर्य समाज को नहीं हटाया जा सकता क्योंकि यह अन्य रिकॉर्ड से जुड़ा हुआ है। कृपया पहले संबंधित रिकॉर्ड हटाएं।"
+              }
+
+              errorMessage.contains("violation", ignoreCase = true) -> {
+                "डेटाबेस नियम उल्लंघन: $errorMessage"
+              }
+
+              errorMessage.contains("still referenced", ignoreCase = true) -> {
+                "इस आर्य समाज से जुड़े सदस्य हैं। कृपया पहले सदस्यों को अन्य आर्य समाज में स्थानांतरित करें।"
+              }
+
+              else -> "आर्य समाज हटाने में त्रुटि: $errorMessage"
+            }
+            throw Exception(userFriendlyMessage)
           }
+
           val success = response.data?.deleteFromAryaSamajCollection?.affectedCount?.let { it > 0 } ?: false
           if (!success) {
-            throw Exception("Failed to delete AryaSamaj - no records affected")
+            throw Exception("आर्य समाज नहीं मिला या पहले से ही हटा दिया गया है")
           }
-          // CRITICAL: Clear Apollo cache immediately after successful deletion
+
           apolloClient.apolloStore.clearAll()
+
           success
         }
       emit(result)
@@ -693,8 +712,9 @@ class AryaSamajRepositoryImpl(private val apolloClient: ApolloClient) : AryaSama
             throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
           }
 
-          val edges = response.data?.aryaSamajCollection?.edges ?: emptyList()
-          val aryaSamajs = edges.map { it.node as AryaSamajWithAddress }
+          val aryaSamajs = response.data?.aryaSamajCollection?.edges?.map {
+            it.node.aryaSamajWithAddress
+          } ?: emptyList()
           val hasNextPage = response.data?.aryaSamajCollection?.pageInfo?.hasNextPage ?: false
           val endCursor = response.data?.aryaSamajCollection?.pageInfo?.endCursor
 

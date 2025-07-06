@@ -9,6 +9,7 @@ import com.aryamahasangh.domain.error.ErrorHandler
 import com.aryamahasangh.domain.error.getUserMessage
 import com.aryamahasangh.features.activities.Member
 import com.aryamahasangh.fragment.MemberInOrganisationShort
+import com.aryamahasangh.util.GlobalMessageManager
 import com.aryamahasangh.viewmodel.ErrorState
 import com.aryamahasangh.viewmodel.handleResult
 import kotlinx.coroutines.Job
@@ -68,7 +69,8 @@ data class DeleteMemberState(
   val isDeleting: Boolean = false,
   val deleteSuccess: Boolean = false,
   val deleteError: String? = null,
-  val deleteAppError: AppError? = null
+  val deleteAppError: AppError? = null,
+  val deletingMemberId: String? = null // Track which member is being deleted
 )
 
 class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
@@ -535,6 +537,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
             // Already handled above
           },
           onSuccess = { _ ->
+            GlobalMessageManager.showSuccess("सदस्य सफलतापूर्वक अपडेट किया गया")
             _memberDetailUiState.value =
               _memberDetailUiState.value.copy(
                 isUpdating = false,
@@ -640,7 +643,8 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
         _deleteMemberState.value.copy(
           isDeleting = true,
           deleteError = null,
-          deleteAppError = null
+          deleteAppError = null,
+          deletingMemberId = memberId
         )
 
       repository.deleteMember(memberId).collect { result ->
@@ -654,7 +658,8 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
                 isDeleting = false,
                 deleteSuccess = true,
                 deleteError = null,
-                deleteAppError = null
+                deleteAppError = null,
+                deletingMemberId = null
               )
             // Refresh members list
             loadMembers()
@@ -669,7 +674,8 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
               _deleteMemberState.value.copy(
                 isDeleting = false,
                 deleteError = appError.getUserMessage(),
-                deleteAppError = appError
+                deleteAppError = appError,
+                deletingMemberId = null
               )
           }
         )
@@ -694,6 +700,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
             // Already handled above
           },
           onSuccess = { _ ->
+            GlobalMessageManager.showSuccess("सदस्य की तस्वीर सफलतापूर्वक अपडेट की गई")
             _memberDetailUiState.value =
               _memberDetailUiState.value.copy(
                 isUpdating = false,
@@ -782,6 +789,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
             // Already handled above
           },
           onSuccess = { id ->
+            GlobalMessageManager.showSuccess("सदस्य सफलतापूर्वक जोड़ा गया")
             _memberDetailUiState.value =
               _memberDetailUiState.value.copy(
                 isUpdating = false,

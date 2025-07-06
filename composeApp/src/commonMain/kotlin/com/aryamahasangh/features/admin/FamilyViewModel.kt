@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.aryamahasangh.GetFamilyDetailQuery
 import com.aryamahasangh.components.*
 import com.aryamahasangh.features.activities.Member
+import com.aryamahasangh.util.GlobalMessageManager
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.utils.FileUploadUtils
 import kotlinx.coroutines.Job
@@ -723,6 +724,7 @@ class FamilyViewModel(
                   isSubmitting = false,
                   submitSuccess = true
                 )
+              GlobalMessageManager.showSuccess("परिवार सफलतापूर्वक संपादित किया गया")
             }
 
             is Result.Error -> {
@@ -838,6 +840,7 @@ class FamilyViewModel(
                   submitSuccess = true,
                   familyId = result.data
                 )
+              GlobalMessageManager.showSuccess("परिवार सफलतापूर्वक बनाया गया")
             }
 
             is Result.Error -> {

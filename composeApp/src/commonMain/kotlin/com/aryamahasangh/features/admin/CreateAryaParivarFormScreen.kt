@@ -25,13 +25,13 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.aryamahasangh.components.*
+import com.aryamahasangh.navigation.LocalSnackbarHostState
+import com.aryamahasangh.utils.WithTooltip
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import com.aryamahasangh.components.*
-import com.aryamahasangh.navigation.LocalSnackbarHostState
-import com.aryamahasangh.utils.WithTooltip
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -70,7 +70,7 @@ fun CreateAryaParivarFormScreen(
       uiState.familyMembers.isNotEmpty() ||
       uiState.addressData.address.isNotBlank()
 
-  // Handle success
+  // Handle success: Navigate immediately on submitSuccess (snackbar message handled globally)
   LaunchedEffect(uiState.submitSuccess) {
     if (uiState.submitSuccess) {
       viewModel.clearCreateFamilyState()

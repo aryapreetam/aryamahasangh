@@ -460,16 +460,29 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
         safeCall {
           val response = apolloClient.mutation(DeleteMemberMutation(memberId)).execute()
           if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Unknown error occurred")
+            val errorMessage = response.errors?.firstOrNull()?.message ?: "Unknown error occurred"
+            val userFriendlyMessage = when {
+              errorMessage.contains("foreign key", ignoreCase = true) ||
+                errorMessage.contains("constraint", ignoreCase = true) -> {
+                "इस सदस्य को नहीं हटाया जा सकता क्योंकि यह अन्य रिकॉर्ड से जुड़ा हुआ है। कृपया पहले संबंधित रिकॉर्ड हटाएं।"
+              }
+
+              errorMessage.contains("violation", ignoreCase = true) -> {
+                "डेटाबेस नियम उल्लंघन: $errorMessage"
+              }
+
+              else -> "सदस्य हटाने में त्रुटि: $errorMessage"
+            }
+            throw Exception(userFriendlyMessage)
           }
 
-          // Since DeleteMember returns JSON, we'll return true for success
-          val deleted = response.data?.deleteFromMemberCollection?.affectedCount
-          if (deleted == null || deleted <= 0) {
-            throw Exception("Failed to delete member - no records deleted")
+          val affectedCount = response.data?.deleteFromMemberCollection?.affectedCount ?: 0
+          if (affectedCount == 0) {
+            throw Exception("सदस्य नहीं मिला या पहले से ही हटा दिया गया है")
           }
-          // CRITICAL: Clear Apollo cache after successful deletion
+
           apolloClient.apolloStore.clearAll()
+
           true
         }
       emit(result)

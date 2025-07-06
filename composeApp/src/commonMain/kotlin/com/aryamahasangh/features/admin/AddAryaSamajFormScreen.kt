@@ -47,11 +47,7 @@ fun AddAryaSamajFormScreen(
   // Handle success state
   LaunchedEffect(formUiState.submitSuccess) {
     if (formUiState.submitSuccess) {
-      if (isEditMode) {
-        snackbarHostState.showSnackbar("आर्य समाज सफलतापूर्वक संपादित किया गया")
-      } else {
-        snackbarHostState.showSnackbar("आर्य समाज सफलतापूर्वक जोड़ा गया")
-      }
+      // Navigate immediately without waiting for snackbar
       onNavigateToAryaSamajDetails(formUiState.createdAryaSamajId ?: "")
     }
   }

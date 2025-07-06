@@ -471,14 +471,11 @@ fun AddMemberFormScreen(
     viewModel.loadAllAryaSamajsForSelection()
   }
 
-  // Handle success
+  // Handle success: Navigate immediately (snackbar message handled globally)
   LaunchedEffect(uiState.updateSuccess) {
     if (uiState.updateSuccess) {
-      val message = if (isEditMode) "सदस्य सफलतापूर्वक अपडेट किया गया" else "सदस्य सफलतापूर्वक जोड़ा गया"
-      snackbarHostState.showSnackbar(message)
       viewModel.resetUpdateState()
-
-      onNavigateToMemberDetail(if(isEditMode) memberId else uiState.memberId!!)
+      onNavigateToMemberDetail(if (isEditMode) memberId!! else uiState.memberId!!)
     }
   }
 

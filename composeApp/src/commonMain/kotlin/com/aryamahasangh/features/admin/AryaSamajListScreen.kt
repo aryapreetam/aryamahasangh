@@ -23,6 +23,7 @@ import coil3.compose.AsyncImage
 import com.aryamahasangh.features.activities.toDevanagariNumerals
 import com.aryamahasangh.features.admin.data.AryaSamajListItem
 import com.aryamahasangh.features.admin.data.AryaSamajViewModel
+import com.aryamahasangh.navigation.LocalSnackbarHostState
 import kotlinx.datetime.Clock
 
 // Global object to persist pagination state across ViewModel recreation
@@ -66,6 +67,7 @@ fun AryaSamajListScreen(
   onDeleteAryaSamaj: (String) -> Unit = {},
   onDataChanged: () -> Unit = {}
 ) {
+  val snackbarHostState = LocalSnackbarHostState.current
   val uiState by viewModel.listUiState.collectAsState()
   val scope = rememberCoroutineScope()
   val windowInfo = currentWindowAdaptiveInfo()
@@ -109,6 +111,22 @@ fun AryaSamajListScreen(
   LaunchedEffect(uiState) {
     AryaSamajPageState.saveState(uiState.paginationState.items, uiState.paginationState, uiState.searchQuery)
     }
+
+  // Show deletion errors from ViewModel state
+  LaunchedEffect(uiState.deleteError) {
+    uiState.deleteError?.let { error ->
+      snackbarHostState.showSnackbar(error)
+      viewModel.clearListError() // Clear the error after showing
+    }
+  }
+
+  // Show deletion success from ViewModel state
+  LaunchedEffect(uiState.deleteSuccess) {
+    uiState.deleteSuccess?.let { success ->
+      snackbarHostState.showSnackbar(success)
+      viewModel.clearListError() // Clear the success message after showing
+    }
+  }
 
   PaginatedListScreen(
     items = uiState.aryaSamajs,
