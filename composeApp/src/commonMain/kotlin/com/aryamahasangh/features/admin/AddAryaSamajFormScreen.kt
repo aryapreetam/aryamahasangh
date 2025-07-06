@@ -6,7 +6,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -26,7 +29,8 @@ fun AddAryaSamajFormScreen(
   allMembers: List<Member> = emptyList(),
   onTriggerSearch: (String) -> Unit = {},
   isEditMode: Boolean = false, // New parameter to determine if we're editing
-  aryaSamajId: String? = null // New parameter for the AryaSamaj ID when editing
+  aryaSamajId: String? = null, // New parameter for the AryaSamaj ID when editing
+  onNavigateToAryaSamajDetails: (String) -> Unit = {}
 ) {
   val isAuthenticated = LocalIsAuthenticated.current
   val snackbarHostState = LocalSnackbarHostState.current
@@ -48,7 +52,7 @@ fun AddAryaSamajFormScreen(
       } else {
         snackbarHostState.showSnackbar("आर्य समाज सफलतापूर्वक जोड़ा गया")
       }
-      onNavigateBack()
+      onNavigateToAryaSamajDetails(formUiState.createdAryaSamajId ?: "")
     }
   }
 

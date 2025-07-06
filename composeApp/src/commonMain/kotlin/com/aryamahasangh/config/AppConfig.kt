@@ -54,12 +54,6 @@ object AppConfig {
 
   const val STORAGE_BUCKET = "documents"
 
-  val googleMapsApiKey: String
-    get() = when (environment) {
-      "prod" -> Secrets.prod_googlemaps_apikey
-      else -> Secrets.dev_googlemaps_apikey
-    }
-
   val keystorePassword: String
     get() = when (environment) {
       "prod" -> Secrets.prod_keystore_password

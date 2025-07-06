@@ -17,6 +17,12 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.aryamahasangh.features.activities.LatLng
+import com.aryamahasangh.features.activities.MapLocationPickerDialog
+import com.aryamahasangh.screens.DistrictDropdown
+import com.aryamahasangh.screens.StateDropdown
+import com.aryamahasangh.screens.indianStatesToDistricts
+import com.aryamahasangh.screens.vidhansabhaByState
 import io.ktor.client.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
@@ -27,12 +33,6 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import com.aryamahasangh.features.activities.LatLng
-import com.aryamahasangh.features.activities.MapLocationPickerDialog
-import com.aryamahasangh.screens.DistrictDropdown
-import com.aryamahasangh.screens.StateDropdown
-import com.aryamahasangh.screens.indianStatesToDistricts
-import com.aryamahasangh.screens.vidhansabhaByState
 
 /**
  * Data class representing address information
@@ -395,7 +395,7 @@ fun AddressComponent(
             onAddressChange(addressData.copy(address = newAddress))
           }
         },
-        label = { Text("पूर्ण पता") },
+        label = { Text("पता") },
         modifier =
           Modifier
             .width(500.dp)

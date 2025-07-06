@@ -2,10 +2,7 @@ package com.aryamahasangh.features.admin.data
 
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
-import com.apollographql.apollo.cache.normalized.FetchPolicy
-import com.apollographql.apollo.cache.normalized.cacheInfo
-import com.apollographql.apollo.cache.normalized.fetchPolicy
-import com.apollographql.apollo.cache.normalized.isFromCache
+import com.apollographql.apollo.cache.normalized.*
 import com.aryamahasangh.*
 import com.aryamahasangh.components.AddressData
 import com.aryamahasangh.components.getActiveImageUrls
@@ -243,7 +240,7 @@ class AryaSamajRepositoryImpl(private val apolloClient: ApolloClient) : AryaSama
               throw Exception(membersResponse.errors?.firstOrNull()?.message ?: "Failed to add members to Arya Samaj")
             }
           }
-
+          apolloClient.apolloStore.clearAll()
           aryaSamajId
         }
       emit(result)

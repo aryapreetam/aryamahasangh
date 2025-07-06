@@ -598,6 +598,11 @@ fun RootNavGraph(navController: NavHostController) {
           onTriggerSearch = { query ->
             // Trigger the server search in AdminViewModel
             adminViewModel.searchMembers(query)
+          },
+          onNavigateToAryaSamajDetails = {
+            navController.navigate(Screen.AryaSamajDetail(it)){
+              popUpTo(Screen.AdminContainer(0))
+            }
           }
         )
       }
@@ -699,7 +704,12 @@ fun RootNavGraph(navController: NavHostController) {
             adminViewModel.searchMembers(query)
           },
           isEditMode = true,
-          aryaSamajId = aryaSamajId
+          aryaSamajId = aryaSamajId,
+          onNavigateToAryaSamajDetails = {
+            navController.navigate(Screen.AryaSamajDetail(aryaSamajId)){
+              popUpTo(Screen.AdminContainer(0))
+            }
+          }
         )
       }
     }

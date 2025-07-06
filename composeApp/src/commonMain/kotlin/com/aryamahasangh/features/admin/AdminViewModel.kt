@@ -829,6 +829,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
   }
 
   fun loadAdminCounts() {
+    println("Loading admin counts...")
     viewModelScope.launch {
       repository.getAdminCounts().collect { result ->
         result.handleResult(

@@ -46,7 +46,8 @@ data class AryaSamajFormUiState(
   val validationErrors: Map<String, String> = emptyMap(),
   val hasUnsavedChanges: Boolean = false,
   val editingAryaSamajId: String? = null, // Track which AryaSamaj we're editing
-  val originalFormData: AryaSamajFormData? = null // Track original data for change detection
+  val originalFormData: AryaSamajFormData? = null, // Track original data for change detection
+  val createdAryaSamajId: String? = null
 ) {
   private val initialFormData = AryaSamajFormData()
 
@@ -103,40 +104,41 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
   }
 
   // List operations
-  fun loadAryaSamajs() {
-    viewModelScope.launch {
-      repository.getAryaSamajs().collect { result ->
-        result.handleResult(
-          onLoading = {
-            _listUiState.value =
-              _listUiState.value.copy(
-                isLoading = true,
-                error = null,
-                appError = null
-              )
-          },
-          onSuccess = { aryaSamajs ->
-            _listUiState.value =
-              _listUiState.value.copy(
-                aryaSamajs = aryaSamajs,
-                isLoading = false,
-                error = null,
-                appError = null
-              )
-          },
-          onError = { appError ->
-            ErrorHandler.logError(appError, "AryaSamajViewModel.loadAryaSamajs")
-            _listUiState.value =
-              _listUiState.value.copy(
-                isLoading = false,
-                error = appError.getUserMessage(),
-                appError = appError
-              )
-          }
-        )
-      }
-    }
-  }
+//  fun loadAryaSamajs() {
+//    println("loadAryaSamajs")
+//    viewModelScope.launch {
+//      repository.getAryaSamajs().collect { result ->
+//        result.handleResult(
+//          onLoading = {
+//            _listUiState.value =
+//              _listUiState.value.copy(
+//                isLoading = true,
+//                error = null,
+//                appError = null
+//              )
+//          },
+//          onSuccess = { aryaSamajs ->
+//            _listUiState.value =
+//              _listUiState.value.copy(
+//                aryaSamajs = aryaSamajs,
+//                isLoading = false,
+//                error = null,
+//                appError = null
+//              )
+//          },
+//          onError = { appError ->
+//            ErrorHandler.logError(appError, "AryaSamajViewModel.loadAryaSamajs")
+//            _listUiState.value =
+//              _listUiState.value.copy(
+//                isLoading = false,
+//                error = appError.getUserMessage(),
+//                appError = appError
+//              )
+//          }
+//        )
+//      }
+//    }
+//  }
 
   fun searchAryaSamajs(query: String) {
     _listUiState.value = _listUiState.value.copy(searchQuery = query)
@@ -151,7 +153,7 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
           },
           onSuccess = { _ ->
             // Refresh the list
-            loadAryaSamajs()
+            loadAryaSamajsPaginated(resetPagination = true)
           },
           onError = { appError ->
             ErrorHandler.logError(appError, "AryaSamajViewModel.deleteAryaSamaj")
@@ -289,7 +291,7 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
                     originalFormData = null
                   )
                 // Refresh the list
-                loadAryaSamajs()
+                loadAryaSamajsPaginated(resetPagination = true)
               },
               onError = { appError ->
                 ErrorHandler.logError(appError, "AryaSamajViewModel.submitForm")
@@ -308,17 +310,19 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
               onLoading = {
                 // Already handled above
               },
-              onSuccess = { _ ->
+              onSuccess = { aryaSamajId ->
                 _formUiState.value =
                   _formUiState.value.copy(
                     isSubmitting = false,
                     submitSuccess = true,
                     hasUnsavedChanges = false,
                     editingAryaSamajId = null,
-                    originalFormData = null
+                    originalFormData = null,
+                    createdAryaSamajId = aryaSamajId
                   )
+
                 // Refresh the list
-                loadAryaSamajs()
+                loadAryaSamajsPaginated(resetPagination = true)
               },
               onError = { appError ->
                 ErrorHandler.logError(appError, "AryaSamajViewModel.submitForm")
@@ -509,6 +513,7 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
 
   // NEW: Pagination methods for infinite scroll
   fun loadAryaSamajsPaginated(pageSize: Int = 30, resetPagination: Boolean = false) {
+    println("Loading AryaSamajs paginated...")
     viewModelScope.launch {
       val currentState = _listUiState.value.paginationState
 

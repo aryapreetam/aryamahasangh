@@ -34,7 +34,7 @@ fun AryaSamajHomeScreen(
   var hasSearched by remember { mutableStateOf(false) }
 
   LaunchedEffect(Unit) {
-    viewModel?.loadAryaSamajs()
+    viewModel?.loadAryaSamajsPaginated()
     viewModel?.getAryaSamajCount() // Load total count separately
   }
 
@@ -230,7 +230,7 @@ fun AryaSamajHomeScreen(
               onClick = {
                 addressData = AddressData()
                 hasSearched = false
-                viewModel?.loadAryaSamajs()
+                viewModel?.loadAryaSamajsPaginated()
               },
               modifier = Modifier.align(Alignment.CenterHorizontally)
             ) {
