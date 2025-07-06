@@ -23,17 +23,20 @@ import coil3.compose.AsyncImage
 import com.aryamahasangh.features.activities.toDevanagariNumerals
 import com.aryamahasangh.features.admin.data.AryaSamajListItem
 import com.aryamahasangh.features.admin.data.AryaSamajViewModel
+import kotlinx.datetime.Clock
 
 // Global object to persist pagination state across ViewModel recreation
-private object AryaSamajPageState {
+internal object AryaSamajPageState {
   var aryaSamajs: List<com.aryamahasangh.fragment.AryaSamajWithAddress> = emptyList()
   var paginationState: PaginationState<com.aryamahasangh.fragment.AryaSamajWithAddress> = PaginationState()
   var lastSearchQuery: String = ""
+  var needsRefresh: Boolean = false
 
   fun clear() {
     aryaSamajs = emptyList()
     paginationState = PaginationState()
     lastSearchQuery = ""
+    needsRefresh = false
   }
 
   fun saveState(
@@ -47,6 +50,10 @@ private object AryaSamajPageState {
     }
 
   fun hasData(): Boolean = aryaSamajs.isNotEmpty()
+
+  fun markForRefresh() {
+    needsRefresh = true
+  }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,11 +63,11 @@ fun AryaSamajListScreen(
   onNavigateToAddAryaSamaj: () -> Unit = {},
   onNavigateToAryaSamajDetail: (String) -> Unit = {},
   onEditAryaSamaj: (String) -> Unit = {},
-  onDeleteAryaSamaj: (String) -> Unit = {}
+  onDeleteAryaSamaj: (String) -> Unit = {},
+  onDataChanged: () -> Unit = {}
 ) {
   val uiState by viewModel.listUiState.collectAsState()
   val scope = rememberCoroutineScope()
-  var showDeleteDialog by remember { mutableStateOf<AryaSamajListItem?>(null) }
   val windowInfo = currentWindowAdaptiveInfo()
   val isCompact = windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT
 
@@ -77,15 +84,27 @@ fun AryaSamajListScreen(
     }
   val pageSize = viewModel.calculatePageSize(screenWidthDp)
 
-  LaunchedEffect(Unit) {
-    // Preserve pagination if we have existing data (user navigated back)
-    if (AryaSamajPageState.hasData() && AryaSamajPageState.lastSearchQuery == uiState.searchQuery) {
+  // Generate a unique key when refresh is needed
+  val refreshKey = remember(AryaSamajPageState.needsRefresh) {
+    if (AryaSamajPageState.needsRefresh) Clock.System.now().toEpochMilliseconds() else 0L
+  }
+
+  LaunchedEffect(refreshKey) {
+    // Clear preserved state if refresh is requested
+    if (AryaSamajPageState.needsRefresh) {
+      AryaSamajPageState.clear()
+    }
+
+    // Preserve pagination if we have existing data (user navigated back from view-only)
+    if (!AryaSamajPageState.needsRefresh && AryaSamajPageState.hasData() && AryaSamajPageState.lastSearchQuery == uiState.searchQuery) {
       viewModel.preserveAryaSamajPagination(AryaSamajPageState.aryaSamajs, AryaSamajPageState.paginationState)
     }
 
-      // Load data (will be skipped if preserved)
-      viewModel.loadAryaSamajsPaginated(pageSize = pageSize, resetPagination = true)
-    }
+    // Load data (resetPagination = true when refreshing)
+    val shouldReset = AryaSamajPageState.needsRefresh
+    viewModel.loadAryaSamajsPaginated(pageSize = pageSize, resetPagination = shouldReset)
+    AryaSamajPageState.needsRefresh = false
+  }
 
   LaunchedEffect(uiState) {
     AryaSamajPageState.saveState(uiState.paginationState.items, uiState.paginationState, uiState.searchQuery)
@@ -107,42 +126,19 @@ fun AryaSamajListScreen(
     itemsPerRow = if (isCompact) 1 else 2,
     itemContent = { aryaSamaj ->
       AryaSamajItem(
-                aryaSamaj = aryaSamaj,
-                onItemClick = { onNavigateToAryaSamajDetail(aryaSamaj.id) },
-              onEditClick = { onEditAryaSamaj(aryaSamaj.id) },
-              onDeleteClick = { showDeleteDialog = aryaSamaj },
-            )
+        aryaSamaj = aryaSamaj,
+        onItemClick = { onNavigateToAryaSamajDetail(aryaSamaj.id) },
+        onEditClick = { onEditAryaSamaj(aryaSamaj.id) },
+        onDeleteClick = {
+          // Mark for refresh and delete
+          AryaSamajPageState.markForRefresh()
+          viewModel.deleteAryaSamaj(aryaSamaj.id) {
+            onDataChanged()
+          }
         }
-    )
-
-  // Delete confirmation dialog
-  showDeleteDialog?.let { aryaSamaj ->
-    AlertDialog(
-      onDismissRequest = { showDeleteDialog = null },
-      title = { Text("आर्य समाज हटाएँ") },
-      text = {
-        Text("क्या आप वाकई \"${aryaSamaj.name}\" को हटाना चाहते हैं? यह कार्रवाई पूर्ववत नहीं की जा सकती।")
-      },
-      confirmButton = {
-        TextButton(
-          onClick = {
-            onDeleteAryaSamaj(aryaSamaj.id)
-            showDeleteDialog = null
-          },
-          colors = ButtonDefaults.textButtonColors(
-            contentColor = MaterialTheme.colorScheme.error
-          )
-        ) {
-          Text("हटाएँ")
-        }
-      },
-      dismissButton = {
-        TextButton(onClick = { showDeleteDialog = null }) {
-          Text("रद्द करें")
-        }
-      }
-    )
+      )
     }
+  )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

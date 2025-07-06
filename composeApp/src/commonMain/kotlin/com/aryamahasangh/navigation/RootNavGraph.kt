@@ -18,6 +18,7 @@ import androidx.navigation.toRoute
 import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.features.activities.*
 import com.aryamahasangh.features.admin.*
+import com.aryamahasangh.features.admin.AryaSamajPageState
 import com.aryamahasangh.features.admin.data.AryaSamajViewModel
 import com.aryamahasangh.features.arya_nirman.AryaNirmanHomeScreen
 import com.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
@@ -345,7 +346,6 @@ fun RootNavGraph(navController: NavHostController) {
       composable<Screen.Activities> {
         val viewModel = koinInject<ActivitiesViewModel>()
         val onNavigateToDetails = { id: String ->
-          println("navigating to details: $id")
           navController.navigate(Screen.ActivityDetails(id))
         }
         if (isLoggedIn) {
@@ -599,9 +599,10 @@ fun RootNavGraph(navController: NavHostController) {
             // Trigger the server search in AdminViewModel
             adminViewModel.searchMembers(query)
           },
-          onNavigateToAryaSamajDetails = {
-            navController.navigate(Screen.AryaSamajDetail(it)){
-              popUpTo(Screen.AdminContainer(0))
+          onNavigateToAryaSamajDetails = { aryaSamajId ->
+            AryaSamajPageState.markForRefresh()
+            navController.navigate(Screen.AryaSamajDetail(aryaSamajId)) {
+              popUpTo(Screen.AddAryaSamajForm) { inclusive = true }
             }
           }
         )
@@ -706,8 +707,9 @@ fun RootNavGraph(navController: NavHostController) {
           isEditMode = true,
           aryaSamajId = aryaSamajId,
           onNavigateToAryaSamajDetails = {
+            AryaSamajPageState.markForRefresh()
             navController.navigate(Screen.AryaSamajDetail(aryaSamajId)){
-              popUpTo(Screen.AdminContainer(0))
+              popUpTo(Screen.EditAryaSamajForm(aryaSamajId)) { inclusive = true }
             }
           }
         )

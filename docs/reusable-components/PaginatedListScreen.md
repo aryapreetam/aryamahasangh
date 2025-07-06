@@ -298,11 +298,13 @@ private object YourPageState {
   var items: List<YourDataType> = emptyList()
   var paginationState: PaginationState<YourDataType> = PaginationState()
   var lastSearchQuery: String = ""
+  var needsRefresh: Boolean = false // Add refresh tracking
 
   fun clear() {
     items = emptyList()
     paginationState = PaginationState()
     lastSearchQuery = ""
+    needsRefresh = false
   }
 
   fun saveState(
@@ -316,6 +318,10 @@ private object YourPageState {
   }
 
   fun hasData(): Boolean = items.isNotEmpty()
+  
+  fun markForRefresh() {
+    needsRefresh = true
+  }
 }
 
 @Composable
@@ -324,7 +330,8 @@ fun YourListScreen(
   onNavigateToAdd: () -> Unit = {},
   onNavigateToDetail: (String) -> Unit = {},
   onEdit: (String) -> Unit = {},
-  onDelete: (String) -> Unit = {}
+  onDelete: (String) -> Unit = {},
+  onDataChanged: () -> Unit = {} // Callback for when data changes (for count updates)
 ) {
   val uiState by viewModel.uiState.collectAsState()
   val windowInfo = currentWindowAdaptiveInfo()
@@ -343,13 +350,27 @@ fun YourListScreen(
   }
   val pageSize = viewModel.calculatePageSize(screenWidthDp)
 
-  LaunchedEffect(Unit) {
-    // State preservation logic (optional)
-    if (YourPageState.hasData() && YourPageState.lastSearchQuery == uiState.searchQuery) {
+  // Generate unique key when refresh is needed
+  val refreshKey = remember(YourPageState.needsRefresh) {
+    if (YourPageState.needsRefresh) Clock.System.now().toEpochMilliseconds() else 0L
+  }
+
+  LaunchedEffect(refreshKey) {
+    // Clear preserved state if refresh is requested
+    if (YourPageState.needsRefresh) {
+      YourPageState.clear()
+    }
+
+    // Preserve pagination only if not refreshing
+    if (!YourPageState.needsRefresh && YourPageState.hasData() && 
+        YourPageState.lastSearchQuery == uiState.searchQuery) {
       viewModel.preservePagination(YourPageState.items, YourPageState.paginationState)
     }
 
-    viewModel.loadItemsPaginated(pageSize = pageSize, resetPagination = true)
+    // Load data (resetPagination = true when refreshing)
+    val shouldReset = YourPageState.needsRefresh
+    viewModel.loadItemsPaginated(pageSize = pageSize, resetPagination = shouldReset)
+    YourPageState.needsRefresh = false
   }
 
   LaunchedEffect(uiState) {
@@ -375,12 +396,180 @@ fun YourListScreen(
         item = item,
         onItemClick = { onNavigateToDetail(item.id) },
         onEditClick = { onEdit(item.id) },
-        onDeleteClick = { onDelete(item.id) }
+        onDeleteClick = {
+          // Mark for refresh and delete
+          YourPageState.markForRefresh()
+          viewModel.deleteItem(item.id) {
+            onDataChanged() // Trigger parent screen updates (like count refresh)
+          }
+        }
       )
     }
   )
 }
+
+## Auto-Refresh for Create/Edit/Delete Operations
+
+To ensure the paginated list automatically refreshes after create, edit, or delete operations, follow this pattern:
+
+### 1. Add Refresh Flag to Global State
+
+```kotlin
+private object YourPageState {
+  // ... existing properties
+  var needsRefresh: Boolean = false
+
+  fun markForRefresh() {
+    needsRefresh = true
+  }
+
+  fun clear() {
+    // ... existing clear logic
+    needsRefresh = false
+  }
+}
 ```
+
+### 2. Modify LaunchedEffect to Handle Refresh
+
+```kotlin
+// Generate unique key when refresh is needed
+val refreshKey = remember(YourPageState.needsRefresh) {
+  if (YourPageState.needsRefresh) Clock.System.now().toEpochMilliseconds() else 0L
+}
+
+LaunchedEffect(refreshKey) {
+  // Clear preserved state if refresh is requested
+  if (YourPageState.needsRefresh) {
+    YourPageState.clear()
+  }
+
+  // Preserve pagination only if not refreshing
+  if (!YourPageState.needsRefresh && YourPageState.hasData() && 
+      YourPageState.lastSearchQuery == uiState.searchQuery) {
+    viewModel.preservePagination(YourPageState.items, YourPageState.paginationState)
+  }
+
+  // Load data (resetPagination = true when refreshing)
+  val shouldReset = YourPageState.needsRefresh
+  viewModel.loadItemsPaginated(pageSize = pageSize, resetPagination = shouldReset)
+  YourPageState.needsRefresh = false
+}
+```
+
+### 3. Mark for Refresh After Operations
+
+#### After Create/Edit (in navigation callbacks):
+
+```kotlin
+// In form screens after successful create/edit
+onNavigateToItemDetails = { itemId ->
+  YourPageState.markForRefresh() // Mark list for refresh
+  navController.navigate(Screen.ItemDetail(itemId)) {
+    popUpTo(Screen.ItemForm) { inclusive = true }
+  }
+}
+```
+
+#### After Delete (in item component):
+
+```kotlin
+onDeleteClick = {
+  YourPageState.markForRefresh() // Mark list for refresh
+  viewModel.deleteItem(item.id) {
+    onDataChanged() // Callback to parent for additional updates (e.g., count refresh)
+  }
+}
+```
+
+### 4. Update ViewModel Delete Method
+
+```kotlin
+fun deleteItem(id: String, onSuccess: (() -> Unit)? = null) {
+  viewModelScope.launch {
+    repository.deleteItem(id).collect { result ->
+      result.handleResult(
+        onSuccess = { success ->
+          // Refresh the list
+          loadItemsPaginated(resetPagination = true)
+          // Call success callback
+          onSuccess?.invoke()
+        },
+        onError = { appError ->
+          // Handle error
+        }
+      )
+    }
+  }
+}
+```
+
+### 5. Clear Cache After Mutations (Repository Level)
+
+```kotlin
+// In repository delete method
+override suspend fun deleteItem(id: String): Flow<Result<Boolean>> = flow {
+  emit(Result.Loading)
+  val result = safeCall {
+    val response = apolloClient.mutation(DeleteItemMutation(id)).execute()
+    if (response.hasErrors()) {
+      throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+    }
+    val success = response.data?.deleteFromItemCollection?.affectedCount?.let { it > 0 } ?: false
+    if (success) {
+      // Clear Apollo cache after successful deletion
+      apolloClient.apolloStore.clearAll()
+    }
+    success
+  }
+  emit(result)
+}
+
+// Similar for create operation
+override suspend fun createItem(formData: ItemFormData): Flow<Result<String>> = flow {
+  // ... creation logic
+  
+  // Clear cache after successful creation
+  apolloClient.apolloStore.clearAll()
+  
+  emit(result)
+}
+```
+
+### 6. Add Data Change Callback to Parent Screen
+
+If your list is embedded in a parent screen (like tabs), add a callback to refresh parent data:
+
+```kotlin
+// In parent screen (e.g., TabScreen with counts)
+YourListScreen(
+  viewModel = yourViewModel,
+  onDataChanged = {
+    // Refresh counts or other parent data
+    parentViewModel.loadCounts()
+  }
+)
+```
+
+### Benefits of This Pattern
+
+1. **Scroll Preservation**: Normal navigation preserves scroll position
+2. **Auto-Refresh**: Create/edit/delete operations automatically refresh the list
+3. **Cache Consistency**: Apollo cache is cleared to ensure fresh data
+4. **Parent Updates**: Callbacks allow parent screens to update counts/stats
+5. **Minimal Changes**: Only 4-5 lines of code per screen to implement
+
+### Key Points
+
+- ✅ Use `markForRefresh()` after create/edit/delete operations
+- ✅ Clear Apollo cache in repository after successful mutations
+- ✅ Use unique `refreshKey` to trigger LaunchedEffect when needed
+- ✅ Preserve scroll position for view-only navigation
+- ✅ Add `onDataChanged` callback for parent screen updates
+- ✅ Reset `needsRefresh` flag after processing
+
+This pattern ensures consistent behavior across all paginated screens while maintaining optimal performance and user
+experience.
 
 ## Required Dependencies
 

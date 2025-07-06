@@ -376,11 +376,13 @@ private object [EntityName]PageState {
   var [entityPlural]: List<[EntityType]> = emptyList()
   var paginationState: PaginationState<[EntityType]> = PaginationState()
   var lastSearchQuery: String = ""
+  var needsRefresh: Boolean = false // Add refresh tracking
 
   fun clear() {
     [entityPlural] = emptyList()
     paginationState = PaginationState()
     lastSearchQuery = ""
+    needsRefresh = false
   }
 
   fun saveState(
@@ -394,6 +396,10 @@ private object [EntityName]PageState {
   }
 
   fun hasData(): Boolean = [entityPlural].isNotEmpty()
+  
+  fun markForRefresh() {
+    needsRefresh = true
+  }
 }
 ```
 
@@ -406,7 +412,8 @@ fun [EntityName]ListScreen(
   onNavigateToAdd[EntityName]: () -> Unit = {},
   onNavigateToDetail: (String) -> Unit = {},
   onEdit: (String) -> Unit = {},
-  onDelete: (String) -> Unit = {}
+  onDelete: (String) -> Unit = {},
+  onDataChanged: () -> Unit = {} // Add callback for count updates
 ) {
   val uiState by viewModel.uiState.collectAsState()
   val windowInfo = currentWindowAdaptiveInfo()
@@ -425,13 +432,27 @@ fun [EntityName]ListScreen(
   }
   val pageSize = viewModel.calculatePageSize(screenWidthDp)
 
-  LaunchedEffect(Unit) {
-    // State preservation
-    if ([EntityName]PageState.hasData() && [EntityName]PageState.lastSearchQuery == uiState.searchQuery) {
+  // Generate unique key when refresh is needed
+  val refreshKey = remember([EntityName]PageState.needsRefresh) {
+    if ([EntityName]PageState.needsRefresh) Clock.System.now().toEpochMilliseconds() else 0L
+  }
+
+  LaunchedEffect(refreshKey) {
+    // Clear preserved state if refresh is requested
+    if ([EntityName]PageState.needsRefresh) {
+      [EntityName]PageState.clear()
+    }
+
+    // Preserve pagination only if not refreshing
+    if (![EntityName]PageState.needsRefresh && [EntityName]PageState.hasData() && 
+        [EntityName]PageState.lastSearchQuery == uiState.searchQuery) {
       viewModel.preserve[EntityName]Pagination([EntityName]PageState.[entityPlural], [EntityName]PageState.paginationState)
     }
 
-    viewModel.load[EntityPlural]Paginated(pageSize = pageSize, resetPagination = true)
+    // Load data (resetPagination = true when refreshing)
+    val shouldReset = [EntityName]PageState.needsRefresh
+    viewModel.load[EntityPlural]Paginated(pageSize = pageSize, resetPagination = shouldReset)
+    [EntityName]PageState.needsRefresh = false
   }
 
   LaunchedEffect(uiState) {
@@ -457,7 +478,13 @@ fun [EntityName]ListScreen(
         [entitySingular] = [entitySingular],
         onItemClick = { onNavigateToDetail([entitySingular].id) },
         onEditClick = { onEdit([entitySingular].id) },
-        onDeleteClick = { onDelete([entitySingular].id) }
+        onDeleteClick = {
+          // Mark for refresh and delete
+          [EntityName]PageState.markForRefresh()
+          viewModel.delete[EntityName]([entitySingular].id) {
+            onDataChanged() // Trigger parent screen updates (like count refresh)
+          }
+        }
       )
     }
   )
@@ -577,3 +604,214 @@ Test with realistic data (50+ records) to verify:
 - Complete example: `AryaSamajListScreen.kt`
 - Documentation: `docs/reusable-components/PaginatedListScreen.md`
 - Development log: `docs/development-logs/2025-07-03-pagination-implementation.md`
+
+## Auto-Refresh for Create/Edit/Delete Operations
+
+**CRITICAL**: To ensure the paginated list automatically refreshes after create, edit, or delete operations, and that
+dependent counts update properly, follow this pattern:
+
+### 1. Add Refresh Tracking to Global State
+
+Update the global state object to include refresh tracking:
+
+```kotlin
+private object [EntityName]PageState {
+  var [entityPlural]: List<[EntityType]> = emptyList()
+  var paginationState: PaginationState<[EntityType]> = PaginationState()
+  var lastSearchQuery: String = ""
+  var needsRefresh: Boolean = false // Add refresh tracking
+
+  fun clear() {
+    [entityPlural] = emptyList()
+    paginationState = PaginationState()
+    lastSearchQuery = ""
+    needsRefresh = false
+  }
+
+  fun saveState(
+    new[EntityPlural]: List<[EntityType]>,
+    newPaginationState: PaginationState<[EntityType]>,
+    searchQuery: String
+  ) {
+    [entityPlural] = new[EntityPlural]
+    paginationState = newPaginationState
+    lastSearchQuery = searchQuery
+  }
+
+  fun hasData(): Boolean = [entityPlural].isNotEmpty()
+  
+  fun markForRefresh() {
+    needsRefresh = true
+  }
+}
+```
+
+### 2. Add Cache Clearing to Repository Mutations
+
+**CRITICAL**: Add cache clearing after successful create/edit/delete operations:
+
+```kotlin
+// In create[EntityName] method
+override suspend fun create[EntityName](formData: [EntityName]FormData): Flow<Result<String>> = flow {
+  // ... creation logic...
+  
+  // CRITICAL: Clear Apollo cache after successful creation
+  apolloClient.apolloStore.clearAll()
+  
+  emit(result)
+}
+
+// In update[EntityName] method  
+override suspend fun update[EntityName](id: String, formData: [EntityName]FormData): Flow<Result<Boolean>> = flow {
+  // ... update logic...
+  
+  val result = safeCall {
+    // ... update operations...
+    
+    // CRITICAL: Clear Apollo cache after successful update
+    apolloClient.apolloStore.clearAll()
+    true
+  }
+  emit(result)
+}
+
+// In delete[EntityName] method
+override suspend fun delete[EntityName](id: String): Flow<Result<Boolean>> = flow {
+  emit(Result.Loading)
+  val result = safeCall {
+    val response = apolloClient.mutation(Delete[EntityName]Mutation(id)).execute()
+    if (response.hasErrors()) {
+      throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+    }
+    val success = response.data?.deleteFrom[EntityName]Collection?.affectedCount?.let { it > 0 } ?: false
+    if (success) {
+      // CRITICAL: Clear Apollo cache after successful deletion
+      apolloClient.apolloStore.clearAll()
+    }
+    success
+  }
+  emit(result)
+}
+```
+
+### 3. Update ViewModel Delete Method
+
+Modify the delete method to accept a success callback:
+
+```kotlin
+fun delete[EntityName](id: String, onSuccess: (() -> Unit)? = null) {
+  viewModelScope.launch {
+    repository.delete[EntityName](id).collect { result ->
+      result.handleResult(
+        onLoading = {
+          // Could add a loading state for delete if needed
+        },
+        onSuccess = { success ->
+          // Refresh the list
+          load[EntityPlural]Paginated(resetPagination = true)
+          // Call the success callback for parent updates
+          onSuccess?.invoke()
+        },
+        onError = { appError ->
+          ErrorHandler.logError(appError, "[EntityName]ViewModel.delete[EntityName]")
+          _listUiState.value = _listUiState.value.copy(
+            error = appError.getUserMessage(),
+            appError = appError
+          )
+        }
+      )
+    }
+  }
+}
+```
+
+### 4. Mark for Refresh After Create/Edit Operations
+
+In navigation callbacks after successful create/edit:
+
+```kotlin
+// In form screens, navigation callbacks after successful operations
+onNavigateToItemDetails = { itemId ->
+  [EntityName]PageState.markForRefresh() // Mark list for refresh
+  navController.navigate(Screen.[EntityName]Detail(itemId)) {
+    popUpTo(Screen.[EntityName]Form) { inclusive = true }
+  }
+}
+```
+
+### 5. Parent Screen Integration (For Count Updates)
+
+If your list is embedded in a parent screen with counts (like tabs), add the callback:
+
+```kotlin
+// In parent screen (e.g., AdminContainerScreen with tabs showing counts)
+[EntityName]ListScreen(
+  viewModel = [entityName]ViewModel,
+  onDataChanged = {
+    // Refresh counts or other parent data when entity data changes
+    parentViewModel.loadCounts() // or loadAdminCounts()
+  }
+  // ... other parameters
+)
+```
+
+### 6. LaunchedEffect Pattern for Auto-Refresh
+
+The screen implementation should use this pattern:
+
+```kotlin
+// Generate unique key when refresh is needed
+val refreshKey = remember([EntityName]PageState.needsRefresh) {
+  if ([EntityName]PageState.needsRefresh) Clock.System.now().toEpochMilliseconds() else 0L
+}
+
+LaunchedEffect(refreshKey) {
+  // Clear preserved state if refresh is requested
+  if ([EntityName]PageState.needsRefresh) {
+    [EntityName]PageState.clear()
+  }
+
+  // Preserve pagination only if not refreshing
+  if (![EntityName]PageState.needsRefresh && [EntityName]PageState.hasData() && 
+      [EntityName]PageState.lastSearchQuery == uiState.searchQuery) {
+    viewModel.preserve[EntityName]Pagination([EntityName]PageState.[entityPlural], [EntityName]PageState.paginationState)
+  }
+
+  // Load data (resetPagination = true when refreshing)
+  val shouldReset = [EntityName]PageState.needsRefresh
+  viewModel.load[EntityPlural]Paginated(pageSize = pageSize, resetPagination = shouldReset)
+  [EntityName]PageState.needsRefresh = false
+}
+```
+
+### 7. Required Imports for Auto-Refresh
+
+Add these imports to your screen file:
+
+```kotlin
+import kotlinx.datetime.Clock
+```
+
+### Auto-Refresh Benefits
+
+This pattern ensures:
+
+- ✅ **Scroll Preservation**: Normal navigation preserves scroll position
+- ✅ **Auto-Refresh**: Create/edit/delete operations automatically refresh the list
+- ✅ **Cache Consistency**: Apollo cache is cleared to ensure fresh data
+- ✅ **Parent Updates**: Callbacks allow parent screens to update counts/stats
+- ✅ **Minimal Changes**: Only 5-6 lines of code per screen to implement
+
+### Auto-Refresh Checklist
+
+When implementing, ensure:
+
+- ✅ Add `needsRefresh` flag and `markForRefresh()` to global state
+- ✅ Clear Apollo cache in repository after successful mutations
+- ✅ Use unique `refreshKey` based on `needsRefresh` in LaunchedEffect
+- ✅ Call `markForRefresh()` after create/edit operations in navigation
+- ✅ Add success callback to delete method for parent updates
+- ✅ Add `onDataChanged` callback to screen for count updates
+- ✅ Reset `needsRefresh` flag after processing
+
+### 5. Required Dependencies

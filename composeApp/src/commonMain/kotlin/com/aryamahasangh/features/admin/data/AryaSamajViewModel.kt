@@ -105,7 +105,6 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
 
   // List operations
 //  fun loadAryaSamajs() {
-//    println("loadAryaSamajs")
 //    viewModelScope.launch {
 //      repository.getAryaSamajs().collect { result ->
 //        result.handleResult(
@@ -144,16 +143,18 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
     _listUiState.value = _listUiState.value.copy(searchQuery = query)
   }
 
-  fun deleteAryaSamaj(id: String) {
+  fun deleteAryaSamaj(id: String, onSuccess: (() -> Unit)? = null) {
     viewModelScope.launch {
       repository.deleteAryaSamaj(id).collect { result ->
         result.handleResult(
           onLoading = {
             // Could add a loading state for delete if needed
           },
-          onSuccess = { _ ->
+          onSuccess = { success ->
             // Refresh the list
             loadAryaSamajsPaginated(resetPagination = true)
+            // Call the success callback
+            onSuccess?.invoke()
           },
           onError = { appError ->
             ErrorHandler.logError(appError, "AryaSamajViewModel.deleteAryaSamaj")
@@ -513,7 +514,6 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
 
   // NEW: Pagination methods for infinite scroll
   fun loadAryaSamajsPaginated(pageSize: Int = 30, resetPagination: Boolean = false) {
-    println("Loading AryaSamajs paginated...")
     viewModelScope.launch {
       val currentState = _listUiState.value.paginationState
 

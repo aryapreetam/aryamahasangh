@@ -203,7 +203,11 @@ fun AdminContainerScreen(
             viewModel = aryaSamajViewModel,
             onNavigateToAddAryaSamaj = onNavigateToAddAryaSamaj,
             onNavigateToAryaSamajDetail = onNavigateToAryaSamajDetail,
-            onEditAryaSamaj = onEditAryaSamaj
+            onEditAryaSamaj = onEditAryaSamaj,
+            onDataChanged = {
+              // Refresh admin counts when Arya Samaj data changes
+              viewModel.loadAdminCounts()
+            }
           )
         } else if (it == 2) {
           AryaPariwarListScreen(

@@ -255,7 +255,12 @@ class AryaSamajRepositoryImpl(private val apolloClient: ApolloClient) : AryaSama
           if (response.hasErrors()) {
             throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
           }
-          response.data?.deleteFromAryaSamajCollection?.affectedCount?.let { it > 0 } ?: false
+          val success = response.data?.deleteFromAryaSamajCollection?.affectedCount?.let { it > 0 } ?: false
+          if (success) {
+            // Clear Apollo cache after successful deletion
+            apolloClient.apolloStore.clearAll()
+          }
+          success
         }
       emit(result)
     }
