@@ -151,8 +151,17 @@ class AryaSamajViewModel(private val repository: AryaSamajRepository) : ViewMode
             // Could add a loading state for delete if needed
           },
           onSuccess = { success ->
-            // Refresh the list
+            // Clear any pagination preservation flags that might interfere
+            shouldPreservePagination = false
+
+            // Force refresh the list by clearing current state first
+            _listUiState.value = _listUiState.value.copy(
+              paginationState = PaginationState() // Reset pagination state completely
+            )
+
+            // Then reload with forced reset
             loadAryaSamajsPaginated(resetPagination = true)
+
             // Call the success callback
             onSuccess?.invoke()
           },

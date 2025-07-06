@@ -23,6 +23,7 @@ import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.error_profile_image
 import coil3.compose.AsyncImage
 import com.aryamahasangh.features.activities.toDevanagariNumerals
+import com.aryamahasangh.navigation.LocalSnackbarHostState
 import kotlinx.datetime.Clock
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -64,7 +65,9 @@ fun EkalAryaListScreen(
   onDeleteMember: (String) -> Unit = {},
   onDataChanged: () -> Unit = {}
 ) {
+  val snackbarHostState = LocalSnackbarHostState.current
   val uiState by viewModel.ekalAryaUiState.collectAsState()
+  val deleteState by viewModel.deleteMemberState.collectAsState()
   val windowInfo = currentWindowAdaptiveInfo()
   val isCompact = windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT
 
@@ -101,6 +104,33 @@ fun EkalAryaListScreen(
 
   LaunchedEffect(uiState) {
     EkalAryaPageState.saveState(uiState.members, uiState.paginationState, uiState.searchQuery)
+  }
+
+  // Snackbar logic for deletion feedback
+  LaunchedEffect(deleteState.isDeleting) {
+    if (deleteState.isDeleting) {
+      snackbarHostState.showSnackbar("सदस्य हटाया जा रहा है...")
+    }
+  }
+
+  LaunchedEffect(deleteState.deleteSuccess) {
+    if (deleteState.deleteSuccess) {
+      snackbarHostState.showSnackbar("सदस्य सफलतापूर्वक हटाया गया")
+      viewModel.resetDeleteState()
+    }
+  }
+
+  LaunchedEffect(deleteState.deleteError) {
+    deleteState.deleteError?.let { error ->
+      val result = snackbarHostState.showSnackbar(
+        message = error,
+        actionLabel = "पुनः प्रयास"
+      )
+      if (result == SnackbarResult.ActionPerformed) {
+        // Handle retry if needed
+      }
+      viewModel.resetDeleteState()
+    }
   }
 
   PaginatedListScreen(
@@ -142,7 +172,7 @@ private fun MemberItem(
   modifier: Modifier = Modifier
 ) {
   var showOptionsMenu by remember { mutableStateOf(false) }
-
+  var showDeleteDialog by remember { mutableStateOf(false) }
   ElevatedCard(
     modifier =
       modifier
@@ -205,13 +235,41 @@ private fun MemberItem(
             text = { Text("सदस्य हटाएँ") },
             onClick = {
               showOptionsMenu = false
-              onDeleteClick()
+              showDeleteDialog = true
             },
             leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) }
           )
         }
       }
     }
+  }
+  // Delete confirmation dialog
+  if (showDeleteDialog) {
+    AlertDialog(
+      onDismissRequest = { showDeleteDialog = false },
+      title = { Text("परिवार हटाएँ") },
+      text = {
+        Text("क्या आप निश्चित हैं कि आप \"${member.name}\" को हटाना चाहते हैं? यह कार्रवाई पूर्ववत नहीं की जा सकती।")
+      },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            showDeleteDialog = false
+            onDeleteClick()
+          },
+          colors = ButtonDefaults.textButtonColors(
+            contentColor = MaterialTheme.colorScheme.error
+          )
+        ) {
+          Text("हटाएँ")
+        }
+      },
+      dismissButton = {
+        TextButton(onClick = { showDeleteDialog = false }) {
+          Text("रद्द करें")
+        }
+      }
+    )
   }
 }
 

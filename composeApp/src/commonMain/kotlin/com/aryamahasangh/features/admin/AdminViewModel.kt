@@ -659,7 +659,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
             // Refresh members list
             loadMembers()
             getMembersCount()
-            loadEkalAryaMembersPaginated()
+            loadEkalAryaMembersPaginated(resetPagination = true)
             // Call success callback
             onSuccess?.invoke()
           },
@@ -790,7 +790,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
               )
             // Refresh members list
             loadMembers()
-            loadEkalAryaMembersPaginated()
+            loadEkalAryaMembersPaginated(resetPagination = true)
             getMembersCount()
           },
           onError = { appError ->

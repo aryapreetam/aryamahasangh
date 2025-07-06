@@ -7,7 +7,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
@@ -34,7 +33,6 @@ fun OrganisationalMembersScreen(
   onNavigateToEditMember: (String) -> Unit = {}, // Add edit navigation
 ) {
   val uiState by viewModel.membersUiState.collectAsState()
-  val deleteState by viewModel.deleteMemberState.collectAsState()
   val snackbarHostState = LocalSnackbarHostState.current
   val scope = rememberCoroutineScope()
   var showDeleteDialog by remember { mutableStateOf<MemberShort?>(null) }
@@ -42,34 +40,6 @@ fun OrganisationalMembersScreen(
 
   LaunchedEffect(Unit) {
     viewModel.loadMembers()
-  }
-
-  // Handle delete state changes
-  LaunchedEffect(deleteState.isDeleting) {
-    if (deleteState.isDeleting) {
-      snackbarHostState.showSnackbar("Deleting member...")
-    }
-  }
-
-  LaunchedEffect(deleteState.deleteSuccess) {
-    if (deleteState.deleteSuccess) {
-      snackbarHostState.showSnackbar("Member deleted successfully")
-      viewModel.resetDeleteState()
-    }
-  }
-
-  LaunchedEffect(deleteState.deleteError) {
-    deleteState.deleteError?.let { error ->
-      val result =
-        snackbarHostState.showSnackbar(
-          message = error,
-          actionLabel = "Retry"
-        )
-      if (result == SnackbarResult.ActionPerformed) {
-        // Handle retry if needed
-      }
-      viewModel.resetDeleteState()
-    }
   }
 
   val windowInfo = currentWindowAdaptiveInfo()
@@ -180,7 +150,8 @@ fun OrganisationalMembersScreen(
       confirmButton = {
         TextButton(
           onClick = {
-            viewModel.deleteMember(member.id, member.name)
+            // TODO fix deleteOrganisation member
+            // viewModel.deleteMember(member.id, member.name)
             showDeleteDialog = null
           }
         ) {
@@ -267,14 +238,14 @@ private fun MemberItem(
             },
             leadingIcon = { Icon(Icons.Default.Edit, contentDescription = null) }
           )
-          DropdownMenuItem(
-            text = { Text("सदस्य हटाएँ") },
-            onClick = {
-              showOptionsMenu = false
-              onDeleteClick()
-            },
-            leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) }
-          )
+//          DropdownMenuItem(
+//            text = { Text("सदस्य हटाएँ") },
+//            onClick = {
+//              showOptionsMenu = false
+//              onDeleteClick()
+//            },
+//            leadingIcon = { Icon(Icons.Default.Delete, contentDescription = null) }
+//          )
         }
       }
     }

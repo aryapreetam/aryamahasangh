@@ -463,10 +463,13 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
             throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Unknown error occurred")
           }
 
+          // Since DeleteMember returns JSON, we'll return true for success
+          val deleted = response.data?.deleteFromMemberCollection?.affectedCount
+          if (deleted == null || deleted <= 0) {
+            throw Exception("Failed to delete member - no records deleted")
+          }
           // CRITICAL: Clear Apollo cache after successful deletion
           apolloClient.apolloStore.clearAll()
-
-          // Since DeleteMember returns JSON, we'll return true for success
           true
         }
       emit(result)

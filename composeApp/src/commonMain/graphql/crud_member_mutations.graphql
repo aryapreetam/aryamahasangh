@@ -138,6 +138,6 @@ mutation UpdateMemberDetailsComprehensive(
 }
 
 # Delete Member (comprehensive deletion with cleanup)
-mutation DeleteMember($memberId: String!) {
+mutation DeleteMemberUsingFunction($memberId: String!) {
   deleteMember(pMemberId: $memberId)
 }
