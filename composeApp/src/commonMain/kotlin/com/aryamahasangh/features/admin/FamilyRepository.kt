@@ -2,17 +2,11 @@ package com.aryamahasangh.features.admin
 
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
-import com.apollographql.apollo.cache.normalized.FetchPolicy
-import com.apollographql.apollo.cache.normalized.cacheInfo
-import com.apollographql.apollo.cache.normalized.fetchPolicy
-import com.apollographql.apollo.cache.normalized.isFromCache
+import com.apollographql.apollo.cache.normalized.*
 import com.aryamahasangh.*
 import com.aryamahasangh.fragment.FamilyFields
 import com.aryamahasangh.fragment.MemberWithoutFamily
-import com.aryamahasangh.type.FamilyMemberInsertInput
-import com.aryamahasangh.type.FamilyOrderBy
-import com.aryamahasangh.type.FamilyRelation
-import com.aryamahasangh.type.OrderByDirection
+import com.aryamahasangh.type.*
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.util.safeCall
 import kotlinx.coroutines.flow.Flow
@@ -27,7 +21,7 @@ data class FamilyMemberJson(
   val relation_to_head: String
 )
 
-interface FamilyRepository {
+interface FamilyRepository : PaginatedRepository<FamilyFields> {
   // Family listing and search
   suspend fun getFamilies(
     first: Int = 50,
@@ -39,18 +33,6 @@ interface FamilyRepository {
     first: Int = 50,
     after: String? = null
   ): Flow<Result<List<FamilyFields>>>
-
-  // NEW: Paginated methods for infinite scroll
-  suspend fun getFamiliesPaginated(
-    pageSize: Int = 30,
-    cursor: String? = null
-  ): Flow<PaginationResult<FamilyFields>>
-
-  suspend fun searchFamiliesPaginated(
-    searchTerm: String,
-    pageSize: Int = 30,
-    cursor: String? = null
-  ): Flow<PaginationResult<FamilyFields>>
 
   // Family detail
   suspend fun getFamilyDetail(familyId: String): Flow<Result<GetFamilyDetailQuery.Node>>
@@ -114,6 +96,102 @@ data class FamilyMemberData(
 )
 
 class FamilyRepositoryImpl(private val apolloClient: ApolloClient) : FamilyRepository {
+
+  override suspend fun getItemsPaginated(
+    pageSize: Int,
+    cursor: String?,
+    filter: Any?
+  ): Flow<PaginationResult<FamilyFields>> =
+    flow {
+      emit(PaginationResult.Loading())
+
+      apolloClient.query(
+        GetFamiliesQuery(
+          first = Optional.present(pageSize),
+          after = Optional.presentIfNotNull(cursor),
+          filter = Optional.presentIfNotNull(filter as? FamilyFilter),
+          orderBy = Optional.present(listOf(FamilyOrderBy(createdAt = Optional.present(OrderByDirection.DescNullsLast))))
+        )
+      )
+        .fetchPolicy(FetchPolicy.CacheAndNetwork)
+        .toFlow()
+        .collect { response ->
+          // Skip only cache MISSES with empty data - cache HITS with empty data should be shown
+          if (response.isFromCache && response.cacheInfo?.isCacheHit == false && response.data?.familyCollection?.edges.isNullOrEmpty()) {
+            // Skip emitting empty cache miss - wait for network
+          } else {
+            val result = safeCall {
+              if (response.hasErrors()) {
+                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+              }
+
+              val families = response.data?.familyCollection?.edges?.map {
+                it.node.familyFields
+              } ?: emptyList()
+
+              val pageInfo = response.data?.familyCollection?.pageInfo
+
+              PaginationResult.Success(
+                data = families,
+                hasNextPage = pageInfo?.hasNextPage ?: false,
+                endCursor = pageInfo?.endCursor
+              )
+            }
+
+            when (result) {
+              is Result.Success -> {
+                emit(result.data)
+              }
+
+              is Result.Error -> {
+                emit(PaginationResult.Error(result.exception?.message ?: "Unknown error"))
+              }
+
+              is Result.Loading -> {
+                // Already emitted loading state above
+              }
+            }
+          }
+        }
+    }
+
+  override suspend fun searchItemsPaginated(
+    searchTerm: String,
+    pageSize: Int,
+    cursor: String?
+  ): Flow<PaginationResult<FamilyFields>> =
+    flow {
+      emit(PaginationResult.Loading())
+      val result =
+        safeCall {
+          val response =
+            apolloClient.query(
+              SearchFamiliesQuery(
+                searchTerm = "%$searchTerm%",
+                first = Optional.present(pageSize),
+                after = Optional.presentIfNotNull(cursor)
+              )
+            ).execute()
+
+          if (response.hasErrors()) {
+            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+          }
+
+          val edges = response.data?.familyCollection?.edges ?: emptyList()
+          val familyFields = edges.map { it.node.familyFields }
+          val hasNextPage = response.data?.familyCollection?.pageInfo?.hasNextPage ?: false
+          val endCursor = response.data?.familyCollection?.pageInfo?.endCursor
+
+          PaginationResult.Success(data = familyFields, hasNextPage = hasNextPage, endCursor = endCursor)
+        }
+
+      when (result) {
+        is Result.Success -> emit(result.data)
+        is Result.Error -> emit(PaginationResult.Error(result.message))
+        is Result.Loading -> {} // Already emitted Loading above
+      }
+    }
+
   override suspend fun getFamilies(
     first: Int,
     after: String?
@@ -377,6 +455,9 @@ class FamilyRepositoryImpl(private val apolloClient: ApolloClient) : FamilyRepos
             throw Exception("No response data received")
           }
 
+          // CRITICAL: Clear Apollo cache after successful creation
+          apolloClient.apolloStore.clearAll()
+
           try {
             val jsonString = responseData.toString()
             // Parse using the same jsonConfig instance
@@ -444,6 +525,9 @@ class FamilyRepositoryImpl(private val apolloClient: ApolloClient) : FamilyRepos
             throw Exception("Family update failed - no records updated")
           }
 
+          // CRITICAL: Clear Apollo cache after successful update
+          apolloClient.apolloStore.clearAll()
+
           true
         }
       emit(result)
@@ -476,6 +560,9 @@ class FamilyRepositoryImpl(private val apolloClient: ApolloClient) : FamilyRepos
             throw Exception("Failed to add members to family: ${response.errors?.firstOrNull()?.message}")
           }
 
+          // CRITICAL: Clear Apollo cache after successful addition of members
+          apolloClient.apolloStore.clearAll()
+
           true
         }
       emit(result)
@@ -506,6 +593,9 @@ class FamilyRepositoryImpl(private val apolloClient: ApolloClient) : FamilyRepos
             }
           }
 
+          // CRITICAL: Clear Apollo cache after successful update of member addresses
+          apolloClient.apolloStore.clearAll()
+
           true
         }
       emit(result)
@@ -532,115 +622,40 @@ class FamilyRepositoryImpl(private val apolloClient: ApolloClient) : FamilyRepos
             throw Exception("Failed to delete family - no records deleted")
           }
 
+          // CRITICAL: Clear Apollo cache after successful deletion
+          apolloClient.apolloStore.clearAll()
+
           true
         }
       emit(result)
     }
 
-  override suspend fun getFamiliesPaginated(
-    pageSize: Int,
-    cursor: String?
-  ): Flow<PaginationResult<FamilyFields>> =
-    flow {
-      emit(PaginationResult.Loading())
+}
 
-      apolloClient.query(
-        GetFamiliesQuery(
-          first = Optional.present(pageSize),
-          after = Optional.presentIfNotNull(cursor),
-          filter = Optional.absent(),
-          orderBy = Optional.present(listOf(FamilyOrderBy(createdAt = Optional.present(OrderByDirection.DescNullsLast))))
-        )
-      )
-        .fetchPolicy(FetchPolicy.CacheAndNetwork)
-        .toFlow()
-        .collect { response ->
-          // Skip only cache MISSES with empty data - cache HITS with empty data should be shown
-          if (response.isFromCache && response.cacheInfo?.isCacheHit == false && response.data?.familyCollection?.edges.isNullOrEmpty()) {
-            // Skip emitting empty cache miss - wait for network
-          } else {
-            val result = safeCall {
-              if (response.hasErrors()) {
-                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-              }
+// Extension functions to convert between generated types and UI models
+public fun GetFamilyDetailQuery.Node.toFamilyShort(): FamilyShort {
+  val familyData = this.familyFields
+  return FamilyShort(
+    id = familyData.id,
+    name = familyData.name ?: "",
+    photos = familyData.photos?.filterNotNull() ?: emptyList(),
+    address =
+      familyData.address?.let { addr ->
+        "${addr.basicAddress ?: ""}, ${addr.district ?: ""}, ${addr.state ?: ""}"
+      }?.trim()?.let { if (it == ", , ") "" else it } ?: "",
+    aryaSamajName = familyData.aryaSamaj?.name ?: ""
+  )
+}
 
-              val families = response.data?.familyCollection?.edges?.map {
-                it.node.familyFields
-              } ?: emptyList()
-
-              val pageInfo = response.data?.familyCollection?.pageInfo
-
-              PaginationResult.Success(
-                data = families,
-                hasNextPage = pageInfo?.hasNextPage ?: false,
-                endCursor = pageInfo?.endCursor
-              )
-            }
-
-            when (result) {
-              is Result.Success -> {
-                emit(result.data)
-              }
-              is Result.Error -> {
-                emit(PaginationResult.Error(result.exception?.message ?: "Unknown error"))
-              }
-              is Result.Loading -> {
-                // Already emitted loading state above
-              }
-            }
-          }
-        }
-    }
-
-  override suspend fun searchFamiliesPaginated(
-    searchTerm: String,
-    pageSize: Int,
-    cursor: String?
-  ): Flow<PaginationResult<FamilyFields>> =
-    flow {
-      emit(PaginationResult.Loading())
-      val result =
-        safeCall {
-          val response =
-            apolloClient.query(
-              SearchFamiliesQuery(
-                searchTerm = "%$searchTerm%",
-                first = Optional.present(pageSize),
-                after = Optional.presentIfNotNull(cursor)
-              )
-            ).execute()
-
-          if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-          }
-
-          val edges = response.data?.familyCollection?.edges ?: emptyList()
-          val familyFields = edges.map { it.node.familyFields }
-          val hasNextPage = response.data?.familyCollection?.pageInfo?.hasNextPage ?: false
-          val endCursor = response.data?.familyCollection?.pageInfo?.endCursor
-
-          PaginationResult.Success(data = familyFields, hasNextPage = hasNextPage, endCursor = endCursor)
-        }
-
-      when (result) {
-        is Result.Success -> emit(result.data)
-        is Result.Error -> emit(PaginationResult.Error(result.message))
-        is Result.Loading -> {} // Already emitted Loading above
-      }
-    }
-
-  // Extension function to convert GetFamilyDetailQuery.Node to FamilyShort
-  fun GetFamilyDetailQuery.Node.toFamilyShort(): FamilyShort {
-    val familyData = this.familyFields
-    return FamilyShort(
-      id = familyData.id,
-      name = familyData.name ?: "",
-      photos = familyData.photos?.filterNotNull() ?: emptyList(),
-      address =
-        familyData.address?.let { addr ->
-          "${addr.basicAddress ?: ""}, ${addr.district ?: ""}, ${addr.state ?: ""}"
-        }?.trim()?.let { if (it == ", , ") "" else it } ?: "",
-      aryaSamajName = familyData.aryaSamaj?.name ?: ""
-    )
-  }
+public fun FamilyFields.toFamilyShort(): FamilyShort {
+  return FamilyShort(
+    id = id,
+    name = name ?: "",
+    photos = photos?.filterNotNull() ?: emptyList(),
+    address =
+      address?.let { addr ->
+        "${addr.basicAddress ?: ""}, ${addr.district ?: ""}, ${addr.state ?: ""}"
+      }?.trim()?.let { if (it == ", , ") "" else it } ?: "",
+    aryaSamajName = aryaSamaj?.name ?: ""
+  )
 }

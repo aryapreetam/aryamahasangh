@@ -215,7 +215,11 @@ fun AdminContainerScreen(
             onNavigateToFamilyDetail = onNavigateToFamilyDetail,
             onNavigateToCreateFamily = onNavigateToCreateFamily,
             onEditFamily = onEditFamily,
-            onDeleteFamily = onDeleteFamily
+            onDeleteFamily = onDeleteFamily,
+            onDataChanged = {
+              // Refresh admin counts when family data changes
+              viewModel.loadAdminCounts()
+            }
           )
         } else if (it == 3) {
           EkalAryaListScreen(

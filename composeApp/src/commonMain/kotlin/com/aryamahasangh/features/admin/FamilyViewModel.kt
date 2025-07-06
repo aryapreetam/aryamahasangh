@@ -5,15 +5,14 @@ import androidx.lifecycle.viewModelScope
 import com.aryamahasangh.GetFamilyDetailQuery
 import com.aryamahasangh.components.*
 import com.aryamahasangh.features.activities.Member
-import com.aryamahasangh.fragment.FamilyFields
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.utils.FileUploadUtils
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.serialization.Serializable
 
 data class FamiliesUiState(
@@ -84,10 +83,10 @@ class FamilyViewModel(
   }
 
   // Method to preserve pagination state when navigating back
-  fun preserveFamilyPagination(savedFamilies: List<FamilyShort>, savedPaginationState: PaginationState<FamilyShort>) {
+  fun preserveFamilyPagination(families: List<FamilyShort>, paginationState: PaginationState<FamilyShort>) {
     _familiesUiState.value = _familiesUiState.value.copy(
-      families = savedFamilies,
-      paginationState = savedPaginationState
+      families = families,
+      paginationState = paginationState
     )
     shouldPreservePagination = true
   }
@@ -127,7 +126,7 @@ class FamilyViewModel(
         )
       )
 
-      familyRepository.getFamiliesPaginated(pageSize = pageSize, cursor = cursor).collect { result ->
+      familyRepository.getItemsPaginated(pageSize = pageSize, cursor = cursor).collect { result ->
         when (result) {
           is PaginationResult.Loading -> {
             // Loading state already set above
@@ -194,7 +193,7 @@ class FamilyViewModel(
         )
       )
 
-      familyRepository.searchFamiliesPaginated(
+      familyRepository.searchItemsPaginated(
         searchTerm = searchTerm,
         pageSize = pageSize,
         cursor = cursor
@@ -872,7 +871,7 @@ class FamilyViewModel(
     _familyDetailUiState.value = _familyDetailUiState.value.copy(error = null)
   }
 
-  fun deleteFamily(familyId: String) {
+  fun deleteFamily(familyId: String, onSuccess: (() -> Unit)? = null) {
     viewModelScope.launch {
       familyRepository.deleteFamily(familyId).collect { result ->
         when (result) {
@@ -883,6 +882,8 @@ class FamilyViewModel(
           is Result.Success -> {
             // Refresh the families list
             loadFamiliesPaginated(resetPagination = true)
+            // Call the success callback for parent updates
+            onSuccess?.invoke()
           }
 
           is Result.Error -> {
@@ -927,16 +928,3 @@ class FamilyViewModel(
   }
 }
 
-// Extension functions to convert between generated types and UI models
-private fun FamilyFields.toFamilyShort(): FamilyShort {
-  return FamilyShort(
-    id = id,
-    name = name ?: "",
-    photos = photos?.filterNotNull() ?: emptyList(),
-    address =
-      address?.let { addr ->
-        "${addr.basicAddress ?: ""}, ${addr.district ?: ""}, ${addr.state ?: ""}"
-      }?.trim()?.let { if (it == ", , ") "" else it } ?: "",
-    aryaSamajName = aryaSamaj?.name ?: ""
-  )
-}

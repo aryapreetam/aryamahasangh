@@ -18,7 +18,6 @@ import androidx.navigation.toRoute
 import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.features.activities.*
 import com.aryamahasangh.features.admin.*
-import com.aryamahasangh.features.admin.AryaSamajPageState
 import com.aryamahasangh.features.admin.data.AryaSamajViewModel
 import com.aryamahasangh.features.arya_nirman.AryaNirmanHomeScreen
 import com.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
@@ -271,6 +270,7 @@ fun RootNavGraph(navController: NavHostController) {
             navController.popBackStack()
           },
           onFamilyCreated = { familyId ->
+            AryaPariwarPageState.markForRefresh()
             navController.navigate(Screen.FamilyDetail(familyId)) {
               popUpTo(Screen.AdminContainer(0))
             }
@@ -286,6 +286,7 @@ fun RootNavGraph(navController: NavHostController) {
             navController.popBackStack()
           },
           onFamilyCreated = { familyId ->
+            AryaPariwarPageState.markForRefresh()
             navController.navigate(Screen.FamilyDetail(familyId)) {
               popUpTo(Screen.AdminContainer(0))
             }
