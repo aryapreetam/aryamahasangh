@@ -30,9 +30,10 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import kotlinx.coroutines.delay
 import com.aryamahasangh.features.activities.Member
 import com.aryamahasangh.utils.WithTooltip
+import kotlinx.coroutines.delay
+import sh.calvin.reorderable.ReorderableCollectionItemScope
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyStaggeredGridState
 
@@ -54,6 +55,15 @@ enum class MembersEditMode {
 }
 
 /**
+ * Drag behavior for reorderable members
+ */
+enum class DragBehavior {
+  DragHandleOnly, // Only drag handle icon is draggable
+  FullItem, // Entire item is draggable
+  Adaptive // Responsive based on screen width (default)
+}
+
+/**
  * Configuration for MembersComponent
  */
 data class MembersConfig(
@@ -68,6 +78,7 @@ data class MembersConfig(
   val editMode: MembersEditMode = MembersEditMode.GROUPED,
   val enableReordering: Boolean = false, // Enable drag-and-drop reordering
   val reorderingHint: String = "खींचकर क्रम बदलें", // Hint text for reordering
+  val dragBehavior: DragBehavior = DragBehavior.Adaptive, // Drag behavior configuration
   // NEW: Choice type
   val choiceType: MembersChoiceType = MembersChoiceType.MULTIPLE,
   // NEW: Label for single mode
@@ -357,50 +368,63 @@ private fun ReorderableGroupedMembersEditor(
       hapticFeedback.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick)
     }
 
-  // Display members in a reorderable staggered grid
-  LazyVerticalStaggeredGrid(
-    columns = StaggeredGridCells.Adaptive(minSize = 320.dp),
-    state = lazyStaggeredGridState,
-    modifier =
-      Modifier
-        .fillMaxWidth()
-        .heightIn(min = 100.dp, max = 600.dp),
-    verticalItemSpacing = 8.dp,
-    horizontalArrangement = Arrangement.spacedBy(8.dp),
-    userScrollEnabled = false
-  ) {
-    items(sortedMembers.size, key = { sortedMembers[it].id }) { index ->
-      val member = sortedMembers[index]
-      val postPair = state.members[member] ?: Pair("", 0)
+  // Determine effective drag behavior based on screen width
+  BoxWithConstraints {
+    val screenWidth = maxWidth
+    val effectiveDragBehavior = when (config.dragBehavior) {
+      DragBehavior.DragHandleOnly -> DragBehavior.DragHandleOnly
+      DragBehavior.FullItem -> DragBehavior.FullItem
+      DragBehavior.Adaptive -> {
+        // Compact screens (< 600dp): DragHandleOnly
+        // Medium/Large screens (>= 600dp): FullItem
+        if (screenWidth < 600.dp) DragBehavior.DragHandleOnly else DragBehavior.FullItem
+      }
+    }
 
-      ReorderableItem(reorderableLazyStaggeredGridState, key = member.id) { isDragging ->
-        val elevation by animateDpAsState(if (isDragging) 8.dp else 2.dp, label = "drag_elevation")
+    // Display members in a reorderable staggered grid
+    LazyVerticalStaggeredGrid(
+      columns = StaggeredGridCells.Adaptive(minSize = 320.dp),
+      state = lazyStaggeredGridState,
+      modifier =
+        Modifier
+          .fillMaxWidth()
+          .heightIn(min = 100.dp, max = 600.dp),
+      verticalItemSpacing = 8.dp,
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
+      userScrollEnabled = false
+    ) {
+      items(sortedMembers.size, key = { sortedMembers[it].id }) { index ->
+        val member = sortedMembers[index]
+        val postPair = state.members[member] ?: Pair("", 0)
 
-        Surface(
-          shadowElevation = elevation,
-          modifier = Modifier.fillMaxWidth()
-        ) {
-          ReorderableMemberChip(
-            member = member,
-            post = postPair.first,
-            config = config,
-            onPostChange = { newPost ->
-              onStateChange(state.updateMemberPost(member, newPost))
-            },
-            onRemove = {
-              onStateChange(state.removeMember(member))
-            },
-            isDragging = isDragging,
-            modifier =
-              Modifier.draggableHandle(
-                onDragStarted = {
-                  hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
-                },
-                onDragStopped = {
-                  hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
-                }
-              )
-          )
+        ReorderableItem(reorderableLazyStaggeredGridState, key = member.id) { isDragging ->
+          val elevation by animateDpAsState(if (isDragging) 8.dp else 2.dp, label = "drag_elevation")
+
+          Surface(
+            shadowElevation = elevation,
+            modifier = Modifier.fillMaxWidth()
+          ) {
+            ReorderableMemberChip(
+              member = member,
+              post = postPair.first,
+              config = config,
+              dragBehavior = effectiveDragBehavior,
+              onPostChange = { newPost ->
+                onStateChange(state.updateMemberPost(member, newPost))
+              },
+              onRemove = {
+                onStateChange(state.removeMember(member))
+              },
+              isDragging = isDragging,
+              onDragStarted = {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+              },
+              onDragStopped = {
+                hapticFeedback.performHapticFeedback(HapticFeedbackType.GestureEnd)
+              },
+              reorderableScope = this
+            )
+          }
         }
       }
     }
@@ -442,9 +466,13 @@ private fun ReorderableMemberChip(
   member: Member,
   post: String,
   config: MembersConfig,
+  dragBehavior: DragBehavior,
   onPostChange: (String) -> Unit,
   onRemove: () -> Unit,
   isDragging: Boolean,
+  onDragStarted: () -> Unit,
+  onDragStopped: () -> Unit,
+  reorderableScope: ReorderableCollectionItemScope,
   modifier: Modifier = Modifier
 ) {
   var text by remember { mutableStateOf(post) }
@@ -454,8 +482,25 @@ private fun ReorderableMemberChip(
     text = post
   }
 
+  val cardModifier = when (dragBehavior) {
+    DragBehavior.FullItem -> {
+      // Apply drag handle to entire card
+      with(reorderableScope) {
+        modifier.padding(4.dp).draggableHandle(
+          onDragStarted = { onDragStarted() },
+          onDragStopped = { onDragStopped() }
+        )
+      }
+    }
+
+    DragBehavior.DragHandleOnly, DragBehavior.Adaptive -> {
+      // No drag handle on card - will be applied to icon only
+      modifier.padding(4.dp)
+    }
+  }
+
   Card(
-    modifier = modifier.padding(4.dp),
+    modifier = cardModifier,
     colors =
       CardDefaults.cardColors(
         containerColor =
@@ -471,13 +516,28 @@ private fun ReorderableMemberChip(
       horizontalArrangement = Arrangement.spacedBy(12.dp),
       verticalAlignment = Alignment.Top
     ) {
-      // Drag handle icon
-      Icon(
-        Icons.Default.DragHandle,
-        contentDescription = "खींचकर क्रम बदलें",
-        tint = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.padding(top = 4.dp)
-      )
+      // Drag handle icon (conditional)
+      if (dragBehavior == DragBehavior.DragHandleOnly) {
+        Icon(
+          Icons.Default.DragHandle,
+          contentDescription = "खींचकर क्रम बदलें",
+          tint = MaterialTheme.colorScheme.primary,
+          modifier = with(reorderableScope) {
+            Modifier.padding(top = 4.dp).draggableHandle(
+              onDragStarted = { onDragStarted() },
+              onDragStopped = { onDragStopped() }
+            )
+          }
+        )
+      } else if (dragBehavior == DragBehavior.FullItem) {
+        // Show drag handle icon for visual indication, but drag is handled by entire card
+        Icon(
+          Icons.Default.DragHandle,
+          contentDescription = "खींचकर क्रम बदलें",
+          tint = MaterialTheme.colorScheme.primary,
+          modifier = Modifier.padding(top = 4.dp)
+        )
+      }
 
       // Member profile image or icon
       if (!member.profileImage.isNullOrEmpty()) {
@@ -810,7 +870,7 @@ private fun FamilyMembersEditor(
         modifier = Modifier.size(ButtonDefaults.IconSize),
         tint = MaterialTheme.colorScheme.primary
       )
-      Spacer(modifier = Modifier.size(ButtonDefaults.IconSpacing))
+      Spacer(Modifier.size(ButtonDefaults.IconSpacing))
       Text("सदस्य जोड़ें")
     }
 

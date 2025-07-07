@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
@@ -114,15 +115,28 @@ fun <T> PaginatedListScreen(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = onSearchChange,
-                modifier = if (isCompact) Modifier.weight(1f) else Modifier.widthIn(max = 600.dp),
+                modifier = if (isCompact) Modifier.weight(1f) else Modifier.width(490.dp),
                 placeholder = { Text(searchPlaceholder) },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                leadingIcon = if (searchQuery.isEmpty()) {
+                  { Icon(Icons.Default.Search, contentDescription = "Search") }
+                } else null,
                 trailingIcon = {
                     if (paginationState.isSearching) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
                             strokeWidth = 2.dp
                         )
+                    }else if(searchQuery.isNotEmpty()){
+                      // close icon that when clicked, clears the input field
+                      IconButton(onClick = { onSearchChange("") }) {
+                        Icon(
+                          Icons.Default.Close,
+                          contentDescription = "हटाएँ",
+                          modifier = Modifier.size(20.dp)
+                        )
+                      }
+                    }else{
+                      null
                     }
                 },
                 singleLine = true

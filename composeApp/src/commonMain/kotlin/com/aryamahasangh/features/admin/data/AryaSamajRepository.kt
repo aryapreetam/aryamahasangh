@@ -473,6 +473,9 @@ class AryaSamajRepositoryImpl(private val apolloClient: ApolloClient) : AryaSama
             }
           }
 
+          // Clear Apollo cache to ensure fresh data on next fetch (especially important for WasmJS)
+          apolloClient.apolloStore.clearAll()
+
           true
         }
       emit(result)
