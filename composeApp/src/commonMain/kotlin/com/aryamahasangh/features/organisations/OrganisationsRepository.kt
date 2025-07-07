@@ -6,6 +6,7 @@ import com.apollographql.apollo.cache.normalized.FetchPolicy
 import com.apollographql.apollo.cache.normalized.cacheInfo
 import com.apollographql.apollo.cache.normalized.fetchPolicy
 import com.apollographql.apollo.cache.normalized.isFromCache
+import com.apollographql.apollo.exception.CacheMissException
 import com.aryamahasangh.*
 import com.aryamahasangh.features.activities.Member
 import com.aryamahasangh.network.supabaseClient
@@ -94,13 +95,18 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
         .fetchPolicy(FetchPolicy.CacheAndNetwork)
         .toFlow()
         .collect { response ->
-          val cameFromEmptyCache =
-            response.isFromCache && response.cacheInfo?.isCacheHit == false
+          val isCacheMissWithEmptyData = response.exception is CacheMissException &&
+            response.data?.organisationCollection?.edges.isNullOrEmpty()
+
+          if (isCacheMissWithEmptyData) {
+            return@collect
+          }
+
+          //val cameFromEmptyCache =
+          //  response.isFromCache && response.cacheInfo?.isCacheHit == false
           val result = safeCall {
-            if(!cameFromEmptyCache) {
-              if (response.hasErrors()) {
-                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-              }
+            if (response.hasErrors()) {
+              throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
             }
             response.data?.organisationCollection?.edges?.map {
               OrganisationWithDescription(id = it.node.id, name = it.node.name!!, logo = it.node.logo, description = it.node.description!!)

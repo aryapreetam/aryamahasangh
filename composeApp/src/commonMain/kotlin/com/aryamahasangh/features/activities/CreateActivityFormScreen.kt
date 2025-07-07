@@ -1,5 +1,10 @@
 package com.aryamahasangh.features.activities
 
+// Wrapper class to handle both new files and existing URLs
+// No MediaFile sealed class needed - we'll track existing and new files separately
+
+// Removed MediaDocumentGrid - using DocumentGrid component instead
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -47,15 +52,12 @@ import com.aryamahasangh.screens.DistrictDropdown
 import com.aryamahasangh.screens.StateDropdown
 import com.aryamahasangh.screens.indianStatesToDistricts
 import com.aryamahasangh.type.ActivityType
+import com.aryamahasangh.ui.components.buttons.*
+import com.aryamahasangh.util.GlobalMessageManager
 import io.github.vinceglb.filekit.core.PlatformFile
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 import kotlinx.datetime.Clock.System
-
-// Wrapper class to handle both new files and existing URLs
-// No MediaFile sealed class needed - we'll track existing and new files separately
-
-// Removed MediaDocumentGrid - using DocumentGrid component instead
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -101,7 +103,7 @@ fun CustomTextField(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomDatePickerDialog(
-  onDateSelected: (LocalDate) -> Unit,
+  onDateSelected: (_root_ide_package_.kotlinx.datetime.LocalDate) -> Unit,
   onDismissRequest: () -> Unit,
   disablePastDates: Boolean = true
 ) {
@@ -986,86 +988,48 @@ private fun CreateActivityScreenContent(
     )
   }
 
-  fun submitForm() {
-    // Prevent multiple submissions
-    if (isSubmitting) return
 
-    if (validateForm()) {
-      scope.launch {
-        val attachedImages = mutableListOf<String>()
+  /**
+   * Processes media files for activity submission.
+   * - Keeps existing URLs except those marked for deletion.
+   * - Uploads any new files and appends their URLs.
+   * - Removes deleted media if needed (not implemented here).
+   * This logic closely matches the original submitForm logic.
+   */
+  // Media files processing: upload new files, keep existing non-deleted ones
+  suspend fun processMediaFiles(): List<String> {
+    val attachedImages = mutableListOf<String>()
 
-        // Keep existing files that weren't deleted
-        attachedImages.addAll(existingMediaUrls.filterNot { it in deletedMediaUrls })
+    // Keep existing files that weren't deleted
+    attachedImages.addAll(existingMediaUrls.filterNot { it in deletedMediaUrls })
 
-        // Delete files marked for deletion from bucket
-        if (deletedMediaUrls.isNotEmpty()) {
-          try {
-            val filesToDelete =
-              deletedMediaUrls.map { url ->
-                url.substringAfterLast("/")
-              }.toList()
-            bucket.delete(filesToDelete)
-          } catch (e: Exception) {
-            snackbarHostState.showSnackbar(
-              message = "चित्र हटाने में त्रुटि: ${e.message}",
-              actionLabel = "बंद करें"
-            )
-            // Continue with the update even if deletion fails
-          }
-        }
-
-        // Upload new files
-        try {
-          attachedDocuments.forEach {
-            val uploadResponse =
-              bucket.upload(
-                path = "${System.now().epochSeconds}.jpg",
-                data = it.readBytes()
-              )
-            attachedImages.add(bucket.publicUrl(uploadResponse.path))
-          }
-        } catch (e: Exception) {
-          snackbarHostState.showSnackbar(
-            message = "चित्र अपलोड करने में त्रुटि। कृपया पुनः प्रयास करें",
-            actionLabel = "बंद करें"
-          )
-          println("error uploading files: $e")
-          return@launch
-        }
-
-        val inp =
-          ActivityInputData(
-            name = name,
-            shortDescription = shortDescription,
-            longDescription = description,
-            type = selectedType!!,
-            address = if (includeAddress || selectedType != ActivityType.CAMPAIGN) address else "",
-            state = if (includeAddress || selectedType != ActivityType.CAMPAIGN) state else "",
-            district = if (includeAddress || selectedType != ActivityType.CAMPAIGN) district else "",
-            associatedOrganisations = associatedOrganisations.toList(),
-            startDatetime = startDate?.atTime(startTime!!)!!,
-            endDatetime = endDate?.atTime(endTime!!)!!,
-            mediaFiles = attachedImages,
-            contactPeople =
-              contactPeople.map {
-                val (role, priority) = postMap[it.id] ?: Pair("", 0)
-                ActivityMember(it.id, role, it, priority)
-              },
-            additionalInstructions = additionalInstructions,
-            capacity = eventCapacity.toIntOrNull() ?: 0,
-            allowedGender = eventGenderAllowed,
-            latitude = if (includeAddress || selectedType != ActivityType.CAMPAIGN) eventLatitude.toDoubleOrNull() else null,
-            longitude = if (includeAddress || selectedType != ActivityType.CAMPAIGN) eventLongitude.toDoubleOrNull() else null
-          )
-
-        // Submit form using ViewModel
-        if (editingActivityId != null) {
-          viewModel.updateActivitySmart(editingActivityId, inp)
-        } else {
-          viewModel.createActivity(inp)
-        }
+    // Delete files marked for deletion from bucket
+    if (deletedMediaUrls.isNotEmpty()) {
+      try {
+        val filesToDelete = deletedMediaUrls.map { url ->
+          url.substringAfterLast("/")
+        }.toList()
+        bucket.delete(filesToDelete)
+      } catch (e: Exception) {
+        GlobalMessageManager.showError("चित्र हटाने में त्रुटि: ${e.message}")
+        // Continue with the update even if deletion fails
       }
     }
+
+    // Upload new files
+    try {
+      attachedDocuments.forEach { file ->
+        val uploadResponse = bucket.upload(
+          path = "${System.now().epochSeconds}.jpg",
+          data = file.readBytes()
+        )
+        attachedImages.add(bucket.publicUrl(uploadResponse.path))
+      }
+    } catch (e: Exception) {
+      throw Exception("चित्र अपलोड करने में त्रुटि। कृपया पुनः प्रयास करें")
+    }
+
+    return attachedImages
   }
 
   // Show loading while fetching activity details
@@ -1685,25 +1649,77 @@ private fun CreateActivityScreenContent(
 
       // Removed 300dp spacer since we now handle keyboard scrolling for individual fields
 
-      // Create Activity Button
-      Button(
-        modifier = Modifier.padding(vertical = 16.dp),
-        onClick = { submitForm() },
-        enabled = !isSubmitting,
-        colors =
-          ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = MaterialTheme.colorScheme.onPrimary
-          )
-      ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-          if (isSubmitting) {
-            CircularProgressIndicator(modifier = Modifier.size(20.dp))
-            Spacer(modifier = Modifier.width(8.dp))
+      // Submit Button
+      Spacer(modifier = Modifier.height(24.dp))
+      SubmitButton(
+        text = if (editingActivityId != null) "अद्यतन करें" else "गतिविधि बनाएं",
+        onSubmit = {
+          // Validation
+          if (!validateForm()) {
+            throw IllegalArgumentException("कृपया सभी आवश्यक फील्ड भरें")
           }
-          Text(if (editingActivityId != null) "अद्यतन करें" else "गतिविधि बनाएं")
+
+          // Process media files and create activity data
+          val processedMediaFiles = processMediaFiles()
+
+          val activityData = ActivityInputData(
+            name = name,
+            shortDescription = shortDescription,
+            longDescription = description,
+            type = selectedType!!,
+            address = if (includeAddress || selectedType != ActivityType.CAMPAIGN) address else "",
+            state = if (includeAddress || selectedType != ActivityType.CAMPAIGN) state else "",
+            district = if (includeAddress || selectedType != ActivityType.CAMPAIGN) district else "",
+            associatedOrganisations = associatedOrganisations.toList(),
+            startDatetime = startDate?.atTime(startTime!!)!!,
+            endDatetime = endDate?.atTime(endTime!!)!!,
+            mediaFiles = processedMediaFiles,
+            contactPeople = contactPeople.map {
+              val (role, priority) = postMap[it.id] ?: Pair("", 0)
+              ActivityMember(it.id, role, it, priority)
+            },
+            additionalInstructions = additionalInstructions,
+            capacity = eventCapacity.toIntOrNull() ?: 0,
+            allowedGender = eventGenderAllowed,
+            latitude = if (includeAddress || selectedType != ActivityType.CAMPAIGN) eventLatitude.toDoubleOrNull() else null,
+            longitude = if (includeAddress || selectedType != ActivityType.CAMPAIGN) eventLongitude.toDoubleOrNull() else null
+          )
+
+          // Submit to ViewModel
+          if (editingActivityId != null) {
+            viewModel.updateActivitySmart(editingActivityId, activityData)
+          } else {
+            viewModel.createActivity(activityData)
+          }
+
+          // Mark for refresh
+          ActivitiesPageState.markForRefresh()
+        },
+        config = SubmitButtonConfig(
+          fillMaxWidth = false,
+          texts = SubmitButtonTexts(
+            submittingText = if (editingActivityId != null) "अद्यतन हो रही है..." else "बनाई जा रही है...",
+            successText = if (editingActivityId != null) "अद्यतन सफल!" else "सफल!"
+          )
+        ),
+        callbacks = object : SubmitCallbacks {
+          override fun onSuccess() {
+            // Navigate immediately on success
+            if (editingActivityId != null) {
+              onActivitySaved(editingActivityId)
+            } else {
+              // Get the created activity ID from ViewModel
+              val activityId = viewModel.createdActivityId.value ?: editingActivityId!!
+              onActivitySaved(activityId)
+            }
+          }
+
+          override fun onError(error: SubmissionError) {
+            // The GlobalMessageManager is already used in the ViewModel for errors
+            // So we don't need to show additional error messages here
+          }
         }
-      }
+      )
 
       // Handle form submission result
       LaunchedEffect(formSubmissionState) {

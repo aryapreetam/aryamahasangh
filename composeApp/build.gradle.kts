@@ -129,6 +129,7 @@ kotlin {
       implementation(libs.androidx.lifecycle.viewmodel)
       implementation(libs.androidx.lifecycle.runtime.compose)
       implementation(projects.shared)
+      implementation(projects.uiComponents)
       implementation(compose.animation)
       implementation(libs.coil.compose)
       implementation(libs.coil.network.ktor3)
