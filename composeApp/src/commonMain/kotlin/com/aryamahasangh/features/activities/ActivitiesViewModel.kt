@@ -2,12 +2,15 @@ package com.aryamahasangh.features.activities
 
 import androidx.lifecycle.viewModelScope
 import com.apollographql.apollo.api.Optional
-import com.aryamahasangh.fragment.OrganisationalActivityShort
+import com.aryamahasangh.features.admin.PaginationResult
+import com.aryamahasangh.features.admin.PaginationState
+import com.aryamahasangh.fragment.ActivityWithStatus
 import com.aryamahasangh.type.ActivitiesInsertInput
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.viewmodel.AdmissionFormSubmissionState
 import com.aryamahasangh.viewmodel.BaseViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,7 +25,9 @@ import kotlinx.datetime.toInstant
  * UI state for the Activities screen
  */
 data class ActivitiesUiState(
-  val activities: List<OrganisationalActivityShort> = emptyList(),
+  val activities: List<ActivityWithStatus> = emptyList(),
+  val searchQuery: String = "",
+  val paginationState: PaginationState<ActivityWithStatus> = PaginationState(),
   val isLoading: Boolean = false,
   val error: String? = null
 )
@@ -61,6 +66,11 @@ data class OrganisationsAndMembersUiState(
 class ActivitiesViewModel(
   private val activityRepository: ActivityRepository
 ) : BaseViewModel<ActivitiesUiState>(ActivitiesUiState()) {
+
+  // Direct state management for Activities (not using BaseViewModel's generic state)
+  private val _activitiesUiState = MutableStateFlow(ActivitiesUiState())
+  val activitiesUiState: StateFlow<ActivitiesUiState> = _activitiesUiState.asStateFlow()
+
   private val _registeredUsers = MutableStateFlow(emptyList<UserProfile>())
   val registeredUsers: StateFlow<List<UserProfile>> = _registeredUsers.asStateFlow()
 
@@ -89,38 +99,234 @@ class ActivitiesViewModel(
   private val _originalActivityData = MutableStateFlow<OrganisationalActivity?>(null)
   val originalActivityData: StateFlow<OrganisationalActivity?> = _originalActivityData.asStateFlow()
 
+  // Add required properties and methods for pagination
+  private var searchJob: Job? = null
+  private var shouldPreservePagination = false
+
   init {
-    loadActivities()
+    loadActivitiesPaginated()
+  }
+
+  fun hasExistingActivityData(): Boolean {
+    return _activitiesUiState.value.activities.isNotEmpty()
+  }
+
+  fun preserveActivityPagination(
+    savedActivities: List<ActivityWithStatus>,
+    savedPaginationState: PaginationState<ActivityWithStatus>
+  ) {
+    _activitiesUiState.value = _activitiesUiState.value.copy(
+      activities = savedActivities,
+      paginationState = savedPaginationState.copy(items = savedActivities) // Ensure consistency
+    )
+    shouldPreservePagination = true
+  }
+
+  fun loadActivitiesPaginated(pageSize: Int = 30, resetPagination: Boolean = false) {
+    viewModelScope.launch {
+      val currentState = _activitiesUiState.value.paginationState
+
+      // Check if we should preserve existing data
+      val shouldPreserveExistingData = shouldPreservePagination && resetPagination && hasExistingActivityData()
+
+      if (shouldPreservePagination) {
+        shouldPreservePagination = false
+        if (shouldPreserveExistingData) {
+          return@launch
+        }
+      }
+
+      // Bounds checking
+      if (!resetPagination && currentState.hasNextPage == false) {
+        return@launch
+      }
+
+      val shouldReset = resetPagination
+      val cursor = if (shouldReset) null else currentState.endCursor
+
+      // Update loading states
+      _activitiesUiState.value = _activitiesUiState.value.copy(
+        paginationState = currentState.copy(
+          isInitialLoading = shouldReset && currentState.items.isEmpty(),
+          isLoadingNextPage = !shouldReset && currentState.items.isNotEmpty()
+        )
+      )
+
+      activityRepository.getItemsPaginated(pageSize = pageSize, cursor = cursor).collect { result ->
+        when (result) {
+          is PaginationResult.Success -> {
+            // Query Watchers prevent duplication - no distinctBy needed
+            val existingActivities = if (shouldReset) emptyList() else currentState.items
+            val newActivities = existingActivities + result.data
+
+            _activitiesUiState.value = _activitiesUiState.value.copy(
+              activities = newActivities,
+              paginationState = currentState.copy(
+                items = newActivities, // Keep UI and pagination state in sync
+                isInitialLoading = false,
+                isLoadingNextPage = false,
+                hasNextPage = result.hasNextPage,
+                endCursor = result.endCursor,
+                hasReachedEnd = !result.hasNextPage,
+                error = null
+              )
+            )
+          }
+
+          is PaginationResult.Error -> {
+            _activitiesUiState.value = _activitiesUiState.value.copy(
+              paginationState = currentState.copy(
+                isInitialLoading = false,
+                isLoadingNextPage = false,
+                error = result.message,
+                showRetryButton = true
+              )
+            )
+          }
+
+          is PaginationResult.Loading -> {
+            // Loading state handled by pagination state
+          }
+        }
+      }
+    }
+  }
+
+  fun searchActivitiesWithDebounce(query: String) {
+    _activitiesUiState.value = _activitiesUiState.value.copy(searchQuery = query)
+
+    searchJob?.cancel()
+    searchJob = viewModelScope.launch {
+      if (query.isBlank()) {
+        loadActivitiesPaginated(resetPagination = true)
+        return@launch
+      }
+
+      delay(1000) // 1 second debounce
+      searchActivitiesPaginated(searchTerm = query.trim(), resetPagination = true)
+    }
+  }
+
+  fun searchActivitiesPaginated(searchTerm: String, pageSize: Int = 30, resetPagination: Boolean = true) {
+    viewModelScope.launch {
+      val currentState = _activitiesUiState.value.paginationState
+      val cursor = if (resetPagination) null else currentState.endCursor
+
+      // Update loading states
+      _activitiesUiState.value = _activitiesUiState.value.copy(
+        paginationState = currentState.copy(
+          isSearching = resetPagination,
+          isLoadingNextPage = !resetPagination
+        )
+      )
+
+      activityRepository.searchItemsPaginated(
+        searchTerm = searchTerm,
+        pageSize = pageSize,
+        cursor = cursor
+      ).collect { result ->
+        when (result) {
+          is PaginationResult.Success -> {
+            val existingActivities = if (resetPagination) emptyList() else currentState.items
+            val newActivities = existingActivities + result.data
+
+            _activitiesUiState.value = _activitiesUiState.value.copy(
+              activities = newActivities,
+              paginationState = currentState.copy(
+                items = newActivities,
+                isSearching = false,
+                isLoadingNextPage = false,
+                hasNextPage = result.hasNextPage,
+                endCursor = result.endCursor,
+                hasReachedEnd = !result.hasNextPage,
+                error = null,
+                currentSearchTerm = searchTerm
+              )
+            )
+          }
+
+          is PaginationResult.Error -> {
+            _activitiesUiState.value = _activitiesUiState.value.copy(
+              paginationState = currentState.copy(
+                isSearching = false,
+                isLoadingNextPage = false,
+                error = result.message,
+                showRetryButton = true
+              )
+            )
+          }
+
+          is PaginationResult.Loading -> {
+            // Loading state handled by pagination state
+          }
+        }
+      }
+    }
+  }
+
+  fun loadNextActivityPage() {
+    val currentState = _activitiesUiState.value.paginationState
+    if (currentState.hasNextPage && !currentState.isLoadingNextPage) {
+      if (currentState.currentSearchTerm.isNotBlank()) {
+        searchActivitiesPaginated(
+          searchTerm = currentState.currentSearchTerm,
+          resetPagination = false
+        )
+      } else {
+        loadActivitiesPaginated(resetPagination = false)
+      }
+    }
+  }
+
+  fun retryActivityLoad() {
+    val currentState = _activitiesUiState.value.paginationState
+    _activitiesUiState.value = _activitiesUiState.value.copy(
+      paginationState = currentState.copy(showRetryButton = false)
+    )
+
+    if (currentState.currentSearchTerm.isNotBlank()) {
+      searchActivitiesPaginated(
+        searchTerm = currentState.currentSearchTerm,
+        resetPagination = currentState.items.isEmpty()
+      )
+    } else {
+      loadActivitiesPaginated(resetPagination = currentState.items.isEmpty())
+    }
+  }
+
+  fun calculatePageSize(screenWidthDp: Float): Int {
+    return when {
+      screenWidthDp < 600f -> 15      // Mobile portrait
+      screenWidthDp < 840f -> 25      // Tablet, mobile landscape  
+      else -> 35                      // Desktop, large tablets
+    }
   }
 
   /**
-   * Load activities from the repository
+   * Load activities from the repository (legacy method - kept for compatibility)
    */
   fun loadActivities() {
     launch {
       activityRepository.getActivities().collect { result ->
         when (result) {
           is Result.Loading -> {
-            updateState { it.copy(isLoading = true, error = null) }
+            _activitiesUiState.value = _activitiesUiState.value.copy(isLoading = true, error = null)
           }
 
           is Result.Success -> {
-            updateState {
-              it.copy(
-                activities = result.data,
+            _activitiesUiState.value =
+              _activitiesUiState.value.copy(
                 isLoading = false,
                 error = null
               )
-            }
           }
 
           is Result.Error -> {
-            updateState {
-              it.copy(
+            _activitiesUiState.value =
+              _activitiesUiState.value.copy(
                 isLoading = false,
                 error = result.message
               )
-            }
           }
         }
       }
@@ -130,27 +336,18 @@ class ActivitiesViewModel(
   /**
    * Delete an activity by ID
    */
-  fun deleteActivity(id: String) {
+  fun deleteActivity(id: String, onSuccess: (() -> Unit)? = null) {
     launch {
-      val result = activityRepository.deleteActivity(id)
-      when (result) {
+      when (val result = activityRepository.deleteActivity(id)) {
         is Result.Success -> {
-          // Remove the deleted activity from the list
-          updateState { state ->
-            state.copy(
-              activities = state.activities.filter { it.id != id },
-              error = null
-            )
-          }
+          // Refresh the list
+          loadActivitiesPaginated(resetPagination = true)
+          onSuccess?.invoke()
         }
-
         is Result.Error -> {
-          updateState { it.copy(error = result.message) }
+          _activitiesUiState.value = _activitiesUiState.value.copy(error = result.message)
         }
-
-        is Result.Loading -> {
-          // This shouldn't happen with the current implementation
-        }
+        is Result.Loading -> {}
       }
     }
   }
@@ -258,7 +455,7 @@ class ActivitiesViewModel(
               error = null
             )
           // Reload activities to include the new one
-          loadActivities()
+          loadActivitiesPaginated(resetPagination = true)
         }
 
         is Result.Error -> {

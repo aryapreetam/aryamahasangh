@@ -297,6 +297,17 @@ fragment OrganisationalActivityShort on Activities {
   state
 }
 
+fragment ActivityWithStatus on ActivitiesWithStatus {
+  id
+  name
+  shortDescription
+  startDatetime
+  endDatetime
+  type
+  district
+  state
+}
+
 query UpcomingSatrByRegion($state: String!, $district: String, $currentDateTime: Datetime) {
   activitiesCollection(
     filter: {
@@ -944,5 +955,62 @@ query CountsForAdminContainer{
   }
   memberNotInFamilyCollection{
     totalCount
+  }
+}
+
+# Activity Queries with Status-based Pagination
+
+query getActivities($first: Int!, $after: Cursor, $filter: ActivitiesWithStatusFilter, $orderBy: [ActivitiesWithStatusOrderBy!]) {
+  activitiesWithStatusCollection(
+    first: $first
+    after: $after
+    filter: $filter
+    orderBy: $orderBy
+  ) {
+    edges {
+      node {
+        ...ActivityWithStatus
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+  }
+}
+
+query searchActivities($first: Int!, $after: Cursor, $searchTerm: String!) {
+  activitiesWithStatusCollection(
+    first: $first
+    after: $after
+    filter: {
+      or: [
+        {name: {ilike: $searchTerm}},
+        {shortDescription: {ilike: $searchTerm}},
+        {district: {ilike: $searchTerm}},
+        {state: {ilike: $searchTerm}}
+      ]
+    }
+    orderBy: [
+      {statusPriority: AscNullsLast},
+      {startDatetime: AscNullsLast},
+      {id: AscNullsLast}
+    ]
+  ) {
+    edges {
+      node {
+        ...ActivityWithStatus
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
   }
 }

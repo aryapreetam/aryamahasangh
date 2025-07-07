@@ -55,7 +55,7 @@ fun ActivityListItem(
   val activityStatus = activity.getStatus()
 
   ElevatedCard(
-    modifier = Modifier.width(500.dp),
+    modifier = Modifier.width(490.dp),
     shape = RoundedCornerShape(4.dp),
     onClick = handleOnClick
   ) {

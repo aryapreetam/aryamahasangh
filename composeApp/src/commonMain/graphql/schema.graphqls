@@ -260,6 +260,181 @@ type ActivitiesUpdateResponse {
   records: [Activities!]!
 }
 
+type ActivitiesWithStatus implements Node {
+  """
+  Globally Unique Record Identifier
+  """
+  nodeId: ID!
+
+  id: String
+
+  name: String
+
+  shortDescription: String
+
+  startDatetime: Datetime
+
+  endDatetime: Datetime
+
+  type: ActivityType
+
+  district: String
+
+  state: String
+
+  statusPriority: Int
+}
+
+type ActivitiesWithStatusConnection {
+  edges: [ActivitiesWithStatusEdge!]!
+
+  pageInfo: PageInfo!
+
+  """
+  The total number of records matching the `filter` criteria
+  """
+  totalCount: Int!
+}
+
+type ActivitiesWithStatusDeleteResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [ActivitiesWithStatus!]!
+}
+
+type ActivitiesWithStatusEdge {
+  cursor: String!
+
+  node: ActivitiesWithStatus!
+}
+
+input ActivitiesWithStatusFilter {
+  id: StringFilter
+
+  name: StringFilter
+
+  shortDescription: StringFilter
+
+  startDatetime: DatetimeFilter
+
+  endDatetime: DatetimeFilter
+
+  type: ActivityTypeFilter
+
+  district: StringFilter
+
+  state: StringFilter
+
+  statusPriority: IntFilter
+
+  nodeId: IDFilter
+
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [ActivitiesWithStatusFilter!]
+
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [ActivitiesWithStatusFilter!]
+
+  """
+  Negates a filter
+  """
+  not: ActivitiesWithStatusFilter
+}
+
+input ActivitiesWithStatusInsertInput {
+  id: String
+
+  name: String
+
+  shortDescription: String
+
+  startDatetime: Datetime
+
+  endDatetime: Datetime
+
+  type: ActivityType
+
+  district: String
+
+  state: String
+
+  statusPriority: Int
+}
+
+type ActivitiesWithStatusInsertResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [ActivitiesWithStatus!]!
+}
+
+input ActivitiesWithStatusOrderBy {
+  id: OrderByDirection
+
+  name: OrderByDirection
+
+  shortDescription: OrderByDirection
+
+  startDatetime: OrderByDirection
+
+  endDatetime: OrderByDirection
+
+  type: OrderByDirection
+
+  district: OrderByDirection
+
+  state: OrderByDirection
+
+  statusPriority: OrderByDirection
+}
+
+input ActivitiesWithStatusUpdateInput {
+  id: String
+
+  name: String
+
+  shortDescription: String
+
+  startDatetime: Datetime
+
+  endDatetime: Datetime
+
+  type: ActivityType
+
+  district: String
+
+  state: String
+
+  statusPriority: Int
+}
+
+type ActivitiesWithStatusUpdateResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [ActivitiesWithStatus!]!
+}
+
 type ActivityMember implements Node {
   """
   Globally Unique Record Identifier
@@ -2217,11 +2392,11 @@ type Member implements Node {
 
   address: Address
 
-  aryaSamaj: AryaSamaj
-
   tempAddress: Address
 
   referrer: Member
+
+  aryaSamaj: AryaSamaj
 
   activityMemberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: ActivityMemberFilter, "Sort order to apply to the collection" orderBy: [ActivityMemberOrderBy!]): ActivityMemberConnection
 
@@ -2720,6 +2895,11 @@ type Mutation {
   deleteFromActivitiesCollection("Restricts the mutation's impact to records matching the criteria" filter: ActivitiesFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): ActivitiesDeleteResponse!
 
   """
+  Deletes zero or more records from the `ActivitiesWithStatus` collection
+  """
+  deleteFromActivitiesWithStatusCollection("Restricts the mutation's impact to records matching the criteria" filter: ActivitiesWithStatusFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): ActivitiesWithStatusDeleteResponse!
+
+  """
   Deletes zero or more records from the `ActivityMember` collection
   """
   deleteFromActivityMemberCollection("Restricts the mutation's impact to records matching the criteria" filter: ActivityMemberFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): ActivityMemberDeleteResponse!
@@ -2816,6 +2996,11 @@ type Mutation {
   insertIntoActivitiesCollection(objects: [ActivitiesInsertInput!]!): ActivitiesInsertResponse
 
   """
+  Adds one or more `ActivitiesWithStatus` records to the collection
+  """
+  insertIntoActivitiesWithStatusCollection(objects: [ActivitiesWithStatusInsertInput!]!): ActivitiesWithStatusInsertResponse
+
+  """
   Adds one or more `ActivityMember` records to the collection
   """
   insertIntoActivityMemberCollection(objects: [ActivityMemberInsertInput!]!): ActivityMemberInsertResponse
@@ -2906,6 +3091,11 @@ type Mutation {
   Updates zero or more records in the `Activities` collection
   """
   updateActivitiesCollection("Fields that are set will be updated for all records matching the `filter`" set: ActivitiesUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: ActivitiesFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): ActivitiesUpdateResponse!
+
+  """
+  Updates zero or more records in the `ActivitiesWithStatus` collection
+  """
+  updateActivitiesWithStatusCollection("Fields that are set will be updated for all records matching the `filter`" set: ActivitiesWithStatusUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: ActivitiesWithStatusFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): ActivitiesWithStatusUpdateResponse!
 
   updateActivityDetails(pRequest: JSON!): JSON
 
@@ -3447,6 +3637,11 @@ type Query {
   A pagable collection of type `Activities`
   """
   activitiesCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: ActivitiesFilter, "Sort order to apply to the collection" orderBy: [ActivitiesOrderBy!]): ActivitiesConnection
+
+  """
+  A pagable collection of type `ActivitiesWithStatus`
+  """
+  activitiesWithStatusCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: ActivitiesWithStatusFilter, "Sort order to apply to the collection" orderBy: [ActivitiesWithStatusOrderBy!]): ActivitiesWithStatusConnection
 
   """
   A pagable collection of type `ActivityMember`

@@ -2,15 +2,15 @@ package com.aryamahasangh.features.activities
 
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
-import com.apollographql.apollo.cache.normalized.FetchPolicy
-import com.apollographql.apollo.cache.normalized.cacheInfo
-import com.apollographql.apollo.cache.normalized.fetchPolicy
-import com.apollographql.apollo.cache.normalized.isFromCache
+import com.apollographql.apollo.cache.normalized.*
+import com.apollographql.apollo.exception.CacheMissException
 import com.aryamahasangh.*
+import com.aryamahasangh.features.admin.PaginatedRepository
+import com.aryamahasangh.features.admin.PaginationResult
+import com.aryamahasangh.fragment.ActivityWithStatus
 import com.aryamahasangh.fragment.OrganisationalActivityShort
 import com.aryamahasangh.network.supabaseClient
-import com.aryamahasangh.type.ActivitiesInsertInput
-import com.aryamahasangh.type.ActivitiesUpdateInput
+import com.aryamahasangh.type.*
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.util.safeCall
 import io.github.jan.supabase.annotations.SupabaseExperimental
@@ -29,7 +29,7 @@ import com.aryamahasangh.type.GenderFilter as ApolloGenderFilter
 /**
  * Repository for handling activity-related operations
  */
-interface ActivityRepository {
+interface ActivityRepository : PaginatedRepository<ActivityWithStatus> {
   /**
    * Get all activities
    */
@@ -88,7 +88,7 @@ interface ActivityRepository {
   fun addActivityOverview(
     activityId: String,
     overview: String,
-    mediaUrls: List<String> = emptyList()
+    mediaUrls: List<String>
   ): Flow<Result<Boolean>>
 }
 
@@ -98,6 +98,112 @@ interface ActivityRepository {
 class ActivityRepositoryImpl(
   private val apolloClient: ApolloClient
 ) : ActivityRepository {
+
+  override suspend fun getItemsPaginated(
+    pageSize: Int,
+    cursor: String?,
+    filter: Any?
+  ): Flow<PaginationResult<ActivityWithStatus>> = flow {
+    emit(PaginationResult.Loading())
+
+    apolloClient.query(
+      GetActivitiesQuery(
+        first = pageSize,
+        after = Optional.presentIfNotNull(cursor),
+        filter = Optional.presentIfNotNull(filter as? ActivitiesWithStatusFilter),
+        orderBy = Optional.present(listOf(
+          ActivitiesWithStatusOrderBy(statusPriority = Optional.present(OrderByDirection.AscNullsLast)),
+          ActivitiesWithStatusOrderBy(startDatetime = Optional.present(OrderByDirection.AscNullsLast)),
+          ActivitiesWithStatusOrderBy(id = Optional.present(OrderByDirection.AscNullsLast))
+        ))
+      )
+    )
+    .fetchPolicy(FetchPolicy.CacheAndNetwork)
+    .watch() 
+    .collect { response ->
+      val isCacheMissWithEmptyData = response.exception is CacheMissException && 
+                                     response.data?.activitiesWithStatusCollection?.edges.isNullOrEmpty()
+      
+      if (isCacheMissWithEmptyData) {
+        return@collect
+      }
+
+      val result = safeCall {
+        if (response.hasErrors()) {
+          throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+        }
+
+        val activities = response.data?.activitiesWithStatusCollection?.edges?.map {
+          it.node.activityWithStatus
+        } ?: emptyList()
+
+        val pageInfo = response.data?.activitiesWithStatusCollection?.pageInfo
+
+        PaginationResult.Success(
+          data = activities,
+          hasNextPage = pageInfo?.hasNextPage ?: false,
+          endCursor = pageInfo?.endCursor
+        )
+      }
+
+      when (result) {
+        is Result.Success -> emit(result.data)
+        is Result.Error -> emit(PaginationResult.Error(result.exception?.message ?: "Unknown error"))
+        is Result.Loading -> {}
+      }
+    }
+  }
+
+  override suspend fun searchItemsPaginated(
+    searchTerm: String,
+    pageSize: Int,
+    cursor: String?
+  ): Flow<PaginationResult<ActivityWithStatus>> = flow {
+    emit(PaginationResult.Loading())
+    
+    apolloClient.query(
+      SearchActivitiesQuery(
+        searchTerm = "%$searchTerm%",
+        first = pageSize,
+        after = Optional.presentIfNotNull(cursor)
+      )
+    )
+    .fetchPolicy(FetchPolicy.CacheAndNetwork)
+    .watch() 
+    .collect { response ->
+      val isCacheMissWithEmptyData = response.exception is CacheMissException && 
+                                     response.data?.activitiesWithStatusCollection?.edges.isNullOrEmpty()
+      
+      if (isCacheMissWithEmptyData) {
+        return@collect
+      }
+
+      val result = safeCall {
+        if (response.hasErrors()) {
+          throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+        }
+
+        val activities = response.data?.activitiesWithStatusCollection?.edges?.map {
+          it.node.activityWithStatus
+        } ?: emptyList()
+
+        val pageInfo = response.data?.activitiesWithStatusCollection?.pageInfo
+
+        PaginationResult.Success(
+          data = activities,
+          hasNextPage = pageInfo?.hasNextPage ?: false,
+          endCursor = pageInfo?.endCursor
+        )
+      }
+
+      when (result) {
+        is Result.Success -> emit(result.data)
+        is Result.Error -> emit(PaginationResult.Error(result.exception?.message ?: "Unknown error"))
+        is Result.Loading -> {}
+      }
+    }
+  }
+
   override fun getActivities(): Flow<Result<List<OrganisationalActivityShort>>> =
     flow {
       emit(Result.Loading)
@@ -157,7 +263,11 @@ class ActivityRepositoryImpl(
       if (response.hasErrors()) {
         throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
       }
-      response.data?.deleteFromActivitiesCollection?.affectedCount!! > 0
+      val success = response.data?.deleteFromActivitiesCollection?.affectedCount!! > 0
+      if (success) {
+        apolloClient.apolloStore.clearAll()
+      }
+      success
     }
   }
 
@@ -190,7 +300,6 @@ class ActivityRepositoryImpl(
             }
           supabaseClient.from("activity_member").insert(members)
         } catch (e: Exception) {
-          // FIXME notify about the error to the user
           throw Exception("Unknown error occurred ${e.message}")
         }
         return@safeCall activityId
@@ -206,7 +315,6 @@ class ActivityRepositoryImpl(
     organisations: List<Organisation>
   ): Result<Boolean> {
     return try {
-      // Create update input using Optional fields
       val updateInput =
         ActivitiesUpdateInput(
           name = input.name,
@@ -226,7 +334,6 @@ class ActivityRepositoryImpl(
           allowedGender = input.allowedGender
         )
 
-      // Update the activity
       val updateMutation =
         UpdateActivityMutation(
           id = id,
@@ -238,7 +345,6 @@ class ActivityRepositoryImpl(
         return Result.Error(updateResponse.errors?.first()?.message ?: "Failed to update activity")
       }
 
-      // Delete existing associations
       supabaseClient.from("organisational_activity")
         .delete {
           filter {
@@ -253,7 +359,6 @@ class ActivityRepositoryImpl(
           }
         }
 
-      // Add new associations
       val organisationData =
         organisations.map {
           OrganisationalActivityInsertData(
@@ -294,22 +399,18 @@ class ActivityRepositoryImpl(
     newActivityData: ActivityInputData
   ): Result<Boolean> {
     return safeCall {
-      // Build the update request with only changed fields
       val updateRequest = buildActivityUpdateRequest(
         activityId = activityId,
         originalActivity = originalActivity,
         newActivityData = newActivityData
       )
 
-      // If no changes detected, return success without making API call
       if (isActivityUpdateRequestEmpty(updateRequest)) {
         return@safeCall true
       }
 
-      // Convert to JSON string
       val requestJson = Json.encodeToString(updateRequest)
 
-      // Execute the mutation
       val response = apolloClient.mutation(
         UpdateActivityDetailsSmartMutation(requestJson)
       ).execute()
@@ -318,13 +419,11 @@ class ActivityRepositoryImpl(
         throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
       }
 
-      // Parse the response
       val responseData = response.data?.updateActivityDetails
       if (responseData == null) {
         throw Exception("No response data received")
       }
 
-      // Parse the JSON response
       try {
         val jsonConfig = Json {
           ignoreUnknownKeys = true
@@ -340,7 +439,6 @@ class ActivityRepositoryImpl(
           throw Exception("Update failed: ${parsedResponse.error_code ?: "UNKNOWN_ERROR"}${parsedResponse.error_details?.let { " - $it" } ?: ""}")
         }
       } catch (e: Exception) {
-        // Fallback: check for success in raw response string
         val responseString = responseData.toString()
         if (responseString.contains("\"success\":true")) {
           true
@@ -351,15 +449,11 @@ class ActivityRepositoryImpl(
     }
   }
 
-  /**
-   * Build update request with only changed fields
-   */
   private fun buildActivityUpdateRequest(
     activityId: String,
     originalActivity: OrganisationalActivity?,
     newActivityData: ActivityInputData
   ): ActivityUpdateRequest {
-    // If no original data, send all fields
     if (originalActivity == null) {
       return ActivityUpdateRequest(
         activityId = activityId,
@@ -389,7 +483,6 @@ class ActivityRepositoryImpl(
       )
     }
 
-    // Compare and include only changed fields
     return ActivityUpdateRequest(
       activityId = activityId,
       name = if (originalActivity.name != newActivityData.name) newActivityData.name else null,
@@ -426,9 +519,6 @@ class ActivityRepositoryImpl(
     )
   }
 
-  /**
-   * Check if update request has any changes
-   */
   private fun isActivityUpdateRequestEmpty(request: ActivityUpdateRequest): Boolean {
     return request.name == null &&
       request.type == null &&
@@ -449,9 +539,6 @@ class ActivityRepositoryImpl(
       request.members == null
   }
 
-  /**
-   * Compare organisations for equality
-   */
   private fun areOrganisationsEqual(
     original: List<Organisation>,
     new: List<Organisation>
@@ -462,16 +549,12 @@ class ActivityRepositoryImpl(
     return originalIds == newIds
   }
 
-  /**
-   * Compare members for equality
-   */
   private fun areMembersEqual(
     original: List<ActivityMember>,
     new: List<ActivityMember>
   ): Boolean {
     if (original.size != new.size) return false
     
-    // Create comparable lists
     val originalComparable = original.map { Triple(it.member.id, it.post, it.priority) }.sortedBy { it.first }
     val newComparable = new.map { Triple(it.member.id, it.post, it.priority) }.sortedBy { it.first }
     
@@ -532,7 +615,6 @@ class ActivityRepositoryImpl(
         primaryKeys = listOf(SatrRegistration::id),
         filter = FilterOperation("activity_id", FilterOperator.EQ, activityId)
       ).map { registrations ->
-        // Convert to UserProfile - no need to filter since it's already filtered at DB level
         registrations.map { registration ->
           UserProfile(
             id = registration.id,
@@ -574,9 +656,6 @@ class ActivityRepositoryImpl(
   }
 }
 
-/**
- * Response type for smart activity updates
- */
 @Serializable
 data class ActivityUpdateResponse(
   val success: Boolean,
@@ -585,9 +664,6 @@ data class ActivityUpdateResponse(
   val error_details: String? = null
 )
 
-/**
- * Data class for smart activity update requests
- */
 @Serializable
 data class ActivityUpdateRequest(
   @SerialName("activity_id")
@@ -618,9 +694,6 @@ data class ActivityUpdateRequest(
   val members: List<ActivityMemberUpdateRequest>? = null
 )
 
-/**
- * Data class for activity member update requests
- */
 @Serializable
 data class ActivityMemberUpdateRequest(
   @SerialName("memberId")

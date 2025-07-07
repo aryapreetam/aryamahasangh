@@ -51,6 +51,7 @@ fun <T> PaginatedListScreen(
     // Layout Configuration
     isCompactLayout: Boolean = true,
     itemsPerRow: Int = 1,
+    showAddButton: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     val windowInfo = currentWindowAdaptiveInfo()
@@ -148,33 +149,35 @@ fun <T> PaginatedListScreen(
                 Spacer(modifier = Modifier.width(16.dp))
             }
 
+          if (showAddButton) {
             if (isCompact) {
-                TooltipBox(
-                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                    tooltip = {
-                        PlainTooltip {
-                            Text(addButtonText)
+              TooltipBox(
+                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                tooltip = {
+                  PlainTooltip {
+                    Text(addButtonText)
+                  }
+                },
+                state = rememberTooltipState()
+              ) {
+                IconButton(onClick = onAddClick) {
+                  Icon(
+                    modifier = Modifier.size(24.dp),
+                    imageVector = Icons.Default.Add,
+                    contentDescription = addButtonText
+                  )
                         }
-                    },
-                    state = rememberTooltipState()
-                ) {
-                    IconButton(onClick = onAddClick) {
+                    }
+                } else {
+                  Button(onClick = onAddClick) {
                         Icon(
                             modifier = Modifier.size(24.dp),
                             imageVector = Icons.Default.Add,
-                            contentDescription = addButtonText
+                          contentDescription = null
                         )
+                      Spacer(modifier = Modifier.width(8.dp))
+                      Text(addButtonText)
                     }
-                }
-            } else {
-                Button(onClick = onAddClick) {
-                    Icon(
-                        modifier = Modifier.size(24.dp),
-                        imageVector = Icons.Default.Add,
-                        contentDescription = null
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(addButtonText)
                 }
             }
         }
