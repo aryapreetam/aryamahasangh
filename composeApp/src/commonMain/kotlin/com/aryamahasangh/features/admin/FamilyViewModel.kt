@@ -87,7 +87,7 @@ class FamilyViewModel(
   fun preserveFamilyPagination(families: List<FamilyShort>, paginationState: PaginationState<FamilyShort>) {
     _familiesUiState.value = _familiesUiState.value.copy(
       families = families,
-      paginationState = paginationState
+      paginationState = paginationState.copy(items = families) // Ensure consistency
     )
     shouldPreservePagination = true
   }
@@ -101,20 +101,25 @@ class FamilyViewModel(
     viewModelScope.launch {
       val currentState = _familiesUiState.value.paginationState
 
-      // Only preserve pagination when explicitly requested AND it's a reset operation
+      // Check if we should preserve existing data (e.g., navigating back from detail screen)
       val shouldPreserveExistingData = shouldPreservePagination && resetPagination && hasExistingFamilyData()
 
       // Reset the preservation flag after checking
       if (shouldPreservePagination) {
         shouldPreservePagination = false
+
+        // If preserving data, don't make API call
+        if (shouldPreserveExistingData) {
+          return@launch
+        }
       }
 
-      // Only skip loading if we're preserving existing data from navigation
-      if (shouldPreserveExistingData) {
+      // For pagination (resetPagination=false), check if we already have the data
+      if (!resetPagination && currentState.hasNextPage == false) {
+        // No more pages to load
         return@launch
       }
 
-      // For normal pagination (resetPagination=false), always proceed with loading
       val shouldReset = resetPagination
       val cursor = if (shouldReset) null else currentState.endCursor
 
@@ -135,17 +140,16 @@ class FamilyViewModel(
 
           is PaginationResult.Success -> {
             val familyShorts = result.data.map { it.toFamilyShort() }
-            val newItems = if (shouldReset) {
-              familyShorts
-            } else {
-              currentState.items + familyShorts
-            }
+
+            // ✅ Query Watchers prevent duplication automatically
+            val existingFamilies = if (shouldReset) emptyList() else _familiesUiState.value.families
+            val newFamilies = existingFamilies + familyShorts
 
             _familiesUiState.value = _familiesUiState.value.copy(
-              families = newItems,
+              families = newFamilies,
               hasLoadedOnce = true,
               paginationState = currentState.copy(
-                items = newItems,
+                items = newFamilies,
                 isInitialLoading = false,
                 isLoadingNextPage = false,
                 hasNextPage = result.hasNextPage,
@@ -206,17 +210,16 @@ class FamilyViewModel(
 
           is PaginationResult.Success -> {
             val familyShorts = result.data.map { it.toFamilyShort() }
-            val newItems = if (resetPagination) {
-              familyShorts
-            } else {
-              currentState.items + familyShorts
-            }
+
+            // ✅ Query Watchers prevent duplication automatically
+            val existingFamilies = if (resetPagination) emptyList() else currentState.items
+            val newFamilies = existingFamilies + familyShorts
 
             _familiesUiState.value = _familiesUiState.value.copy(
-              families = newItems,
+              families = newFamilies,
               hasLoadedOnce = true,
               paginationState = currentState.copy(
-                items = newItems,
+                items = newFamilies,
                 isSearching = false,
                 isLoadingNextPage = false,
                 hasNextPage = result.hasNextPage,

@@ -105,14 +105,18 @@ fun AryaPariwarListScreen(
       viewModel.preserveFamilyPagination(AryaPariwarPageState.families, AryaPariwarPageState.paginationState)
     }
 
-    // Load data (resetPagination = true when refreshing)
-    val shouldReset = AryaPariwarPageState.needsRefresh
+    // Load data: Reset pagination if refresh needed OR no existing data (initial load)
+    val shouldReset = AryaPariwarPageState.needsRefresh || !AryaPariwarPageState.hasData()
     viewModel.loadFamiliesPaginated(pageSize = pageSize, resetPagination = shouldReset)
     AryaPariwarPageState.needsRefresh = false
   }
 
-  LaunchedEffect(uiState) {
-    AryaPariwarPageState.saveState(uiState.families, uiState.paginationState, uiState.searchQuery)
+  // Save state only when families list changes significantly
+  LaunchedEffect(uiState.families.size, uiState.searchQuery) {
+    // Only save state if we have families and it's not during initial loading
+    if (uiState.families.isNotEmpty() && !uiState.paginationState.isInitialLoading) {
+      AryaPariwarPageState.saveState(uiState.families, uiState.paginationState, uiState.searchQuery)
+    }
   }
 
   PaginatedListScreen(

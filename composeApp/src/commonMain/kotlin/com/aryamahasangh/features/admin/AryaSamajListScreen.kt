@@ -103,7 +103,7 @@ fun AryaSamajListScreen(
     }
 
     // Load data (resetPagination = true when refreshing)
-    val shouldReset = AryaSamajPageState.needsRefresh
+    val shouldReset = AryaSamajPageState.needsRefresh || !AryaSamajPageState.hasData()
     viewModel.loadAryaSamajsPaginated(pageSize = pageSize, resetPagination = shouldReset)
     AryaSamajPageState.needsRefresh = false
   }

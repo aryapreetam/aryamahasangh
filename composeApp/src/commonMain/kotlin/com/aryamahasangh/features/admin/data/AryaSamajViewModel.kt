@@ -104,7 +104,7 @@ class AryaSamajViewModel(
 
     _listUiState.value = _listUiState.value.copy(
       aryaSamajs = listItems,
-      paginationState = savedPaginationState
+      paginationState = savedPaginationState.copy(items = savedAryaSamajs) // Ensure consistency
     )
     shouldPreservePagination = true
   }
@@ -543,20 +543,25 @@ class AryaSamajViewModel(
     viewModelScope.launch {
       val currentState = _listUiState.value.paginationState
 
-      // Only preserve pagination when explicitly requested AND it's a reset operation
+      // Check if we should preserve existing data (e.g., navigating back from detail screen)
       val shouldPreserveExistingData = shouldPreservePagination && resetPagination && hasExistingAryaSamajData()
 
       // Reset the preservation flag after checking
       if (shouldPreservePagination) {
         shouldPreservePagination = false
+
+        // If preserving data, don't make API call
+        if (shouldPreserveExistingData) {
+          return@launch
+        }
       }
 
-      // Only skip loading if we're preserving existing data from navigation
-      if (shouldPreserveExistingData) {
+      // For pagination (resetPagination=false), check if we already have the data
+      if (!resetPagination && currentState.hasNextPage == false) {
+        // No more pages to load
         return@launch
       }
 
-      // For normal pagination (resetPagination=false), always proceed with loading
       val shouldReset = resetPagination
       val cursor = if (shouldReset) null else currentState.endCursor
 
@@ -576,14 +581,15 @@ class AryaSamajViewModel(
           }
 
           is com.aryamahasangh.features.admin.PaginationResult.Success -> {
-            val newItems = if (shouldReset) {
-              result.data
-            } else {
-              currentState.items + result.data
-            }
+            // Prevent duplication by ensuring clean state management
+            val existingItems = if (shouldReset) emptyList() else currentState.items
+            val newItems = existingItems + result.data
+
+            // Remove duplicates based on ID
+            val uniqueItems = newItems.distinctBy { it.aryaSamajFields.id }
 
             // Convert to AryaSamajListItem for display
-            val listItems = newItems.map { aryaSamaj ->
+            val listItems = uniqueItems.map { aryaSamaj ->
               AryaSamajListItem(
                 id = aryaSamaj.aryaSamajFields.id,
                 name = aryaSamaj.aryaSamajFields.name ?: "",
@@ -597,7 +603,7 @@ class AryaSamajViewModel(
             _listUiState.value = _listUiState.value.copy(
               aryaSamajs = listItems,
               paginationState = currentState.copy(
-                items = newItems,
+                items = uniqueItems,
                 isInitialLoading = false,
                 isLoadingNextPage = false,
                 hasNextPage = result.hasNextPage,
@@ -656,14 +662,14 @@ class AryaSamajViewModel(
           }
 
           is com.aryamahasangh.features.admin.PaginationResult.Success -> {
-            val newItems = if (resetPagination) {
-              result.data
-            } else {
-              currentState.items + result.data
-            }
+            val existingItems = if (resetPagination) emptyList() else currentState.items
+            val newItems = existingItems + result.data
+
+            // Remove duplicates based on ID
+            val uniqueItems = newItems.distinctBy { it.aryaSamajFields.id }
 
             // Convert to AryaSamajListItem for display
-            val listItems = newItems.map { aryaSamaj ->
+            val listItems = uniqueItems.map { aryaSamaj ->
               AryaSamajListItem(
                 id = aryaSamaj.aryaSamajFields.id,
                 name = aryaSamaj.aryaSamajFields.name ?: "",
@@ -677,7 +683,7 @@ class AryaSamajViewModel(
             _listUiState.value = _listUiState.value.copy(
               aryaSamajs = listItems,
               paginationState = currentState.copy(
-                items = newItems,
+                items = uniqueItems,
                 isSearching = false,
                 isLoadingNextPage = false,
                 hasNextPage = result.hasNextPage,

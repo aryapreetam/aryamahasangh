@@ -24,7 +24,6 @@ import aryamahasangh.composeapp.generated.resources.*
 import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.auth.SessionManager
 import com.aryamahasangh.components.LoginDialog
-import com.aryamahasangh.util.GlobalMessage
 import com.aryamahasangh.util.GlobalMessageDuration
 import com.aryamahasangh.util.GlobalMessageManager
 import com.aryamahasangh.util.PlatformBackHandler
@@ -287,7 +286,8 @@ private fun checkIfSelected(
     (
       currentDestination?.contains("Activities") == true ||
         currentDestination?.contains("ActivityDetails") == true ||
-        currentDestination?.contains("EditActivity") == true
+        currentDestination?.contains("EditActivity") == true ||
+        currentDestination?.contains("CreateActivity") == true
     ) &&
     currentDrawerItem == Screen.ActivitiesSection.toString()
   ) {
@@ -795,6 +795,7 @@ private fun shouldShowBackButtonFor(currentScreen: String?): Boolean = listOf(
   "AboutUsDetails",
   "ActivityDetails",
   "EditActivity",
+  "CreateActivity",
   "OrgDetails",
   "NewOrganisationForm",
   "VideoDetails",

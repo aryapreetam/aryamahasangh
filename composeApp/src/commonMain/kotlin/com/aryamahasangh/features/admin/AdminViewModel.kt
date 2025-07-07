@@ -109,7 +109,7 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
   fun preserveEkalAryaPagination(savedMembers: List<MemberShort>, savedPaginationState: PaginationState<MemberShort>) {
     _ekalAryaUiState.value = _ekalAryaUiState.value.copy(
       members = savedMembers,
-      paginationState = savedPaginationState
+      paginationState = savedPaginationState.copy(items = savedMembers) // Ensure consistency
     )
     shouldPreservePagination = true
   }
@@ -899,20 +899,25 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
     viewModelScope.launch {
       val currentState = _ekalAryaUiState.value.paginationState
 
-      // Only preserve pagination when explicitly requested AND it's a reset operation
+      // Check if we should preserve existing data (e.g., navigating back from detail screen)
       val shouldPreserveExistingData = shouldPreservePagination && resetPagination && hasExistingEkalAryaData()
 
       // Reset the preservation flag after checking
       if (shouldPreservePagination) {
         shouldPreservePagination = false
+
+        // If preserving data, don't make API call
+        if (shouldPreserveExistingData) {
+          return@launch
+        }
       }
 
-      // Only skip loading if we're preserving existing data from navigation
-      if (shouldPreserveExistingData) {
+      // For pagination (resetPagination=false), check if we already have the data
+      if (!resetPagination && currentState.hasNextPage == false) {
+        // No more pages to load
         return@launch
       }
 
-      // For normal pagination (resetPagination=false), always proceed with loading
       val shouldReset = resetPagination
       val cursor = if (shouldReset) null else currentState.endCursor
 
@@ -932,16 +937,17 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
           }
 
           is PaginationResult.Success -> {
-            val newItems = if (shouldReset) {
-              result.data
-            } else {
-              currentState.items + result.data
-            }
+            // Prevent duplication by ensuring clean state management
+            val existingItems = if (shouldReset) emptyList() else currentState.items
+            val newItems = existingItems + result.data
+
+            // Remove duplicates based on ID
+            val uniqueItems = newItems.distinctBy { it.id }
 
             _ekalAryaUiState.value = _ekalAryaUiState.value.copy(
-              members = newItems,
+              members = uniqueItems,
               paginationState = currentState.copy(
-                items = newItems,
+                items = uniqueItems,
                 isInitialLoading = false,
                 isLoadingNextPage = false,
                 hasNextPage = result.hasNextPage,
@@ -1000,16 +1006,16 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
           }
 
           is PaginationResult.Success -> {
-            val newItems = if (resetPagination) {
-              result.data
-            } else {
-              currentState.items + result.data
-            }
+            val existingItems = if (resetPagination) emptyList() else currentState.items
+            val newItems = existingItems + result.data
+
+            // Remove duplicates based on ID
+            val uniqueItems = newItems.distinctBy { it.id }
 
             _ekalAryaUiState.value = _ekalAryaUiState.value.copy(
-              members = newItems,
+              members = uniqueItems,
               paginationState = currentState.copy(
-                items = newItems,
+                items = uniqueItems,
                 isSearching = false,
                 isLoadingNextPage = false,
                 hasNextPage = result.hasNextPage,

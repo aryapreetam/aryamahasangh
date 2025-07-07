@@ -353,23 +353,32 @@ fun RootNavGraph(navController: NavHostController) {
         val onNavigateToDetails = { id: String ->
           navController.navigate(Screen.ActivityDetails(id))
         }
-        if (isLoggedIn) {
-          ActivitiesContainer(
-            onNavigateToActivityDetails = onNavigateToDetails,
-            viewModel = viewModel,
-            onNavigateToEditActivity = { id ->
-              navController.navigate(Screen.EditActivity(id))
-            }
-          )
-        } else {
-          ActivitiesScreen(
-            onNavigateToActivityDetails = onNavigateToDetails,
-            onNavigateToEditActivity = { id ->
-              // This won't be used for non-logged in users, but we need to provide it
-            },
-            viewModel = viewModel
-          )
+        ActivitiesScreen(
+          onNavigateToActivityDetails = onNavigateToDetails,
+          onNavigateToEditActivity = { id ->
+            navController.navigate(Screen.EditActivity(id))
+          },
+          onNavigateToCreateOrganisation = {
+            navController.navigate(Screen.CreateActivity)
+          },
+          viewModel = viewModel
+        )
+      }
+      composable<Screen.CreateActivity> {
+        val viewModel = koinInject<ActivitiesViewModel>()
+        val onNavigateToDetails = { id: String ->
+          navController.navigate(Screen.ActivityDetails(id))
         }
+        CreateActivityScreen(
+          viewModel = viewModel,
+          editingActivityId = null,
+          onActivitySaved = { activityId ->
+            onNavigateToDetails(activityId)
+          },
+          onCancel = {
+            navController.popBackStack()
+          }
+        )
       }
       composable<Screen.EditActivity> {
         val id = it.toRoute<Screen.EditActivity>().id

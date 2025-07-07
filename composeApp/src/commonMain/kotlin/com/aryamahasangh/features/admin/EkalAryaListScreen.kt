@@ -97,7 +97,7 @@ fun EkalAryaListScreen(
       viewModel.preserveEkalAryaPagination(EkalAryaPageState.members, EkalAryaPageState.paginationState)
     }
 
-    val shouldReset = EkalAryaPageState.needsRefresh
+    val shouldReset = EkalAryaPageState.needsRefresh || !EkalAryaPageState.hasData()
     viewModel.loadEkalAryaMembersPaginated(pageSize = pageSize, resetPagination = shouldReset)
     EkalAryaPageState.needsRefresh = false
   }

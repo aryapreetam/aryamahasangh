@@ -16,15 +16,17 @@ visual enhancements.
 - ✅ **Scroll State Persistence** across navigation
 - ✅ **End-of-List Indicators** with Devanagari numerals
 - ✅ **Responsive Layout** (compact/tablet/desktop)
-- ✅ **Cache-First Loading** with proper empty state handling
+- ✅ **Query Watchers** for automatic cache/network deduplication
 
 ## Usage
 
 ### 1. Repository Implementation
 
-Your repository must implement `PaginatedRepository<T>`:
+Your repository must implement `PaginatedRepository<T>` using **Query Watchers**:
 
 ```kotlin
+import com.apollographql.apollo.exception.CacheMissException
+
 interface YourRepository : PaginatedRepository<YourDataType> {
   // Required methods will be inherited automatically
 }
@@ -46,36 +48,38 @@ class YourRepositoryImpl : YourRepository {
       )
     )
     .fetchPolicy(FetchPolicy.CacheAndNetwork)
-    .toFlow()
+    .watch() // ✅ PREFERRED: Query Watchers handle cache/network automatically
     .collect { response ->
-      // IMPORTANT: Include cache handling to prevent empty state flashing
-      if (response.isFromCache && response.cacheInfo?.isCacheHit == false && 
-          response.data?.yourCollection?.edges.isNullOrEmpty()) {
-        // Skip emitting empty cache miss - wait for network
-      } else {
-        val result = safeCall {
-          if (response.hasErrors()) {
-            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-          }
+      // ✅ CRITICAL: Still need to handle empty cache misses
+      val isCacheMissWithEmptyData = response.exception is CacheMissException && 
+                                     response.data?.yourCollection?.edges.isNullOrEmpty()
+      
+      if (isCacheMissWithEmptyData) {
+        return@collect // Skip empty cache miss - prevents empty list flashing
+      }
 
-          val items = response.data?.yourCollection?.edges?.map {
-            it.node.yourFragment // Use your fragment here
-          } ?: emptyList()
-
-          val pageInfo = response.data?.yourCollection?.pageInfo
-
-          PaginationResult.Success(
-            data = items,
-            hasNextPage = pageInfo?.hasNextPage ?: false,
-            endCursor = pageInfo?.endCursor
-          )
+      val result = safeCall {
+        if (response.hasErrors()) {
+          throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
         }
 
-        when (result) {
-          is Result.Success -> emit(result.data)
-          is Result.Error -> emit(PaginationResult.Error(result.exception?.message ?: "Unknown error"))
-          is Result.Loading -> {} // Already emitted Loading above
-        }
+        val items = response.data?.yourCollection?.edges?.map {
+          it.node.yourFragment // Use your fragment here
+        } ?: emptyList()
+
+        val pageInfo = response.data?.yourCollection?.pageInfo
+
+        PaginationResult.Success(
+          data = items,
+          hasNextPage = pageInfo?.hasNextPage ?: false,
+          endCursor = pageInfo?.endCursor
+        )
+      }
+
+      when (result) {
+        is Result.Success -> emit(result.data)
+        is Result.Error -> emit(PaginationResult.Error(result.exception?.message ?: "Unknown error"))
+        is Result.Loading -> {} // Already emitted Loading above
       }
     }
   }
@@ -85,24 +89,49 @@ class YourRepositoryImpl : YourRepository {
     pageSize: Int,
     cursor: String?
   ): Flow<PaginationResult<YourDataType>> = flow {
-    // Similar implementation for search
     emit(PaginationResult.Loading())
-    val result = safeCall {
-      val response = apolloClient.query(
-        YourSearchQuery(
-          searchTerm = "%$searchTerm%",
-          first = pageSize,
-          after = Optional.presentIfNotNull(cursor)
+    
+    apolloClient.query(
+      YourSearchQuery(
+        searchTerm = "%$searchTerm%",
+        first = pageSize,
+        after = Optional.presentIfNotNull(cursor)
+      )
+    )
+    .fetchPolicy(FetchPolicy.CacheAndNetwork)
+    .watch() // ✅ PREFERRED: Query Watchers handle cache/network automatically
+    .collect { response ->
+      // ✅ CRITICAL: Handle empty cache misses in search too
+      val isCacheMissWithEmptyData = response.exception is CacheMissException && 
+                                     response.data?.yourCollection?.edges.isNullOrEmpty()
+      
+      if (isCacheMissWithEmptyData) {
+        return@collect
+      }
+
+      val result = safeCall {
+        if (response.hasErrors()) {
+          throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+        }
+
+        val items = response.data?.yourCollection?.edges?.map {
+          it.node.yourFragment
+        } ?: emptyList()
+
+        val pageInfo = response.data?.yourCollection?.pageInfo
+
+        PaginationResult.Success(
+          data = items,
+          hasNextPage = pageInfo?.hasNextPage ?: false,
+          endCursor = pageInfo?.endCursor
         )
-      ).execute()
+      }
 
-      // Process response and return PaginationResult.Success
-    }
-
-    when (result) {
-      is Result.Success -> emit(result.data)
-      is Result.Error -> emit(PaginationResult.Error(result.message))
-      is Result.Loading -> {} // Already emitted Loading above
+      when (result) {
+        is Result.Success -> emit(result.data)
+        is Result.Error -> emit(PaginationResult.Error(result.exception?.message ?: "Unknown error"))
+        is Result.Loading -> {} // Already emitted Loading above
+      }
     }
   }
 }
@@ -179,10 +208,40 @@ class YourViewModel(private val repository: YourRepository) : ViewModel() {
     val searchQuery: String = ""
   )
 
+  // Method to preserve pagination state when navigating back
+  fun preservePagination(savedItems: List<YourDataType>, savedPaginationState: PaginationState<YourDataType>) {
+    val displayItems = savedItems.map { /* convert to display format */ }
+    _uiState.value = _uiState.value.copy(
+      items = displayItems,
+      paginationState = savedPaginationState.copy(items = savedItems) // CRITICAL: Ensure consistency
+    )
+    shouldPreservePagination = true
+  }
+
   // Required pagination methods
   fun loadItemsPaginated(pageSize: Int = 30, resetPagination: Boolean = false) {
     viewModelScope.launch {
       val currentState = _uiState.value.paginationState
+
+      // CRITICAL: Check if we should preserve existing data (e.g., navigating back from detail screen)
+      val shouldPreserveExistingData = shouldPreservePagination && resetPagination && hasExistingData()
+
+      // Reset the preservation flag after checking
+      if (shouldPreservePagination) {
+        shouldPreservePagination = false
+
+        // CRITICAL: If preserving data, don't make API call
+        if (shouldPreserveExistingData) {
+          return@launch
+        }
+      }
+
+      // CRITICAL: For pagination (resetPagination=false), check if we already have the data
+      if (!resetPagination && currentState.hasNextPage == false) {
+        // No more pages to load
+        return@launch
+      }
+
       val shouldReset = resetPagination
       val cursor = if (shouldReset) null else currentState.endCursor
 
@@ -201,11 +260,9 @@ class YourViewModel(private val repository: YourRepository) : ViewModel() {
             // Loading state already set above
           }
           is PaginationResult.Success -> {
-            val newItems = if (shouldReset) {
-              result.data
-            } else {
-              currentState.items + result.data
-            }
+            // ✅ Query Watchers prevent duplication automatically - no distinctBy needed
+            val existingItems = if (shouldReset) emptyList() else currentState.items
+            val newItems = existingItems + result.data
 
             // Convert to display items if needed
             val displayItems = newItems.map { /* convert to display format */ }
@@ -213,7 +270,7 @@ class YourViewModel(private val repository: YourRepository) : ViewModel() {
             _uiState.value = _uiState.value.copy(
               items = displayItems,
               paginationState = currentState.copy(
-                items = newItems,
+                items = newItems, // ✅ Clean items - Query Watchers handle deduplication
                 isInitialLoading = false,
                 isLoadingNextPage = false,
                 hasNextPage = result.hasNextPage,
@@ -250,43 +307,73 @@ class YourViewModel(private val repository: YourRepository) : ViewModel() {
 
       delay(1000) // 1 second debounce
 
-      // Implement search pagination similar to loadItemsPaginated
+      searchItemsPaginated(searchTerm = query.trim(), resetPagination = true)
     }
   }
 
-  fun loadNextPage() {
-    val currentState = _uiState.value.paginationState
-    if (currentState.hasNextPage && !currentState.isLoadingNextPage) {
-      if (currentState.currentSearchTerm.isNotBlank()) {
-        // Load next search page
-      } else {
-        loadItemsPaginated(resetPagination = false)
+  fun searchItemsPaginated(searchTerm: String, pageSize: Int = 30, resetPagination: Boolean = true) {
+    viewModelScope.launch {
+      val currentState = _uiState.value.paginationState
+      val cursor = if (resetPagination) null else currentState.endCursor
+
+      // Set loading state
+      _uiState.value = _uiState.value.copy(
+        searchQuery = searchTerm,
+        paginationState = currentState.copy(
+          isSearching = resetPagination,
+          isLoadingNextPage = !resetPagination,
+          error = null,
+          currentSearchTerm = searchTerm
+        )
+      )
+
+      repository.searchItemsPaginated(
+        searchTerm = searchTerm,
+        pageSize = pageSize,
+        cursor = cursor
+      ).collect { result ->
+        when (result) {
+          is PaginationResult.Loading -> {
+            // Loading state already set above
+          }
+          is PaginationResult.Success -> {
+            // ✅ Query Watchers prevent duplication in search too
+            val existingItems = if (resetPagination) emptyList() else currentState.items
+            val newItems = existingItems + result.data
+
+            val displayItems = newItems.map { /* convert to display format */ }
+
+            _uiState.value = _uiState.value.copy(
+              items = displayItems,
+              paginationState = currentState.copy(
+                items = newItems, // ✅ Clean items - Query Watchers handle deduplication
+                isSearching = false,
+                isLoadingNextPage = false,
+                hasNextPage = result.hasNextPage,
+                endCursor = result.endCursor,
+                hasReachedEnd = !result.hasNextPage,
+                error = null,
+                currentSearchTerm = searchTerm
+              )
+            )
+          }
+          is PaginationResult.Error -> {
+            _uiState.value = _uiState.value.copy(
+              paginationState = currentState.copy(
+                isSearching = false,
+                isLoadingNextPage = false,
+                error = result.message,
+                showRetryButton = true
+              )
+            )
+          }
+        }
       }
     }
   }
 
-  fun retryLoad() {
-    val currentState = _uiState.value.paginationState
-    _uiState.value = _uiState.value.copy(
-      paginationState = currentState.copy(showRetryButton = false)
-    )
-
-    if (currentState.currentSearchTerm.isNotBlank()) {
-      // Retry search
-    } else {
-      loadItemsPaginated(resetPagination = currentState.items.isEmpty())
-    }
-  }
-
-  fun calculatePageSize(screenWidthDp: Float): Int {
-    return when {
-      screenWidthDp < 600f -> 15      // Mobile portrait
-      screenWidthDp < 840f -> 25      // Tablet, mobile landscape
-      else -> 35                      // Desktop, large tablets
-    }
-  }
+  // ... rest of methods remain the same
 }
-```
 
 ### 4. Screen Implementation
 
@@ -367,8 +454,8 @@ fun YourListScreen(
       viewModel.preservePagination(YourPageState.items, YourPageState.paginationState)
     }
 
-    // Load data (resetPagination = true when refreshing)
-    val shouldReset = YourPageState.needsRefresh
+    // Load data: Reset pagination if refresh needed OR no existing data (initial load)
+    val shouldReset = YourPageState.needsRefresh || !YourPageState.hasData()
     viewModel.loadItemsPaginated(pageSize = pageSize, resetPagination = shouldReset)
     YourPageState.needsRefresh = false
   }
@@ -450,8 +537,8 @@ LaunchedEffect(refreshKey) {
     viewModel.preservePagination(YourPageState.items, YourPageState.paginationState)
   }
 
-  // Load data (resetPagination = true when refreshing)
-  val shouldReset = YourPageState.needsRefresh
+  // Load data: Reset pagination if refresh needed OR no existing data (initial load)
+  val shouldReset = YourPageState.needsRefresh || !YourPageState.hasData()
   viewModel.loadItemsPaginated(pageSize = pageSize, resetPagination = shouldReset)
   YourPageState.needsRefresh = false
 }
@@ -525,7 +612,7 @@ override suspend fun deleteItem(id: String): Flow<Result<Boolean>> = flow {
   emit(result)
 }
 
-// Similar for create operation
+// Similar for create/update operations
 override suspend fun createItem(formData: ItemFormData): Flow<Result<String>> = flow {
   // ... creation logic
   
@@ -558,6 +645,7 @@ YourListScreen(
 3. **Cache Consistency**: Apollo cache is cleared to ensure fresh data
 4. **Parent Updates**: Callbacks allow parent screens to update counts/stats
 5. **Minimal Changes**: Only 4-5 lines of code per screen to implement
+6. **No Duplication**: Query Watchers prevent cache/network response duplication
 
 ### Key Points
 
@@ -567,6 +655,7 @@ YourListScreen(
 - ✅ Preserve scroll position for view-only navigation
 - ✅ Add `onDataChanged` callback for parent screen updates
 - ✅ Reset `needsRefresh` flag after processing
+- ✅ **Query Watchers eliminate need for manual deduplication**
 
 This pattern ensures consistent behavior across all paginated screens while maintaining optimal performance and user
 experience.
@@ -654,17 +743,22 @@ You can override this by implementing your own `calculatePageSize()` method.
 
 ## Best Practices
 
-### 1. Cache Handling
+### 1. Use Query Watchers
 
-Always implement proper cache handling in your repository to prevent empty state flashing:
+**PREFERRED**: Use Apollo Query Watchers for automatic cache/network response handling:
 
 ```kotlin
-if (response.isFromCache && response.cacheInfo?.isCacheHit == false && 
-    response.data?.yourCollection?.edges.isNullOrEmpty()) {
-  // Skip emitting empty cache miss
-} else {
-  // Process and emit result
-}
+apolloClient.query(YourQuery(...))
+  .fetchPolicy(FetchPolicy.CacheAndNetwork)
+  .watch() // ✅ Handles cache vs network automatically
+  .collect { response ->
+    // Handle only empty cache misses
+    val isCacheMissWithEmptyData = response.exception is CacheMissException && 
+                                   response.data?.collection?.edges.isNullOrEmpty()
+    if (isCacheMissWithEmptyData) return@collect
+    
+    // Process normally - no deduplication needed
+  }
 ```
 
 ### 2. State Preservation
@@ -695,8 +789,8 @@ Distinguish between initial loading and next page loading for better UX.
 
 #### 2. Empty State Flashing
 
-- Implement proper cache handling in repository
-- Skip cache misses with empty data
+- Use Query Watchers: `.watch()` instead of `.toFlow()`
+- Handle empty cache misses: `response.exception is CacheMissException`
 
 #### 3. State Not Preserved
 
@@ -709,11 +803,127 @@ Distinguish between initial loading and next page loading for better UX.
 - Verify search GraphQL query is correct
 - Ensure debounce logic is implemented
 
+#### 5. **Empty List on Initial Load**
+
+**Symptoms:**
+
+- Screen shows empty list on first load
+- Loading indicators don't appear
+- Works fine after manual refresh
+
+**Root Cause:**
+Wrong pagination reset logic - trying to load "next page" when no first page exists.
+
+**Fix:**
+
+```kotlin
+// WRONG - causes empty list on initial load
+val shouldReset = YourPageState.needsRefresh  // false on initial load
+
+// CORRECT - handles initial load properly  
+val shouldReset = YourPageState.needsRefresh || !YourPageState.hasData()
+```
+
+**Prevention:**
+
+- ALWAYS check `!hasData()` for initial load reset logic
+- Never rely solely on `needsRefresh` flag for determining reset behavior
+
+#### 6. **State Inconsistency Between UI and Pagination**
+
+**Symptoms:**
+
+- Display shows wrong count vs actual data
+- Navigation back doesn't preserve scroll correctly
+- State gets out of sync after operations
+
+**Root Cause:**
+UI state items and pagination state items are not kept in sync.
+
+**Fix:**
+
+```kotlin
+// WRONG - can get out of sync
+_uiState.value = _uiState.value.copy(
+  items = displayItems,
+  paginationState = savedPaginationState  // Original state
+)
+
+// CORRECT - ensures consistency
+_uiState.value = _uiState.value.copy(
+  items = displayItems,  
+  paginationState = savedPaginationState.copy(items = sourceItems) // Synced state
+)
+```
+
+#### 7. **Platform-Specific Issues (WasmJS/Web)**
+
+**Symptoms:**
+
+- Issues appear only on web target (WasmJS)
+- Works fine on Android/iOS but fails on web
+- Cache behaves differently
+
+**Root Cause:**
+Different platforms have different caching behaviors. WasmJS has more persistent/aggressive caching.
+
+**Fix:**
+
+- Always clear Apollo cache after mutations: `apolloClient.apolloStore.clearAll()`
+- Use Query Watchers for consistent cross-platform behavior
+- Test extensively on all target platforms
+
+### Pagination Implementation Checklist
+
+Use this checklist when implementing any paginated list to prevent common issues:
+
+#### Repository Requirements
+
+- ✅ **Query Watchers**: Use `.watch()` instead of `.toFlow()`
+- ✅ **Cache Miss Handling**: Check `response.exception is CacheMissException`
+- ✅ **Cache clearing**: Clear Apollo cache after successful mutations
+- ✅ **Error handling**: Proper error states in pagination results
+- ✅ **GraphQL structure**: Correct pageInfo with `hasNextPage`, `endCursor`
+
+#### ViewModel Requirements
+
+- ✅ **State preservation**: Proper early returns for existing data
+- ✅ **State consistency**: `paginationState.copy(items = items)`
+- ✅ **Bounds checking**: Check for existing data before API calls
+- ✅ **Simple concatenation**: No manual deduplication needed with Query Watchers
+
+#### Screen Requirements
+
+- ✅ **Correct reset logic**: `shouldReset = needsRefresh || !hasData()`
+- ✅ **Global state object**: With `markForRefresh()` method
+- ✅ **Unique refresh key**: `Clock.System.now().toEpochMilliseconds()`
+- ✅ **State saving**: Save pagination state in LaunchedEffect
+
+#### Testing Requirements
+
+- ✅ **Initial load**: Verify list loads correctly (not empty)
+- ✅ **Configuration changes**: Test device rotation
+- ✅ **Navigation flows**: Back navigation preserves scroll/data correctly
+- ✅ **Search functionality**: Search + pagination works without issues
+- ✅ **CRUD operations**: Lists refresh after create/edit/delete
+- ✅ **Platform testing**: Test especially on WasmJS/Web target
+
+### Prevention Rules
+
+To prevent issues in future implementations:
+
+1. **MANDATORY QUERY WATCHERS**: Use `.watch()` for CacheAndNetwork policy
+2. **MANDATORY CACHE MISS HANDLING**: Check `CacheMissException` for empty responses
+3. **MANDATORY RESET LOGIC**: Always check `!hasData()` for initial load handling
+4. **MANDATORY STATE SYNC**: Keep UI state and pagination state in sync
+5. **MANDATORY CACHE CLEARING**: Clear Apollo cache after mutations
+6. **MANDATORY TESTING**: Test on all platforms, especially WasmJS/Web
+
 ## Examples
 
 ### Complete Implementation
 
-See `AryaSamajListScreen.kt` for a complete working example that demonstrates all features of the pagination system.
+See `FamilyRepository.kt` for a complete working example that demonstrates Query Watchers implementation.
 
 ### Integration with Existing Screens
 
@@ -721,6 +931,7 @@ The EkalAryaListScreen and AryaPariwarListScreen can be refactored to use this c
 
 ---
 
-**Version**: 1.0  
-**Last Updated**: July 3, 2025  
-**Compatible With**: Compose Multiplatform (Android, iOS, Web, Desktop)
+**Version**: 2.0  
+**Last Updated**: July 7, 2025  
+**Compatible With**: Compose Multiplatform (Android, iOS, Web, Desktop)  
+**Uses**: Apollo Query Watchers for optimal cache handling

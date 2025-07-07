@@ -2,7 +2,11 @@ package com.aryamahasangh.features.admin
 
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
-import com.apollographql.apollo.cache.normalized.*
+import com.apollographql.apollo.cache.normalized.FetchPolicy
+import com.apollographql.apollo.cache.normalized.apolloStore
+import com.apollographql.apollo.cache.normalized.fetchPolicy
+import com.apollographql.apollo.cache.normalized.watch
+import com.apollographql.apollo.exception.CacheMissException
 import com.aryamahasangh.*
 import com.aryamahasangh.fragment.FamilyFields
 import com.aryamahasangh.fragment.MemberWithoutFamily
@@ -114,42 +118,44 @@ class FamilyRepositoryImpl(private val apolloClient: ApolloClient) : FamilyRepos
         )
       )
         .fetchPolicy(FetchPolicy.CacheAndNetwork)
-        .toFlow()
+        .watch()
         .collect { response ->
-          // Skip only cache MISSES with empty data - cache HITS with empty data should be shown
-          if (response.isFromCache && response.cacheInfo?.isCacheHit == false && response.data?.familyCollection?.edges.isNullOrEmpty()) {
-            // Skip emitting empty cache miss - wait for network
-          } else {
-            val result = safeCall {
-              if (response.hasErrors()) {
-                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-              }
+          val isCacheMissWithEmptyData = response.exception is CacheMissException &&
+            response.data?.familyCollection?.edges.isNullOrEmpty()
 
-              val families = response.data?.familyCollection?.edges?.map {
-                it.node.familyFields
-              } ?: emptyList()
+          if (isCacheMissWithEmptyData) {
+            return@collect
+          }
 
-              val pageInfo = response.data?.familyCollection?.pageInfo
-
-              PaginationResult.Success(
-                data = families,
-                hasNextPage = pageInfo?.hasNextPage ?: false,
-                endCursor = pageInfo?.endCursor
-              )
+          val result = safeCall {
+            if (response.hasErrors()) {
+              throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
             }
 
-            when (result) {
-              is Result.Success -> {
-                emit(result.data)
-              }
+            val families = response.data?.familyCollection?.edges?.map {
+              it.node.familyFields
+            } ?: emptyList()
 
-              is Result.Error -> {
-                emit(PaginationResult.Error(result.exception?.message ?: "Unknown error"))
-              }
+            val pageInfo = response.data?.familyCollection?.pageInfo
 
-              is Result.Loading -> {
-                // Already emitted loading state above
-              }
+            PaginationResult.Success(
+              data = families,
+              hasNextPage = pageInfo?.hasNextPage ?: false,
+              endCursor = pageInfo?.endCursor
+            )
+          }
+
+          when (result) {
+            is Result.Success -> {
+              emit(result.data)
+            }
+
+            is Result.Error -> {
+              emit(PaginationResult.Error(result.exception?.message ?: "Unknown error"))
+            }
+
+            is Result.Loading -> {
+              // Already emitted loading state above
             }
           }
         }
@@ -208,15 +214,18 @@ class FamilyRepositoryImpl(private val apolloClient: ApolloClient) : FamilyRepos
         )
       )
         .fetchPolicy(FetchPolicy.CacheAndNetwork)
-        .toFlow()
+        .watch()
         .collect { response ->
-          val cameFromEmptyCache =
-            response.isFromCache && response.cacheInfo?.isCacheHit == false
+          val isCacheMissWithEmptyData = response.exception is CacheMissException &&
+            response.data?.familyCollection?.edges.isNullOrEmpty()
+
+          if (isCacheMissWithEmptyData) {
+            return@collect
+          }
+
           val result = safeCall {
-            if(!cameFromEmptyCache) {
-              if (response.hasErrors()) {
-                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-              }
+            if (response.hasErrors()) {
+              throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
             }
 
             response.data?.familyCollection?.edges?.map { it.node.familyFields } ?: emptyList()
@@ -260,27 +269,28 @@ class FamilyRepositoryImpl(private val apolloClient: ApolloClient) : FamilyRepos
         GetFamilyDetailQuery(familyId)
       )
         .fetchPolicy(FetchPolicy.CacheAndNetwork)
-        .toFlow()
+        .watch()
         .collect { response ->
-          val cameFromEmptyCache =
-            response.isFromCache && response.cacheInfo?.isCacheHit == false
+          val isCacheMissWithEmptyData = response.exception is CacheMissException &&
+            response.data?.familyCollection?.edges.isNullOrEmpty()
+
+          if (isCacheMissWithEmptyData) {
+            return@collect
+          }
+
           val result = safeCall {
-            if (!cameFromEmptyCache) {
-              if (response.hasErrors()) {
-                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-              }
+            if (response.hasErrors()) {
+              throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
             }
 
             val familyNode = response.data?.familyCollection?.edges?.firstOrNull()?.node
-            if (familyNode == null && !cameFromEmptyCache) {
+            if (familyNode == null) {
               throw Exception("Family not found")
             }
 
-            familyNode ?: throw Exception("Family not found")
+            familyNode
           }
-          if (!cameFromEmptyCache || (result is Result.Success)) {
-            emit(result)
-          }
+          emit(result)
         }
     }
 
