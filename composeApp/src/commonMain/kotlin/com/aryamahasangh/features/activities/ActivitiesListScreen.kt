@@ -37,7 +37,7 @@ private fun ActivityWithStatus.toOrganisationalActivityShort(): OrganisationalAc
 }
 
 // Global state object for scroll persistence
-private object ActivitiesPageState {
+internal object ActivitiesPageState {
   var activities: List<ActivityWithStatus> = emptyList()
   var paginationState: PaginationState<ActivityWithStatus> = PaginationState()
   var lastSearchQuery: String = ""
@@ -128,7 +128,7 @@ fun ActivitiesScreen(
       onSearchChange = viewModel::searchActivitiesWithDebounce,
       onLoadMore = viewModel::loadNextActivityPage,
       onRetry = viewModel::retryActivityLoad,
-      searchPlaceholder = "गतिविधि का नाम खोजें",
+      searchPlaceholder = "गतिविधि खोजें",
       emptyStateText = "कोई गतिविधि नहीं मिली",
       endOfListText = { count -> "सभी गतिविधियां दिखाई गईं (${count.toString().toDevanagariNumerals()})" },
       addButtonText = "नयी गतिविधी", // Not used since showAddButton = false

@@ -987,6 +987,9 @@ private fun CreateActivityScreenContent(
   }
 
   fun submitForm() {
+    // Prevent multiple submissions
+    if (isSubmitting) return
+
     if (validateForm()) {
       scope.launch {
         val attachedImages = mutableListOf<String>()
@@ -1029,6 +1032,7 @@ private fun CreateActivityScreenContent(
           println("error uploading files: $e")
           return@launch
         }
+
         val inp =
           ActivityInputData(
             name = name,
@@ -1706,39 +1710,19 @@ private fun CreateActivityScreenContent(
         when {
           formSubmissionState.isSuccess -> {
             if (editingActivityId != null) {
-              // Navigate to activity details after successful update
-              snackbarHostState.showSnackbar(
-                message = "गतिविधि सफलतापूर्वक अद्यतन की गई"
-              )
+              // Navigate immediately to activity details after successful update
               onActivitySaved(editingActivityId)
             } else {
-              // Handle new activity creation
+              // Handle new activity creation - navigate immediately
               createdActivityId?.let { activityId ->
-                snackbarHostState.showSnackbar(
-                  message = "नई गतिविधि सफलतापूर्वक बनाई गई"
-                )
                 onActivitySaved(activityId)
               }
             }
           }
 
           formSubmissionState.error != null -> {
-            // Error submitting form
-            val errorMessage =
-              when {
-                formSubmissionState.error!!.contains("network", ignoreCase = true) ->
-                  "नेटवर्क त्रुटि। कृपया अपना इंटरनेट कनेक्शन जांचें"
-
-                formSubmissionState.error!!.contains("duplicate", ignoreCase = true) ->
-                  "इस नाम की गतिविधि पहले से उपस्थित है"
-
-                else -> "त्रुटि: ${formSubmissionState.error}"
-              }
-            snackbarHostState.showSnackbar(
-              message = errorMessage,
-              actionLabel = "बंद करें",
-              duration = SnackbarDuration.Long
-            )
+            // Error messages are now handled by GlobalMessageManager in ViewModel
+            // Keep local error display for form-specific validation errors if needed
           }
         }
       }

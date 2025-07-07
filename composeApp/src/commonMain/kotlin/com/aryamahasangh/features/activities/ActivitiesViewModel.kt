@@ -6,6 +6,7 @@ import com.aryamahasangh.features.admin.PaginationResult
 import com.aryamahasangh.features.admin.PaginationState
 import com.aryamahasangh.fragment.ActivityWithStatus
 import com.aryamahasangh.type.ActivitiesInsertInput
+import com.aryamahasangh.util.GlobalMessageManager
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.viewmodel.AdmissionFormSubmissionState
 import com.aryamahasangh.viewmodel.BaseViewModel
@@ -340,11 +341,23 @@ class ActivitiesViewModel(
     launch {
       when (val result = activityRepository.deleteActivity(id)) {
         is Result.Success -> {
+          GlobalMessageManager.showSuccess("गतिविधि सफलतापूर्वक हटाई गई")
           // Refresh the list
           loadActivitiesPaginated(resetPagination = true)
           onSuccess?.invoke()
         }
         is Result.Error -> {
+          val errorMessage = when {
+            result.message?.startsWith("CONSTRAINT_VIOLATION:", ignoreCase = true) == true ->
+              "इस गतिविधि को नहीं हटाया जा सकता क्योंकि यह अन्य रिकॉर्ड से जुड़ी हुई है"
+            result.message?.startsWith("RECORD_NOT_FOUND:", ignoreCase = true) == true ->
+              "गतिविधि नहीं मिली या पहले से हटा दी गई है"
+
+            result.message?.contains("network", ignoreCase = true) == true ->
+              "नेटवर्क त्रुटि। कृपया अपना इंटरनेट कनेक्शन जांचें"
+            else -> "गतिविधि हटाने में त्रुटि: ${result.message ?: "अज्ञात त्रुटि"}"
+          }
+          GlobalMessageManager.showError(errorMessage)
           _activitiesUiState.value = _activitiesUiState.value.copy(error = result.message)
         }
         is Result.Loading -> {}
@@ -454,75 +467,22 @@ class ActivitiesViewModel(
               isSuccess = true,
               error = null
             )
+          GlobalMessageManager.showSuccess("नई गतिविधि सफलतापूर्वक बनाई गई")
           // Reload activities to include the new one
           loadActivitiesPaginated(resetPagination = true)
         }
 
         is Result.Error -> {
-          _formSubmissionState.value =
-            AdmissionFormSubmissionState(
-              isSubmitting = false,
-              isSuccess = false,
-              error = result.message
-            )
-        }
+          val errorMessage = when {
+            result.message?.contains("duplicate", ignoreCase = true) == true ->
+              "इस नाम की गतिविधि पहले से उपस्थित है"
 
-        is Result.Loading -> {
-          // This shouldn't happen with the current implementation
-        }
-      }
-    }
-  }
+            result.message?.contains("network", ignoreCase = true) == true ->
+              "नेटवर्क त्रुटि। कृपया अपना इंटरनेट कनेक्शन जांचें"
 
-  /**
-   * Update an existing activity
-   */
-  fun updateActivity(
-    id: String,
-    input: ActivityInputData
-  ) {
-    val activity =
-      ActivitiesInsertInput(
-        name = Optional.present(input.name),
-        type = Optional.present(input.type),
-        shortDescription = Optional.present(input.shortDescription),
-        longDescription = Optional.present(input.longDescription),
-        address = Optional.present(input.address),
-        state = Optional.present(input.state),
-        district = Optional.present(input.district),
-        startDatetime = Optional.present(input.startDatetime.convertToInstant()),
-        endDatetime = Optional.present(input.endDatetime.convertToInstant()),
-        mediaFiles = Optional.present(input.mediaFiles),
-        additionalInstructions = Optional.present(input.additionalInstructions),
-        capacity = Optional.present(input.capacity),
-        latitude = Optional.present(input.latitude),
-        longitude = Optional.present(input.longitude),
-        allowedGender = Optional.present(input.allowedGender.toApollo())
-      )
-    launch {
-      _formSubmissionState.value = AdmissionFormSubmissionState(isSubmitting = true)
-
-      when (
-        val result =
-          activityRepository.updateActivity(
-            id,
-            activity,
-            input.contactPeople,
-            input.associatedOrganisations
-          )
-      ) {
-        is Result.Success -> {
-          _formSubmissionState.value =
-            AdmissionFormSubmissionState(
-              isSubmitting = false,
-              isSuccess = result.data,
-              error = null
-            )
-          // Reload activities to reflect the update
-          loadActivityDetail(id)
-        }
-
-        is Result.Error -> {
+            else -> "गतिविधि बनाने में त्रुटि: ${result.message ?: "अज्ञात त्रुटि"}"
+          }
+          GlobalMessageManager.showError(errorMessage)
           _formSubmissionState.value =
             AdmissionFormSubmissionState(
               isSubmitting = false,
@@ -562,11 +522,24 @@ class ActivitiesViewModel(
               isSuccess = result.data,
               error = null
             )
+          GlobalMessageManager.showSuccess("गतिविधि सफलतापूर्वक अद्यतन की गई")
+          // Reload activities list to reflect the update
+          loadActivitiesPaginated(resetPagination = true)
           // Reload activity detail to reflect the update
           loadActivityDetail(id)
         }
 
         is Result.Error -> {
+          val errorMessage = when {
+            result.message?.contains("duplicate", ignoreCase = true) == true ->
+              "इस नाम की गतिविधि पहले से उपस्थित है"
+
+            result.message?.contains("network", ignoreCase = true) == true ->
+              "नेटवर्क त्रुटि। कृपया अपना इंटरनेट कनेक्शन जांचें"
+
+            else -> "गतिविधि अद्यतन करने में त्रुटि: ${result.message ?: "अज्ञात त्रुटि"}"
+          }
+          GlobalMessageManager.showError(errorMessage)
           _formSubmissionState.value =
             AdmissionFormSubmissionState(
               isSubmitting = false,

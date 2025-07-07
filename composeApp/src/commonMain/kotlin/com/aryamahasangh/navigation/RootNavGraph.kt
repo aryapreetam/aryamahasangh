@@ -5,9 +5,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -28,6 +28,7 @@ import com.aryamahasangh.features.organisations.OrgDetailScreen
 import com.aryamahasangh.features.organisations.OrganisationsViewModel
 import com.aryamahasangh.features.organisations.OrgsScreen
 import com.aryamahasangh.screens.*
+import com.aryamahasangh.features.activities.ActivitiesPageState
 import com.aryamahasangh.viewmodel.*
 import org.koin.compose.koinInject
 
@@ -373,7 +374,14 @@ fun RootNavGraph(navController: NavHostController) {
           viewModel = viewModel,
           editingActivityId = null,
           onActivitySaved = { activityId ->
-            onNavigateToDetails(activityId)
+            // Mark list for refresh when activity is created
+            ActivitiesPageState.markForRefresh()
+            navController.navigate(Screen.ActivityDetails(activityId)) {
+              // Clear the CreateActivity form from back stack
+              popUpTo(Screen.Activities) {
+                inclusive = false
+              }
+            }
           },
           onCancel = {
             navController.popBackStack()
@@ -387,6 +395,8 @@ fun RootNavGraph(navController: NavHostController) {
           viewModel = viewModel,
           editingActivityId = id,
           onActivitySaved = { activityId ->
+            // Mark list for refresh when activity is updated
+            ActivitiesPageState.markForRefresh()
             // Navigate to activity details after save
             navController.navigate(Screen.ActivityDetails(activityId)) {
               popUpTo(Screen.Activities)

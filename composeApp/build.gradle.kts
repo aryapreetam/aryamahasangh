@@ -315,6 +315,10 @@ apollo {
     mapScalar("Date", "kotlinx.datetime.LocalDate")
     // If you're using adapters, you can also set this
     generateKotlinModels.set(true)
+    generateInputBuilders.set(true)
+
+    // Make IDEA aware of codegen and will run it during your Gradle Sync, default: false
+    // generateSourcesDuringGradleSync.set(true)
 
     // Read Supabase credentials directly from local.properties based on environment
     val supabaseUrl = localProps.getProperty("${environment}_supabase_url", "")

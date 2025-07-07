@@ -10,7 +10,10 @@ import com.aryamahasangh.features.admin.PaginationResult
 import com.aryamahasangh.fragment.ActivityWithStatus
 import com.aryamahasangh.fragment.OrganisationalActivityShort
 import com.aryamahasangh.network.supabaseClient
-import com.aryamahasangh.type.*
+import com.aryamahasangh.type.ActivitiesInsertInput
+import com.aryamahasangh.type.ActivitiesWithStatusFilter
+import com.aryamahasangh.type.ActivitiesWithStatusOrderBy
+import com.aryamahasangh.type.OrderByDirection
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.util.safeCall
 import io.github.jan.supabase.annotations.SupabaseExperimental
@@ -53,16 +56,6 @@ interface ActivityRepository : PaginatedRepository<ActivityWithStatus> {
     activityMembers: List<ActivityMember>,
     associatedOrganisations: List<Organisation>
   ): Result<String>
-
-  /**
-   * Update an activity
-   */
-  suspend fun updateActivity(
-    id: String,
-    input: ActivitiesInsertInput,
-    contactMembers: List<ActivityMember>,
-    organisations: List<Organisation>
-  ): Result<Boolean>
 
   /**
    * Smart update an activity using differential updates
@@ -261,9 +254,23 @@ class ActivityRepositoryImpl(
     return safeCall {
       val response = apolloClient.mutation(DeleteActivityMutation(id)).execute()
       if (response.hasErrors()) {
-        throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+        val errorMessage = response.errors?.firstOrNull()?.message ?: "Unknown error occurred"
+        // Check for database constraint violations
+        if (errorMessage.contains("constraint", ignoreCase = true) ||
+          errorMessage.contains("foreign key", ignoreCase = true) ||
+          errorMessage.contains("violates", ignoreCase = true)
+        ) {
+          throw Exception("CONSTRAINT_VIOLATION: $errorMessage")
+        }
+        throw Exception(errorMessage)
       }
-      val success = response.data?.deleteFromActivitiesCollection?.affectedCount!! > 0
+
+      val affectedCount = response.data?.deleteFromActivitiesCollection?.affectedCount ?: 0
+      if (affectedCount == 0) {
+        throw Exception("RECORD_NOT_FOUND: No activity found with the specified ID")
+      }
+
+      val success = affectedCount > 0
       if (success) {
         apolloClient.apolloStore.clearAll()
       }
@@ -302,94 +309,10 @@ class ActivityRepositoryImpl(
         } catch (e: Exception) {
           throw Exception("Unknown error occurred ${e.message}")
         }
+        apolloClient.apolloStore.clearAll()
         return@safeCall activityId
       }
       throw Exception("Failed to create activity")
-    }
-  }
-
-  override suspend fun updateActivity(
-    id: String,
-    input: ActivitiesInsertInput,
-    contactMembers: List<ActivityMember>,
-    organisations: List<Organisation>
-  ): Result<Boolean> {
-    return try {
-      val updateInput =
-        ActivitiesUpdateInput(
-          name = input.name,
-          type = input.type,
-          shortDescription = input.shortDescription,
-          longDescription = input.longDescription,
-          address = input.address,
-          state = input.state,
-          district = input.district,
-          startDatetime = input.startDatetime,
-          endDatetime = input.endDatetime,
-          mediaFiles = input.mediaFiles,
-          additionalInstructions = input.additionalInstructions,
-          capacity = input.capacity,
-          latitude = input.latitude,
-          longitude = input.longitude,
-          allowedGender = input.allowedGender
-        )
-
-      val updateMutation =
-        UpdateActivityMutation(
-          id = id,
-          input = updateInput
-        )
-
-      val updateResponse = apolloClient.mutation(updateMutation).execute()
-      if (updateResponse.hasErrors()) {
-        return Result.Error(updateResponse.errors?.first()?.message ?: "Failed to update activity")
-      }
-
-      supabaseClient.from("organisational_activity")
-        .delete {
-          filter {
-            eq("activity_id", id)
-          }
-        }
-
-      supabaseClient.from("activity_member")
-        .delete {
-          filter {
-            eq("activity_id", id)
-          }
-        }
-
-      val organisationData =
-        organisations.map {
-          OrganisationalActivityInsertData(
-            activityId = id,
-            organisationId = it.id
-          )
-        }
-
-      if (organisationData.isNotEmpty()) {
-        supabaseClient.from("organisational_activity")
-          .insert(organisationData)
-      }
-
-      val contactData =
-        contactMembers.map {
-          ActivityMemberInsertData(
-            activityId = id,
-            memberId = it.member.id,
-            post = it.post,
-            priority = it.priority
-          )
-        }
-
-      if (contactData.isNotEmpty()) {
-        supabaseClient.from("activity_member")
-          .insert(contactData)
-      }
-
-      Result.Success(true)
-    } catch (e: Exception) {
-      Result.Error(e.message ?: "Failed to update activity")
     }
   }
 
