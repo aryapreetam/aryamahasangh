@@ -1,7 +1,6 @@
 
 import com.apollographql.apollo.gradle.internal.ApolloGenerateSourcesTask
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
-import org.jetbrains.compose.reload.ComposeHotRun
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
@@ -305,9 +304,9 @@ compose.desktop {
   }
 }
 
-tasks.withType<ComposeHotRun>().configureEach {
-  mainClass.set("com.aryamahasangh.MainKt")
-}
+//tasks.withType<ComposeHotRun>().configureEach {
+//  mainClass.set("com.aryamahasangh.MainKt")
+//}
 
 apollo {
   service("service") {

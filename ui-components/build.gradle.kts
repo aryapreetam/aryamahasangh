@@ -3,6 +3,7 @@
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
+  alias(libs.plugins.androidLibrary)
   alias(libs.plugins.kotlinMultiplatform)
   alias(libs.plugins.composeMultiplatform)
   alias(libs.plugins.composeCompiler)
@@ -11,7 +12,11 @@ plugins {
 kotlin {
   jvmToolchain(11)
 
-  jvm("desktop")
+  androidTarget()
+  iosX64()
+  iosArm64()
+  iosSimulatorArm64()
+  jvm()
 
   wasmJs {
     browser()
@@ -32,16 +37,28 @@ kotlin {
       // For coroutines and state management
     }
 
-    val desktopMain by getting {
-      dependencies {
-        implementation(compose.desktop.currentOs)
-      }
-    }
+//    val jvmMain by getting {
+//      dependencies {
+//        implementation(compose.desktop.currentOs)
+//      }
+//    }
+//
+//    val wasmJsMain by getting {
+//      dependencies {
+//        // WASM specific dependencies if needed
+//      }
+//    }
+  }
+}
 
-    val wasmJsMain by getting {
-      dependencies {
-        // WASM specific dependencies if needed
-      }
-    }
+android {
+  namespace = "com.aryamahasangh.uicomponents"
+  compileSdk = libs.versions.android.compileSdk.get().toInt()
+  compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+  }
+  defaultConfig {
+    minSdk = libs.versions.android.minSdk.get().toInt()
   }
 }

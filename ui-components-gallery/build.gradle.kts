@@ -1,5 +1,3 @@
-import org.jetbrains.compose.reload.ComposeHotRun
-
 plugins {
   alias(libs.plugins.kotlinMultiplatform)
   alias(libs.plugins.composeMultiplatform)
@@ -61,6 +59,6 @@ compose.desktop {
   }
 }
 
-tasks.withType<ComposeHotRun>().configureEach {
-  mainClass.set("com.aryamahasangh.gallery.MainKt")
-}
+//tasks.withType<ComposeHotRun>().configureEach {
+//  mainClass.set("com.aryamahasangh.gallery.MainKt")
+//}

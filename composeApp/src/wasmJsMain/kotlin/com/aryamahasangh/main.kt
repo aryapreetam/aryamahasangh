@@ -11,7 +11,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.CanvasBasedWindow
+import androidx.compose.ui.window.ComposeViewport
 import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.mahasangh_logo_without_background
 import aryamahasangh.composeapp.generated.resources.noto_sans_devanagari
@@ -29,7 +29,8 @@ fun main() {
     // Overrides the resource location
     resourcePathMapping { path -> "./$path" }
   }
-  CanvasBasedWindow(canvasElementId = "ComposeTarget") {
+//  val body = document.body ?: return
+  ComposeViewport(document.body!!) {
     val quoteContainer = document.querySelector(".quote-container")
     quoteContainer?.remove()
 
