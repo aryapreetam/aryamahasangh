@@ -11,10 +11,15 @@ import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -24,8 +29,10 @@ import aryamahasangh.composeapp.generated.resources.*
 import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.auth.SessionManager
 import com.aryamahasangh.components.LoginDialog
+import com.aryamahasangh.util.GlobalMessage
 import com.aryamahasangh.util.GlobalMessageDuration
 import com.aryamahasangh.util.GlobalMessageManager
+import com.aryamahasangh.util.GlobalMessageType
 import com.aryamahasangh.util.PlatformBackHandler
 import com.aryamahasangh.util.VersionInfo
 import kotlinx.coroutines.launch
@@ -473,12 +480,13 @@ fun MainContent(
     globalMessage?.let { message ->
       val duration = when (message.duration) {
         GlobalMessageDuration.SHORT -> SnackbarDuration.Short
-        GlobalMessageDuration.LONG -> SnackbarDuration.Long
+        GlobalMessageDuration.LONG -> SnackbarDuration.Short
         GlobalMessageDuration.INDEFINITE -> SnackbarDuration.Indefinite
       }
 
       snackbarHostState.showSnackbar(
         message = message.message,
+        actionLabel = null,
         duration = duration
       )
 
@@ -489,7 +497,66 @@ fun MainContent(
 
   Scaffold(
     snackbarHost = {
-      SnackbarHost(hostState = snackbarHostState)
+      SnackbarHost(
+        hostState = snackbarHostState,
+        snackbar = { data ->
+          // Determine message type for icon
+          // Find the GlobalMessage in currentMessage to match string or propagate meta
+          // (We use the last shown message; best effort for matching)
+          val globalMsg = globalMessage
+          val isError = globalMsg?.type == GlobalMessageType.ERROR
+          val isSuccess = globalMsg?.type == GlobalMessageType.SUCCESS
+          val icon = when {
+            isSuccess -> Icons.Filled.CheckCircle
+            isError -> Icons.Filled.Error
+            else -> Icons.Filled.Info
+          }
+          val iconTint = when {
+            isError -> MaterialTheme.colorScheme.error
+            isSuccess -> Color(0xFF00C853) // Bright, vibrant green for celebration
+            else -> MaterialTheme.colorScheme.primary
+          }
+
+          Surface(
+            shadowElevation = 6.dp,
+            shape = MaterialTheme.shapes.extraLarge,
+            tonalElevation = 2.dp,
+            color = MaterialTheme.colorScheme.inverseSurface,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+          ) {
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .fillMaxWidth()
+            ) {
+              Icon(
+                icon, contentDescription = null,
+                tint = iconTint,
+                modifier = Modifier
+                  .size(32.dp)
+                  .padding(end = 8.dp)
+              )
+              Text(
+                data.visuals.message,
+                color = MaterialTheme.colorScheme.inverseOnSurface,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f)
+              )
+              IconButton(
+                onClick = { snackbarHostState.currentSnackbarData?.dismiss() },
+                modifier = Modifier.size(28.dp)
+              ) {
+                Icon(
+                  Icons.Default.Close,
+                  contentDescription = "Close",
+                  tint = MaterialTheme.colorScheme.inverseOnSurface
+                )
+              }
+            }
+          }
+        }
+      )
     },
     topBar = {
       TopAppBar(

@@ -1,6 +1,9 @@
 package com.aryamahasangh.ui.components.buttons
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -15,6 +18,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -222,6 +228,9 @@ data class SubmitButtonConfig(
   val successDuration: Long = 1500L,
   val errorDuration: Long = 3000L,
   val validator: (suspend () -> SubmissionError?)? = null,
+  val onValidationFailed: (SubmissionError) -> Unit = {},
+  val showValidationFeedback: Boolean = true,
+  val validationFeedbackDuration: Long = 2000L,
   val errorMapper: (Exception) -> SubmissionError = {
     when {
       it.message?.contains("network", ignoreCase = true) == true -> SubmissionError.NetworkError
@@ -373,26 +382,70 @@ fun SubmitButton(
   var currentState by remember { mutableStateOf<SubmissionState>(SubmissionState.Idle) }
   val coroutineScope = rememberCoroutineScope()
   val internalCallbacks = remember { SubmitButtonCallbacks.fromPublic(callbacks) }
+  val hapticFeedback = LocalHapticFeedback.current
+
+  // Validation feedback state
+  var showValidationFeedback by remember { mutableStateOf(false) }
+  var validationMessage by remember { mutableStateOf<String?>(null) }
+  
+  // Shake animation state
+  val shakeAnimation = remember { Animatable(0f) }
 
   // Perfect submission logic with comprehensive error handling
   val handleSubmission = remember {
     {
       coroutineScope.launch {
         try {
-          // Validation phase
+          // Validation phase - NEW BEHAVIOR: Don't trigger error state
+          config.validator?.invoke()?.let { validationError ->
+            // Visual feedback without state change
+            showValidationFeedback = true
+            validationMessage = validationError.toUserMessage()
+            
+            // Trigger haptic feedback
+            hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+
+            // Shake animation - Better rejection feel
+            coroutineScope.launch {
+              // Double haptic for stronger feedback
+              hapticFeedback.performHapticFeedback(HapticFeedbackType.LongPress)
+
+              // More natural "no/rejection" shake with dampening effect
+              val shakeValues = listOf(
+                12f, -10f, 8f, -6f, 4f, -2f, 0f
+              )
+
+              shakeValues.forEachIndexed { index, value ->
+                shakeAnimation.animateTo(
+                  targetValue = value,
+                  animationSpec = tween(
+                    durationMillis = 60, // Faster, more snappy
+                    easing = if (index == 0) LinearEasing else FastOutSlowInEasing
+                  )
+                )
+              }
+            }
+            
+            // Trigger callback (for snackbar)
+            config.onValidationFailed(validationError)
+            
+            // Auto-hide feedback
+            coroutineScope.launch {
+              delay(config.validationFeedbackDuration)
+              showValidationFeedback = false
+              validationMessage = null
+            }
+            
+            return@launch // Stay in Idle state, don't proceed to onSubmit
+          }
+
+          // Validation passed - proceed through proper state transitions
+          // First transition to Validating state  
           if (!stateMachine.transition(SubmissionState.Validating)) return@launch
           currentState = SubmissionState.Validating
           internalCallbacks.onStateChange(currentState)
 
-          config.validator?.invoke()?.let { validationError ->
-            stateMachine.transition(SubmissionState.Error(validationError))
-            currentState = stateMachine.state
-            internalCallbacks.onStateChange(currentState)
-            internalCallbacks.onError(validationError)
-            return@launch
-          }
-
-          // Processing phase
+          // Then immediately transition to Processing (validation already done)
           if (!stateMachine.transition(SubmissionState.Processing)) return@launch
           currentState = SubmissionState.Processing
           internalCallbacks.onStateChange(currentState)
@@ -452,70 +505,88 @@ fun SubmitButton(
     }
   }
 
-  Button(
-    onClick = {
-      // Smart click prevention - only process clicks when appropriate
-      // This avoids ugly disabled styling while preventing unwanted clicks
-      when (currentState) {
-        is SubmissionState.Idle -> {
-          if (config.enabled) handleSubmission()
-        }
-        is SubmissionState.Error -> {
-          if (config.showRetryOnError && config.enabled) handleRetry()
-        }
-        // Ignore clicks during Validating, Processing, and Success states
-        // This provides the "smart prevention" without disabled styling
-        else -> { /* No action - click is ignored gracefully */
-        }
-      }
-    },
-    modifier = modifier.then(
-      if (config.fillMaxWidth) Modifier.fillMaxWidth().height(56.dp)
-      else Modifier.height(56.dp)
-    ).semantics {
-      // Perfect accessibility
-      when (currentState) {
-        is SubmissionState.Validating -> {
-          contentDescription = "${config.texts.validatingText} - $text"
-          stateDescription = "जांच प्रक्रिया में"
-        }
-
-        is SubmissionState.Processing -> {
-          contentDescription = "${config.texts.submittingText} - $text"
-          stateDescription = "प्रक्रिया में"
-        }
-
-        is SubmissionState.Success -> {
-          contentDescription = "${config.texts.successText} - $text"
-          stateDescription = "सफल"
-        }
-
-        is SubmissionState.Error -> {
-          contentDescription = "${config.texts.errorText} - $text"
-          stateDescription = "त्रुटि"
-        }
-
-        else -> {
-          contentDescription = text
-          stateDescription = "तैयार"
-        }
-      }
-    },
-    // ALWAYS ENABLED - This prevents ugly disabled styling!
-    // Click prevention is handled in onClick logic above
-    enabled = true,
-    colors = ButtonDefaults.buttonColors(
-      containerColor = config.colors.getContainerColor(currentState),
-      contentColor = config.colors.getContentColor(currentState)
-    ),
-    // Remove default Material3 content padding to use our custom 24.dp padding
-    contentPadding = PaddingValues(0.dp)
+  // Complete button with validation feedback
+  Column(
+    horizontalAlignment = Alignment.CenterHorizontally,
+    verticalArrangement = Arrangement.spacedBy(8.dp)
   ) {
-    PerfectButtonContent(
-      state = currentState,
-      text = text,
-      config = config
-    )
+    Button(
+      onClick = {
+        // Smart click prevention - only process clicks when appropriate
+        when (currentState) {
+          is SubmissionState.Idle -> {
+            if (config.enabled) handleSubmission()
+          }
+          is SubmissionState.Error -> {
+            if (config.showRetryOnError && config.enabled) handleRetry()
+          }
+          else -> { /* No action - click is ignored gracefully */ }
+        }
+      },
+      modifier = modifier.then(
+        if (config.fillMaxWidth) Modifier.fillMaxWidth().height(56.dp)
+        else Modifier.height(56.dp)
+      ).graphicsLayer {
+        // Apply shake animation
+        translationX = shakeAnimation.value
+      }.semantics {
+        // Perfect accessibility
+        when (currentState) {
+          is SubmissionState.Processing -> {
+            contentDescription = "${config.texts.submittingText} - $text"
+            stateDescription = "प्रक्रिया में"
+          }
+
+          is SubmissionState.Success -> {
+            contentDescription = "${config.texts.successText} - $text"
+            stateDescription = "सफल"
+          }
+
+          is SubmissionState.Error -> {
+            contentDescription = "${config.texts.errorText} - $text"
+            stateDescription = "त्रुटि"
+          }
+
+          else -> {
+            contentDescription = text
+            stateDescription = "तैयार"
+          }
+        }
+      },
+      enabled = true,
+      colors = ButtonDefaults.buttonColors(
+        containerColor = config.colors.getContainerColor(currentState),
+        contentColor = config.colors.getContentColor(currentState)
+      ),
+      contentPadding = PaddingValues(0.dp)
+    ) {
+      PerfectButtonContent(
+        state = currentState,
+        text = text,
+        config = config
+      )
+    }
+
+    // Validation message below button with reserved space
+    Box(
+      modifier = Modifier.height(48.dp), // Reserved space to prevent jumping
+      contentAlignment = Alignment.Center
+    ) {
+      if (showValidationFeedback && validationMessage != null) {
+        Card(
+          colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+          )
+        ) {
+          Text(
+            text = validationMessage!!,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onErrorContainer,
+            modifier = Modifier.padding(12.dp)
+          )
+        }
+      }
+    }
   }
 }
 

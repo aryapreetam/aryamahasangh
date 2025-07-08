@@ -1654,11 +1654,6 @@ private fun CreateActivityScreenContent(
       SubmitButton(
         text = if (editingActivityId != null) "अद्यतन करें" else "गतिविधि बनाएं",
         onSubmit = {
-          // Validation
-          if (!validateForm()) {
-            throw IllegalArgumentException("कृपया सभी आवश्यक फील्ड भरें")
-          }
-
           // Process media files and create activity data
           val processedMediaFiles = processMediaFiles()
 
@@ -1697,6 +1692,9 @@ private fun CreateActivityScreenContent(
         },
         config = SubmitButtonConfig(
           fillMaxWidth = false,
+          validator = {
+            if (!validateForm()) SubmissionError.ValidationFailed else null
+          },
           texts = SubmitButtonTexts(
             submittingText = if (editingActivityId != null) "अद्यतन हो रही है..." else "बनाई जा रही है...",
             successText = if (editingActivityId != null) "अद्यतन सफल!" else "सफल!"

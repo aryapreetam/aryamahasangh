@@ -20,10 +20,56 @@ Location: `ui-components/src/commonMain/kotlin/com/aryamahasangh/ui/components/b
 - **♿ Complete Accessibility** - WCAG compliant
 - **🎨 Infinite Customization** - Colors, texts, behaviors
 - **📊 Analytics Integration** - Comprehensive callbacks
-- **🔄 Retry Functionality** - Smart error recovery
+- **🔄 Smart Validation Flow** - Validation errors don't trigger button state change
+- **🎊 Haptic Feedback** - Tactile rejection feel for validation errors
+- **🎭 Smooth Animations** - Natural shake animation with dampening
 - **⚡ Performance Optimized** - Minimal recompositions
 
-### **2. Comprehensive Gallery Showcase**
+### **2. Revolutionary Validation UX**
+
+**🎯 Problem Solved:**
+
+- **Old behavior**: Validation errors triggered button error state (red color, retry text)
+- **New behavior**: Validation errors show contextual message below button, button stays normal
+
+**🔧 Implementation:**
+
+```kotlin
+SubmitButton(
+    text = "गतिविधि बनाएं",
+    onSubmit = {
+        // Only submission logic - no validation here
+        val activityData = createActivityData()
+        viewModel.createActivity(activityData)
+    },
+    config = SubmitButtonConfig(
+        validator = { 
+            if (!validateForm()) SubmissionError.ValidationFailed else null
+        }
+    )
+)
+```
+
+### **3. Enhanced Visual Feedback**
+
+**🎊 Shake Animation:**
+
+- **Natural dampening**: 12f, -10f, 8f, -6f, 4f, -2f, 0f
+- **Fast response**: 60ms per frame
+- **Rejection feel**: Users know they did something wrong
+
+**🎯 Haptic Feedback:**
+
+- **Double vibration**: Stronger tactile feedback
+- **Error indication**: Clear physical rejection signal
+
+**💬 Validation Messages:**
+
+- **Contextual placement**: Below button in reserved space
+- **No layout jumping**: Button stays in fixed position
+- **Auto-dismiss**: 2-second timeout
+
+### **4. Comprehensive Gallery Showcase**
 
 Location: `ui-components-gallery/src/commonMain/kotlin/com/aryamahasangh/gallery/screens/ButtonsGalleryScreen.kt`
 
@@ -73,10 +119,13 @@ sealed class SubmissionError {
 ```kotlin
 data class SubmitButtonConfig(
     val enabled: Boolean = true,
-    val fillMaxWidth: Boolean = true,
+    val fillMaxWidth: Boolean = false,
     val successDuration: Long = 1500L,
     val errorDuration: Long = 3000L,
     val validator: (suspend () -> SubmissionError?)? = null,
+    val onValidationFailed: (SubmissionError) -> Unit = {},
+    val showValidationFeedback: Boolean = true,
+    val validationFeedbackDuration: Long = 2000L,
     val errorMapper: (Exception) -> SubmissionError = { /* smart mapping */ },
     val texts: SubmitButtonTexts = SubmitButtonTexts.default(),
     val colors: SubmitButtonColors = SubmitButtonColors.default(),
@@ -84,7 +133,7 @@ data class SubmitButtonConfig(
 )
 ```
 
-## 🎯 **Clean Usage API (Your Requirement)**
+## 🎯 **Clean Usage API**
 
 ```kotlin
 // Dead simple usage - exactly what you wanted!
@@ -92,18 +141,21 @@ SubmitButton(
     text = "गतिविधि बनाएं",
     onSubmit = {
         // Your clean submission logic
-        if (!validateForm()) {
-            throw IllegalArgumentException("Validation failed")
-        }
-        viewModel.submitActivityForm(createActivityData())
+        val activityData = createActivityData()
+        viewModel.createActivity(activityData)
     },
+    config = SubmitButtonConfig(
+        validator = { 
+            if (!validateForm()) SubmissionError.ValidationFailed else null
+        }
+    ),
     callbacks = object : SubmitCallbacks {
         override fun onSuccess() {
             ActivitiesPageState.markForRefresh()
             onActivitySaved(getActivityId())
         }
         override fun onError(error: SubmissionError) {
-            GlobalMessageManager.showError(error.toUserMessage())
+            // Real submission errors handled via GlobalMessageManager
         }
     }
 )
@@ -117,6 +169,8 @@ SubmitButton(
 2. **❌ Double-click problems** → **✅ Mathematical prevention**
 3. **❌ Race conditions** → **✅ State machine guarantees**
 4. **❌ Complex form logic** → **✅ Clean separation of concerns**
+5. **❌ Validation UX confusion** → **✅ Contextual feedback without state change**
+6. **❌ Layout jumping** → **✅ Fixed button position with reserved space**
 
 ### **✅ Distinguished Engineer Benefits:**
 
@@ -124,6 +178,29 @@ SubmitButton(
 2. **🧠 Developer Experience** - Impossible to misuse API
 3. **⚡ Technical Excellence** - Mathematical correctness + Performance optimization
 4. **📈 Scalability** - Same pattern for all forms in your application
+5. **🎯 Perfect UX** - Users get immediate, contextual feedback
+
+## 🎯 **Revolutionary UX Flow**
+
+### **Validation Failure:**
+
+1. **User clicks button** with invalid form
+2. **Button shakes** with natural dampening animation
+3. **Haptic feedback** - Double vibration for tactile rejection
+4. **Validation message** appears below button in reserved space
+5. **Button stays normal** - No red color, no state change
+6. **Form fields highlight** - Individual field validation
+7. **Auto-dismiss** - Message disappears after 2 seconds
+8. **No layout jumping** - Button stays in fixed position
+
+### **Validation Success:**
+
+1. **User clicks button** with valid form
+2. **Brief validation state** - "जांच की जा रही है..."
+3. **Processing state** - "बनाई जा रही है..."
+4. **Success state** - "सफल!" with green checkmark
+5. **Auto-navigation** - Immediate via callbacks
+6. **Success snackbar** - Global celebratory message with vibrant icon
 
 ## # SubmitButton Component Documentation
 
@@ -141,6 +218,7 @@ eliminates entire categories of bugs while providing a simple, clean API for for
 - **🔄 Smart State Management**: Automatic validation → processing → success/error flow
 - **🌍 Internationalization**: Built-in Hindi support with English alternatives
 - **🧪 Gallery-Testable**: Comprehensive demo states for development and testing
+- **🎊 Enhanced UX**: Haptic feedback, shake animation, contextual validation messages
 
 ## Basic Usage
 
@@ -149,14 +227,17 @@ eliminates entire categories of bugs while providing a simple, clean API for for
 ```kotlin
 SubmitButton(
     text = "गतिविधि बनाएं",
-  onSubmit = { submitData() },
-  callbacks = object : SubmitCallbacks {
-    override fun onSuccess() {
-      onActivitySaved(getActivityId())
-    }
-    override fun onError(error: SubmissionError) {
-      GlobalMessageManager.showError(error.toUserMessage())
-    }
+    onSubmit = { submitData() },
+    config = SubmitButtonConfig(
+        validator = { if (!validateForm()) SubmissionError.ValidationFailed else null }
+    ),
+    callbacks = object : SubmitCallbacks {
+        override fun onSuccess() {
+            onActivitySaved(getActivityId())
+        }
+        override fun onError(error: SubmissionError) {
+            // Real submission errors only
+        }
     }
 )
 ```
@@ -167,12 +248,15 @@ SubmitButton(
 SubmitButton(
     text = "डेटा सहेजें",
     onSubmit = { validateAndSaveData() },
+    config = SubmitButtonConfig(
+        validator = { if (!isFormValid()) SubmissionError.ValidationFailed else null }
+    ),
     callbacks = object : SubmitCallbacks {
         override fun onSuccess() {
             navigateToNextScreen()
         }
         override fun onError(error: SubmissionError) {
-            GlobalMessageManager.showError(error.toUserMessage())
+            // Network/API errors handled via GlobalMessageManager
         }
     }
 )
@@ -182,17 +266,41 @@ SubmitButton(
 
 ### SubmitButtonConfig
 
-| Parameter          | Type                                | Default        | Description                             |
-|--------------------|-------------------------------------|----------------|-----------------------------------------|
-| `enabled`          | Boolean                             | `true`         | Whether the button accepts interactions |
-| `fillMaxWidth`     | Boolean                             | `false`        | Whether button should take full width   |
-| `successDuration`  | Long                                | `1500L`        | How long to show success state (ms)     |
-| `errorDuration`    | Long                                | `3000L`        | How long to show error state (ms)       |
-| `validator`        | `(suspend () -> SubmissionError?)?` | `null`         | Pre-submission validation               |
-| `errorMapper`      | `(Exception) -> SubmissionError`    | Smart mapper   | Maps exceptions to user-friendly errors |
-| `texts`            | SubmitButtonTexts                   | Hindi defaults | Customizable text for all states        |
-| `colors`           | SubmitButtonColors                  | Professional   | Color scheme for all states             |
-| `showRetryOnError` | Boolean                             | `true`         | Whether error state shows retry option  |
+| Parameter                    | Type                                | Default        | Description                             |
+|------------------------------|-------------------------------------|----------------|-----------------------------------------|
+| `enabled`                    | Boolean                             | `true`         | Whether the button accepts interactions |
+| `fillMaxWidth`               | Boolean                             | `false`        | Whether button should take full width   |
+| `successDuration`            | Long                                | `1500L`        | How long to show success state (ms)     |
+| `errorDuration`              | Long                                | `3000L`        | How long to show error state (ms)       |
+| `validator`                  | `(suspend () -> SubmissionError?)?` | `null`         | Pre-submission validation               |
+| `onValidationFailed`         | `(SubmissionError) -> Unit`         | `{}`           | Called when validation fails            |
+| `showValidationFeedback`     | Boolean                             | `true`         | Show visual feedback for validation     |
+| `validationFeedbackDuration` | Long                                | `2000L`        | How long to show validation message     |
+| `errorMapper`                | `(Exception) -> SubmissionError`    | Smart mapper   | Maps exceptions to user-friendly errors |
+| `texts`                      | SubmitButtonTexts                   | Hindi defaults | Customizable text for all states        |
+| `colors`                     | SubmitButtonColors                  | Professional   | Color scheme for all states             |
+| `showRetryOnError`           | Boolean                             | `true`         | Whether error state shows retry option  |
+
+### Enhanced Validation Configuration
+
+```kotlin
+SubmitButton(
+    text = "Submit Form",
+    onSubmit = { submitForm() },
+    config = SubmitButtonConfig(
+        validator = { 
+            when {
+                name.isEmpty() -> SubmissionError.ValidationFailed
+                email.isEmpty() -> SubmissionError.ValidationFailed
+                !isValidEmail(email) -> SubmissionError.Custom("Invalid email format")
+                else -> null
+            }
+        },
+        showValidationFeedback = true,
+        validationFeedbackDuration = 3000L // Show message for 3 seconds
+    )
+)
+```
 
 ### Text Customization
 
@@ -261,15 +369,21 @@ SubmitButtonColors(
 
 ## Advanced Usage
 
-### With Validation
+### With Comprehensive Validation
 
 ```kotlin
 SubmitButton(
     text = "सत्यापन सहित प्रस्तुत करें",
     config = SubmitButtonConfig(
         validator = {
-            if (!isFormValid()) SubmissionError.ValidationFailed else null
-        }
+            when {
+                !isFormValid() -> SubmissionError.ValidationFailed
+                !isNetworkAvailable() -> SubmissionError.NetworkError
+                else -> null
+            }
+        },
+        showValidationFeedback = true,
+        validationFeedbackDuration = 2000L
     ),
     onSubmit = { submitValidatedForm() }
 )
@@ -281,6 +395,7 @@ SubmitButton(
 SubmitButton(
     text = "नेटवर्क ऑपरेशन",
     config = SubmitButtonConfig(
+        validator = { if (!validateForm()) SubmissionError.ValidationFailed else null },
         errorMapper = { exception ->
             when {
                 exception.message?.contains("network") == true -> 
@@ -300,7 +415,10 @@ SubmitButton(
 ```kotlin
 SubmitButton(
     text = "पूर्ण चौड़ाई बटन",
-    config = SubmitButtonConfig(fillMaxWidth = true),
+    config = SubmitButtonConfig(
+        fillMaxWidth = true,
+        validator = { if (!validateForm()) SubmissionError.ValidationFailed else null }
+    ),
     onSubmit = { submitForm() }
 )
 ```
@@ -332,7 +450,7 @@ sealed class SubmissionError {
 ```kotlin
 interface SubmitCallbacks {
     fun onSuccess() {}                              // Called on successful submission
-    fun onError(error: SubmissionError) {}         // Called on error
+    fun onError(error: SubmissionError) {}         // Called on submission error (not validation)
     fun onRetry() {}                               // Called when user clicks retry
 }
 ```
@@ -342,7 +460,7 @@ interface SubmitCallbacks {
 ### Internal States (Automatic)
 
 1. **Idle**: Ready for user interaction
-2. **Validating**: Running pre-submission validation
+2. **Validating**: Running pre-submission validation (brief)
 3. **Processing**: Executing submission logic
 4. **Success**: Operation completed successfully
 5. **Error**: Operation failed with retry option
@@ -351,70 +469,98 @@ interface SubmitCallbacks {
 
 ```
 Idle → Validating → Processing → Success → Idle
-  ↓        ↓           ↓
-  Error ←← Error ←← Error
-  ↓
-  Idle (auto-reset) or Retry → Validating
+       ↓           ↓
+       ValidationFailed   Error ← (submission errors only)
+       ↓           ↓
+       Stay in Idle   → Idle (auto-reset) or Retry → Validating
 ```
+
+## Visual Feedback System
+
+### Validation Feedback
+
+**When validation fails:**
+
+- **Shake animation**: Natural dampening (12f, -10f, 8f, -6f, 4f, -2f, 0f)
+- **Haptic feedback**: Double vibration for tactile rejection
+- **Visual message**: Contextual card below button
+- **Button state**: Remains in Idle (no color change)
+- **Auto-dismiss**: Message disappears after 2 seconds
+- **Fixed position**: Button doesn't jump up/down
+
+### Success Feedback
+
+**When submission succeeds:**
+
+- **Success state**: Green button with checkmark
+- **Duration**: 1.5 seconds by default
+- **Snackbar**: Global celebratory message
+- **Navigation**: Immediate via callbacks
 
 ## Best Practices
 
 ### ✅ Do
 
 ```kotlin
-// Simple, clean usage
+// Clean validation separation
 SubmitButton(
     text = "सहेजें",
-    onSubmit = { saveData() },
+    onSubmit = { saveData() }, // Only submission logic
+    config = SubmitButtonConfig(
+        validator = { if (!validateForm()) SubmissionError.ValidationFailed else null }
+    ),
     callbacks = object : SubmitCallbacks {
         override fun onSuccess() = navigateBack()
-        override fun onError(error) = showError(error)
+        override fun onError(error) = {} // Real errors via GlobalMessageManager
     }
 )
 
-// Use GlobalMessageManager for consistent UX
-override fun onError(error: SubmissionError) {
-    GlobalMessageManager.showError(error.toUserMessage())
-}
-
-// Let the button handle state management
-onSubmit = {
-    if (!validateLocally()) {
-        throw IllegalArgumentException("Validation failed")
-    }
-    repository.submitData(formData)
-}
+// Let the button handle all feedback
+// No manual state management needed
 ```
 
 ### ❌ Don't
 
 ```kotlin
-// Don't manage submission state yourself
+// Don't put validation in onSubmit
+onSubmit = {
+    if (!validateForm()) {
+        throw IllegalArgumentException("Validation failed") // ❌ Wrong place
+    }
+    saveData()
+}
+
+// Don't manage button state manually
 var isSubmitting by remember { mutableStateOf(false) }
 Button(
     enabled = !isSubmitting,
-    onClick = {
-        isSubmitting = true
-        // ... submission logic
-    }
+    onClick = { isSubmitting = true }
 ) // ❌ The SubmitButton handles this automatically
 
-// Don't handle snackbars in the form screen
-LaunchedEffect(submitResult) {
-    if (submitResult.isSuccess) {
-        snackbarHostState.showSnackbar("Success")
-        navigate()
+// Don't handle validation errors in callbacks
+callbacks = object : SubmitCallbacks {
+    override fun onError(error: SubmissionError) {
+        if (error is SubmissionError.ValidationFailed) {
+            // ❌ Validation errors are handled automatically
+        }
     }
-} // ❌ Use callbacks instead
-
-// Don't prevent double-clicks manually
-fun submitForm() {
-    if (isSubmitting) return // ❌ SubmitButton prevents this automatically
-    // submission logic
 }
 ```
 
 ## FAQ
+
+### Q: How does validation work now?
+
+A: Validation runs first and if it fails, the button shows a message below and stays in normal state. Only if validation
+passes does the button proceed to submission.
+
+### Q: Will I see the validation state?
+
+A: Yes, briefly. The button shows "जांच की जा रही है..." for valid forms before proceeding to "बनाई जा रही है...".
+
+### Q: Can I disable the shake animation?
+
+A: Currently no, but you can set `showValidationFeedback = false` to disable all validation feedback.
 
 ### Q: How do I handle navigation after success?
 
@@ -428,10 +574,19 @@ callbacks = object : SubmitCallbacks {
 }
 ```
 
-### Q: Can I customize the loading indicator?
+### Q: Can I customize the validation message?
 
-A: The loading states are built-in with consistent styling. For custom loading UI, consider using a regular Button with
-your own state management.
+A: Yes, through the validator return:
+
+```kotlin
+validator = {
+    when {
+        name.isEmpty() -> SubmissionError.Custom("Name is required")
+        email.isEmpty() -> SubmissionError.Custom("Email is required")
+        else -> null
+    }
+}
+```
 
 ### Q: How do I disable the button conditionally?
 
@@ -441,18 +596,13 @@ A: Use the `enabled` parameter in config:
 config = SubmitButtonConfig(enabled = formIsValid)
 ```
 
-### Q: Can I change colors after creation?
+### Q: Can I change the validation message duration?
 
-A: Colors are set via configuration. Create a new button instance with different colors:
+A: Yes, use `validationFeedbackDuration`:
 
 ```kotlin
-config = SubmitButtonConfig(colors = SubmitButtonColors.vibrant())
+config = SubmitButtonConfig(validationFeedbackDuration = 3000L) // 3 seconds
 ```
-
-### Q: How do I handle very long operations?
-
-A: The button automatically shows progress. For operations longer than 30 seconds, consider showing additional progress
-information outside the button.
 
 ## Component Architecture
 
@@ -463,6 +613,7 @@ This SubmitButton follows distinguished engineer principles:
 - **Open/Closed**: Extensible via configuration, closed for modification
 - **Interface Segregation**: Clean, focused callback interfaces
 - **DRY**: Eliminates repetitive submission handling code
+- **UX Excellence**: Contextual feedback without state confusion
 
 ## Version History
 

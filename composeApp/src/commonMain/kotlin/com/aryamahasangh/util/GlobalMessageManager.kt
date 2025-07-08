@@ -9,22 +9,23 @@ import kotlinx.coroutines.flow.asStateFlow
  */
 sealed class GlobalMessage(
   val message: String,
-  val duration: GlobalMessageDuration = GlobalMessageDuration.SHORT
+  val duration: GlobalMessageDuration = GlobalMessageDuration.SHORT,
+  val type: GlobalMessageType
 ) {
   data class Success(
     val text: String,
     val dur: GlobalMessageDuration = GlobalMessageDuration.SHORT
-  ) : GlobalMessage(text, dur)
+  ) : GlobalMessage(text, dur, GlobalMessageType.SUCCESS)
 
   data class Error(
     val text: String,
     val dur: GlobalMessageDuration = GlobalMessageDuration.LONG
-  ) : GlobalMessage(text, dur)
+  ) : GlobalMessage(text, dur, GlobalMessageType.ERROR)
 
   data class Info(
     val text: String,
     val dur: GlobalMessageDuration = GlobalMessageDuration.SHORT
-  ) : GlobalMessage(text, dur)
+  ) : GlobalMessage(text, dur, GlobalMessageType.INFO)
 }
 
 /**
@@ -34,6 +35,15 @@ enum class GlobalMessageDuration {
   SHORT,    // ~4 seconds
   LONG,     // ~10 seconds
   INDEFINITE // Until user dismisses
+}
+
+/**
+ * Global message types for icon determination
+ */
+enum class GlobalMessageType {
+  SUCCESS,
+  ERROR,
+  INFO
 }
 
 /**
