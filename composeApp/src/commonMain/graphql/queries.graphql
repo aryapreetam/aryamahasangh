@@ -130,8 +130,10 @@ query memberDetail($memberId: String!) {
               activity {
                 id
                 name
-                district
-                state
+                address {
+                  district
+                  state
+                }
                 startDatetime
                 endDatetime
               }
@@ -293,8 +295,10 @@ fragment OrganisationalActivityShort on Activities {
   startDatetime
   endDatetime
   type
-  district
-  state
+  address {
+    district
+    state
+  }
 }
 
 fragment ActivityWithStatus on ActivitiesWithStatus {
@@ -308,28 +312,40 @@ fragment ActivityWithStatus on ActivitiesWithStatus {
   state
 }
 
+fragment OrganisationalActivityWithStatusShort on ActivitiesWithStatus {
+  id
+  name
+  shortDescription
+  startDatetime
+  endDatetime
+  type
+  district
+  state
+}
+
 query UpcomingSatrByRegion($state: String!, $district: String, $currentDateTime: Datetime) {
-  activitiesCollection(
+  activitiesWithStatusCollection(
     filter: {
       state: {eq: $state},
       district: {eq: $district},
       startDatetime: {gt: $currentDateTime},
-      type: {eq: SESSION}
+      type: {eq: SESSION},
+      statusPriority: {eq: 1}
     }
   ) {
     edges {
       node {
-        ...OrganisationalActivityShort
+        ...OrganisationalActivityWithStatusShort
       }
     }
   }
 }
 
-query OrganisationalActivities($filter: ActivitiesFilter) {
-  activitiesCollection(filter: $filter) {
+query OrganisationalActivities($filter: ActivitiesWithStatusFilter) {
+  activitiesWithStatusCollection(filter: $filter) {
     edges {
       node {
-        ...OrganisationalActivityShort
+        ...ActivityWithStatus
       }
     }
   }
@@ -341,13 +357,17 @@ query OrganisationalActivityDetailById($activityId: String!) {
       node {
         ...OrganisationalActivityShort
         longDescription
-        address
-        state
+        address {
+          basicAddress
+          state
+          latitude
+          longitude
+        }
+
         mediaFiles
         additionalInstructions
         capacity
-        latitude
-        longitude
+
         allowedGender
         overviewDescription
         overviewMediaUrls
@@ -388,13 +408,17 @@ query OrganisationalActivityDetail($filter: ActivitiesFilter) {
       node {
         ...OrganisationalActivityShort
         longDescription
-        address
-        state
+        address {
+          basicAddress
+          state
+          latitude
+          longitude
+        }
+
         mediaFiles
         additionalInstructions
         capacity
-        latitude
-        longitude
+
         allowedGender
         overviewDescription
         overviewMediaUrls
@@ -491,10 +515,12 @@ query UpcomingSatrActivities($currentDateTime: Datetime!) {
         startDatetime
         endDatetime
         allowedGender
-        district
-        state
-        latitude
-        longitude
+        address {
+          district
+          state
+          latitude
+          longitude
+        }
         capacity
         satrRegistrationCollection {
           pageInfo {

@@ -14,26 +14,26 @@ import kotlinx.coroutines.flow.map
 class GetActivitiesUseCase(
   private val activityRepository: ActivityRepository
 ) {
-  operator fun invoke(): Flow<Result<List<OrganisationalActivityShort>>> {
-    return activityRepository.getActivities()
-      .map { result ->
-        when (result) {
-          is Result.Success -> {
-            // Apply business logic: sort activities by date (newest first)
-            val sortedActivities =
-              result.data.sortedByDescending {
-                it.startDatetime.toString()
-              }
-            Result.Success(sortedActivities)
-          }
-          else -> result
-        }
-      }
-      .catch { exception ->
-        val appError = ErrorHandler.handleException(exception)
-        emit(Result.Error(appError.message, exception))
-      }
-  }
+//  operator fun invoke(): Flow<Result<List<OrganisationalActivityShort>>> {
+//    return activityRepository.getActivities()
+//      .map { result ->
+//        when (result) {
+//          is Result.Success -> {
+//            // Apply business logic: sort activities by date (newest first)
+//            val sortedActivities =
+//              result.data.sortedByDescending {
+//                it.startDatetime.toString()
+//              }
+//            Result.Success(sortedActivities)
+//          }
+//          else -> result
+//        }
+//      }
+//      .catch { exception ->
+//        val appError = ErrorHandler.handleException(exception)
+//        emit(Result.Error(appError.message, exception))
+//      }
+//  }
 }
 
 /**

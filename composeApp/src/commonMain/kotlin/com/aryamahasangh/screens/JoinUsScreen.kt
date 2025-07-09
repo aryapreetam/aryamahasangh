@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.components.ActivityListItem
 import com.aryamahasangh.components.LoadingErrorState
+import com.aryamahasangh.fragment.ActivityWithStatus
 import com.aryamahasangh.fragment.OrganisationalActivityShort
 import com.aryamahasangh.navigation.LocalSnackbarHostState
 import com.aryamahasangh.viewmodel.JoinUsUiState
@@ -286,7 +287,7 @@ fun UpcomingActivitiesForm(
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ActivitiesList(activities: List<OrganisationalActivityShort>) {
+fun ActivitiesList(activities: List<ActivityWithStatus>) {
   LazyColumn(
     modifier = Modifier.fillMaxSize(),
     verticalArrangement = Arrangement.spacedBy(8.dp)

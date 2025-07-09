@@ -309,8 +309,8 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
                 ActivityInfo(
                   id = activity.id,
                   name = activity.name!!,
-                  district = activity.district!!,
-                  state = activity.state!!,
+                  district = activity.address?.district!!,
+                  state = activity.address.state!!,
                   startDatetime = activity.startDatetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
                   endDatetime = activity.endDatetime!!.toLocalDateTime(TimeZone.currentSystemDefault())
                 )

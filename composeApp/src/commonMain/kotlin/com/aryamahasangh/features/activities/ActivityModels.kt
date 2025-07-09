@@ -4,6 +4,7 @@ import kotlinx.datetime.*
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import com.aryamahasangh.OrganisationalActivityDetailByIdQuery
+import com.aryamahasangh.fragment.ActivityWithStatus
 import com.aryamahasangh.fragment.OrganisationalActivityShort
 import com.aryamahasangh.type.ActivityType
 import com.aryamahasangh.type.ActivityType.*
@@ -172,6 +173,15 @@ fun OrganisationalActivityShort.getStatus(): ActivityStatus {
   }
 }
 
+fun ActivityWithStatus.getStatus(): ActivityStatus {
+  val currentTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+  return when {
+    currentTime < startDatetime!!.toLocalDateTime() -> ActivityStatus.UPCOMING
+    currentTime > endDatetime!!.toLocalDateTime() -> ActivityStatus.PAST
+    else -> ActivityStatus.ONGOING
+  }
+}
+
 fun Instant.toLocalDateTime(): LocalDateTime {
   return this.toLocalDateTime(TimeZone.currentSystemDefault())
 }
@@ -185,12 +195,12 @@ fun OrganisationalActivity.Companion.camelCased(
     name = organisationalActivityShort.name,
     type = organisationalActivityShort.type,
     shortDescription = organisationalActivityShort.shortDescription,
-    district = organisationalActivityShort.district ?: "",
-    state = node.state!!,
-    address = node.address!!,
+    district = organisationalActivityShort.address?.district ?: "",
+    state = node.address?.state!!,
+    address = node.address.basicAddress ?: "",
     capacity = node.capacity!!,
-    latitude = node.latitude,
-    longitude = node.longitude,
+    latitude = node.address.latitude,
+    longitude = node.address.longitude,
     mediaFiles = node.mediaFiles.map { it ?: "" },
     endDatetime = organisationalActivityShort.endDatetime.toLocalDateTime(),
     allowedGender = node.allowedGender!!.name,

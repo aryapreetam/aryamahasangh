@@ -55,7 +55,13 @@ data class AddressFieldsConfig(
   val showState: Boolean = true,
   val showDistrict: Boolean = true,
   val showVidhansabha: Boolean = true,
-  val showPincode: Boolean = true
+  val showPincode: Boolean = true,
+  val mandatoryLocation: Boolean = false,
+  val mandatoryAddress: Boolean = false,
+  val mandatoryState: Boolean = false,
+  val mandatoryDistrict: Boolean = false,
+  val mandatoryVidhansabha: Boolean = false,
+  val mandatoryPincode: Boolean = false
 )
 
 /**
@@ -99,8 +105,10 @@ data class NominatimResponse(
  *
  * @param addressData Current address data
  * @param onAddressChange Callback when address data changes
- * @param fieldsConfig Configuration for which fields to show
- * @param errors Current error states for validation
+ * @param fieldsConfig Configuration for which fields to show and which are mandatory
+ * @param validateFields Trigger validation when this changes from false to true
+ * @param onValidationResult Callback to report validation state back to parent
+ * @param errors Current error states for validation (used when not using self-validation)
  * @param onFieldFocused Optional callback when a field is focused (useful for keyboard handling)
  * @param isSmallScreen Whether the screen is small (for keyboard handling)
  * @param modifier Modifier for the component
@@ -111,11 +119,73 @@ fun AddressComponent(
   addressData: AddressData,
   onAddressChange: (AddressData) -> Unit,
   fieldsConfig: AddressFieldsConfig = AddressFieldsConfig(),
+  validateFields: Boolean = false,
+  onValidationResult: ((Boolean) -> Unit)? = null,
   errors: AddressErrors = AddressErrors(),
   onFieldFocused: ((Float) -> Unit)? = null,
   isSmallScreen: Boolean = false,
   modifier: Modifier = Modifier
 ) {
+  // Internal validation state - only used when onValidationResult is provided
+  var internalLocationError by remember { mutableStateOf(false) }
+  var internalAddressError by remember { mutableStateOf(false) }
+  var internalStateError by remember { mutableStateOf(false) }
+  var internalDistrictError by remember { mutableStateOf(false) }
+  var internalVidhansabhaError by remember { mutableStateOf(false) }
+  var internalPincodeError by remember { mutableStateOf(false) }
+
+  // Track validation trigger to detect changes
+  var lastValidationTrigger by remember { mutableStateOf(validateFields) }
+
+  // Self-validation logic
+  LaunchedEffect(validateFields) {
+    if (onValidationResult != null && validateFields != lastValidationTrigger) {
+      lastValidationTrigger = validateFields
+
+      // Perform validation based on fieldsConfig
+      internalLocationError =
+        fieldsConfig.mandatoryLocation && fieldsConfig.showLocation && addressData.location == null
+      internalAddressError = fieldsConfig.mandatoryAddress && fieldsConfig.showAddress && addressData.address.isBlank()
+      internalStateError = fieldsConfig.mandatoryState && fieldsConfig.showState && addressData.state.isBlank()
+      internalDistrictError =
+        fieldsConfig.mandatoryDistrict && fieldsConfig.showDistrict && addressData.district.isBlank()
+      internalVidhansabhaError =
+        fieldsConfig.mandatoryVidhansabha && fieldsConfig.showVidhansabha && addressData.vidhansabha.isBlank()
+      internalPincodeError = fieldsConfig.mandatoryPincode && fieldsConfig.showPincode && addressData.pincode.isBlank()
+
+      // Report validation result
+      val isValid = !internalLocationError && !internalAddressError && !internalStateError &&
+        !internalDistrictError && !internalVidhansabhaError && !internalPincodeError
+      onValidationResult(isValid)
+    }
+  }
+
+  // Clear errors when user provides valid data (only for self-validation mode)
+  LaunchedEffect(addressData) {
+    if (onValidationResult != null) {
+      if (addressData.location != null) internalLocationError = false
+      if (addressData.address.isNotBlank()) internalAddressError = false
+      if (addressData.state.isNotBlank()) internalStateError = false
+      if (addressData.district.isNotBlank()) internalDistrictError = false
+      if (addressData.vidhansabha.isNotBlank()) internalVidhansabhaError = false
+      if (addressData.pincode.isNotBlank()) internalPincodeError = false
+    }
+  }
+
+  // Determine which errors to use: internal (self-validation) or external
+  val effectiveErrors = if (onValidationResult != null) {
+    AddressErrors(
+      locationError = if (internalLocationError) "स्थान चुनना आवश्यक है" else null,
+      addressError = if (internalAddressError) "पता आवश्यक है" else null,
+      stateError = if (internalStateError) "राज्य चुनना आवश्यक है" else null,
+      districtError = if (internalDistrictError) "जिला चुनना आवश्यक है" else null,
+      vidhansabhaError = if (internalVidhansabhaError) "विधानसभा चुनना आवश्यक है" else null,
+      pincodeError = if (internalPincodeError) "पिन कोड आवश्यक है" else null
+    )
+  } else {
+    errors // Use externally provided errors for backward compatibility
+  }
+
   // Debug: Track address data changes
   LaunchedEffect(addressData) {
     println("DEBUG: AddressComponent received new addressData: $addressData")
@@ -375,7 +445,7 @@ fun AddressComponent(
           )
         }
 
-        errors.locationError?.let {
+        effectiveErrors.locationError?.let {
           Text(
             text = it,
             color = MaterialTheme.colorScheme.error,
@@ -402,8 +472,8 @@ fun AddressComponent(
             .focusRequester(addressFocusRequester),
         minLines = 2,
         maxLines = 3,
-        isError = errors.addressError != null,
-        supportingText = { errors.addressError?.let { Text(it) } },
+        isError = effectiveErrors.addressError != null,
+        supportingText = { effectiveErrors.addressError?.let { Text(it) } },
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
         keyboardActions =
           KeyboardActions(
@@ -433,8 +503,8 @@ fun AddressComponent(
             )
           },
           modifier = Modifier.width(160.dp),
-          isError = errors.stateError != null,
-          errorMessage = errors.stateError ?: ""
+          isError = effectiveErrors.stateError != null,
+          errorMessage = effectiveErrors.stateError ?: ""
         )
       }
 
@@ -448,9 +518,9 @@ fun AddressComponent(
             onAddressChange(addressData.copy(district = newDistrict ?: ""))
           },
           modifier = Modifier.width(200.dp),
-          isError = errors.districtError != null,
-          errorMessage = errors.districtError ?: "",
-          isMandatory = errors.districtError != null
+          isError = effectiveErrors.districtError != null,
+          errorMessage = effectiveErrors.districtError ?: "",
+          isMandatory = fieldsConfig.mandatoryDistrict
         )
       }
 
@@ -464,8 +534,8 @@ fun AddressComponent(
             onAddressChange(addressData.copy(vidhansabha = newVidhansabha))
           },
           modifier = Modifier.width(200.dp),
-          isError = errors.vidhansabhaError != null,
-          errorMessage = errors.vidhansabhaError ?: ""
+          isError = effectiveErrors.vidhansabhaError != null,
+          errorMessage = effectiveErrors.vidhansabhaError ?: ""
         )
       }
     }
@@ -485,8 +555,8 @@ fun AddressComponent(
             .width(150.dp)
             .focusRequester(pincodeFocusRequester),
         singleLine = true,
-        isError = errors.pincodeError != null,
-        supportingText = { errors.pincodeError?.let { Text(it) } },
+        isError = effectiveErrors.pincodeError != null,
+        supportingText = { effectiveErrors.pincodeError?.let { Text(it) } },
         keyboardOptions =
           KeyboardOptions(
             keyboardType = KeyboardType.Number,

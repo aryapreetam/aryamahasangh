@@ -42,6 +42,7 @@ import coil3.compose.AsyncImage
 import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
+import com.aryamahasangh.components.*
 import com.aryamahasangh.components.PhotoItem
 import com.aryamahasangh.isDesktop
 import com.aryamahasangh.navigation.LocalSetBackHandler
@@ -538,22 +539,18 @@ private fun CreateActivityScreenContent(
   var associatedOrganisations by remember { mutableStateOf(emptySet<Organisation>()) }
   var associatedOrganisationsError by remember { mutableStateOf(false) }
 
-  // Address-related states
+  // Address-related states - replaced with AddressData
   var includeAddress by remember { mutableStateOf(true) } // Default to true for non-CAMPAIGN types
-  var address by remember { mutableStateOf("") }
+  var addressData by remember { mutableStateOf(AddressData()) }
   var addressError by remember { mutableStateOf(false) }
 
-  var state by remember { mutableStateOf("") }
-  var stateError by remember { mutableStateOf(false) }
-
-  var district by remember { mutableStateOf("") }
-  var districtError by remember { mutableStateOf(false) }
+  // NEW: Self-validation state for AddressComponent
+  var triggerAddressValidation by remember { mutableStateOf(false) }
+  var isAddressValid by remember { mutableStateOf(true) }
 
   var stateErrorMessage by remember { mutableStateOf("") }
   var districtErrorMessage by remember { mutableStateOf("") }
 
-  var eventLatitude by remember { mutableStateOf("") }
-  var eventLongitude by remember { mutableStateOf("") }
   var latitudeError by remember { mutableStateOf<String?>(null) }
   var longitudeError by remember { mutableStateOf<String?>(null) }
 
@@ -579,15 +576,9 @@ private fun CreateActivityScreenContent(
     if (selectedType == ActivityType.CAMPAIGN) {
       includeAddress = false
       // Clear address fields when switching to CAMPAIGN
-      address = ""
-      state = ""
-      district = ""
-      eventLatitude = ""
-      eventLongitude = ""
+      addressData = AddressData()
       // Clear errors
       addressError = false
-      stateError = false
-      districtError = false
       latitudeError = null
       longitudeError = null
     } else if (selectedType != null) {
@@ -611,24 +602,21 @@ private fun CreateActivityScreenContent(
   var startDateTimeErrorMessage by remember { mutableStateOf("") }
   var endDateTimeErrorMessage by remember { mutableStateOf("") }
 
-  var attachedDocuments by remember { mutableStateOf(emptyList<PlatformFile>()) }
-  var attachedDocumentsError by remember { mutableStateOf(false) }
-  var attachedDocumentsErrorMessage by remember { mutableStateOf("") }
+  // Image picker state - replaced with ImagePickerState
+  var imagePickerState by remember { mutableStateOf(ImagePickerState()) }
+  // self-validation for image picker
+  var triggerImageValidation by remember { mutableStateOf(false) }
+  var imagePickerValid by remember { mutableStateOf(true) }
 
-  // Track URLs of existing media files to preserve during updates
-  var existingMediaUrls by remember { mutableStateOf(emptyList<String>()) }
-  var deletedMediaUrls by remember { mutableStateOf(emptySet<String>()) }
-
-  var contactPeople by remember { mutableStateOf(emptySet<Member>()) }
+  // Members state - replaced with MembersState
+  var membersState by remember { mutableStateOf(MembersState()) }
   var contactPeopleError by remember { mutableStateOf(false) }
 
   var additionalInstructions by remember { mutableStateOf("") }
 
   var eventCapacity by remember { mutableStateOf("100") }
-  var eventGenderAllowed by remember { mutableStateOf(GenderAllowed.ANY) }
-
-  // Map dialog state
-  var showMapDialog by remember { mutableStateOf(false) }
+  // Gender state - replaced with Gender enum
+  var genderAllowed by remember { mutableStateOf<Gender?>(Gender.ANY) }
 
   // Add error states for event details
   var capacityError by remember { mutableStateOf<String?>(null) }
@@ -657,20 +645,16 @@ private fun CreateActivityScreenContent(
         "shortDescription" to shortDescription,
         "description" to description,
         "associatedOrganisations" to associatedOrganisations,
-        "address" to address,
-        "state" to state,
-        "district" to district,
+        "addressData" to addressData,
         "startDate" to startDate,
         "startTime" to startTime,
         "endDate" to endDate,
         "endTime" to endTime,
-        "contactPeople" to contactPeople,
+        "membersState" to membersState,
         "additionalInstructions" to additionalInstructions,
         "eventCapacity" to eventCapacity,
-        "eventGenderAllowed" to eventGenderAllowed,
-        "eventLatitude" to eventLatitude,
-        "eventLongitude" to eventLongitude,
-        "attachedDocuments" to attachedDocuments
+        "genderAllowed" to genderAllowed,
+        "imagePickerState" to imagePickerState
       )
 
     return currentValues != initialFormValues
@@ -769,9 +753,18 @@ private fun CreateActivityScreenContent(
       shortDescription = activity.shortDescription
       description = activity.longDescription
       associatedOrganisations = activity.associatedOrganisations.map { it.organisation }.toSet()
-      address = activity.address
-      state = activity.state
-      district = activity.district
+      
+      // Update address data
+      addressData = AddressData(
+        location = if (activity.latitude != null && activity.longitude != null) {
+          LatLng(activity.latitude!!, activity.longitude!!)
+        } else null,
+        address = activity.address,
+        state = activity.state,
+        district = activity.district,
+        vidhansabha = "",
+        pincode = ""
+      )
 
       // Parse dates and times
       startDate = activity.startDatetime.date
@@ -784,33 +777,30 @@ private fun CreateActivityScreenContent(
       endDateText = TextFieldValue(dateFormatter(endDate!!))
       endTimeText = TextFieldValue(timeFormatter(endTime!!))
 
-      // Contact people - Map the Member objects only when both activity and members list are loaded
-      contactPeople =
-        activity.contactPeople.map { activityMember ->
-          // Find the full member object from the members list if available
-          members.find { it.id == activityMember.member.id } ?: activityMember.member
-        }.toSet()
-
-      // Clear and repopulate postMap
-      postMap.clear()
-      activity.contactPeople.forEach { activityMember ->
-        postMap[activityMember.member.id] = Pair(activityMember.post, activityMember.priority)
+      // Convert contactPeople to MembersState
+      val membersMap = activity.contactPeople.associate { activityMember ->
+        // Find the full member object from the members list if available
+        val fullMember = members.find { it.id == activityMember.member.id } ?: activityMember.member
+        fullMember to Pair(activityMember.post, activityMember.priority)
       }
+      membersState = MembersState(members = membersMap)
 
       additionalInstructions = activity.additionalInstructions
       eventCapacity = activity.capacity.toString()
-      eventGenderAllowed = GenderAllowed.fromDisplayName(activity.allowedGender) ?: GenderAllowed.ANY
-      eventLatitude = activity.latitude?.toString() ?: ""
-      eventLongitude = activity.longitude?.toString() ?: ""
 
-      // Debug: Print latitude/longitude values
-      println(
-        "Edit mode - Loading lat/lng: lat=$eventLatitude, lng=$eventLongitude, activity.lat=${activity.latitude}, activity.lng=${activity.longitude}"
+      // Convert from allowedGender String to Gender
+      genderAllowed = when {
+        activity.allowedGender.contains("महिला") -> Gender.FEMALE
+        activity.allowedGender.contains("पुरुष") -> Gender.MALE
+        else -> Gender.ANY
+      }
+
+      // Convert existing media URLs to ImagePickerState
+      imagePickerState = ImagePickerState(
+        newImages = emptyList(),
+        existingImageUrls = activity.mediaFiles,
+        deletedImageUrls = emptySet()
       )
-
-      // Store existing media URLs separately
-      existingMediaUrls = activity.mediaFiles
-      attachedDocuments = emptyList() // Start with no new files
 
       // Store initial values for unsaved changes detection
       initialFormValues =
@@ -820,20 +810,16 @@ private fun CreateActivityScreenContent(
           "shortDescription" to shortDescription,
           "description" to description,
           "associatedOrganisations" to associatedOrganisations,
-          "address" to address,
-          "state" to state,
-          "district" to district,
+          "addressData" to addressData,
           "startDate" to startDate,
           "startTime" to startTime,
           "endDate" to endDate,
           "endTime" to endTime,
-          "contactPeople" to contactPeople,
+          "membersState" to membersState,
           "additionalInstructions" to additionalInstructions,
           "eventCapacity" to eventCapacity,
-          "eventGenderAllowed" to eventGenderAllowed,
-          "eventLatitude" to eventLatitude,
-          "eventLongitude" to eventLongitude,
-          "attachedDocuments" to attachedDocuments
+          "genderAllowed" to genderAllowed,
+          "imagePickerState" to imagePickerState
         ) as Map<String, Any>
     }
   }
@@ -845,20 +831,30 @@ private fun CreateActivityScreenContent(
     descriptionError = description.isEmpty()
     associatedOrganisationsError = associatedOrganisations.isEmpty()
 
-    // Address validation - only validate if includeAddress is true or not a CAMPAIGN
+    // Address validation using self-validating AddressComponent
     val shouldValidateAddress = includeAddress || selectedType != ActivityType.CAMPAIGN
-    addressError = shouldValidateAddress && address.isEmpty()
-    stateError = shouldValidateAddress && state.isEmpty()
-    districtError = shouldValidateAddress && district.isEmpty()
+    if (shouldValidateAddress) {
+      // Trigger AddressComponent validation
+      triggerAddressValidation = !triggerAddressValidation
+      // addressError will be set by onValidationResult callback
+    } else {
+      isAddressValid = true
+      addressError = false
+    }
 
     startDateError = startDate == null
     startTimeError = startTime == null
     endDateError = endDate == null
     endTimeError = endTime == null
-    contactPeopleError = contactPeople.isEmpty()
+    
+    // Members validation using MembersComponent validation
+    val membersConfig = MembersConfig(isMandatory = true, minMembers = 1)
+    val membersValidationError = validateMembers(membersState, membersConfig)
+    contactPeopleError = membersValidationError != null
 
-    stateErrorMessage = if (stateError) "State required" else ""
-    districtErrorMessage = if (districtError) "Districts required" else ""
+    // Image validation using ImagePickerComponent self-validation
+    triggerImageValidation = !triggerImageValidation
+    // imagePickerValid will be set by onValidationResult callback
 
     // Validate event details
     var eventDetailsValid = true
@@ -884,58 +880,6 @@ private fun CreateActivityScreenContent(
       else -> {
         capacityError = null
       }
-    }
-
-    // Validate latitude - only if address is included
-    if (shouldValidateAddress) {
-      val latDouble = eventLatitude.toDoubleOrNull()
-      when {
-        eventLatitude.isBlank() -> {
-          latitudeError = "अक्षांश आवश्यक है."
-          eventDetailsValid = false
-        }
-
-        latDouble == null -> {
-          latitudeError = "कृपया मान्य अक्षांश दर्ज करें (उदा. 28.6139)."
-          eventDetailsValid = false
-        }
-
-        latDouble < -90.0 || latDouble > 90.0 -> {
-          latitudeError = "अक्षांश -90 और 90 के बीच होना चाहिए."
-          eventDetailsValid = false
-        }
-
-        else -> {
-          latitudeError = null
-        }
-      }
-
-      // Validate longitude - only if address is included
-      val lonDouble = eventLongitude.toDoubleOrNull()
-      when {
-        eventLongitude.isBlank() -> {
-          longitudeError = "देशांतर आवश्यक है."
-          eventDetailsValid = false
-        }
-
-        lonDouble == null -> {
-          longitudeError = "कृपया मान्य देशांतर दर्ज करें (उदा. 77.2090)."
-          eventDetailsValid = false
-        }
-
-        lonDouble < -180.0 || lonDouble > 180.0 -> {
-          longitudeError = "देशांतर -180 और 180 के बीच होना चाहिए."
-          eventDetailsValid = false
-        }
-
-        else -> {
-          longitudeError = null
-        }
-      }
-    } else {
-      // Clear errors if address is not included
-      latitudeError = null
-      longitudeError = null
     }
 
     if ((!startDateError && !startTimeError && !endDateError && !endTimeError)) {
@@ -983,8 +927,8 @@ private fun CreateActivityScreenContent(
 
     return !(
       nameError || typesError || shortDescriptionError || descriptionError || associatedOrganisationsError ||
-        addressError || stateError || districtError || startDateError || startTimeError ||
-        endDateError || endTimeError || contactPeopleError || !eventDetailsValid
+        addressError || startDateError || startTimeError ||
+        endDateError || endTimeError || contactPeopleError || !eventDetailsValid || !imagePickerValid
     )
   }
 
@@ -1001,12 +945,12 @@ private fun CreateActivityScreenContent(
     val attachedImages = mutableListOf<String>()
 
     // Keep existing files that weren't deleted
-    attachedImages.addAll(existingMediaUrls.filterNot { it in deletedMediaUrls })
+    attachedImages.addAll(imagePickerState.getActiveImageUrls())
 
     // Delete files marked for deletion from bucket
-    if (deletedMediaUrls.isNotEmpty()) {
+    if (imagePickerState.deletedImageUrls.isNotEmpty()) {
       try {
-        val filesToDelete = deletedMediaUrls.map { url ->
+        val filesToDelete = imagePickerState.deletedImageUrls.map { url ->
           url.substringAfterLast("/")
         }.toList()
         bucket.delete(filesToDelete)
@@ -1018,7 +962,7 @@ private fun CreateActivityScreenContent(
 
     // Upload new files
     try {
-      attachedDocuments.forEach { file ->
+      imagePickerState.newImages.forEach { file ->
         val uploadResponse = bucket.upload(
           path = "${System.now().epochSeconds}.jpg",
           data = file.readBytes()
@@ -1157,9 +1101,7 @@ private fun CreateActivityScreenContent(
           }
         },
         label = { Text("संक्षिप्त विवरण") },
-        modifier =
-          Modifier
-            .width(500.dp),
+        modifier = Modifier.width(500.dp),
         isError = shortDescriptionError,
         supportingText = { if (shortDescriptionError) Text("Short Description is required") },
         maxLines = 1,
@@ -1176,9 +1118,7 @@ private fun CreateActivityScreenContent(
           }
         },
         label = { Text("विस्तृत विवरण") },
-        modifier =
-          Modifier
-            .width(500.dp),
+        modifier = Modifier.width(500.dp),
         minLines = 3,
         maxLines = 30,
         isError = descriptionError,
@@ -1215,141 +1155,35 @@ private fun CreateActivityScreenContent(
       }
 
       if (includeAddress || selectedType != ActivityType.CAMPAIGN) {
-        // Address field
-        OutlinedTextField(
-          value = address,
-          onValueChange = {
-            if (it.length <= 100) {
-              address = it
-              addressError = false
-            }
+        // Use AddressComponent with self-validation
+        AddressComponent(
+          addressData = addressData,
+          onAddressChange = { newAddressData ->
+            addressData = newAddressData
           },
-          label = { Text("पूर्ण पता") },
-          modifier =
-            Modifier
-              .width(500.dp),
-          minLines = 2,
-          maxLines = 3,
-          isError = addressError,
-          supportingText = { if (addressError) Text("Address is required") },
-          keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
-        )
-
-        // State and District
-        FlowRow(
-          horizontalArrangement = Arrangement.spacedBy(8.dp),
-          verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-          StateDropdown(
-            states = indianStatesToDistricts.keys.toList(),
-            selectedState = state,
-            onStateSelected = {
-              state = it
-              stateError = false
-            },
-            modifier = Modifier.width(160.dp),
-            isError = stateError,
-            errorMessage = if (stateError) stateErrorMessage else ""
-          )
-          // District Selection (Conditional)
-          val districts = indianStatesToDistricts[state] ?: emptyList()
-          DistrictDropdown(
-            districts = districts,
-            selectedDistrict = district,
-            onDistrictSelected = {
-              district = it ?: ""
-              districtError = false
-            },
-            modifier = Modifier.width(200.dp),
-            isError = districtError,
-            errorMessage = if (districtError) districtErrorMessage else ""
-          )
-        }
-
-        // Location Section
-        Text(
-          "स्थान चुनें (Location)",
-          style = MaterialTheme.typography.titleMedium,
-          modifier = Modifier.padding(top = 8.dp)
-        )
-        // button for choosing location
-        OutlinedButton(
-          onClick = {
-            showMapDialog = true
+          fieldsConfig = AddressFieldsConfig(
+            showLocation = true,
+            showAddress = true,
+            showState = true,
+            showDistrict = true,
+            showVidhansabha = false,
+            showPincode = false,
+            // Configure mandatory fields based on whether address is included
+            mandatoryLocation = includeAddress || selectedType != ActivityType.CAMPAIGN,
+            mandatoryAddress = includeAddress || selectedType != ActivityType.CAMPAIGN,
+            mandatoryState = includeAddress || selectedType != ActivityType.CAMPAIGN,
+            mandatoryDistrict = includeAddress || selectedType != ActivityType.CAMPAIGN,
+            mandatoryVidhansabha = false,
+            mandatoryPincode = false
+          ),
+          validateFields = triggerAddressValidation,
+          onValidationResult = { isValid ->
+            isAddressValid = isValid
+            addressError = !isValid
           },
-          contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
-        ) {
-          Icon(
-            Icons.Filled.Map,
-            contentDescription = "मानचित्र से चुनें",
-            modifier = Modifier.size(ButtonDefaults.IconSize)
-          )
-          Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-          Text("मानचित्र से चुनें")
-        }
-        Text(
-          "या स्वयं से लिखें:",
-          style = MaterialTheme.typography.bodySmall,
-          modifier = Modifier.padding(top = 8.dp)
+          onFieldFocused = if (isSmallScreen) { offset -> scrollToFocusedField(offset) } else null,
+          isSmallScreen = isSmallScreen
         )
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-          OutlinedTextField(
-            value = eventLatitude,
-            onValueChange = {
-              if (it.isEmpty() || it.matches(Regex("^-?[0-9]*\\.?[0-9]*$"))) {
-                eventLatitude = it
-                latitudeError = null
-              }
-            },
-            label = { Text("अक्षांश (Latitude)") },
-            modifier =
-              Modifier
-                .width(170.dp)
-                .focusRequester(latitudeFocusRequester)
-                .onGloballyPositioned { coordinates ->
-                  lastFocusedFieldOffset = coordinates.positionInRoot().y
-                }
-                .onFocusChanged { focusState ->
-                  if (isSmallScreen && focusState.isFocused) {
-                    scrollToFocusedField(lastFocusedFieldOffset)
-                  }
-                },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }),
-            isError = latitudeError != null,
-            supportingText = { latitudeError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
-          )
-
-          OutlinedTextField(
-            value = eventLongitude,
-            onValueChange = {
-              if (it.isEmpty() || it.matches(Regex("^-?[0-9]*\\.?[0-9]*$"))) {
-                eventLongitude = it
-                longitudeError = null
-              }
-            },
-            label = { Text("देशांतर (Longitude)") },
-            modifier =
-              Modifier
-                .width(170.dp)
-                .focusRequester(longitudeFocusRequester)
-                .onGloballyPositioned { coordinates ->
-                  lastFocusedFieldOffset = coordinates.positionInRoot().y
-                }
-                .onFocusChanged { focusState ->
-                  if (isSmallScreen && focusState.isFocused) {
-                    scrollToFocusedField(lastFocusedFieldOffset)
-                  }
-                },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Done),
-            keyboardActions = KeyboardActions(onDone = { focusManager.clearFocus() }),
-            isError = longitudeError != null,
-            supportingText = { longitudeError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
-          )
-        }
       }
       FlowRow(
         horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -1438,39 +1272,24 @@ private fun CreateActivityScreenContent(
         verticalArrangement = Arrangement.spacedBy(16.dp)
       ) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-          // Gender Allowed (Using standard ExposedDropdownMenuBox)
-          ExposedDropdownMenuBox(
-            expanded = genderAllowedExpanded,
-            onExpandedChange = { genderAllowedExpanded = !genderAllowedExpanded },
-            modifier = Modifier.width(150.dp)
-          ) {
-            OutlinedTextField(
-              value = eventGenderAllowed.toDisplayName(),
-              onValueChange = {},
-              readOnly = true,
-              label = { Text("सत्र में प्रवेश") },
-              placeholder = { Text("लिंग अनुमति चुनें") },
-              trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = genderAllowedExpanded) },
-              modifier = Modifier.fillMaxWidth().menuAnchor(PrimaryNotEditable, true),
-              isError = genderAllowedError != null,
-              supportingText = { genderAllowedError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
+          // Gender Dropdown using reusable component
+          GenderDropdown(
+            value = genderAllowed,
+            onValueChange = { newGender ->
+              genderAllowed = newGender
+              genderAllowedError = null
+            },
+            label = "सत्र में प्रवेश",
+            modifier = Modifier.width(150.dp),
+            isError = genderAllowedError != null,
+            supportingText = { genderAllowedError?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
+            // NEW: Use GenderAllowed display names
+            customDisplayNames = mapOf(
+              Gender.MALE to GenderAllowed.MALE.toDisplayName(),
+              Gender.FEMALE to GenderAllowed.FEMALE.toDisplayName(),
+              Gender.ANY to GenderAllowed.ANY.toDisplayName()
             )
-            ExposedDropdownMenu(
-              expanded = genderAllowedExpanded,
-              onDismissRequest = { genderAllowedExpanded = false }
-            ) {
-              genderAllowedDisplayOptions.forEach { selectionDisplayName ->
-                DropdownMenuItem(
-                  text = { Text(selectionDisplayName) },
-                  onClick = {
-                    eventGenderAllowed = GenderAllowed.fromDisplayName(selectionDisplayName) ?: GenderAllowed.ANY
-                    genderAllowedExpanded = false
-                  },
-                  contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
-                )
-              }
-            }
-          }
+          )
 
           // Capacity
           OutlinedTextField(
@@ -1492,134 +1311,150 @@ private fun CreateActivityScreenContent(
         }
       }
 
-      Text(
-        modifier = Modifier.padding(top = 8.dp),
-        text = "संबधित चित्र एवं पत्रिकाएं:",
-        style = MaterialTheme.typography.labelLarge
-      )
+//      Text(
+//        modifier = Modifier.padding(top = 8.dp),
+//        text = "संबधित चित्र एवं पत्रिकाएं:",
+//        style = MaterialTheme.typography.labelLarge
+//      )
+//
+//      // Custom grid to show both existing and new files
+//      Column(horizontalAlignment = Alignment.Start) {
+//        val totalItems =
+//          (imagePickerState.getActiveImageUrls().size - imagePickerState.deletedImageUrls.size) + imagePickerState.newImages.size
+//        if (totalItems == 0) {
+//          Icon(
+//            imageVector = Icons.Filled.PhotoLibrary,
+//            contentDescription = "Selected",
+//            modifier = Modifier.size(96.dp).padding(16.dp),
+//            tint = MaterialTheme.colorScheme.outlineVariant
+//          )
+//        }
+//        FlowRow(
+//          verticalArrangement = Arrangement.spacedBy(8.dp),
+//          horizontalArrangement = Arrangement.spacedBy(8.dp)
+//        ) {
+//          // Show existing media files with PhotoItem-like styling
+//          for (url in imagePickerState.getActiveImageUrls().filterNot { it in imagePickerState.deletedImageUrls }) {
+//            val docName = url.substringAfterLast("/")
+//            Box(modifier = Modifier.width(120.dp).padding(8.dp)) {
+//              Column {
+//                Surface(
+//                  modifier =
+//                    Modifier
+//                      .size(100.dp)
+//                      .clip(shape = MaterialTheme.shapes.medium)
+//                ) {
+//                  Box(modifier = Modifier.fillMaxSize()) {
+//                    AsyncImage(
+//                      model = url,
+//                      contentDescription = docName,
+//                      contentScale = ContentScale.Crop,
+//                      modifier = Modifier.fillMaxSize()
+//                    )
+//
+//                    Surface(
+//                      color = MaterialTheme.colorScheme.surfaceVariant,
+//                      shape = CircleShape,
+//                      modifier = Modifier.align(Alignment.TopEnd).padding(4.dp)
+//                    ) {
+//                      IconButton(
+//                        onClick = {
+//                          // Mark URL for deletion
+//                          imagePickerState =
+//                            imagePickerState.copy(deletedImageUrls = imagePickerState.deletedImageUrls + url)
+//                          scope.launch {
+//                            snackbarHostState.showSnackbar("चित्र हटाने के लिए चिह्नित किया गया")
+//                          }
+//                        },
+//                        modifier = Modifier.size(36.dp)
+//                      ) {
+//                        Icon(
+//                          Icons.Default.Close,
+//                          modifier = Modifier.size(22.dp),
+//                          contentDescription = "Remove",
+//                          tint = MaterialTheme.colorScheme.onSurfaceVariant
+//                        )
+//                      }
+//                    }
+//                  }
+//                }
+//                Text(
+//                  text = docName.take(15),
+//                  maxLines = 2,
+//                  style = MaterialTheme.typography.labelSmall,
+//                  modifier = Modifier.padding(4.dp)
+//                )
+//              }
+//            }
+//          }
+//
+//          // Show new documents
+//          for (document in imagePickerState.newImages) {
+//            val docName = document.name
+//            Box(modifier = Modifier.width(120.dp).padding(8.dp)) {
+//              Column {
+//                PhotoItem(document, onRemoveFile = {
+//                  imagePickerState =
+//                    imagePickerState.copy(newImages = imagePickerState.newImages.filter { it != document })
+//                })
+//                Text(
+//                  text = docName,
+//                  maxLines = 2,
+//                  style = MaterialTheme.typography.labelSmall,
+//                  modifier = Modifier.padding(4.dp)
+//                )
+//              }
+//            }
+//          }
+//        }
+//        if (attachedDocumentsError) {
+//          Text(text = attachedDocumentsErrorMessage, color = MaterialTheme.colorScheme.error)
+//        }
+//      }
 
-      // Custom grid to show both existing and new files
-      Column(horizontalAlignment = Alignment.Start) {
-        val totalItems = (existingMediaUrls.size - deletedMediaUrls.size) + attachedDocuments.size
-        if (totalItems == 0) {
-          Icon(
-            imageVector = Icons.Filled.PhotoLibrary,
-            contentDescription = "Selected",
-            modifier = Modifier.size(96.dp).padding(16.dp),
-            tint = MaterialTheme.colorScheme.outlineVariant
-          )
-        }
-        FlowRow(
-          verticalArrangement = Arrangement.spacedBy(8.dp),
-          horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-          // Show existing media files with PhotoItem-like styling
-          for (url in existingMediaUrls.filterNot { it in deletedMediaUrls }) {
-            val docName = url.substringAfterLast("/")
-            Box(modifier = Modifier.width(120.dp).padding(8.dp)) {
-              Column {
-                Surface(
-                  modifier =
-                    Modifier
-                      .size(100.dp)
-                      .clip(shape = MaterialTheme.shapes.medium)
-                ) {
-                  Box(modifier = Modifier.fillMaxSize()) {
-                    AsyncImage(
-                      model = url,
-                      contentDescription = docName,
-                      contentScale = ContentScale.Crop,
-                      modifier = Modifier.fillMaxSize()
-                    )
-
-                    Surface(
-                      color = MaterialTheme.colorScheme.surfaceVariant,
-                      shape = CircleShape,
-                      modifier = Modifier.align(Alignment.TopEnd).padding(4.dp)
-                    ) {
-                      IconButton(
-                        onClick = {
-                          // Mark URL for deletion
-                          deletedMediaUrls = deletedMediaUrls + url
-                          scope.launch {
-                            snackbarHostState.showSnackbar("चित्र हटाने के लिए चिह्नित किया गया")
-                          }
-                        },
-                        modifier = Modifier.size(36.dp)
-                      ) {
-                        Icon(
-                          Icons.Default.Close,
-                          modifier = Modifier.size(22.dp),
-                          contentDescription = "Remove",
-                          tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                      }
-                    }
-                  }
-                }
-                Text(
-                  text = docName.take(15),
-                  maxLines = 2,
-                  style = MaterialTheme.typography.labelSmall,
-                  modifier = Modifier.padding(4.dp)
-                )
-              }
-            }
-          }
-
-          // Show new documents
-          for (document in attachedDocuments) {
-            val docName = document.name
-            Box(modifier = Modifier.width(120.dp).padding(8.dp)) {
-              Column {
-                PhotoItem(document, onRemoveFile = {
-                  attachedDocuments =
-                    attachedDocuments.toMutableList().apply {
-                      remove(document)
-                    }.toList()
-                })
-                Text(
-                  text = docName,
-                  maxLines = 2,
-                  style = MaterialTheme.typography.labelSmall,
-                  modifier = Modifier.padding(4.dp)
-                )
-              }
-            }
-          }
-        }
-        if (attachedDocumentsError) {
-          Text(text = attachedDocumentsErrorMessage, color = MaterialTheme.colorScheme.error)
-        }
-      }
-
-      ButtonForFilePicker("चित्र/पत्रिकाएं जोड़ें", onFilesSelected = { filePath ->
-        if (filePath != null) {
-          attachedDocumentsError = false
-          attachedDocuments = (attachedDocuments + filePath).distinct()
-        }
-      })
-
-      // Contact People
-      ContactPeopleDropdown(
-        modifier =
-          Modifier
-            .fillMaxWidth()
-            .onGloballyPositioned { coordinates ->
-              lastFocusedFieldOffset = coordinates.positionInRoot().y
-            },
-        label = "संपर्क सूत्र",
-        members = members,
-        selectedMembers = contactPeople,
-        onSelectionChanged = {
-          contactPeople = it
-          contactPeopleError = it.isEmpty()
+      ImagePickerComponent(
+        state = imagePickerState,
+        onStateChange = { newImagePickerState ->
+          imagePickerState = newImagePickerState
         },
-        postMap = postMap,
-        isError = contactPeopleError,
-        supportingText = { if (contactPeopleError) Text("At least one contact person is required") },
-        onFieldFocused = if (isSmallScreen) { offset -> scrollToFocusedField(offset) } else null,
-        isSmallScreen = isSmallScreen
+        config = ImagePickerConfig(
+          label = "संबधित चित्र एवं पत्रिकाएं",
+          allowMultiple = true,
+          maxImages = 10,
+          type = ImagePickerType.IMAGE_AND_DOCUMENT,
+          isMandatory = false
+        ),
+        validateFields = triggerImageValidation,
+        onValidationResult = { valid ->
+          imagePickerValid = valid
+        }
+      )
+      Spacer(modifier = Modifier.height(24.dp))
+      // Contact People - Replace with MembersComponent
+      MembersComponent(
+        state = membersState,
+        onStateChange = { newMembersState ->
+          membersState = newMembersState
+          contactPeopleError = newMembersState.members.isEmpty()
+        },
+        config = MembersConfig(
+          label = "संपर्क सूत्र",
+          addButtonText = "संपर्क व्यक्ति जोड़ें",
+          postLabel = "भूमिका",
+          postPlaceholder = "संयोजक, कोषाध्यक्ष इत्यादि",
+          isMandatory = true,
+          editMode = MembersEditMode.GROUPED,
+          enableReordering = true
+        ),
+        error = if (contactPeopleError) "कम से कम एक संपर्क व्यक्ति आवश्यक है" else null,
+        searchMembers = { query -> members.filter { it.name.contains(query, ignoreCase = true) } },
+        allMembers = members,
+        onTriggerSearch = { /* trigger server search */ },
+        modifier = Modifier
+          .fillMaxWidth()
+          .onGloballyPositioned { coordinates ->
+            lastFocusedFieldOffset = coordinates.positionInRoot().y
+          }
       )
 
       // Additional Instructions
@@ -1662,22 +1497,27 @@ private fun CreateActivityScreenContent(
             shortDescription = shortDescription,
             longDescription = description,
             type = selectedType!!,
-            address = if (includeAddress || selectedType != ActivityType.CAMPAIGN) address else "",
-            state = if (includeAddress || selectedType != ActivityType.CAMPAIGN) state else "",
-            district = if (includeAddress || selectedType != ActivityType.CAMPAIGN) district else "",
+            address = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.address else "",
+            state = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.state else "",
+            district = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.district else "",
             associatedOrganisations = associatedOrganisations.toList(),
             startDatetime = startDate?.atTime(startTime!!)!!,
             endDatetime = endDate?.atTime(endTime!!)!!,
             mediaFiles = processedMediaFiles,
-            contactPeople = contactPeople.map {
-              val (role, priority) = postMap[it.id] ?: Pair("", 0)
-              ActivityMember(it.id, role, it, priority)
+            contactPeople = membersState.members.map {
+              val (role, priority) = it.value
+              ActivityMember(it.key.id, role, it.key, priority)
             },
             additionalInstructions = additionalInstructions,
             capacity = eventCapacity.toIntOrNull() ?: 0,
-            allowedGender = eventGenderAllowed,
-            latitude = if (includeAddress || selectedType != ActivityType.CAMPAIGN) eventLatitude.toDoubleOrNull() else null,
-            longitude = if (includeAddress || selectedType != ActivityType.CAMPAIGN) eventLongitude.toDoubleOrNull() else null
+            allowedGender = when (genderAllowed) {
+              Gender.ANY -> GenderAllowed.ANY
+              Gender.MALE -> GenderAllowed.MALE
+              Gender.FEMALE -> GenderAllowed.FEMALE
+              null -> GenderAllowed.ANY
+            },
+            latitude = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.location?.latitude else null,
+            longitude = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.location?.longitude else null
           )
 
           // Submit to ViewModel
@@ -1813,21 +1653,8 @@ private fun CreateActivityScreenContent(
         )
       }
 
-      // Map Location Picker Dialog
-      if (showMapDialog) {
-        MapLocationPickerDialog(
-          onDismiss = {
-            showMapDialog = false // Reset state to false to hide the dialog
-          }
-        ) { it ->
-          println("Location picked: $it")
-
-          eventLatitude = it.latitude.toString()
-          eventLongitude = it.longitude.toString()
-
-          showMapDialog = false
-        }
-      }
+      // Map Location Picker Dialog - removed as AddressComponent handles this internally
+      // The AddressComponent contains its own MapLocationPickerDialog
     }
   }
 }

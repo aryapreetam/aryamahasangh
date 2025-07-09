@@ -63,10 +63,10 @@ class AryaNirmanRepositoryImpl(private val apolloClient: ApolloClient) : AryaNir
                   isFull = (it.satrRegistrationCollection?.edges?.size ?: 0) >= it.capacity!!,
                   startDateTime = it.startDatetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
                   endDateTime = it.endDatetime!!.toLocalDateTime(TimeZone.currentSystemDefault()),
-                  district = it.district!!,
-                  state = it.state!!,
-                  latitude = it.latitude!!,
-                  longitude = it.longitude!!,
+                  district = it.address?.district!!,
+                  state = it.address.state!!,
+                  latitude = it.address.latitude!!,
+                  longitude = it.address.longitude!!,
                   capacity = it.capacity
                 )
               }

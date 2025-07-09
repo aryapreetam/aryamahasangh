@@ -2,6 +2,7 @@ package com.aryamahasangh.features.activities
 
 import androidx.lifecycle.viewModelScope
 import com.apollographql.apollo.api.Optional
+import com.aryamahasangh.CreateAddressMutation
 import com.aryamahasangh.features.admin.PaginationResult
 import com.aryamahasangh.features.admin.PaginationState
 import com.aryamahasangh.fragment.ActivityWithStatus
@@ -304,37 +305,6 @@ class ActivitiesViewModel(
   }
 
   /**
-   * Load activities from the repository (legacy method - kept for compatibility)
-   */
-  fun loadActivities() {
-    launch {
-      activityRepository.getActivities().collect { result ->
-        when (result) {
-          is Result.Loading -> {
-            _activitiesUiState.value = _activitiesUiState.value.copy(isLoading = true, error = null)
-          }
-
-          is Result.Success -> {
-            _activitiesUiState.value =
-              _activitiesUiState.value.copy(
-                isLoading = false,
-                error = null
-              )
-          }
-
-          is Result.Error -> {
-            _activitiesUiState.value =
-              _activitiesUiState.value.copy(
-                isLoading = false,
-                error = result.message
-              )
-          }
-        }
-      }
-    }
-  }
-
-  /**
    * Delete an activity by ID
    */
   fun deleteActivity(id: String, onSuccess: (() -> Unit)? = null) {
@@ -428,22 +398,24 @@ class ActivitiesViewModel(
    * Create a new activity
    */
   fun createActivity(input: ActivityInputData) {
+    val addressInput = CreateAddressMutation.Builder()
+      .basicAddress(input.address)
+      .state(input.state)
+      .district(input.district)
+      .latitude(input.latitude)
+      .longitude(input.longitude)
+
     val activity =
       ActivitiesInsertInput(
         name = Optional.present(input.name),
         type = Optional.present(input.type),
         shortDescription = Optional.present(input.shortDescription),
         longDescription = Optional.present(input.longDescription),
-        address = Optional.present(input.address),
-        state = Optional.present(input.state),
-        district = Optional.present(input.district),
         startDatetime = Optional.present(input.startDatetime.convertToInstant()),
         endDatetime = Optional.present(input.endDatetime.convertToInstant()),
         mediaFiles = Optional.present(input.mediaFiles),
         additionalInstructions = Optional.present(input.additionalInstructions),
         capacity = Optional.present(input.capacity),
-        latitude = Optional.present(input.latitude),
-        longitude = Optional.present(input.longitude),
         allowedGender = Optional.present(input.allowedGender.toApollo()),
         overviewDescription = Optional.absent(),
         overviewMediaUrls = Optional.absent()
@@ -454,9 +426,10 @@ class ActivitiesViewModel(
       when (
         val result =
           activityRepository.createActivity(
-            activity,
-            input.contactPeople,
-            input.associatedOrganisations
+            activityInputData = activity,
+            address = addressInput,
+            activityMembers = input.contactPeople,
+            associatedOrganisations = input.associatedOrganisations
           )
       ) {
         is Result.Success -> {

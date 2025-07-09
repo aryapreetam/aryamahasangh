@@ -8,8 +8,11 @@ import kotlinx.datetime.Clock
 import com.aryamahasangh.AppLabelQuery
 import com.aryamahasangh.OrganisationalActivitiesQuery
 import com.aryamahasangh.UpdateJoinUsLabelMutation
+import com.aryamahasangh.fragment.ActivityWithStatus
 import com.aryamahasangh.fragment.OrganisationalActivityShort
 import com.aryamahasangh.type.ActivitiesFilter
+import com.aryamahasangh.type.ActivitiesWithStatus
+import com.aryamahasangh.type.ActivitiesWithStatusFilter
 import com.aryamahasangh.type.ActivityTypeFilter
 import com.aryamahasangh.type.DatetimeFilter
 import com.aryamahasangh.type.StringFilter
@@ -27,7 +30,7 @@ interface JoinUsRepository {
   fun getFilteredActivities(
     state: String,
     district: String = ""
-  ): Flow<Result<List<OrganisationalActivityShort>>>
+  ): Flow<Result<List<ActivityWithStatus>>>
 
   fun getJoinUsLabel(): Flow<Result<String>>
 
@@ -41,7 +44,7 @@ class JoinUsRepositoryImpl(private val apolloClient: ApolloClient) : JoinUsRepos
   override fun getFilteredActivities(
     state: String,
     district: String
-  ): Flow<Result<List<OrganisationalActivityShort>>> =
+  ): Flow<Result<List<ActivityWithStatus>>> =
     flow {
       emit(Result.Loading)
       val startTimeFilter =
@@ -62,7 +65,7 @@ class JoinUsRepositoryImpl(private val apolloClient: ApolloClient) : JoinUsRepos
                 filter =
                   Optional.present(
                     value =
-                      ActivitiesFilter(
+                      ActivitiesWithStatusFilter(
                         type = Optional.present(ActivityTypeFilter(eq = Optional.present(ApolloActivityType.SESSION))),
                         state = Optional.present(StringFilter(eq = Optional.present(state))),
                         district =
@@ -81,7 +84,7 @@ class JoinUsRepositoryImpl(private val apolloClient: ApolloClient) : JoinUsRepos
           if (response.hasErrors()) {
             throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
           }
-          response.data?.activitiesCollection?.edges?.map { it.node.organisationalActivityShort } ?: emptyList()
+          response.data?.activitiesWithStatusCollection?.edges?.map { it.node.activityWithStatus } ?: emptyList()
         }
       emit(result)
     }

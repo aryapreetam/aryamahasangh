@@ -3,6 +3,7 @@ package com.aryamahasangh.viewmodel
 import com.aryamahasangh.domain.error.AppError
 import com.aryamahasangh.domain.error.ErrorHandler
 import com.aryamahasangh.domain.error.getUserMessage
+import com.aryamahasangh.fragment.ActivityWithStatus
 import com.aryamahasangh.fragment.OrganisationalActivityShort
 import com.aryamahasangh.repository.JoinUsRepository
 
@@ -10,7 +11,7 @@ import com.aryamahasangh.repository.JoinUsRepository
  * UI state for the Join Us screen
  */
 data class JoinUsUiState(
-  val activities: List<OrganisationalActivityShort>? = null,
+  val activities: List<ActivityWithStatus>? = null,
   override val isLoading: Boolean = false,
   override val error: String? = null,
   override val appError: AppError? = null,

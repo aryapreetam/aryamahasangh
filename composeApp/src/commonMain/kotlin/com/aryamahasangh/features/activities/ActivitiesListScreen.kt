@@ -22,20 +22,6 @@ import com.aryamahasangh.fragment.OrganisationalActivityShort
 import com.aryamahasangh.utils.WithTooltip
 import kotlinx.datetime.Clock
 
-// Convert ActivityWithStatus to OrganisationalActivityShort for compatibility
-private fun ActivityWithStatus.toOrganisationalActivityShort(): OrganisationalActivityShort {
-  return OrganisationalActivityShort(
-    id = this.id ?: "",
-    name = this.name ?: "",
-    shortDescription = this.shortDescription ?: "",
-    startDatetime = this.startDatetime ?: Clock.System.now(),
-    endDatetime = this.endDatetime ?: Clock.System.now(),
-    type = this.type ?: com.aryamahasangh.type.ActivityType.UNKNOWN__,
-    district = this.district,
-    state = this.state
-  )
-}
-
 // Global state object for scroll persistence
 internal object ActivitiesPageState {
   var activities: List<ActivityWithStatus> = emptyList()
@@ -138,7 +124,7 @@ fun ActivitiesScreen(
       itemsPerRow = if (isCompact) 1 else 2,
       itemContent = { activity: ActivityWithStatus ->
         ActivityListItem(
-          activity = activity.toOrganisationalActivityShort(),
+          activity = activity,
           handleOnClick = { onNavigateToActivityDetails(activity.id ?: "") },
           handleEditActivity = { onNavigateToEditActivity(activity.id ?: "") },
           handleDeleteActivity = {

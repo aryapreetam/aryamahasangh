@@ -285,10 +285,15 @@ fun GenderDropdown(
   isError: Boolean = false,
   supportingText: @Composable (() -> Unit)? = null,
   enabled: Boolean = true,
-  required: Boolean = false
+  required: Boolean = false,
+  customDisplayNames: Map<Gender, String>? = null
 ) {
   var expanded by remember { mutableStateOf(false) }
   val focusManager = LocalFocusManager.current
+
+  fun getDisplayName(gender: Gender): String {
+    return customDisplayNames?.get(gender) ?: gender.toDisplayName()
+  }
 
   ExposedDropdownMenuBox(
     expanded = expanded,
@@ -296,7 +301,7 @@ fun GenderDropdown(
     modifier = modifier
   ) {
     OutlinedTextField(
-      value = value?.toDisplayName() ?: "",
+      value = value?.let { getDisplayName(it) } ?: "",
       onValueChange = { },
       readOnly = true,
       enabled = enabled,
@@ -316,7 +321,7 @@ fun GenderDropdown(
     ) {
       Gender.entries.forEach { gender ->
         DropdownMenuItem(
-          text = { Text(gender.toDisplayName()) },
+          text = { Text(getDisplayName(gender)) },
           onClick = {
             onValueChange(gender)
             expanded = false

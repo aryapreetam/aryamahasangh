@@ -6,9 +6,11 @@ fragment ActivityFields on Activities {
     startDatetime
     endDatetime
     type
-    address
-    state
-    district
+    address{
+      basicAddress
+      state
+      district
+    }
     mediaFiles
     additionalInstructions
 }
@@ -17,32 +19,7 @@ mutation AddOrganisationActivity($input: ActivitiesInsertInput!) {
     insertIntoActivitiesCollection(objects: [$input]) {
         affectedCount
         records {
-            ...ActivityFields
-            organisationalActivityCollection {
-                edges {
-                    node {
-                        id
-                        organisation {
-                            id
-                            name
-                        }
-                    }
-                }
-            }
-            activityMemberCollection {
-                edges {
-                    node {
-                        id
-                        post
-                        priority
-                        member {
-                            name
-                            profileImage
-                            phoneNumber
-                        }
-                    }
-                }
-            }
+            id
         }
     }
 }

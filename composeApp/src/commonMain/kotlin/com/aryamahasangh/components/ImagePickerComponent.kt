@@ -99,6 +99,8 @@ data class ImagePickerState(
  * @param config Configuration for the image picker
  * @param error Error message to display
  * @param modifier Modifier for the component
+ * @param validateFields Whether to validate fields
+ * @param onValidationResult Callback for validation result
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -107,7 +109,9 @@ fun ImagePickerComponent(
   onStateChange: (ImagePickerState) -> Unit,
   config: ImagePickerConfig = ImagePickerConfig(),
   error: String? = null,
-  modifier: Modifier = Modifier
+  modifier: Modifier = Modifier,
+  validateFields: Boolean = false,
+  onValidationResult: ((Boolean) -> Unit)? = null
 ) {
   val pickerMode =
     if (config.effectiveAllowMultiple) {
@@ -156,6 +160,46 @@ fun ImagePickerComponent(
       }
     }
 
+  /////////////////////////////
+  /// SELF VALIDATION LOGIC ///
+  /////////////////////////////
+  var internalError by remember { mutableStateOf<String?>(null) }
+  var lastValidationTrigger by remember { mutableStateOf(validateFields) }
+
+  // Validate when trigger flips
+  LaunchedEffect(validateFields, state, config.isMandatory) {
+    if (validateFields != lastValidationTrigger) {
+      lastValidationTrigger = validateFields
+
+      val isValid = if (config.isMandatory) state.totalImages >= config.minImages else true
+      internalError =
+        if (!isValid) {
+          if (config.minImages <= 1) {
+            when (config.type) {
+              ImagePickerType.PROFILE_PHOTO -> "व्यक्तिगत चित्र चुनना आवश्यक है"
+              ImagePickerType.IMAGE_AND_DOCUMENT -> "न्यूनतम एक प्रलेख चुनना आवश्यक है"
+              else -> "न्यूनतम एक चित्र चुनना आवश्यक है"
+            }
+          } else {
+            when (config.type) {
+              ImagePickerType.IMAGE_AND_DOCUMENT -> "न्यूनतम ${config.minImages} प्रलेख चुनना आवश्यक है"
+              else -> "न्यूनतम ${config.minImages} चित्र चुनना आवश्यक है"
+            }
+          }
+        } else null
+      onValidationResult?.invoke(isValid)
+    }
+  }
+
+  // Reset error when user adds a valid file
+  LaunchedEffect(state.totalImages, config.isMandatory) {
+    if (config.isMandatory && internalError != null && state.totalImages >= config.minImages)
+      internalError = null
+  }
+
+  // Which error to show: self-managed or external?
+  val effectiveError = error ?: internalError
+
   Column(
     modifier = modifier,
     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -166,7 +210,7 @@ fun ImagePickerComponent(
         state = state,
         onStateChange = onStateChange,
         config = config,
-        error = error,
+        error = effectiveError,
         onPickerLaunch = { imagePickerLauncher.launch() }
       )
     } else {
@@ -175,7 +219,7 @@ fun ImagePickerComponent(
         state = state,
         onStateChange = onStateChange,
         config = config,
-        error = error,
+        error = effectiveError,
         onPickerLaunch = { imagePickerLauncher.launch() }
       )
     }
@@ -439,7 +483,7 @@ private fun RegularPickerContent(
           verticalArrangement = Arrangement.Center
         ) {
           Icon(
-            imageVector = Icons.Default.PhotoLibrary,
+            Icons.Default.PhotoLibrary,
             contentDescription = config.label,
             modifier = Modifier.size(48.dp),
             tint = MaterialTheme.colorScheme.onSurfaceVariant

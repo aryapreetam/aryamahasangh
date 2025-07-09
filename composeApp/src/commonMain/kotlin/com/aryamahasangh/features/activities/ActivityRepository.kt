@@ -54,7 +54,8 @@ interface ActivityRepository : PaginatedRepository<ActivityWithStatus> {
   suspend fun createActivity(
     activityInputData: ActivitiesInsertInput,
     activityMembers: List<ActivityMember>,
-    associatedOrganisations: List<Organisation>
+    associatedOrganisations: List<Organisation>,
+    address: CreateAddressMutation.Builder
   ): Result<String>
 
   /**
@@ -201,23 +202,23 @@ class ActivityRepositoryImpl(
     flow {
       emit(Result.Loading)
 
-      apolloClient.query(OrganisationalActivitiesQuery())
-        .fetchPolicy(FetchPolicy.CacheAndNetwork)
-        .toFlow()
-        .collect { response ->
-          val cameFromEmptyCache =
-            response.isFromCache && response.cacheInfo?.isCacheHit == false
-          val result = safeCall {
-            if(!cameFromEmptyCache) {
-              if (response.hasErrors()) {
-                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-              }
-            }
-            response.data?.activitiesCollection?.edges?.map { it.node.organisationalActivityShort }
-              ?: emptyList()
-          }
-          emit(result)
-        }
+//      apolloClient.query(OrganisationalActivitiesQuery())
+//        .fetchPolicy(FetchPolicy.CacheAndNetwork)
+//        .toFlow()
+//        .collect { response ->
+//          val cameFromEmptyCache =
+//            response.isFromCache && response.cacheInfo?.isCacheHit == false
+//          val result = safeCall {
+//            if(!cameFromEmptyCache) {
+//              if (response.hasErrors()) {
+//                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+//              }
+//            }
+//            response.data?.activitiesCollection?.edges?.map { it.node.organisationalActivityShort }
+//              ?: emptyList()
+//          }
+//          emit(result)
+//        }
     }
 
   override suspend fun getActivityDetail(id: String): Flow<Result<OrganisationalActivity>> =
@@ -281,15 +282,26 @@ class ActivityRepositoryImpl(
   override suspend fun createActivity(
     activityInputData: ActivitiesInsertInput,
     activityMembers: List<ActivityMember>,
-    associatedOrganisations: List<Organisation>
+    associatedOrganisations: List<Organisation>,
+    address: CreateAddressMutation.Builder
   ): Result<String> {
     return safeCall {
-      val response = apolloClient.mutation(AddOrganisationActivityMutation(activityInputData)).execute()
+      address.pincode("")
+      val addressResp = apolloClient.mutation(address.build()).execute()
+      if (addressResp.hasErrors()) {
+        throw Exception(addressResp.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+      }
+      if (addressResp.data?.insertIntoAddressCollection?.affectedCount!! != 1) {
+        throw Exception(addressResp.errors?.firstOrNull()?.message ?: "Couldn't create address. please try again")
+      }
+      val addressId = addressResp.data?.insertIntoAddressCollection?.records?.first()?.id!!
+      val inputWithAddressData = activityInputData.copy(addressId = Optional.present(addressId))
+      val response = apolloClient.mutation(AddOrganisationActivityMutation(inputWithAddressData)).execute()
       if (response.hasErrors()) {
         throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
       }
       if (response.data?.insertIntoActivitiesCollection?.affectedCount!! > 0) {
-        val activityId = response.data?.insertIntoActivitiesCollection?.records?.first()?.activityFields?.id!!
+        val activityId = response.data?.insertIntoActivitiesCollection?.records?.first()?.id!!
         val organisations =
           associatedOrganisations.map {
             OrganisationalActivityInsertData(organisationId = it.id, activityId = activityId)

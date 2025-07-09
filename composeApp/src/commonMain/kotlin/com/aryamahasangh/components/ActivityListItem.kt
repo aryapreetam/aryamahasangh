@@ -30,6 +30,7 @@ import com.aryamahasangh.features.activities.getStatus
 import com.aryamahasangh.features.activities.toDisplayName
 import com.aryamahasangh.features.activities.toLocalDateTime
 import com.aryamahasangh.features.arya_nirman.convertDates
+import com.aryamahasangh.fragment.ActivityWithStatus
 import com.aryamahasangh.fragment.OrganisationalActivityShort
 import com.aryamahasangh.type.ActivityType
 import com.aryamahasangh.utils.WithTooltip
@@ -40,13 +41,13 @@ val activityTypeData = ActivityType.entries.associateWith { it.toDisplayName() }
 
 @Composable
 fun ActivityListItem(
-  activity: OrganisationalActivityShort,
+  activity: ActivityWithStatus,
   handleOnClick: () -> Unit = {},
   handleDeleteActivity: () -> Unit = {},
   handleEditActivity: () -> Unit = {}
 ) {
-  val startDate = formatShort(activity.startDatetime.toLocalDateTime())
-  val endDate = formatShort(activity.endDatetime.toLocalDateTime())
+  val startDate = formatShort(activity.startDatetime!!.toLocalDateTime())
+  val endDate = formatShort(activity.endDatetime!!.toLocalDateTime())
   val isLoggedIn = LocalIsAuthenticated.current
   var showConfirmDialog by remember { mutableStateOf(false) }
   var showMenu by remember { mutableStateOf(false) }
@@ -70,7 +71,7 @@ fun ActivityListItem(
         ) {
           Column(modifier = Modifier.weight(1f)) {
             Text(
-              text = activity.name,
+              text = activity.name!!,
               style = MaterialTheme.typography.titleLarge,
               fontWeight = FontWeight.Bold
             )
@@ -141,7 +142,7 @@ fun ActivityListItem(
 
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-          text = activity.shortDescription,
+          text = activity.shortDescription ?: "",
           style = MaterialTheme.typography.bodyMedium,
           maxLines = 1
         )
@@ -156,8 +157,8 @@ fun ActivityListItem(
               buildAnnotatedString {
                 val (dateRange, timeRange) =
                   convertDates(
-                    activity.startDatetime.toLocalDateTime(),
-                    activity.endDatetime.toLocalDateTime()
+                    activity.startDatetime!!.toLocalDateTime(),
+                    activity.endDatetime!!.toLocalDateTime()
                   )
                 withStyle(
                   style =

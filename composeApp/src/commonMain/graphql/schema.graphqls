@@ -14,12 +14,6 @@ type Activities implements Node {
 
   longDescription: String!
 
-  address: String
-
-  state: String
-
-  district: String
-
   startDatetime: Datetime!
 
   endDatetime: Datetime!
@@ -30,15 +24,15 @@ type Activities implements Node {
 
   capacity: Int
 
-  latitude: Float
-
-  longitude: Float
-
   allowedGender: GenderFilter
 
   overviewDescription: String
 
   overviewMediaUrls: [String]!
+
+  addressId: String
+
+  address: Address
 
   activityMemberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: ActivityMemberFilter, "Sort order to apply to the collection" orderBy: [ActivityMemberOrderBy!]): ActivityMemberConnection
 
@@ -82,12 +76,6 @@ input ActivitiesFilter {
 
   longDescription: StringFilter
 
-  address: StringFilter
-
-  state: StringFilter
-
-  district: StringFilter
-
   startDatetime: DatetimeFilter
 
   endDatetime: DatetimeFilter
@@ -98,15 +86,13 @@ input ActivitiesFilter {
 
   capacity: IntFilter
 
-  latitude: FloatFilter
-
-  longitude: FloatFilter
-
   allowedGender: GenderFilterFilter
 
   overviewDescription: StringFilter
 
   overviewMediaUrls: StringListFilter
+
+  addressId: StringFilter
 
   nodeId: IDFilter
 
@@ -137,12 +123,6 @@ input ActivitiesInsertInput {
 
   longDescription: String
 
-  address: String
-
-  state: String
-
-  district: String
-
   startDatetime: Datetime
 
   endDatetime: Datetime
@@ -153,15 +133,13 @@ input ActivitiesInsertInput {
 
   capacity: Int
 
-  latitude: Float
-
-  longitude: Float
-
   allowedGender: GenderFilter
 
   overviewDescription: String
 
   overviewMediaUrls: [String]
+
+  addressId: String
 }
 
 type ActivitiesInsertResponse {
@@ -187,12 +165,6 @@ input ActivitiesOrderBy {
 
   longDescription: OrderByDirection
 
-  address: OrderByDirection
-
-  state: OrderByDirection
-
-  district: OrderByDirection
-
   startDatetime: OrderByDirection
 
   endDatetime: OrderByDirection
@@ -201,13 +173,11 @@ input ActivitiesOrderBy {
 
   capacity: OrderByDirection
 
-  latitude: OrderByDirection
-
-  longitude: OrderByDirection
-
   allowedGender: OrderByDirection
 
   overviewDescription: OrderByDirection
+
+  addressId: OrderByDirection
 }
 
 input ActivitiesUpdateInput {
@@ -221,12 +191,6 @@ input ActivitiesUpdateInput {
 
   longDescription: String
 
-  address: String
-
-  state: String
-
-  district: String
-
   startDatetime: Datetime
 
   endDatetime: Datetime
@@ -237,15 +201,13 @@ input ActivitiesUpdateInput {
 
   capacity: Int
 
-  latitude: Float
-
-  longitude: Float
-
   allowedGender: GenderFilter
 
   overviewDescription: String
 
   overviewMediaUrls: [String]
+
+  addressId: String
 }
 
 type ActivitiesUpdateResponse {
@@ -625,6 +587,8 @@ type Address implements Node {
   memberWithTempAddressCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: MemberFilter, "Sort order to apply to the collection" orderBy: [MemberOrderBy!]): MemberConnection
 
   familyCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: FamilyFilter, "Sort order to apply to the collection" orderBy: [FamilyOrderBy!]): FamilyConnection
+
+  activitiesCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: ActivitiesFilter, "Sort order to apply to the collection" orderBy: [ActivitiesOrderBy!]): ActivitiesConnection
 }
 
 type AddressConnection {
