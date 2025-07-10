@@ -27,6 +27,7 @@ import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.aryamahasangh.components.*
 import com.aryamahasangh.navigation.LocalSnackbarHostState
+import com.aryamahasangh.ui.components.buttons.*
 import com.aryamahasangh.utils.WithTooltip
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
@@ -61,6 +62,51 @@ fun CreateAryaParivarFormScreen(
   var aryaSamajError by rememberSaveable { mutableStateOf<String?>(null) }
   var membersError by rememberSaveable { mutableStateOf<String?>(null) }
   var addressError by rememberSaveable { mutableStateOf<String?>(null) }
+
+  // Validator function for SubmitButton
+  fun validateForm(): Boolean {
+    var isValid = true
+
+    // Validate family name
+    if (uiState.familyName.isBlank()) {
+      familyNameError = "परिवार का नाम अपेक्षित है"
+      isValid = false
+    } else {
+      familyNameError = null
+    }
+
+    // Validate Arya Samaj selection (now mandatory)
+    if (uiState.selectedAryaSamaj == null) {
+      aryaSamajError = "आर्य समाज चुनना आवश्यक है"
+      isValid = false
+    } else {
+      aryaSamajError = null
+    }
+
+    // Validate members
+    if (uiState.familyMembers.isEmpty()) {
+      membersError = "कम से कम एक सदस्य जोड़ना आवश्यक है"
+      isValid = false
+    } else {
+      val hasHead = uiState.familyMembers.any { it.isHead }
+      if (!hasHead) {
+        membersError = "परिवार प्रमुख चुनना आवश्यक है"
+        isValid = false
+      } else {
+        membersError = null
+      }
+    }
+
+    // Validate address
+    if (uiState.addressData.address.isBlank() || uiState.addressData.state.isBlank()) {
+      addressError = "पूर्ण पता अपेक्षित है"
+      isValid = false
+    } else {
+      addressError = null
+    }
+
+    return isValid
+  }
 
   // Track if form has been modified for unsaved changes
   val hasUnsavedChanges =
@@ -114,49 +160,6 @@ fun CreateAryaParivarFormScreen(
       calculateAge(parseDate(it.member.address)) // Assuming DOB is stored somewhere
     }
 
-  fun validateForm(): Boolean {
-    var isValid = true
-
-    // Validate family name
-    if (uiState.familyName.isBlank()) {
-      familyNameError = "परिवार का नाम अपेक्षित है"
-      isValid = false
-    } else {
-      familyNameError = null
-    }
-
-    // Validate Arya Samaj selection (now mandatory)
-    if (uiState.selectedAryaSamaj == null) {
-      aryaSamajError = "आर्य समाज चुनना आवश्यक है"
-      isValid = false
-    } else {
-      aryaSamajError = null
-    }
-
-    // Validate members
-    if (uiState.familyMembers.isEmpty()) {
-      membersError = "कम से कम एक सदस्य जोड़ना आवश्यक है"
-      isValid = false
-    } else {
-      val hasHead = uiState.familyMembers.any { it.isHead }
-      if (!hasHead) {
-        membersError = "परिवार प्रमुख चुनना आवश्यक है"
-        isValid = false
-      } else {
-        membersError = null
-      }
-    }
-
-    // Validate address
-    if (uiState.addressData.address.isBlank() || uiState.addressData.state.isBlank()) {
-      addressError = "पूर्ण पता अपेक्षित है"
-      isValid = false
-    } else {
-      addressError = null
-    }
-
-    return isValid
-  }
 
   Column(
     modifier =
@@ -328,31 +331,32 @@ fun CreateAryaParivarFormScreen(
     Spacer(modifier = Modifier.height(16.dp))
 
     // Submit Button
-    Button(
-      onClick = {
-        if (validateForm()) {
-          if (isEditMode) {
-            viewModel.updateFamily(editingFamilyId!!)
-          } else {
-            viewModel.createFamily()
-          }
+    SubmitButton(
+      text = if (isEditMode) "परिवार अद्यतन करें" else "परिवार बनाएं",
+      onSubmit = {
+        // Execute family creation/update
+        if (isEditMode) {
+          viewModel.updateFamily(editingFamilyId!!)
+        } else {
+          viewModel.createFamily()
         }
       },
-      modifier = Modifier.fillMaxWidth(),
-      enabled = !uiState.isSubmitting
-    ) {
-      if (uiState.isSubmitting) {
-        CircularProgressIndicator(
-          modifier = Modifier.size(20.dp),
-          strokeWidth = 2.dp,
-          color = MaterialTheme.colorScheme.onPrimary
+      config = SubmitButtonConfig(
+        validator = {
+          if (!validateForm()) SubmissionError.ValidationFailed else null
+        },
+        texts = SubmitButtonTexts(
+          submittingText = "परिवार बनाया जा रहा है...",
+          successText = if (isEditMode) "अद्यतन सफल!" else "सफल!"
         )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text("परिवार बनाया जा रहा है...")
-      } else {
-        Text(if (isEditMode) "परिवार अद्यतन करें" else "परिवार बनाएं")
+      ),
+      callbacks = object : SubmitCallbacks {
+        override fun onError(error: SubmissionError) {
+          // Submission errors are handled by GlobalMessageManager in ViewModel
+          // No additional action needed here
+        }
       }
-    }
+    )
   }
 }
 

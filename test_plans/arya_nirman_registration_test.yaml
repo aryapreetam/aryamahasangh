@@ -1,0 +1,162 @@
+name: "Arya Nirman Registration Test"
+description: "Automated registration for Arya training session"
+test_data:
+  participant:
+    name: "राम प्रकाश शर्मा"
+    mobile: "9876543210"
+    aadhaar: "123456789012"
+    education: "स्नातक"
+    address: "१२३, गीता कॉलोनी, नई दिल्ली - ११००४८"
+  
+  friend:
+    name: "विशाल गुप्ता"
+    mobile: "8765432109"
+  
+  trained_arya:
+    name: "आचार्य राजेश कुमार"
+    mobile: "7654321098"
+
+steps:
+  - action: "observe"
+    description: "Take initial screenshot"
+
+  - action: "tapOn"
+    target: "coordinates"
+    x: 75
+    y: 211
+    description: "Open drawer menu"
+
+  - action: "tapOn"
+    target: "text"
+    text: "आर्य-आर्या निर्माण(सत्र)"
+    description: "Navigate to Arya Nirman section"
+
+  - action: "tapOn"
+    target: "coordinates"
+    x: 926
+    y: 796
+    description: "Click first registration button"
+
+  - action: "tapOn"
+    target: "text"
+    text: "सत्रार्थी का नाम"
+    description: "Focus on name field"
+
+  - action: "inputText"
+    text: "राम प्रकाश शर्मा"
+    description: "Enter participant name"
+
+  - action: "tapOn"
+    target: "text"
+    text: "दूरभाष (Mobile)"
+    description: "Focus on mobile field"
+
+  - action: "inputText"
+    text: "9876543210"
+    description: "Enter mobile number"
+
+  - action: "tapOn"
+    target: "text"
+    text: "आधार कार्ड संख्या"
+    description: "Focus on Aadhaar field"
+
+  - action: "inputText"
+    text: "123456789012"
+    description: "Enter Aadhaar number"
+
+  - action: "tapOn"
+    target: "text"
+    text: "शैक्षणिक योग्यता"
+    description: "Focus on education field"
+
+  - action: "inputText"
+    text: "स्नातक"
+    description: "Enter education qualification"
+
+  - action: "tapOn"
+    target: "text"
+    text: "सम्पूर्ण पता"
+    description: "Focus on address field"
+
+  - action: "inputText"
+    text: "१२३, गीता कॉलोनी, नई दिल्ली - ११००४८"
+    description: "Enter complete address"
+
+  - action: "tapOn"
+    target: "text"
+    text: "प्रेरणा का स्रोत चुनें"
+    description: "Open inspiration source dropdown"
+
+  - action: "tapOn"
+    target: "text"
+    text: "मित्र / सम्बन्धी"
+    description: "Select friend/relative option"
+
+  - action: "tapOn"
+    target: "text"
+    text: "मित्र/सम्बन्धी का नाम"
+    description: "Focus on friend name field"
+
+  - action: "inputText"
+    text: "विशाल गुप्ता"
+    description: "Enter friend name"
+
+  - action: "tapOn"
+    target: "text"
+    text: "मित्र/सम्बन्धी का दूरभाष (10 अंक)"
+    description: "Focus on friend mobile field"
+
+  - action: "inputText"
+    text: "8765432109"
+    description: "Enter friend mobile number"
+
+  - action: "scroll"
+    direction: "down"
+    description: "Scroll to see more fields"
+
+  - action: "tapOn"
+    target: "coordinates"
+    x: 85
+    y: 1013
+    description: "Check trained Arya checkbox"
+
+  - action: "tapOn"
+    target: "text"
+    text: "प्रशिक्षित आर्य का नाम"
+    description: "Focus on trained Arya name field"
+
+  - action: "inputText"
+    text: "आचार्य राजेश कुमार"
+    description: "Enter trained Arya name"
+
+  - action: "tapOn"
+    target: "text"
+    text: "प्रशिक्षित आर्य का दूरभाष (Mobile)"
+    description: "Focus on trained Arya mobile field"
+
+  - action: "inputText"
+    text: "7654321098"
+    description: "Enter trained Arya mobile"
+
+  - action: "tapOn"
+    target: "coordinates"
+    x: 85
+    y: 2194
+    description: "Check acceptance terms checkbox"
+
+  - action: "scroll"
+    direction: "down"
+    description: "Scroll to submit button"
+
+  - action: "tapOn"
+    target: "text"
+    text: "पंजीकृत करें"
+    description: "Submit registration form"
+
+  - action: "assertVisible"
+    text: "आपने सफलतापूर्वक पंजीकरण करा लिया है!"
+    description: "Verify success message"
+
+validation:
+  success_message: "आपने सफलतापूर्वक पंजीकरण करा लिया है!"
+  expected_outcome: "Registration completed successfully"

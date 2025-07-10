@@ -19,6 +19,7 @@ import com.aryamahasangh.components.*
 import com.aryamahasangh.features.activities.Member
 import com.aryamahasangh.features.admin.data.AryaSamajViewModel
 import com.aryamahasangh.navigation.LocalSnackbarHostState
+import com.aryamahasangh.ui.components.buttons.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -199,23 +200,26 @@ fun AddAryaSamajFormScreen(
 
     Spacer(modifier = Modifier.height(32.dp))
 
-    // Submit button
-    Button(
-      onClick = { viewModel.submitForm() },
-      modifier = Modifier.fillMaxWidth(),
-      enabled = !formUiState.isSubmitting
-    ) {
-      if (formUiState.isSubmitting) {
-        CircularProgressIndicator(
-          modifier = Modifier.size(20.dp),
-          color = MaterialTheme.colorScheme.onPrimary
+    Spacer(modifier = Modifier.height(24.dp))
+    SubmitButton(
+      text = if (isEditMode) "संपादित करें" else "आर्य समाज जोड़ें",
+      onSubmit = {
+        // Submit the form via ViewModel - ViewModel handles validation
+        viewModel.submitForm()
+      },
+      config = SubmitButtonConfig(
+        texts = SubmitButtonTexts(
+          submittingText = if (isEditMode) "संपादित हो रहा है..." else "सुरक्षित हो रहा है...",
+          successText = if (isEditMode) "संपादित सफल!" else "सफल!"
         )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text("सुरक्षित हो रहा है...")
-      } else {
-        Text(if (isEditMode) "संपादित करें" else "आर्य समाज जोड़ें")
+      ),
+      callbacks = object : SubmitCallbacks {
+        override fun onError(error: SubmissionError) {
+          // Submission errors are handled by GlobalMessageManager in ViewModel
+          // No additional action needed here
+        }
       }
-    }
+    )
 
     Spacer(modifier = Modifier.height(16.dp))
   }

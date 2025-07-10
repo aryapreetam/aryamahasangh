@@ -1,0 +1,85 @@
+appId: com.aryamahasangh
+---
+# Launch the app
+- launchApp
+# Open drawer menu
+- tapOn:
+    point: "75,211"
+
+# Navigate to Arya Nirman section
+- tapOn:
+    text: "आर्य-आर्या निर्माण(सत्र)"
+
+# Click first registration button
+- tapOn:
+    point: "926,796"
+
+# Enter participant name
+- tapOn:
+    text: "सत्रार्थी का नाम"
+- inputText: "राम प्रकाश शर्मा"
+
+# Enter mobile number
+- tapOn:
+    text: "दूरभाष (Mobile)"
+- inputText: "9876543210"
+
+# Enter Aadhaar number
+- tapOn:
+    text: "आधार कार्ड संख्या"
+- inputText: "123456789012"
+
+# Enter education qualification
+- tapOn:
+    text: "शैक्षणिक योग्यता"
+- inputText: "स्नातक"
+
+# Enter complete address
+- tapOn:
+    text: "सम्पूर्ण पता"
+- inputText: "१२३, गीता कॉलोनी, नई दिल्ली - ११००४८"
+
+# Select inspiration source
+- tapOn:
+    text: "प्रेरणा का स्रोत चुनें"
+- tapOn:
+    text: "मित्र / सम्बन्धी"
+
+# Enter friend details
+- tapOn:
+    text: "मित्र/सम्बन्धी का नाम"
+- inputText: "विशाल गुप्ता"
+- tapOn:
+    text: "मित्र/सम्बन्धी का दूरभाष (10 अंक)"
+- inputText: "8765432109"
+
+# Scroll down
+- scroll
+
+# Check trained Arya checkbox
+- tapOn:
+    point: "85,1013"
+
+# Enter trained Arya details
+- tapOn:
+    text: "प्रशिक्षित आर्य का नाम"
+- inputText: "आचार्य राजेश कुमार"
+- tapOn:
+    text: "प्रशिक्षित आर्य का दूरभाष (Mobile)"
+- inputText: "7654321098"
+
+# Check acceptance terms checkbox
+- tapOn:
+    point: "85,2194"
+
+# Scroll to submit button
+- scroll
+
+# Submit the form
+- tapOn:
+    text: "पंजीकृत करें"
+
+# Verify success message
+- assertVisible:
+    text: "आपने सफलतापूर्वक पंजीकरण करा लिया है!"
+

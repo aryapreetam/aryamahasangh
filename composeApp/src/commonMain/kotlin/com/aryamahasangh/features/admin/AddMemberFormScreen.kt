@@ -11,6 +11,13 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.aryamahasangh.components.*
+import com.aryamahasangh.features.activities.LatLng
+import com.aryamahasangh.features.activities.Member
+import com.aryamahasangh.navigation.LocalSetBackHandler
+import com.aryamahasangh.navigation.LocalSnackbarHostState
+import com.aryamahasangh.network.bucket
+import com.aryamahasangh.ui.components.buttons.*
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.core.PickerMode
 import io.github.vinceglb.filekit.core.PickerType
@@ -18,12 +25,6 @@ import io.github.vinceglb.filekit.core.PlatformFile
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
-import com.aryamahasangh.components.*
-import com.aryamahasangh.features.activities.LatLng
-import com.aryamahasangh.features.activities.Member
-import com.aryamahasangh.navigation.LocalSetBackHandler
-import com.aryamahasangh.navigation.LocalSnackbarHostState
-import com.aryamahasangh.network.bucket
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -291,13 +292,6 @@ fun AddMemberFormScreen(
 
   // Save/Update member function
   fun saveMember() {
-    if (!validateForm()) {
-      scope.launch {
-        snackbarHostState.showSnackbar("कृपया सभी आवश्यक फ़ील्ड भरें")
-      }
-      return
-    }
-
     scope.launch {
       try {
         var finalImageUrl: String? = uploadedImageUrl
@@ -676,24 +670,28 @@ fun AddMemberFormScreen(
       // Submit Button
       item {
         Spacer(modifier = Modifier.height(24.dp))
-        Button(
-          onClick = { saveMember() },
-          enabled = !uiState.isUpdating
-        ) {
-          if (uiState.isUpdating) {
-            CircularProgressIndicator(
-              modifier = Modifier.size(16.dp),
-              strokeWidth = 2.dp
+        SubmitButton(
+          text = if (isEditMode) "अपडेट करें" else "सहेजें",
+          onSubmit = {
+            // Execute the save member logic
+            saveMember()
+          },
+          config = SubmitButtonConfig(
+            validator = {
+              if (!validateForm()) SubmissionError.ValidationFailed else null
+            },
+            texts = SubmitButtonTexts(
+              submittingText = if (isEditMode) "अपडेट हो रहा है..." else "सहेजा जा रहा है...",
+              successText = if (isEditMode) "अपडेट सफल!" else "सफल!"
             )
-            Spacer(modifier = Modifier.width(8.dp))
+          ),
+          callbacks = object : SubmitCallbacks {
+            override fun onError(error: SubmissionError) {
+              // Submission errors are handled by GlobalMessageManager in ViewModel
+              // No additional action needed here
+            }
           }
-          Text(
-            text = if (isEditMode) "अपडेट करें" else "सहेजें",
-            modifier =
-              Modifier
-                .padding(horizontal = 24.dp)
-          )
-        }
+        )
       }
     }
   }
