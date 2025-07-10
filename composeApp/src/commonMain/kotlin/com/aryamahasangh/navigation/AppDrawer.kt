@@ -517,41 +517,48 @@ fun MainContent(
             else -> MaterialTheme.colorScheme.primary
           }
 
-          Surface(
-            shadowElevation = 6.dp,
-            shape = MaterialTheme.shapes.extraLarge,
-            tonalElevation = 2.dp,
-            color = MaterialTheme.colorScheme.inverseSurface,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+          // Center snackbar and constrain width to content
+          Box(
+            modifier = Modifier.fillMaxWidth(),
+            contentAlignment = Alignment.Center
           ) {
-            Row(
-              verticalAlignment = Alignment.CenterVertically,
+            Surface(
+              shadowElevation = 6.dp,
+              shape = MaterialTheme.shapes.extraLarge,
+              tonalElevation = 2.dp,
+              color = MaterialTheme.colorScheme.inverseSurface,
               modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .fillMaxWidth()
+                .wrapContentWidth(Alignment.CenterHorizontally)
+                .widthIn(max = 480.dp)
+                .padding(horizontal = 16.dp, vertical = 4.dp)
             ) {
-              Icon(
-                icon, contentDescription = null,
-                tint = iconTint,
-                modifier = Modifier
-                  .size(32.dp)
-                  .padding(end = 8.dp)
-              )
-              Text(
-                data.visuals.message,
-                color = MaterialTheme.colorScheme.inverseOnSurface,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.weight(1f)
-              )
-              IconButton(
-                onClick = { snackbarHostState.currentSnackbarData?.dismiss() },
-                modifier = Modifier.size(28.dp)
+              Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
               ) {
                 Icon(
-                  Icons.Default.Close,
-                  contentDescription = "Close",
-                  tint = MaterialTheme.colorScheme.inverseOnSurface
+                  icon, contentDescription = null,
+                  tint = iconTint,
+                  modifier = Modifier
+                    .size(32.dp)
+                    .padding(end = 8.dp)
                 )
+                Text(
+                  data.visuals.message,
+                  color = MaterialTheme.colorScheme.inverseOnSurface,
+                  style = MaterialTheme.typography.bodyMedium,
+                  modifier = Modifier.weight(1f)
+                )
+                IconButton(
+                  onClick = { snackbarHostState.currentSnackbarData?.dismiss() },
+                  modifier = Modifier.size(28.dp)
+                ) {
+                  Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Close",
+                    tint = MaterialTheme.colorScheme.inverseOnSurface
+                  )
+                }
               }
             }
           }

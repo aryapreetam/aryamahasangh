@@ -112,72 +112,11 @@ class LoggingApolloInterceptor : ApolloInterceptor {
     chain: ApolloInterceptorChain
   ): Flow<ApolloResponse<D>> {
     return chain.proceed(request).onEach {
-       //println("Request: ${request.operation}")
-       //println("Response ${it.data}")
+       println("Request: ${request.operation}")
+       println("Response ${it.data}")
     }
   }
 }
 
 val resumableClient = supabaseClient.storage[AppConfig.STORAGE_BUCKET].resumable
 val bucket = supabaseClient.storage[AppConfig.STORAGE_BUCKET]
-
-/**
- * Extension function for ApolloClient that provides cache-and-network flow with improved cache detection.
- * 
- * This function addresses the distinction between cache and network responses:
- * - `isFromCache`: True if response comes from cache, false if from network
- * 
- * The logic helps distinguish between:
- * 1. Cache response - suppress errors, show data if available, wait for network
- * 2. Network response - show errors if any, this is the final result
- */
-fun <D : Query.Data, Q : Query<D>> com.apollographql.apollo.ApolloClient.resultCacheAndNetworkFlow(
-    query: Q,
-    extractList: (D) -> List<*>? = { null } // Optional: only needed if you're validating emptiness
-): Flow<Result<D>> = flow {
-    emit(Result.Loading)
-
-    query(query)
-        .fetchPolicy(FetchPolicy.CacheAndNetwork)
-        .toFlow()
-        .collect { response: ApolloResponse<D> ->
-            val isFromCache = response.isFromCache
-            val data = response.data
-            val list = data?.let(extractList)
-
-            // Handle errors based on source
-            if (response.hasErrors()) {
-                if (isFromCache) {
-                    // If from cache and has errors, suppress error and emit data if available
-                    // Wait for network result
-                    if (data != null) {
-                        emit(Result.Success(data))
-                    }
-                } else {
-                    // If from network and has errors, emit error
-                    emit(Result.Error(response.errors?.firstOrNull()?.message ?: "Unknown error"))
-                }
-                return@collect
-            }
-
-            // Handle empty data based on source
-            if (data == null || (list != null && list.isEmpty())) {
-                if (isFromCache) {
-                    // If from cache and empty, suppress error and emit empty data
-                    // Wait for network result
-                    if (data != null) {
-                        emit(Result.Success(data))
-                    }
-                } else {
-                    // If from network and empty, emit error
-                    emit(Result.Error("No data found"))
-                }
-                return@collect
-            }
-
-            // Handle successful responses with data
-            emit(Result.Success(data))
-        }
-}.catch { e ->
-    emit(Result.Error(e.message ?: "Unknown error", e))
-}

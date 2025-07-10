@@ -126,12 +126,12 @@ data class OrganisationalActivity(
   val id: String,
   val name: String,
   val type: ActivityType,
-  val state: String,
-  val address: String,
+  val state: String = "",
+  val address: String = "",
   val capacity: Int,
-  val district: String,
-  val latitude: Double?,
-  val longitude: Double?,
+  val district: String = "",
+  val latitude: Double? = 0.0,
+  val longitude: Double? = 0.0,
   val mediaFiles: List<String>,
   val endDatetime: LocalDateTime,
   val allowedGender: String,
@@ -190,17 +190,12 @@ fun OrganisationalActivity.Companion.camelCased(
   node: OrganisationalActivityDetailByIdQuery.Node
 ): OrganisationalActivity {
   val organisationalActivityShort = node.organisationalActivityShort
-  return OrganisationalActivity(
+  var org =  OrganisationalActivity(
     id = organisationalActivityShort.id,
     name = organisationalActivityShort.name,
     type = organisationalActivityShort.type,
-    shortDescription = organisationalActivityShort.shortDescription,
-    district = organisationalActivityShort.address?.district ?: "",
-    state = node.address?.state!!,
-    address = node.address.basicAddress ?: "",
     capacity = node.capacity!!,
-    latitude = node.address.latitude,
-    longitude = node.address.longitude,
+    shortDescription = organisationalActivityShort.shortDescription,
     mediaFiles = node.mediaFiles.map { it ?: "" },
     endDatetime = organisationalActivityShort.endDatetime.toLocalDateTime(),
     allowedGender = node.allowedGender!!.name,
@@ -234,6 +229,17 @@ fun OrganisationalActivity.Companion.camelCased(
     overviewDescription = node.overviewDescription ?: null,
     overviewMediaUrls = node.overviewMediaUrls.map { it ?: "" }
   )
+  if(organisationalActivityShort.address != null){
+    org = org.copy(
+      district = organisationalActivityShort.address?.district ?: "",
+      state = node.address?.state!!,
+      address = node.address.basicAddress ?: "",
+
+      latitude = node.address.latitude,
+      longitude = node.address.longitude,
+    )
+  }
+  return org
 }
 
 fun getLocalDateTime(timestamptzStr: Any): LocalDateTime {
