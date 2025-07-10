@@ -7,6 +7,7 @@ import com.aryamahasangh.features.admin.data.AryaSamajViewModel
 import com.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
 import com.aryamahasangh.features.arya_nirman.SatraRegistrationViewModel
 import com.aryamahasangh.features.organisations.OrganisationsViewModel
+import com.aryamahasangh.features.public_arya_samaj.AryaSamajHomeViewModel
 import com.aryamahasangh.viewmodel.*
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
@@ -38,5 +39,6 @@ val viewModelModule =
     factoryOf(::SatraRegistrationViewModel)
     factoryOf(::AdminViewModel)
     factoryOf(::AryaSamajViewModel)
+    factoryOf(::AryaSamajHomeViewModel)
     factoryOf(::FamilyViewModel)
   }

@@ -3,13 +3,20 @@ package com.aryamahasangh.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -18,36 +25,43 @@ import coil3.compose.AsyncImage
 import com.aryamahasangh.components.AddressComponent
 import com.aryamahasangh.components.AddressData
 import com.aryamahasangh.components.AddressFieldsConfig
-import com.aryamahasangh.features.admin.data.AryaSamajListItem
-import com.aryamahasangh.features.admin.data.AryaSamajListUiState
-import com.aryamahasangh.features.admin.data.AryaSamajViewModel
+import com.aryamahasangh.features.public_arya_samaj.AryaSamajHomeListItem
+import com.aryamahasangh.features.public_arya_samaj.AryaSamajHomeViewModel
 
 @Composable
 fun AryaSamajHomeScreen(
-  viewModel: AryaSamajViewModel? = null,
+  viewModel: AryaSamajHomeViewModel,
   onNavigateToDetail: (String) -> Unit = {}
 ) {
-  val listUiState by viewModel?.listUiState?.collectAsStateWithLifecycle()
-    ?: remember { mutableStateOf(AryaSamajListUiState()) }
+  val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+  val paginationState by viewModel.paginationState.collectAsStateWithLifecycle()
+  val keyboardController = LocalSoftwareKeyboardController.current
 
-  var addressData by remember { mutableStateOf(AddressData()) }
-  var hasSearched by remember { mutableStateOf(false) }
-
-  LaunchedEffect(Unit) {
-    viewModel?.loadAryaSamajsPaginated()
-    viewModel?.getAryaSamajCount() // Load total count separately
+  var searchQuery by remember { mutableStateOf(uiState.filterState.searchQuery) }
+  var addressData by remember { 
+    mutableStateOf(
+      AddressData(
+        state = uiState.filterState.selectedState,
+        district = uiState.filterState.selectedDistrict,
+        vidhansabha = uiState.filterState.selectedVidhansabha
+      )
+    )
   }
 
-  LaunchedEffect(addressData) {
-    // Only search when user has actually selected something
-    if (hasSearched && (addressData.state.isNotEmpty() || addressData.district.isNotEmpty() || addressData.vidhansabha.isNotEmpty())) {
-      // Call search with address parameters
-      viewModel?.searchAryaSamajByAddress(
-        state = addressData.state.ifBlank { null },
-        district = addressData.district.ifBlank { null },
-        vidhansabha = addressData.vidhansabha.ifBlank { null }
-      )
-    }
+  // Load initial data
+  LaunchedEffect(Unit) {
+    viewModel.loadInitialList()
+    viewModel.loadTotalCount()
+  }
+
+  // Update local state when filter state changes
+  LaunchedEffect(uiState.filterState) {
+    searchQuery = uiState.filterState.searchQuery
+    addressData = AddressData(
+      state = uiState.filterState.selectedState,
+      district = uiState.filterState.selectedDistrict,
+      vidhansabha = uiState.filterState.selectedVidhansabha
+    )
   }
 
   BoxWithConstraints {
@@ -155,7 +169,7 @@ fun AryaSamajHomeScreen(
       item {
         // Total count section
         Card(
-          modifier = Modifier.width(500.dp).padding(vertical = 12.dp),
+          modifier = Modifier.widthIn(max = 500.dp).padding(vertical = 12.dp),
           colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.primaryContainer
           )
@@ -163,7 +177,7 @@ fun AryaSamajHomeScreen(
           Box(
             modifier = Modifier
               .fillMaxWidth()
-              .padding(24.dp),
+              .padding(16.dp),
             contentAlignment = Alignment.Center
           ) {
             Column(
@@ -171,20 +185,18 @@ fun AryaSamajHomeScreen(
               verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
               Text(
-                text = "आर्य समाज(आर्य महासंघ के अंतर्गत)",
+                text = "आर्य समाज (आर्य महासंघ के अंतर्गत)",
                 style = MaterialTheme.typography.titleMedium.copy(
                   fontWeight = FontWeight.SemiBold
                 )
               )
 
-              if (listUiState.isLoading) {
-                CircularProgressIndicator(
-                  modifier = Modifier.size(32.dp)
-                )
+              if (paginationState.isInitialLoading && paginationState.items.isEmpty()) {
+                CircularProgressIndicator(modifier = Modifier.size(32.dp))
               } else {
                 Text(
-                  text = "${listUiState.totalCount}",
-                  style = MaterialTheme.typography.displayMedium.copy(
+                  text = "${uiState.totalCount}",
+                  style = MaterialTheme.typography.displaySmall.copy(
                     fontWeight = FontWeight.Bold
                   ),
                   color = MaterialTheme.colorScheme.primary
@@ -196,7 +208,7 @@ fun AryaSamajHomeScreen(
       }
 
       item {
-        // Search section
+        // Search and filter section
         Column(
           modifier = Modifier.padding(top = 12.dp),
           verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -208,11 +220,53 @@ fun AryaSamajHomeScreen(
             )
           )
 
+          // Search box
+          OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { newQuery ->
+              searchQuery = newQuery
+              viewModel.updateSearchQuery(newQuery)
+            },
+            label = { Text("आर्य समाज का नाम") },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            trailingIcon = {
+              if (paginationState.isSearching) {
+                CircularProgressIndicator(
+                  modifier = Modifier.size(20.dp),
+                  strokeWidth = 2.dp
+                )
+              } else if (searchQuery.isNotEmpty()) {
+                IconButton(
+                  onClick = {
+                    searchQuery = ""
+                    viewModel.updateSearchQuery("")
+                  }
+                ) {
+                  Icon(Icons.Default.Clear, contentDescription = "साफ़ करें")
+                }
+              }
+            },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+            keyboardActions = KeyboardActions(
+              onSearch = {
+                keyboardController?.hide()
+              }
+            ),
+            modifier = Modifier.width(490.dp)
+          )
+
+          // Address filter
           AddressComponent(
             addressData = addressData,
             onAddressChange = { newData ->
               addressData = newData
-              hasSearched = true
+              viewModel.updateFilterState(
+                selectedState = newData.state,
+                selectedDistrict = newData.district,
+                selectedVidhansabha = newData.vidhansabha
+              )
+              viewModel.refreshList()
             },
             fieldsConfig = AddressFieldsConfig(
               showLocation = false,
@@ -225,14 +279,10 @@ fun AryaSamajHomeScreen(
             modifier = Modifier.fillMaxWidth()
           )
 
-          if (hasSearched && (addressData.state.isNotEmpty() || addressData.district.isNotEmpty() || addressData.vidhansabha.isNotEmpty())) {
+          // Clear filters button
+          if (uiState.filterState.hasActiveFilters) {
             Button(
-              onClick = {
-                addressData = AddressData()
-                hasSearched = false
-                viewModel?.loadAryaSamajsPaginated()
-              },
-              modifier = Modifier.align(Alignment.CenterHorizontally)
+              onClick = viewModel::clearFilters,
             ) {
               Text("सभी आर्य समाज दिखाएं")
             }
@@ -242,29 +292,27 @@ fun AryaSamajHomeScreen(
 
       item {
         // Divider
-        HorizontalDivider(
-          modifier = Modifier
-            .fillMaxWidth()
-        )
+        HorizontalDivider(modifier = Modifier.fillMaxWidth())
       }
 
       item {
-        // Results section - show all Arya Samaj
-        Column(
-          verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-          Text(
-            text = if (hasSearched && (addressData.state.isNotEmpty() || addressData.district.isNotEmpty() || addressData.vidhansabha.isNotEmpty())) {
-              "खोज परिणाम"
-            } else {
-              "आर्य समाज"
-            },
-            style = MaterialTheme.typography.titleMedium.copy(
-              fontWeight = FontWeight.SemiBold
-            )
+        // Results section header
+        Text(
+          text = if (uiState.filterState.hasActiveFilters) {
+            "खोज परिणाम (${paginationState.items.size})"
+          } else {
+            "आर्य समाज (${paginationState.items.size})"
+          },
+          style = MaterialTheme.typography.titleMedium.copy(
+            fontWeight = FontWeight.SemiBold
           )
+        )
+      }
 
-          if (listUiState.isLoading) {
+      // List items or states
+      when {
+        paginationState.isInitialLoading && paginationState.items.isEmpty() -> {
+          item {
             Box(
               modifier = Modifier
                 .fillMaxWidth()
@@ -273,41 +321,107 @@ fun AryaSamajHomeScreen(
             ) {
               CircularProgressIndicator()
             }
-          } else if (listUiState.error != null) {
+          }
+        }
+
+        paginationState.error != null && paginationState.items.isEmpty() -> {
+          item {
             Card(
               colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.errorContainer
               )
             ) {
-              Text(
-                text = listUiState.error ?: "Error occurred",
+              Column(
                 modifier = Modifier.padding(16.dp),
-                color = MaterialTheme.colorScheme.onErrorContainer
-              )
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+              ) {
+                Text(
+                  text = paginationState.error ?: "अज्ञात त्रुटि",
+                  color = MaterialTheme.colorScheme.onErrorContainer,
+                  textAlign = TextAlign.Center
+                )
+
+                if (paginationState.showRetryButton) {
+                  Button(
+                    onClick = viewModel::retryLoad
+                  ) {
+                    Text("पुनः प्रयास करें")
+                  }
+                }
+              }
             }
-          } else if (listUiState.aryaSamajs.isEmpty()) {
+          }
+        }
+
+        paginationState.items.isEmpty() && !paginationState.isInitialLoading -> {
+          item {
             Card(
               colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceVariant
               )
             ) {
               Text(
-                text = if (hasSearched) "इस क्षेत्र में कोई आर्य समाज नहीं मिला" else "कोई आर्य समाज उपलब्ध नहीं है",
+                text = if (uiState.filterState.hasActiveFilters) {
+                  "कोई आर्य समाज नहीं मिला"
+                } else {
+                  "कोई आर्य समाज उपलब्ध नहीं है"
+                },
                 modifier = Modifier.padding(16.dp),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center
               )
             }
-          } else {
-            Column(
-              verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-              listUiState.aryaSamajs.forEach { aryaSamaj ->
-                AryaSamajListItemComponent(
-                  aryaSamaj = aryaSamaj,
-                  onItemClick = { onNavigateToDetail(aryaSamaj.id) }
-                )
+          }
+        }
+        
+        else -> {
+          items(
+            count = paginationState.items.size,
+            key = { index -> paginationState.items[index].id }
+          ) { index ->
+            val item = paginationState.items[index]
+
+            // Load more when approaching end
+            LaunchedEffect(index) {
+              if (index >= paginationState.items.size - 3 &&
+                paginationState.hasNextPage &&
+                !paginationState.isLoadingNextPage
+              ) {
+                viewModel.loadNextPage()
               }
+            }
+
+            AryaSamajListItemComponent(
+              aryaSamaj = item,
+              onItemClick = { onNavigateToDetail(item.id) }
+            )
+          }
+
+          // Loading indicator for pagination
+          if (paginationState.isLoadingNextPage) {
+            item {
+              Box(
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .padding(16.dp),
+                contentAlignment = Alignment.Center
+              ) {
+                CircularProgressIndicator()
+              }
+            }
+          }
+
+          // End of list indicator
+          if (paginationState.hasReachedEnd && !paginationState.hasNextPage && paginationState.items.isNotEmpty()) {
+            item {
+              Text(
+                text = "सभी आर्य समाज दिखाए गए हैं (कुल ${paginationState.items.size})",
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+              )
             }
           }
         }
@@ -318,7 +432,7 @@ fun AryaSamajHomeScreen(
 
 @Composable
 private fun AryaSamajListItemComponent(
-  aryaSamaj: AryaSamajListItem,
+  aryaSamaj: AryaSamajHomeListItem,
   onItemClick: () -> Unit
 ) {
   Card(
@@ -340,10 +454,9 @@ private fun AryaSamajListItemComponent(
           .clip(RoundedCornerShape(8.dp)),
         contentAlignment = Alignment.Center
       ) {
-        if (aryaSamaj.mediaUrls.isNotEmpty()) {
-          // Show the first image if available
+        if (aryaSamaj.primaryImage != null) {
           AsyncImage(
-            model = aryaSamaj.mediaUrls.first(),
+            model = aryaSamaj.primaryImage,
             contentDescription = aryaSamaj.name,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
@@ -358,7 +471,7 @@ private fun AryaSamajListItemComponent(
               contentAlignment = Alignment.Center
             ) {
               Text(
-                text = aryaSamaj.name.take(2),
+                text = aryaSamaj.initialsText,
                 style = MaterialTheme.typography.titleLarge.copy(
                   fontWeight = FontWeight.Bold
                 ),

@@ -12,6 +12,8 @@ import com.aryamahasangh.features.arya_nirman.AryaNirmanRepository
 import com.aryamahasangh.features.arya_nirman.AryaNirmanRepositoryImpl
 import com.aryamahasangh.features.organisations.OrganisationsRepository
 import com.aryamahasangh.features.organisations.OrganisationsRepositoryImpl
+import com.aryamahasangh.features.public_arya_samaj.AryaSamajHomeRepository
+import com.aryamahasangh.features.public_arya_samaj.AryaSamajHomeRepositoryImpl
 import com.aryamahasangh.repository.*
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
@@ -44,5 +46,6 @@ val repositoryModule =
     singleOf(::AryaNirmanRepositoryImpl) { bind<AryaNirmanRepository>() }
     singleOf(::AdminRepositoryImpl) { bind<AdminRepository>() }
     singleOf(::AryaSamajRepositoryImpl) { bind<AryaSamajRepository>() }
+    singleOf(::AryaSamajHomeRepositoryImpl) { bind<AryaSamajHomeRepository>() }
     singleOf(::FamilyRepositoryImpl) { bind<FamilyRepository>() }
   }

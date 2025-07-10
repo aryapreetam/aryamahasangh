@@ -1295,6 +1295,209 @@ type AryaSamajUpdateResponse {
   records: [AryaSamaj!]!
 }
 
+type AryaSamajWithAddress implements Node {
+  """
+  Globally Unique Record Identifier
+  """
+  nodeId: ID!
+
+  id: String
+
+  name: String
+
+  mediaUrls: [String]
+
+  createdAt: Datetime
+
+  description: String
+
+  basicAddress: String
+
+  state: String
+
+  district: String
+
+  pincode: String
+
+  latitude: Float
+
+  longitude: Float
+
+  vidhansabha: String
+}
+
+type AryaSamajWithAddressConnection {
+  edges: [AryaSamajWithAddressEdge!]!
+
+  pageInfo: PageInfo!
+
+  """
+  The total number of records matching the `filter` criteria
+  """
+  totalCount: Int!
+}
+
+type AryaSamajWithAddressDeleteResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [AryaSamajWithAddress!]!
+}
+
+type AryaSamajWithAddressEdge {
+  cursor: String!
+
+  node: AryaSamajWithAddress!
+}
+
+input AryaSamajWithAddressFilter {
+  id: StringFilter
+
+  name: StringFilter
+
+  mediaUrls: StringListFilter
+
+  createdAt: DatetimeFilter
+
+  description: StringFilter
+
+  basicAddress: StringFilter
+
+  state: StringFilter
+
+  district: StringFilter
+
+  pincode: StringFilter
+
+  latitude: FloatFilter
+
+  longitude: FloatFilter
+
+  vidhansabha: StringFilter
+
+  nodeId: IDFilter
+
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [AryaSamajWithAddressFilter!]
+
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [AryaSamajWithAddressFilter!]
+
+  """
+  Negates a filter
+  """
+  not: AryaSamajWithAddressFilter
+}
+
+input AryaSamajWithAddressInsertInput {
+  id: String
+
+  name: String
+
+  mediaUrls: [String]
+
+  createdAt: Datetime
+
+  description: String
+
+  basicAddress: String
+
+  state: String
+
+  district: String
+
+  pincode: String
+
+  latitude: Float
+
+  longitude: Float
+
+  vidhansabha: String
+}
+
+type AryaSamajWithAddressInsertResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [AryaSamajWithAddress!]!
+}
+
+input AryaSamajWithAddressOrderBy {
+  id: OrderByDirection
+
+  name: OrderByDirection
+
+  createdAt: OrderByDirection
+
+  description: OrderByDirection
+
+  basicAddress: OrderByDirection
+
+  state: OrderByDirection
+
+  district: OrderByDirection
+
+  pincode: OrderByDirection
+
+  latitude: OrderByDirection
+
+  longitude: OrderByDirection
+
+  vidhansabha: OrderByDirection
+}
+
+input AryaSamajWithAddressUpdateInput {
+  id: String
+
+  name: String
+
+  mediaUrls: [String]
+
+  createdAt: Datetime
+
+  description: String
+
+  basicAddress: String
+
+  state: String
+
+  district: String
+
+  pincode: String
+
+  latitude: Float
+
+  longitude: Float
+
+  vidhansabha: String
+}
+
+type AryaSamajWithAddressUpdateResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [AryaSamajWithAddress!]!
+}
+
 """
 A high precision floating point value represented as a string
 """
@@ -2889,6 +3092,11 @@ type Mutation {
   deleteFromAryaSamajCollection("Restricts the mutation's impact to records matching the criteria" filter: AryaSamajFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): AryaSamajDeleteResponse!
 
   """
+  Deletes zero or more records from the `AryaSamajWithAddress` collection
+  """
+  deleteFromAryaSamajWithAddressCollection("Restricts the mutation's impact to records matching the criteria" filter: AryaSamajWithAddressFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): AryaSamajWithAddressDeleteResponse!
+
+  """
   Deletes zero or more records from the `BookOrders` collection
   """
   deleteFromBookOrdersCollection("Restricts the mutation's impact to records matching the criteria" filter: BookOrdersFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): BookOrdersDeleteResponse!
@@ -2988,6 +3196,11 @@ type Mutation {
   Adds one or more `AryaSamaj` records to the collection
   """
   insertIntoAryaSamajCollection(objects: [AryaSamajInsertInput!]!): AryaSamajInsertResponse
+
+  """
+  Adds one or more `AryaSamajWithAddress` records to the collection
+  """
+  insertIntoAryaSamajWithAddressCollection(objects: [AryaSamajWithAddressInsertInput!]!): AryaSamajWithAddressInsertResponse
 
   """
   Adds one or more `BookOrders` records to the collection
@@ -3091,6 +3304,11 @@ type Mutation {
   updateAryaSamajCollection("Fields that are set will be updated for all records matching the `filter`" set: AryaSamajUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: AryaSamajFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): AryaSamajUpdateResponse!
 
   updateAryaSamajDetails(pAryaSamajId: String!, pSamajName: String, pSamajDescription: String, pBasicAddress: String, pState: String, pDistrict: String, pSamajMediaUrls: [String], pPincode: String, pLatitude: Float, pLongitude: Float, pVidhansabha: String): JSON
+
+  """
+  Updates zero or more records in the `AryaSamajWithAddress` collection
+  """
+  updateAryaSamajWithAddressCollection("Fields that are set will be updated for all records matching the `filter`" set: AryaSamajWithAddressUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: AryaSamajWithAddressFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): AryaSamajWithAddressUpdateResponse!
 
   """
   Updates zero or more records in the `BookOrders` collection
@@ -3631,6 +3849,11 @@ type Query {
   A pagable collection of type `AryaSamaj`
   """
   aryaSamajCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: AryaSamajFilter, "Sort order to apply to the collection" orderBy: [AryaSamajOrderBy!]): AryaSamajConnection
+
+  """
+  A pagable collection of type `AryaSamajWithAddress`
+  """
+  aryaSamajWithAddressCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: AryaSamajWithAddressFilter, "Sort order to apply to the collection" orderBy: [AryaSamajWithAddressOrderBy!]): AryaSamajWithAddressConnection
 
   """
   A pagable collection of type `BookOrders`

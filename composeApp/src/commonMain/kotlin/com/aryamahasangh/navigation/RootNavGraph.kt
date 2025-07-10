@@ -29,6 +29,7 @@ import com.aryamahasangh.features.organisations.OrganisationsViewModel
 import com.aryamahasangh.features.organisations.OrgsScreen
 import com.aryamahasangh.screens.*
 import com.aryamahasangh.features.activities.ActivitiesPageState
+import com.aryamahasangh.features.public_arya_samaj.AryaSamajHomeViewModel
 import com.aryamahasangh.viewmodel.*
 import org.koin.compose.koinInject
 
@@ -569,9 +570,9 @@ fun RootNavGraph(navController: NavHostController) {
     }
     navigation<Screen.AryaSamajSection>(startDestination = Screen.AryaSamajHome) {
       composable<Screen.AryaSamajHome> {
-        val aryaSamajViewModel = koinInject<AryaSamajViewModel>()
+        val aryaSamajHomeViewModel = koinInject<AryaSamajHomeViewModel>()
         AryaSamajHomeScreen(
-          viewModel = aryaSamajViewModel,
+          viewModel = aryaSamajHomeViewModel,
           onNavigateToDetail = { aryaSamajId ->
             navController.navigate(Screen.AryaSamajDetail(aryaSamajId))
           }

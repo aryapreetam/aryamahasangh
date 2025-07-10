@@ -1,0 +1,70 @@
+# Public AryaSamaj Queries for arya_samaj_with_address view
+
+fragment AryaSamajPublicListItem on AryaSamajWithAddress {
+  id
+  name
+  mediaUrls
+  createdAt
+  description
+  basicAddress
+  state
+  district
+  pincode
+  latitude
+  longitude
+  vidhansabha
+}
+
+query getAryaSamajsPublic($first: Int!, $after: Cursor, $filter: AryaSamajWithAddressFilter, $orderBy: [AryaSamajWithAddressOrderBy!]) {
+  aryaSamajWithAddressCollection(
+    first: $first
+    after: $after
+    filter: $filter
+    orderBy: $orderBy
+  ) {
+    edges {
+      node {
+        ...AryaSamajPublicListItem
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+  }
+}
+
+query searchAryaSamajsPublic($first: Int!, $after: Cursor, $searchTerm: String!) {
+  aryaSamajWithAddressCollection(
+    first: $first
+    after: $after
+    filter: {
+      name: {ilike: $searchTerm}
+    }
+    orderBy: {createdAt: DescNullsLast}
+  ) {
+    edges {
+      node {
+        ...AryaSamajPublicListItem
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      hasPreviousPage
+      startCursor
+      endCursor
+    }
+  }
+}
+
+
+
+query aryaSamajPublicCount {
+  aryaSamajWithAddressCollection {
+    totalCount
+  }
+}
