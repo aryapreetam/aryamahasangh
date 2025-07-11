@@ -31,18 +31,21 @@ object AppConfig {
   val supabaseUrl: String
     get() = when (environment) {
       "prod" -> Secrets.prod_supabase_url
+      "staging" -> Secrets.staging_supabase_url
       else -> Secrets.dev_supabase_url
     }
 
   val supabaseKey: String
     get() = when (environment) {
       "prod" -> Secrets.prod_supabase_key
+      "staging" -> Secrets.staging_supabase_key
       else -> Secrets.dev_supabase_key
     }
 
   val serverUrl: String
     get() = when (environment) {
       "prod" -> Secrets.prod_server_url.ifEmpty { supabaseUrl }
+      "staging" -> Secrets.staging_server_url.ifEmpty { supabaseUrl }
       else -> Secrets.dev_server_url
     }
 
@@ -57,18 +60,21 @@ object AppConfig {
   val keystorePassword: String
     get() = when (environment) {
       "prod" -> Secrets.prod_keystore_password
+      "staging" -> Secrets.staging_keystore_password
       else -> Secrets.dev_keystore_password
     }
 
   val keyAlias: String
     get() = when (environment) {
       "prod" -> Secrets.prod_key_alias
+      "staging" -> Secrets.staging_key_alias
       else -> Secrets.dev_key_alias
     }
 
   val keyPassword: String
     get() = when (environment) {
       "prod" -> Secrets.prod_key_password
+      "staging" -> Secrets.staging_key_password
       else -> Secrets.dev_key_password
     }
 

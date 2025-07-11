@@ -669,7 +669,17 @@ class FamilyViewModel(
         // Add existing image URLs
         imageUrls.addAll(currentState.imagePickerState.getActiveImageUrls())
 
-        // Step 2: Handle address (create new if needed)
+        // Step 2: Prepare family members data
+        val familyMemberData =
+          currentState.familyMembers.map { familyMember ->
+            FamilyMemberData(
+              memberId = familyMember.member.id,
+              isHead = familyMember.isHead,
+              relationToHead = familyMember.relationToHead?.toGraphQL()
+            )
+          }
+
+        // Step 3: Handle address (create new if needed)
         var addressId: String? = null
 
         if (currentState.selectedAddressIndex == null || currentState.selectedAddressIndex == -1) {
@@ -712,7 +722,7 @@ class FamilyViewModel(
           return@launch
         }
 
-        // Step 3: Update family
+        // Step 4: Update family
         familyRepository.updateFamily(
           familyId = familyId,
           name = currentState.familyName,
@@ -722,12 +732,43 @@ class FamilyViewModel(
         ).collect { result ->
           when (result) {
             is Result.Success -> {
-              _createFamilyUiState.value =
-                _createFamilyUiState.value.copy(
-                  isSubmitting = false,
-                  submitSuccess = true
-                )
-              GlobalMessageManager.showSuccess("परिवार सफलतापूर्वक संपादित किया गया")
+              // Step 5: Update family members if needed
+              if (familyMemberData.isNotEmpty()) {
+                familyRepository.updateFamilyMembers(
+                  familyId = familyId,
+                  members = familyMemberData
+                ).collect { memberResult ->
+                  when (memberResult) {
+                    is Result.Success -> {
+                      _createFamilyUiState.value =
+                        _createFamilyUiState.value.copy(
+                          isSubmitting = false,
+                          submitSuccess = true
+                        )
+                      GlobalMessageManager.showSuccess("परिवार और सदस्य सफलतापूर्वक संपादित किए गए")
+                    }
+
+                    is Result.Error -> {
+                      _createFamilyUiState.value =
+                        _createFamilyUiState.value.copy(
+                          isSubmitting = false,
+                          error = "परिवार सदस्य अपडेट करने में त्रुटि: ${memberResult.message}"
+                        )
+                    }
+
+                    is Result.Loading -> {
+                      // Already handling loading state
+                    }
+                  }
+                }
+              } else {
+                _createFamilyUiState.value =
+                  _createFamilyUiState.value.copy(
+                    isSubmitting = false,
+                    submitSuccess = true
+                  )
+                GlobalMessageManager.showSuccess("परिवार सफलतापूर्वक संपादित किया गया")
+              }
             }
 
             is Result.Error -> {

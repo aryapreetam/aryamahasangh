@@ -232,3 +232,21 @@ mutation UpdateMemberRelation(
     }
   }
 }
+
+# Remove all members from a family
+mutation RemoveAllMembersFromFamily(
+  $familyId: String!
+) {
+  deleteFromFamilyMemberCollection(
+    filter: { familyId: { eq: $familyId } }
+    atMost: 100
+  ) {
+    affectedCount
+    records {
+      id
+      member {
+        name
+      }
+    }
+  }
+}

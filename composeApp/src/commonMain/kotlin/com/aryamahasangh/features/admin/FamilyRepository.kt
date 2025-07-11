@@ -91,6 +91,13 @@ interface FamilyRepository : PaginatedRepository<FamilyFields> {
 
   // Family deletion
   suspend fun deleteFamily(familyId: String): Flow<Result<Boolean>>
+
+  suspend fun removeMembersFromFamily(familyId: String): Flow<Result<Boolean>>
+  
+  suspend fun updateFamilyMembers(
+    familyId: String,
+    members: List<FamilyMemberData>
+  ): Flow<Result<Boolean>>
 }
 
 data class FamilyMemberData(
@@ -640,6 +647,77 @@ class FamilyRepositoryImpl(private val apolloClient: ApolloClient) : FamilyRepos
       emit(result)
     }
 
+  override suspend fun removeMembersFromFamily(familyId: String): Flow<Result<Boolean>> =
+    flow {
+      emit(Result.Loading)
+      val result: Result<Boolean> =
+        safeCall {
+          val response =
+            apolloClient.mutation(
+              RemoveAllMembersFromFamilyMutation(
+                familyId = familyId
+              )
+            ).execute()
+
+          if (response.hasErrors()) {
+            throw Exception("Failed to remove members from family: ${response.errors?.firstOrNull()?.message}")
+          }
+
+          // CRITICAL: Clear Apollo cache after successful removal of members
+          apolloClient.apolloStore.clearAll()
+
+          true
+        }
+      emit(result)
+    }
+
+  override suspend fun updateFamilyMembers(
+    familyId: String,
+    members: List<FamilyMemberData>
+  ): Flow<Result<Boolean>> =
+    flow {
+      emit(Result.Loading)
+      val result: Result<Boolean> =
+        safeCall {
+          val familyMemberInputs =
+            members.map { memberData ->
+              FamilyMemberInsertInput(
+                familyId = Optional.present(familyId),
+                memberId = Optional.present(memberData.memberId),
+                isHead = Optional.present(memberData.isHead),
+                relationToHead = Optional.presentIfNotNull(memberData.relationToHead)
+              )
+            }
+
+          // Remove existing members
+          val removeResponse =
+            apolloClient.mutation(
+              RemoveAllMembersFromFamilyMutation(
+                familyId = familyId
+              )
+            ).execute()
+
+          if (removeResponse.hasErrors()) {
+            throw Exception("Failed to remove existing members from family: ${removeResponse.errors?.firstOrNull()?.message}")
+          }
+
+          // Add new members
+          val addResponse =
+            apolloClient.mutation(
+              AddMultipleMembersToFamilyMutation(familyMemberInputs)
+            ).execute()
+
+          if (addResponse.hasErrors()) {
+            throw Exception("Failed to add new members to family: ${addResponse.errors?.firstOrNull()?.message}")
+          }
+
+          // CRITICAL: Clear Apollo cache after successful update of family members
+          apolloClient.apolloStore.clearAll()
+
+          true
+        }
+      emit(result)
+    }
 }
 
 // Extension functions to convert between generated types and UI models

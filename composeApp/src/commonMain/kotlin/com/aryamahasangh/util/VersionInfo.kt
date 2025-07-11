@@ -29,6 +29,8 @@ object VersionInfo {
     val environment = getEnvironment()
     return if (environment == "dev") {
       "$baseVersion-dev"
+    } else if (environment == "staging") {
+      "$baseVersion-staging"
     } else {
       baseVersion
     }
