@@ -1,0 +1,36 @@
+# Get recent AryaSamajs with optional location-based sorting
+query RecentAryaSamajsQuery($first: Int!, $lat: Float, $lng: Float) {
+  aryaSamajCollection(
+    first: $first,
+    orderBy: { createdAt: DescNullsLast }
+  ) {
+    edges {
+      node {
+        ...AryaSamajFields
+        address {
+          ...AddressFields
+        }
+      }
+    }
+  }
+}
+
+# Search AryaSamajs by name
+query SearchAryaSamajsQuery($searchTerm: String!, $first: Int!) {
+  aryaSamajCollection(
+    first: $first,
+    filter: {
+      name: { ilike: $searchTerm }
+    },
+    orderBy: { createdAt: DescNullsLast }
+  ) {
+    edges {
+      node {
+        ...AryaSamajFields
+        address {
+          ...AddressFields
+        }
+      }
+    }
+  }
+}

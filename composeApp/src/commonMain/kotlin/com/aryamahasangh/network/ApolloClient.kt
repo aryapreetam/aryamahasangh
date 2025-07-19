@@ -5,13 +5,9 @@ import com.apollographql.adapter.datetime.KotlinxLocalDateAdapter
 import com.apollographql.apollo.api.ApolloRequest
 import com.apollographql.apollo.api.ApolloResponse
 import com.apollographql.apollo.api.Operation
-import com.apollographql.apollo.api.Query
 import com.apollographql.apollo.api.http.HttpRequest
 import com.apollographql.apollo.api.http.HttpResponse
-import com.apollographql.apollo.cache.normalized.FetchPolicy
 import com.apollographql.apollo.cache.normalized.api.MemoryCacheFactory
-import com.apollographql.apollo.cache.normalized.fetchPolicy
-import com.apollographql.apollo.cache.normalized.isFromCache
 import com.apollographql.apollo.cache.normalized.normalizedCache
 import com.apollographql.apollo.interceptor.ApolloInterceptor
 import com.apollographql.apollo.interceptor.ApolloInterceptorChain
@@ -20,9 +16,9 @@ import com.apollographql.apollo.network.http.HttpInterceptorChain
 import com.aryamahasangh.config.AppConfig
 import com.aryamahasangh.type.Date
 import com.aryamahasangh.type.Datetime
-import com.aryamahasangh.util.Result
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.FlowType
+import io.github.jan.supabase.coil.Coil3Integration
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.graphql.GraphQL
 import io.github.jan.supabase.postgrest.Postgrest
@@ -32,8 +28,6 @@ import io.github.jan.supabase.storage.Storage
 import io.github.jan.supabase.storage.resumable.SettingsResumableCache
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.serialization.json.Json
 
@@ -51,6 +45,7 @@ val supabaseClient =
         cache = SettingsResumableCache()
       }
     }
+    install(Coil3Integration)
     install(Postgrest)
     install(Realtime)
     install(Auth) {

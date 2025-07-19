@@ -11,10 +11,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.launch
-import kotlinx.datetime.LocalDate
 import com.aryamahasangh.components.*
 import com.aryamahasangh.features.activities.Member
+import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 
 // Example data class for form
 data class PersonFormData(
@@ -354,18 +354,6 @@ fun FormComponentsExample() {
         supportingText = {
           aryaSamajError?.let {
             Text(it, color = MaterialTheme.colorScheme.error)
-          }
-        },
-        searchAryaSamaj = ::searchAryaSamaj,
-        allAryaSamaj = searchResults,
-        onTriggerSearch = { query ->
-          // Simulate network search
-          isSearching = true
-          // Simulate network delay
-          coroutineScope.launch {
-            kotlinx.coroutines.delay(500)
-            searchResults = searchAryaSamaj(query)
-            isSearching = false
           }
         }
       )

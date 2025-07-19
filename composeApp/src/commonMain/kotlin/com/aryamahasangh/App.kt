@@ -13,10 +13,17 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.dp
 import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.family_add
+import coil3.ImageLoader
+import coil3.compose.setSingletonImageLoaderFactory
+import coil3.network.ktor3.KtorNetworkFetcherFactory
+import coil3.request.crossfade
 import com.aryamahasangh.auth.SessionManager
 import com.aryamahasangh.di.KoinInitializer
 import com.aryamahasangh.navigation.AppDrawer
+import com.aryamahasangh.network.supabaseClient
 import com.aryamahasangh.utils.WithTooltip
+import io.github.jan.supabase.annotations.SupabaseExperimental
+import io.github.jan.supabase.coil.coil3
 import org.jetbrains.compose.resources.vectorResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -31,6 +38,9 @@ private val initKoin by lazy {
 
 @Composable
 fun App() {
+
+  initializeCoilImageLoader()
+
   val demo = false // Set to true to show form components example
   if (!demo) {
     // Ensure Koin is initialized
@@ -59,6 +69,19 @@ fun App() {
     // ActivityFormImagePickerIntegration()
 //    DragAndDropSample()
     // DNDWithCursor()
+  }
+}
+
+@OptIn(SupabaseExperimental::class)
+@Composable
+private fun initializeCoilImageLoader() {
+  setSingletonImageLoaderFactory {
+    ImageLoader.Builder(it)
+      .crossfade(true)
+      .components {
+        add(supabaseClient.coil3)
+        add(KtorNetworkFetcherFactory())
+      }.build()
   }
 }
 

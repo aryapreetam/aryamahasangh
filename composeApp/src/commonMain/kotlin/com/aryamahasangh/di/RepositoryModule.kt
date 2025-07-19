@@ -6,6 +6,8 @@ import com.aryamahasangh.features.admin.AdminRepository
 import com.aryamahasangh.features.admin.AdminRepositoryImpl
 import com.aryamahasangh.features.admin.FamilyRepository
 import com.aryamahasangh.features.admin.FamilyRepositoryImpl
+import com.aryamahasangh.features.admin.aryasamaj.AryaSamajSelectorRepository
+import com.aryamahasangh.features.admin.aryasamaj.data.AryaSamajSelectorRepositoryImpl
 import com.aryamahasangh.features.admin.data.AryaSamajRepository
 import com.aryamahasangh.features.admin.data.AryaSamajRepositoryImpl
 import com.aryamahasangh.features.arya_nirman.AryaNirmanRepository
@@ -46,6 +48,7 @@ val repositoryModule =
     singleOf(::AryaNirmanRepositoryImpl) { bind<AryaNirmanRepository>() }
     singleOf(::AdminRepositoryImpl) { bind<AdminRepository>() }
     singleOf(::AryaSamajRepositoryImpl) { bind<AryaSamajRepository>() }
+    singleOf(::AryaSamajSelectorRepositoryImpl) { bind<AryaSamajSelectorRepository>() }
     singleOf(::AryaSamajHomeRepositoryImpl) { bind<AryaSamajHomeRepository>() }
     singleOf(::FamilyRepositoryImpl) { bind<FamilyRepository>() }
   }

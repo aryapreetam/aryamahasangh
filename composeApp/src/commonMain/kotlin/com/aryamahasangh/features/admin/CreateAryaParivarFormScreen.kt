@@ -212,14 +212,6 @@ fun CreateAryaParivarFormScreen(
             },
             label = "आर्य समाज *",
             modifier = Modifier.width(400.dp),
-            searchAryaSamaj = { query ->
-              // Search implementation would go here
-              emptyList()
-            },
-            allAryaSamaj = uiState.availableAryaSamajs,
-            onTriggerSearch = { query ->
-              // Trigger search implementation
-            }
           )
 
           // Show error message if validation failed

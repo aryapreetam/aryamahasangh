@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.material3.MenuAnchorType.Companion.PrimaryNotEditable
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
@@ -400,9 +401,9 @@ fun AryaSamajSelector(
   supportingText: @Composable (() -> Unit)? = null,
   enabled: Boolean = true,
   required: Boolean = false,
-  searchAryaSamaj: (String) -> List<AryaSamaj> = { emptyList() },
-  allAryaSamaj: List<AryaSamaj> = emptyList(),
-  onTriggerSearch: (String) -> Unit = {}
+  // Optional location for proximity-based sorting
+  latitude: Double? = null,
+  longitude: Double? = null
 ) {
   var showDialog by remember { mutableStateOf(false) }
 
@@ -427,7 +428,11 @@ fun AryaSamajSelector(
             }
           }
           IconButton(
-            onClick = { if (enabled) showDialog = true }
+            onClick = {
+              if (enabled) {
+                showDialog = true
+              }
+            }
           ) {
             Icon(
               Icons.Default.ArrowDropDown,
@@ -448,7 +453,9 @@ fun AryaSamajSelector(
           Modifier
             .matchParentSize()
             .padding(end = if (selectedAryaSamaj != null) 96.dp else 48.dp) // Exclude trailing icons
-            .clickable { showDialog = true }
+            .clickable {
+              showDialog = true
+            }
       )
     }
   }
@@ -460,10 +467,9 @@ fun AryaSamajSelector(
         onAryaSamajSelected(aryaSamaj)
         showDialog = false
       },
-      searchAryaSamaj = searchAryaSamaj,
-      allAryaSamaj = allAryaSamaj,
-      onTriggerSearch = onTriggerSearch,
-      selectedAryaSamaj = selectedAryaSamaj
+      selectedAryaSamaj = selectedAryaSamaj,
+      latitude = latitude,
+      longitude = longitude
     )
   }
 }
@@ -474,16 +480,47 @@ fun AryaSamajSelector(
 private fun AryaSamajSelectionDialog(
   onDismiss: () -> Unit,
   onAryaSamajSelected: (AryaSamaj?) -> Unit,
-  searchAryaSamaj: (String) -> List<AryaSamaj>,
-  allAryaSamaj: List<AryaSamaj>,
-  onTriggerSearch: (String) -> Unit,
-  selectedAryaSamaj: AryaSamaj?
+  selectedAryaSamaj: AryaSamaj?,
+  latitude: Double? = null,
+  longitude: Double? = null
 ) {
+  // Get ViewModel from DI
+  val viewModel: com.aryamahasangh.features.admin.aryasamaj.AryaSamajSelectorViewModel =
+    org.koin.compose.koinInject()
+
+  val uiState by viewModel.uiState.collectAsState()
   var searchQuery by remember { mutableStateOf("") }
-  val searchResults =
-    remember(searchQuery) {
-      if (searchQuery.isBlank()) allAryaSamaj else searchAryaSamaj(searchQuery)
+
+  // Load recent AryaSamajs when dialog opens
+  LaunchedEffect(Unit) {
+    viewModel.loadRecentAryaSamajs(latitude = latitude, longitude = longitude)
+  }
+
+  // Handle search input
+  LaunchedEffect(searchQuery) {
+    if (searchQuery != uiState.searchQuery) {
+      viewModel.searchAryaSamajs(searchQuery)
     }
+  }
+
+  // Clear search when dialog is dismissed
+  DisposableEffect(Unit) {
+    onDispose {
+      viewModel.clearSearch()
+    }
+  }
+
+  val displayResults = if (searchQuery.isBlank()) {
+    uiState.recentAryaSamajs
+  } else {
+    uiState.searchResults
+  }
+
+  val isLoading = if (searchQuery.isBlank()) {
+    uiState.isLoadingRecent
+  } else {
+    uiState.isSearching
+  }
 
   Dialog(
     onDismissRequest = onDismiss,
@@ -510,10 +547,7 @@ private fun AryaSamajSelectionDialog(
         // Search field
         OutlinedTextField(
           value = searchQuery,
-          onValueChange = {
-            searchQuery = it
-            if (it.length >= 2) onTriggerSearch(it)
-          },
+          onValueChange = { searchQuery = it },
           label = { Text("खोजें") },
           placeholder = { Text("आर्य समाज का नाम") },
           leadingIcon = {
@@ -522,7 +556,10 @@ private fun AryaSamajSelectionDialog(
           trailingIcon = {
             if (searchQuery.isNotEmpty()) {
               IconButton(
-                onClick = { searchQuery = "" }
+                onClick = {
+                searchQuery = ""
+                  viewModel.clearSearch()
+                }
               ) {
                 Icon(Icons.Default.Clear, contentDescription = "साफ़ करें")
               }
@@ -536,7 +573,7 @@ private fun AryaSamajSelectionDialog(
             ),
           keyboardActions =
             KeyboardActions(
-              onSearch = { onTriggerSearch(searchQuery) }
+              onSearch = { viewModel.searchAryaSamajs(searchQuery) }
             )
         )
 
@@ -547,26 +584,70 @@ private fun AryaSamajSelectionDialog(
           modifier = Modifier.weight(1f),
           verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-          items(searchResults) { aryaSamaj ->
-            AryaSamajItem(
-              aryaSamaj = aryaSamaj,
-              isSelected = selectedAryaSamaj?.id == aryaSamaj.id,
-              onClick = { onAryaSamajSelected(aryaSamaj) }
-            )
-          }
-
-          if (searchResults.isEmpty() && searchQuery.isNotEmpty()) {
+          if (isLoading) {
             item {
-              Text(
-                text = "कोई आर्य समाज नहीं मिला",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center,
-                modifier =
-                  Modifier
-                    .fillMaxWidth()
-                    .padding(32.dp)
+              Box(
+                modifier = Modifier.fillMaxWidth().padding(32.dp),
+                contentAlignment = Alignment.Center
+              ) {
+                Column(
+                  horizontalAlignment = Alignment.CenterHorizontally,
+                  verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                  CircularProgressIndicator()
+                  Text(
+                    text = if (searchQuery.isBlank()) "लोड हो रहा है..." else "खोजा जा रहा है...",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                  )
+                }
+              }
+            }
+          } else {
+            items(displayResults) { aryaSamaj ->
+              AryaSamajItem(
+                aryaSamaj = aryaSamaj,
+                isSelected = selectedAryaSamaj?.id == aryaSamaj.id,
+                onClick = { onAryaSamajSelected(aryaSamaj) }
               )
+            }
+
+            if (displayResults.isEmpty() && !isLoading) {
+              item {
+                Column(
+                  modifier = Modifier.fillMaxWidth().padding(32.dp),
+                  horizontalAlignment = Alignment.CenterHorizontally,
+                  verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                  if (uiState.error != null) {
+                    Text(
+                      text = uiState.error ?: "अज्ञात त्रुटि",
+                      style = MaterialTheme.typography.bodyMedium,
+                      color = MaterialTheme.colorScheme.error,
+                      textAlign = TextAlign.Center
+                    )
+                    if (uiState.showRetryButton) {
+                      Spacer(modifier = Modifier.height(8.dp))
+                      TextButton(
+                        onClick = { viewModel.retry(latitude, longitude) }
+                      ) {
+                        Text("पुनः प्रयास करें")
+                      }
+                    }
+                  } else {
+                    Text(
+                      text = if (searchQuery.isBlank()) {
+                        "कोई आर्य समाज उपलब्ध नहीं"
+                      } else {
+                        "कोई आर्य समाज नहीं मिला"
+                      },
+                      style = MaterialTheme.typography.bodyMedium,
+                      color = MaterialTheme.colorScheme.onSurfaceVariant,
+                      textAlign = TextAlign.Center
+                    )
+                  }
+                }
+              }
             }
           }
         }

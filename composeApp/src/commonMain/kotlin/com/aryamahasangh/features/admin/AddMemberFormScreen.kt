@@ -654,7 +654,6 @@ fun AddMemberFormScreen(
           searchMembers = { query -> viewModel.searchMembersForSelection(query) },
           allMembers = uiState.allMembers,
           onTriggerMemberSearch = { query -> viewModel.triggerMemberSearch(query) },
-          allAryaSamajs = uiState.allAryaSamajs
         )
       }
 

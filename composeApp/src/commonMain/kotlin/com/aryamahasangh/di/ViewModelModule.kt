@@ -3,6 +3,7 @@ package com.aryamahasangh.di
 import com.aryamahasangh.features.activities.ActivitiesViewModel
 import com.aryamahasangh.features.admin.AdminViewModel
 import com.aryamahasangh.features.admin.FamilyViewModel
+import com.aryamahasangh.features.admin.aryasamaj.AryaSamajSelectorViewModel
 import com.aryamahasangh.features.admin.data.AryaSamajViewModel
 import com.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
 import com.aryamahasangh.features.arya_nirman.SatraRegistrationViewModel
@@ -39,6 +40,7 @@ val viewModelModule =
     factoryOf(::SatraRegistrationViewModel)
     factoryOf(::AdminViewModel)
     factoryOf(::AryaSamajViewModel)
+    factoryOf(::AryaSamajSelectorViewModel)
     factoryOf(::AryaSamajHomeViewModel)
     factoryOf(::FamilyViewModel)
   }

@@ -24,10 +24,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import io.github.vinceglb.filekit.core.PlatformFile
-import kotlinx.datetime.LocalDate
 import com.aryamahasangh.components.*
 import com.aryamahasangh.features.activities.Member
+import io.github.vinceglb.filekit.core.PlatformFile
+import kotlinx.datetime.LocalDate
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -296,8 +296,7 @@ fun OrganizationDetailsSection(
   onAryaSamajSelected: (AryaSamaj?) -> Unit,
   searchMembers: (String) -> List<Member>,
   allMembers: List<Member>,
-  onTriggerMemberSearch: (String) -> Unit,
-  allAryaSamajs: List<AryaSamaj> = emptyList()
+  onTriggerMemberSearch: (String) -> Unit
 ) {
   Column(
     verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -357,14 +356,9 @@ fun OrganizationDetailsSection(
       onAryaSamajSelected = onAryaSamajSelected,
       label = "सम्बंधित आर्य समाज",
       modifier = Modifier.width(300.dp),
-      searchAryaSamaj = { query ->
-        allAryaSamajs.filter { aryaSamaj ->
-          aryaSamaj.name.contains(query, ignoreCase = true) ||
-            aryaSamaj.address.contains(query, ignoreCase = true) ||
-            aryaSamaj.district.contains(query, ignoreCase = true)
-        }
-      },
-      allAryaSamaj = allAryaSamajs
+      // Pass user's current location if available from address
+      latitude = null, // TODO: Extract from user's selected address if needed
+      longitude = null // TODO: Extract from user's selected address if needed
     )
   }
 }
