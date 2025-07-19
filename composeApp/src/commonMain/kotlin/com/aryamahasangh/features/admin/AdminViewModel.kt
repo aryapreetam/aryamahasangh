@@ -1081,6 +1081,11 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
     searchJob?.cancel()
     searchJob = viewModelScope.launch {
       if (query.isBlank()) {
+        // Clear search state and reset pagination completely for initial load
+        _ekalAryaUiState.value = _ekalAryaUiState.value.copy(
+          paginationState = PaginationState(), // Reset pagination state completely
+          isSearching = false
+        )
         // Load regular members when search is cleared
         loadEkalAryaMembersPaginated(resetPagination = true)
         return@launch
@@ -1100,6 +1105,12 @@ class AdminViewModel(private val repository: AdminRepository) : ViewModel() {
       screenWidthDp < 840f -> 25      // Tablet, mobile landscape
       else -> 35                      // Desktop, large tablets
     }
+  }
+
+  // NEW: Restore search query and trigger fresh search for preserved context
+  fun restoreAndSearchEkalArya(query: String) {
+    // Set search query state and trigger fresh search to ensure latest results
+    searchEkalAryaMembersWithDebounce(query)
   }
 
   // NEW method for searching members for selection component

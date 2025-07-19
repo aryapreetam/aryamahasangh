@@ -57,6 +57,10 @@ internal object EkalAryaPageState {
   fun markForRefresh() {
     needsRefresh = true
   }
+
+  fun clearSearchState() {
+    lastSearchQuery = ""
+  }
 }
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
@@ -97,12 +101,23 @@ fun EkalAryaListScreen(
       EkalAryaPageState.clear()
     }
 
-    if (!EkalAryaPageState.needsRefresh && EkalAryaPageState.hasData() && EkalAryaPageState.lastSearchQuery == uiState.searchQuery) {
-      viewModel.preserveEkalAryaPagination(EkalAryaPageState.members, EkalAryaPageState.paginationState)
+    when {
+      // Scenario 1: Have saved search query → restore and search with fresh results
+      !EkalAryaPageState.needsRefresh && EkalAryaPageState.lastSearchQuery.isNotEmpty() -> {
+        viewModel.restoreAndSearchEkalArya(EkalAryaPageState.lastSearchQuery)
+      }
+
+      // Scenario 2: Have saved non-search data → preserve pagination  
+      !EkalAryaPageState.needsRefresh && EkalAryaPageState.hasData() -> {
+        viewModel.preserveEkalAryaPagination(EkalAryaPageState.members, EkalAryaPageState.paginationState)
+      }
+
+      // Scenario 3: No saved data → load fresh initial data
+      else -> {
+        viewModel.loadEkalAryaMembersPaginated(pageSize = pageSize, resetPagination = true)
+      }
     }
 
-    val shouldReset = EkalAryaPageState.needsRefresh || !EkalAryaPageState.hasData()
-    viewModel.loadEkalAryaMembersPaginated(pageSize = pageSize, resetPagination = shouldReset)
     EkalAryaPageState.needsRefresh = false
   }
 
