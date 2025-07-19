@@ -1,4 +1,4 @@
-package com.aryamahasangh.features.admin
+package com.aryamahasangh.features.admin.family
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn

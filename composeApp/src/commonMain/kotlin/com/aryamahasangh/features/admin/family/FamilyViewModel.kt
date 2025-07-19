@@ -1,10 +1,13 @@
-package com.aryamahasangh.features.admin
+package com.aryamahasangh.features.admin.family
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aryamahasangh.GetFamilyDetailQuery
 import com.aryamahasangh.components.*
 import com.aryamahasangh.features.activities.Member
+import com.aryamahasangh.features.admin.AdminRepository
+import com.aryamahasangh.features.admin.PaginationResult
+import com.aryamahasangh.features.admin.PaginationState
 import com.aryamahasangh.util.GlobalMessageManager
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.utils.FileUploadUtils

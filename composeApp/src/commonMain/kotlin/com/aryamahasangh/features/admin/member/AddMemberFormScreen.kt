@@ -1,4 +1,4 @@
-package com.aryamahasangh.features.admin
+package com.aryamahasangh.features.admin.member
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -14,6 +14,7 @@ import androidx.compose.ui.unit.dp
 import com.aryamahasangh.components.*
 import com.aryamahasangh.features.activities.LatLng
 import com.aryamahasangh.features.activities.Member
+import com.aryamahasangh.features.admin.AdminViewModel
 import com.aryamahasangh.navigation.LocalSetBackHandler
 import com.aryamahasangh.navigation.LocalSnackbarHostState
 import com.aryamahasangh.network.bucket
@@ -651,9 +652,6 @@ fun AddMemberFormScreen(
           referrerError = referrerError,
           selectedAryaSamaj = selectedAryaSamaj,
           onAryaSamajSelected = { selectedAryaSamaj = it },
-          searchMembers = { query -> viewModel.searchMembersForSelection(query) },
-          allMembers = uiState.allMembers,
-          onTriggerMemberSearch = { query -> viewModel.triggerMemberSearch(query) },
         )
       }
 

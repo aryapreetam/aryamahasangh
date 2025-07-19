@@ -1,4 +1,4 @@
-package com.aryamahasangh.features.admin
+package com.aryamahasangh.features.admin.family
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -28,6 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowWidthSizeClass
 import coil3.compose.AsyncImage
 import com.aryamahasangh.features.activities.toDevanagariNumerals
+import com.aryamahasangh.features.admin.PaginatedListScreen
+import com.aryamahasangh.features.admin.PaginationState
 import com.aryamahasangh.navigation.LocalSnackbarHostState
 import kotlinx.datetime.Clock
 

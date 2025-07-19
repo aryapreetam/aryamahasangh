@@ -1,4 +1,4 @@
-package com.aryamahasangh.features.admin.data
+package com.aryamahasangh.features.admin.aryasamaj
 
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional

@@ -1,0 +1,106 @@
+# Member selector queries for self-contained MembersComponent with infinite scroll
+
+# Extended fragment for member selector with additional fields beyond MemberShort
+fragment MemberSelectorExtended on Member {
+  id
+  name
+  profileImage
+  phoneNumber
+}
+
+fragment MemberNotInFamilySelectorExtended on MemberNotInFamily {
+  id
+  name
+  profileImage
+  phoneNumber
+}
+
+# Get recent members with cursor-based pagination (20 initially)
+query RecentMembersForSelectorQuery($first: Int!, $after: Cursor) {
+  memberCollection(
+    first: $first,
+    after: $after,
+    orderBy: { createdAt: DescNullsLast }
+  ) {
+    edges {
+      node {
+        ...MemberSelectorExtended
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+# Search members by name and phone number with cursor-based pagination
+query SearchMembersForSelectorQuery($searchTerm: String!, $first: Int!, $after: Cursor) {
+  memberCollection(
+    first: $first,
+    after: $after,
+    filter: {
+      or: [
+        {name: {ilike: $searchTerm}},
+        {phoneNumber: {ilike: $searchTerm}}
+      ]
+    },
+    orderBy: { createdAt: DescNullsLast }
+  ) {
+    edges {
+      node {
+        ...MemberSelectorExtended
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+# Get recent members with cursor-based pagination (20 initially)
+query RecentMembersNotInFamilyForSelectorQuery($first: Int!, $after: Cursor) {
+  memberNotInFamilyCollection(
+    first: $first,
+    after: $after,
+  ) {
+    edges {
+      node {
+        ...MemberNotInFamilySelectorExtended
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+
+# Search members by name and phone number with cursor-based pagination
+query SearchMembersNotInFamilyForSelectorQuery($searchTerm: String!, $first: Int!, $after: Cursor) {
+  memberNotInFamilyCollection(
+    first: $first,
+    after: $after,
+    filter: {
+      or: [
+        {name: {ilike: $searchTerm}},
+        {phoneNumber: {ilike: $searchTerm}}
+      ]
+    }
+  ) {
+    edges {
+      node {
+        ...MemberNotInFamilySelectorExtended
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

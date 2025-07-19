@@ -1,4 +1,4 @@
-package com.aryamahasangh.features.admin
+package com.aryamahasangh.features.admin.aryasamaj
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -25,9 +25,6 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.features.activities.Member
-import com.aryamahasangh.features.admin.data.AryaSamajDetail
-import com.aryamahasangh.features.admin.data.AryaSamajMember
-import com.aryamahasangh.features.admin.data.AryaSamajViewModel
 import com.aryamahasangh.navigation.LocalSnackbarHostState
 
 @OptIn(ExperimentalMaterial3Api::class)

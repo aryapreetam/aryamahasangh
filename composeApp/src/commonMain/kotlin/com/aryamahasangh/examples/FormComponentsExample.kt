@@ -406,44 +406,25 @@ fun FormComponentsExample() {
             showMemberCount = false
           ),
         error = referrerError,
-        searchMembers = { query ->
-          // Mock search - filter mock members by name
-          mockMembers.filter { it.name.contains(query, ignoreCase = true) }
-        },
-        allMembers = mockMembers,
-        onTriggerSearch = { query ->
-          // Simulate network search
-        },
         modifier = Modifier.width(400.dp)
       )
 
       Spacer(modifier = Modifier.height(16.dp))
 
       // MembersComponent in MULTIPLE mode
-      val multipleMembersState = remember { MembersState() }
+      var multipleMembersState by remember { mutableStateOf(MembersState()) }
       MembersComponent(
         state = multipleMembersState,
-        onStateChange = { newState ->
-          // This is just a test - no actual data binding needed
-        },
-        config =
-          MembersConfig(
-            label = "कई सदस्य (Multiple Members)",
-            addButtonText = "सदस्य जोड़ें",
-            choiceType = MembersChoiceType.MULTIPLE,
-            editMode = MembersEditMode.INDIVIDUAL, // Show individual buttons
-            isMandatory = false,
-            showMemberCount = true
-          ),
+        onStateChange = { multipleMembersState = it },
+        config = MembersConfig(
+          label = "कई सदस्य (Multiple Members)",
+          addButtonText = "सदस्य जोड़ें",
+          choiceType = MembersChoiceType.MULTIPLE,
+          editMode = MembersEditMode.INDIVIDUAL, // Show individual buttons
+          isMandatory = false,
+          showMemberCount = true
+        ),
         error = null,
-        searchMembers = { query ->
-          // Mock search - filter mock members by name
-          mockMembers.filter { it.name.contains(query, ignoreCase = true) }
-        },
-        allMembers = mockMembers,
-        onTriggerSearch = { query ->
-          // Simulate network search
-        },
         modifier = Modifier.width(400.dp)
       )
 

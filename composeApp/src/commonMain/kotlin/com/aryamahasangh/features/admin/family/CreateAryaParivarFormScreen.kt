@@ -1,4 +1,4 @@
-package com.aryamahasangh.features.admin
+package com.aryamahasangh.features.admin.family
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -26,6 +26,7 @@ import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.aryamahasangh.components.*
+import com.aryamahasangh.features.admin.member.MemberCollectionType
 import com.aryamahasangh.navigation.LocalSnackbarHostState
 import com.aryamahasangh.ui.components.buttons.*
 import com.aryamahasangh.utils.WithTooltip
@@ -281,6 +282,7 @@ fun CreateAryaParivarFormScreen(
               showMemberCount = true,
               editMode = MembersEditMode.FAMILY_MEMBERS,
               choiceType = MembersChoiceType.MULTIPLE,
+              memberCollectionType = MemberCollectionType.MEMBERS_NOT_IN_FAMILY,
               // Family-specific callbacks
               onFamilyHeadChanged = { memberId, isHead ->
                 viewModel.updateMemberHead(memberId, isHead)
@@ -295,15 +297,7 @@ fun CreateAryaParivarFormScreen(
                 uiState.familyMembers.find { it.member.id == memberId }?.relationToHead
               }
             ),
-          error = membersError,
-          searchMembers = { query ->
-            // Return the current available members since search is async
-            uiState.availableMembers
-          },
-          allMembers = uiState.availableMembers,
-          onTriggerSearch = { query ->
-            viewModel.searchMembersWithoutFamily(query)
-          }
+          error = membersError
         )
       }
 

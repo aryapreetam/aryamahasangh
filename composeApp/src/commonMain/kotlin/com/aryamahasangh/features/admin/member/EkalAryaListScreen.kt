@@ -1,4 +1,4 @@
-package com.aryamahasangh.features.admin
+package com.aryamahasangh.features.admin.member
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -23,6 +23,10 @@ import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.error_profile_image
 import coil3.compose.AsyncImage
 import com.aryamahasangh.features.activities.toDevanagariNumerals
+import com.aryamahasangh.features.admin.AdminViewModel
+import com.aryamahasangh.features.admin.MemberShort
+import com.aryamahasangh.features.admin.PaginatedListScreen
+import com.aryamahasangh.features.admin.PaginationState
 import com.aryamahasangh.navigation.LocalSnackbarHostState
 import kotlinx.datetime.Clock
 import org.jetbrains.compose.resources.painterResource
@@ -142,7 +146,11 @@ fun EkalAryaListScreen(
     onRetry = viewModel::retryEkalAryaLoad,
     searchPlaceholder = "आर्य का नाम/दूरभाष",
     emptyStateText = "कोई एकल आर्य नहीं मिले",
-    endOfListText = { count -> "सभी आर्य सदस्य दिखाए गए(${uiState.members.count().toString().toDevanagariNumerals()})" },
+    endOfListText = { count ->
+      "सभी आर्य सदस्य दिखाए गए(${
+        uiState.members.count().toString().toDevanagariNumerals()
+      })"
+    },
     addButtonText = "नए आर्य जोड़ें",
     onAddClick = onNavigateToAddMember,
     isCompactLayout = isCompact,

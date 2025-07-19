@@ -1,4 +1,4 @@
-package com.aryamahasangh.features.admin
+package com.aryamahasangh.features.admin.member
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -293,10 +293,7 @@ fun OrganizationDetailsSection(
   onReferrerStateChange: (MembersState) -> Unit,
   referrerError: String?,
   selectedAryaSamaj: AryaSamaj?,
-  onAryaSamajSelected: (AryaSamaj?) -> Unit,
-  searchMembers: (String) -> List<Member>,
-  allMembers: List<Member>,
-  onTriggerMemberSearch: (String) -> Unit
+  onAryaSamajSelected: (AryaSamaj?) -> Unit
 ) {
   Column(
     verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -328,20 +325,18 @@ fun OrganizationDetailsSection(
     MembersComponent(
       state = referrerState,
       onStateChange = onReferrerStateChange,
-      config =
-        MembersConfig(
-          label = "सन्दर्भकः",
-          addButtonText = "सदस्य चुनें",
-          choiceType = MembersChoiceType.SINGLE,
-          singleModeLabel = "सन्दर्भकः",
-          singleModeButtonText = "सदस्य चुनें",
-          editMode = MembersEditMode.INDIVIDUAL,
-          showMemberCount = false
-        ),
+      config = MembersConfig(
+        label = "संदर्भक (प्रेरक)",
+        addButtonText = "संदर्भक चुनें",
+        choiceType = MembersChoiceType.SINGLE,
+        singleModeLabel = "संदर्भक",
+        singleModeButtonText = "संदर्भक चुनें",
+        editMode = MembersEditMode.INDIVIDUAL,
+        isMandatory = false,
+        showMemberCount = false
+      ),
       error = referrerError,
-      searchMembers = searchMembers,
-      allMembers = allMembers,
-      onTriggerSearch = onTriggerMemberSearch
+      modifier = Modifier.width(400.dp)
     )
 
     // Arya Samaj

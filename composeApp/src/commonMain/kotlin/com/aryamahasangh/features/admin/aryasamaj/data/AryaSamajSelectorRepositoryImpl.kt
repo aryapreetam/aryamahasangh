@@ -9,6 +9,7 @@ import com.apollographql.apollo.cache.normalized.isFromCache
 import com.aryamahasangh.RecentAryaSamajsQuery
 import com.aryamahasangh.SearchAryaSamajsQuery
 import com.aryamahasangh.components.AryaSamaj
+import com.aryamahasangh.features.admin.aryasamaj.AryaSamajPaginatedResult
 import com.aryamahasangh.features.admin.aryasamaj.AryaSamajSelectorRepository
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.util.safeCall
@@ -22,14 +23,16 @@ class AryaSamajSelectorRepositoryImpl(
 
   override suspend fun getRecentAryaSamajs(
     limit: Int,
+    cursor: String?,
     latitude: Double?,
     longitude: Double?
-  ): Flow<Result<List<AryaSamaj>>> = flow {
+  ): Flow<Result<AryaSamajPaginatedResult<AryaSamaj>>> = flow {
     emit(Result.Loading)
 
     apolloClient.query(
       RecentAryaSamajsQuery(
         first = limit,
+        after = if (cursor != null) Optional.Present(cursor) else Optional.Absent,
         lat = Optional.presentIfNotNull(latitude),
         lng = Optional.presentIfNotNull(longitude)
       )
@@ -53,7 +56,10 @@ class AryaSamajSelectorRepositoryImpl(
             )
           }
 
-          val aryaSamajs = response.data?.aryaSamajCollection?.edges?.mapNotNull { edge ->
+          val edges = response.data?.aryaSamajCollection?.edges ?: emptyList()
+          val pageInfo = response.data?.aryaSamajCollection?.pageInfo
+
+          val aryaSamajs = edges.mapNotNull { edge ->
             val node = edge.node
             val aryaSamajFields = node.aryaSamajFields
             val address = node.address
@@ -85,7 +91,7 @@ class AryaSamajSelectorRepositoryImpl(
               // No location-based sorting
               aryaSamaj to 0.0
             }
-          } ?: emptyList()
+          }
 
           // Sort by distance if location provided, otherwise keep order from query
           val sortedAryaSamajs = if (latitude != null && longitude != null) {
@@ -94,7 +100,11 @@ class AryaSamajSelectorRepositoryImpl(
             aryaSamajs.map { it.first }
           }
 
-          sortedAryaSamajs
+          AryaSamajPaginatedResult(
+            items = sortedAryaSamajs,
+            hasNextPage = pageInfo?.hasNextPage ?: false,
+            endCursor = pageInfo?.endCursor
+          )
         }
 
         emit(result)
@@ -103,14 +113,16 @@ class AryaSamajSelectorRepositoryImpl(
 
   override suspend fun searchAryaSamajs(
     query: String,
-    limit: Int
-  ): Flow<Result<List<AryaSamaj>>> = flow {
+    limit: Int,
+    cursor: String?
+  ): Flow<Result<AryaSamajPaginatedResult<AryaSamaj>>> = flow {
     emit(Result.Loading)
 
     apolloClient.query(
       SearchAryaSamajsQuery(
         searchTerm = "%$query%",
-        first = limit
+        first = limit,
+        after = if (cursor != null) Optional.Present(cursor) else Optional.Absent
       )
     )
       .fetchPolicy(FetchPolicy.CacheAndNetwork)
@@ -132,14 +144,17 @@ class AryaSamajSelectorRepositoryImpl(
             )
           }
 
-          response.data?.aryaSamajCollection?.edges?.map { edge ->
+          val edges = response.data?.aryaSamajCollection?.edges ?: emptyList()
+          val pageInfo = response.data?.aryaSamajCollection?.pageInfo
+
+          val aryaSamajs = edges.map { edge ->
             val node = edge.node
-            val aryaSamajFields = node.aryaSamajWithAddress
-            val address = node.aryaSamajWithAddress.address
+            val aryaSamajWithAddress = node.aryaSamajWithAddress
+            val address = aryaSamajWithAddress.address
 
             AryaSamaj(
-              id = aryaSamajFields.aryaSamajFields.id,
-              name = aryaSamajFields.aryaSamajFields.name ?: "",
+              id = aryaSamajWithAddress.aryaSamajFields.id,
+              name = aryaSamajWithAddress.aryaSamajFields.name ?: "",
               address = buildAddressString(
                 basicAddress = address?.addressFields?.basicAddress,
                 district = address?.addressFields?.district,
@@ -148,7 +163,13 @@ class AryaSamajSelectorRepositoryImpl(
               ),
               district = address?.addressFields?.district ?: ""
             )
-          } ?: emptyList()
+          }
+
+          AryaSamajPaginatedResult(
+            items = aryaSamajs,
+            hasNextPage = pageInfo?.hasNextPage ?: false,
+            endCursor = pageInfo?.endCursor
+          )
         }
 
         emit(result)

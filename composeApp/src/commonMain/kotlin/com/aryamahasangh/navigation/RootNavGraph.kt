@@ -5,9 +5,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -17,8 +17,18 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.toRoute
 import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.features.activities.*
-import com.aryamahasangh.features.admin.*
-import com.aryamahasangh.features.admin.data.AryaSamajViewModel
+import com.aryamahasangh.features.admin.AdminContainerScreen
+import com.aryamahasangh.features.admin.AdminViewModel
+import com.aryamahasangh.features.admin.aryasamaj.AddAryaSamajFormScreen
+import com.aryamahasangh.features.admin.aryasamaj.AryaSamajDetailScreen
+import com.aryamahasangh.features.admin.aryasamaj.AryaSamajViewModel
+import com.aryamahasangh.features.admin.family.AryaPariwarPageState
+import com.aryamahasangh.features.admin.family.CreateAryaParivarFormScreen
+import com.aryamahasangh.features.admin.family.FamilyDetailScreen
+import com.aryamahasangh.features.admin.family.FamilyViewModel
+import com.aryamahasangh.features.admin.member.AddMemberFormScreen
+import com.aryamahasangh.features.admin.member.EkalAryaPageState
+import com.aryamahasangh.features.admin.member.MemberDetailScreen
 import com.aryamahasangh.features.arya_nirman.AryaNirmanHomeScreen
 import com.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
 import com.aryamahasangh.features.arya_nirman.SatraRegistrationFormScreen
@@ -27,9 +37,8 @@ import com.aryamahasangh.features.organisations.NewOrganisationFormScreen
 import com.aryamahasangh.features.organisations.OrgDetailScreen
 import com.aryamahasangh.features.organisations.OrganisationsViewModel
 import com.aryamahasangh.features.organisations.OrgsScreen
-import com.aryamahasangh.screens.*
-import com.aryamahasangh.features.activities.ActivitiesPageState
 import com.aryamahasangh.features.public_arya_samaj.AryaSamajHomeViewModel
+import com.aryamahasangh.screens.*
 import com.aryamahasangh.viewmodel.*
 import org.koin.compose.koinInject
 
@@ -534,36 +543,6 @@ fun RootNavGraph(navController: NavHostController) {
           },
           onCancel = {
             navController.popBackStack()
-          },
-          searchMembers = { query ->
-            // Use the search results from AdminViewModel
-            if (query.isNotBlank()) {
-              adminUiState.searchResults.map { memberShort ->
-                Member(
-                  id = memberShort.id,
-                  name = memberShort.name,
-                  profileImage = memberShort.profileImage,
-                  phoneNumber = "", // Not available in MemberShort
-                  email = "" // Not available in MemberShort
-                )
-              }
-            } else {
-              emptyList()
-            }
-          },
-          allMembers =
-            adminUiState.members.map { memberShort ->
-              Member(
-                id = memberShort.id,
-                name = memberShort.name,
-                profileImage = memberShort.profileImage,
-                phoneNumber = "", // Not available in MemberShort
-                email = "" // Not available in MemberShort
-              )
-            },
-          onTriggerSearch = { query ->
-            // Trigger the server search in AdminViewModel
-            adminViewModel.searchMembers(query)
           }
         )
       }
@@ -595,37 +574,8 @@ fun RootNavGraph(navController: NavHostController) {
           onNavigateBack = {
             navController.popBackStack()
           },
-          searchMembers = { query ->
-            if (query.isNotBlank()) {
-              adminUiState.searchResults.map { memberShort ->
-                Member(
-                  id = memberShort.id,
-                  name = memberShort.name,
-                  profileImage = memberShort.profileImage,
-                  phoneNumber = "", // Not available in MemberShort
-                  email = "" // Not available in MemberShort
-                )
-              }
-            } else {
-              emptyList()
-            }
-          },
-          allMembers =
-            adminUiState.members.map { memberShort ->
-              Member(
-                id = memberShort.id,
-                name = memberShort.name,
-                profileImage = memberShort.profileImage,
-                phoneNumber = "", // Not available in MemberShort
-                email = "" // Not available in MemberShort
-              )
-            },
-          onTriggerSearch = { query ->
-            // Trigger the server search in AdminViewModel
-            adminViewModel.searchMembers(query)
-          },
           onNavigateToAryaSamajDetails = { aryaSamajId ->
-            AryaSamajPageState.markForRefresh()
+            _root_ide_package_.com.aryamahasangh.features.admin.aryasamaj.AryaSamajPageState.markForRefresh()
             navController.navigate(Screen.AryaSamajDetail(aryaSamajId)) {
               popUpTo(Screen.AddAryaSamajForm) { inclusive = true }
             }
@@ -700,39 +650,10 @@ fun RootNavGraph(navController: NavHostController) {
           onNavigateBack = {
             navController.popBackStack()
           },
-          searchMembers = { query ->
-            if (query.isNotBlank()) {
-              adminUiState.searchResults.map { memberShort ->
-                Member(
-                  id = memberShort.id,
-                  name = memberShort.name,
-                  profileImage = memberShort.profileImage,
-                  phoneNumber = "", // Not available in MemberShort
-                  email = "" // Not available in MemberShort
-                )
-              }
-            } else {
-              emptyList()
-            }
-          },
-          allMembers =
-            adminUiState.members.map { memberShort ->
-              Member(
-                id = memberShort.id,
-                name = memberShort.name,
-                profileImage = memberShort.profileImage,
-                phoneNumber = "", // Not available in MemberShort
-                email = "" // Not available in MemberShort
-              )
-            },
-          onTriggerSearch = { query ->
-            // Trigger the server search in AdminViewModel
-            adminViewModel.searchMembers(query)
-          },
           isEditMode = true,
           aryaSamajId = aryaSamajId,
           onNavigateToAryaSamajDetails = {
-            AryaSamajPageState.markForRefresh()
+            _root_ide_package_.com.aryamahasangh.features.admin.aryasamaj.AryaSamajPageState.markForRefresh()
             navController.navigate(Screen.AryaSamajDetail(aryaSamajId)){
               popUpTo(Screen.EditAryaSamajForm(aryaSamajId)) { inclusive = true }
             }

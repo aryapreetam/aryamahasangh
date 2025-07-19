@@ -1,4 +1,4 @@
-package com.aryamahasangh.features.admin
+package com.aryamahasangh.features.admin.aryasamaj
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -17,7 +17,6 @@ import androidx.compose.ui.unit.dp
 import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.components.*
 import com.aryamahasangh.features.activities.Member
-import com.aryamahasangh.features.admin.data.AryaSamajViewModel
 import com.aryamahasangh.navigation.LocalSnackbarHostState
 import com.aryamahasangh.ui.components.buttons.*
 
@@ -26,11 +25,8 @@ import com.aryamahasangh.ui.components.buttons.*
 fun AddAryaSamajFormScreen(
   viewModel: AryaSamajViewModel,
   onNavigateBack: () -> Unit,
-  searchMembers: (String) -> List<Member> = { emptyList() },
-  allMembers: List<Member> = emptyList(),
-  onTriggerSearch: (String) -> Unit = {},
-  isEditMode: Boolean = false, // New parameter to determine if we're editing
-  aryaSamajId: String? = null, // New parameter for the AryaSamaj ID when editing
+  isEditMode: Boolean = false,
+  aryaSamajId: String? = null,
   onNavigateToAryaSamajDetails: (String) -> Unit = {}
 ) {
   val isAuthenticated = LocalIsAuthenticated.current
@@ -193,9 +189,7 @@ fun AddAryaSamajFormScreen(
           editMode = MembersEditMode.GROUPED,
           enableReordering = true
         ),
-      searchMembers = searchMembers,
-      allMembers = allMembers,
-      onTriggerSearch = onTriggerSearch
+      modifier = Modifier.fillMaxWidth()
     )
 
     Spacer(modifier = Modifier.height(32.dp))

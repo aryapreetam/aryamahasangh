@@ -31,8 +31,10 @@ import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.aryamahasangh.features.activities.Member
+import com.aryamahasangh.features.admin.member.MemberCollectionType
+import com.aryamahasangh.features.admin.member.MembersSelectorViewModel
 import com.aryamahasangh.utils.WithTooltip
-import kotlinx.coroutines.delay
+import org.koin.compose.koinInject
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyStaggeredGridState
@@ -85,6 +87,8 @@ data class MembersConfig(
   val singleModeLabel: String = "सदस्य चुनें",
   // NEW: Button text for single mode
   val singleModeButtonText: String = "सदस्य चुनें",
+  // NEW: Member collection type
+  val memberCollectionType: MemberCollectionType = MemberCollectionType.ALL_MEMBERS,
   // NEW: Family-specific callbacks
   val onFamilyHeadChanged: ((String, Boolean) -> Unit)? = null,
   val onFamilyRelationChanged: ((String, FamilyRelation?) -> Unit)? = null,
@@ -167,9 +171,6 @@ data class MembersState(
  * @param onStateChange Callback when state changes
  * @param config Configuration for the component
  * @param error Error message to display
- * @param searchMembers Function to search members
- * @param allMembers List of all available members
- * @param onTriggerSearch Function to trigger server search
  * @param modifier Modifier for the component
  */
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
@@ -179,9 +180,6 @@ fun MembersComponent(
   onStateChange: (MembersState) -> Unit,
   config: MembersConfig = MembersConfig(),
   error: String? = null,
-  searchMembers: (String) -> List<Member> = { emptyList() },
-  allMembers: List<Member> = emptyList(),
-  onTriggerSearch: (String) -> Unit = {},
   modifier: Modifier = Modifier
 ) {
   var showAddMemberDialog by remember { mutableStateOf(false) }
@@ -336,10 +334,9 @@ fun MembersComponent(
           showAddMemberDialog = false
         }
       },
-      searchMembers = searchMembers,
-      allMembers = allMembers,
-      onTriggerSearch = onTriggerSearch,
-      choiceType = config.choiceType
+      choiceType = config.choiceType,
+      initialSelectedMembers = state.getSortedMembers(),
+      memberCollectionType = config.memberCollectionType
     )
   }
 }
@@ -1164,49 +1161,38 @@ private fun SingleMemberDisplay(
 private fun MemberSelectionDialog(
   onDismiss: () -> Unit,
   onMembersSelected: (List<Member>) -> Unit,
-  searchMembers: (String) -> List<Member>,
-  allMembers: List<Member>,
-  onTriggerSearch: (String) -> Unit = {},
-  choiceType: MembersChoiceType = MembersChoiceType.MULTIPLE
+  choiceType: MembersChoiceType = MembersChoiceType.MULTIPLE,
+  initialSelectedMembers: List<Member> = emptyList(),
+  memberCollectionType: MemberCollectionType = MemberCollectionType.ALL_MEMBERS
 ) {
-  var query by remember { mutableStateOf("") }
-  var selectedMembers by remember { mutableStateOf<Set<Member>>(emptySet()) }
-  var filteredMembers by remember { mutableStateOf(allMembers) }
-  var isSearching by remember { mutableStateOf(false) }
+  // Inject the ViewModel
+  val viewModel: MembersSelectorViewModel = koinInject()
+  LaunchedEffect(memberCollectionType) {
+    viewModel.setCollectionType(memberCollectionType)
+  }
+  val uiState by viewModel.uiState.collectAsState()
 
-  // Debounced search
-  LaunchedEffect(query, allMembers) {
-    if (query.isBlank()) {
-      // Show all members immediately for empty query
-      filteredMembers = allMembers
-      isSearching = false
-    } else {
-      isSearching = true
-      delay(500)
+  // Local TextField state - this fixes the cursor position issue
+  var localSearchQuery by remember { mutableStateOf("") }
+  var selectedMembers by remember { mutableStateOf<Set<Member>>(initialSelectedMembers.toSet()) }
 
-      // First show local results
-      val localResults =
-        allMembers.filter { member ->
-          member.name.contains(query, ignoreCase = true) ||
-            member.phoneNumber.contains(query, ignoreCase = true) ||
-            member.email.contains(query, ignoreCase = true)
-        }
-      filteredMembers = localResults
+  // Debounced search trigger - only affects network calls, not TextField
+  LaunchedEffect(localSearchQuery) {
+    kotlinx.coroutines.delay(300) // Local debounce for network calls
+    viewModel.triggerSearch(localSearchQuery)
+  }
 
-      // Trigger server search
-      onTriggerSearch(query)
+  // Display members based on search state
+  val displayMembers = if (localSearchQuery.isBlank()) {
+    uiState.recentMembers
+  } else {
+    uiState.searchResults
+  }
 
-      // Get server results
-      try {
-        val serverResults = searchMembers(query)
-        if (serverResults.isNotEmpty()) {
-          filteredMembers = serverResults
-        }
-      } catch (e: Exception) {
-        println("Server search failed: ${e.message}")
-      }
-
-      isSearching = false
+  // Clear search when dialog is dismissed
+  DisposableEffect(Unit) {
+    onDispose {
+      viewModel.clearSearch()
     }
   }
 
@@ -1225,25 +1211,28 @@ private fun MemberSelectionDialog(
             .padding(16.dp)
       ) {
         Text(
-          text = if (choiceType == MembersChoiceType.SINGLE) "सदस्य चुनें" else "पदाधिकारी चुनें",
+          text = when (choiceType) {
+            MembersChoiceType.SINGLE -> "सदस्य चुनें"
+            MembersChoiceType.MULTIPLE -> "सदस्य चुनें"
+          },
           style = MaterialTheme.typography.titleMedium
         )
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Search bar
+        // Search bar - uses local state to prevent cursor issues
         OutlinedTextField(
-          value = query,
-          onValueChange = { query = it },
+          value = localSearchQuery, // 
+          onValueChange = { localSearchQuery = it }, // 
           placeholder = { Text("आर्य का नाम/दूरभाष") },
           leadingIcon = {
             Icon(
               imageVector = Icons.Default.Search,
-              contentDescription = null,
-              tint = MaterialTheme.colorScheme.primary
+              contentDescription = "खोजें",
+              tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
           },
           trailingIcon = {
-            if (isSearching) {
+            if (uiState.isSearching) {
               CircularProgressIndicator(
                 modifier = Modifier.size(20.dp),
                 strokeWidth = 2.dp
@@ -1253,50 +1242,159 @@ private fun MemberSelectionDialog(
           modifier = Modifier.fillMaxWidth(),
           singleLine = true
         )
+
+        // Error state with retry option
+        uiState.error?.let { errorMessage ->
+          Card(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            colors = CardDefaults.cardColors(
+              containerColor = MaterialTheme.colorScheme.errorContainer
+            )
+          ) {
+            Column(
+              modifier = Modifier.padding(16.dp)
+            ) {
+              Text(
+                text = errorMessage,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer
+              )
+              if (uiState.showRetryButton) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row {
+                  TextButton(
+                    onClick = {
+                      if (localSearchQuery.isBlank()) {
+                        viewModel.retryLoadRecentMembers()
+                      } else {
+                        viewModel.retrySearch()
+                      }
+                    }
+                  ) {
+                    Text("पुनः प्रयास करें")
+                  }
+                  Spacer(modifier = Modifier.width(8.dp))
+                  TextButton(onClick = viewModel::clearError) {
+                    Text("ठीक है")
+                  }
+                }
+              }
+            }
+          }
+        }
+
         Spacer(modifier = Modifier.height(16.dp))
 
         // List of members
         LazyColumn(
           modifier = Modifier.weight(1f)
         ) {
-          if (filteredMembers.isEmpty() && query.isNotEmpty() && !isSearching) {
+          if (localSearchQuery.length == 1) {
+            // Show minimum character requirement for single character
             item {
               Box(
                 modifier = Modifier.fillMaxWidth().padding(16.dp),
                 contentAlignment = Alignment.Center
               ) {
                 Text(
-                  "कोई सदस्य नहीं मिला",
+                  "न्यूनतम २ अक्षर आवश्यक",
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+              }
+            }
+          } else if (displayMembers.isEmpty() && localSearchQuery.length >= 2 && !uiState.isSearching) {
+            // Show no members found only for valid search queries (>= 2 chars)
+            item {
+              Box(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                contentAlignment = Alignment.Center
+              ) {
+                Text(
+                  "कोई सदस्य नहीं मिले",
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+              }
+            }
+          } else if (displayMembers.isEmpty() && localSearchQuery.isBlank() && !uiState.isLoadingRecent) {
+            // Show message for empty recent members list
+            item {
+              Box(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                contentAlignment = Alignment.Center
+              ) {
+                Text(
+                  "सदस्य सूची उपलब्ध नहीं",
                   style = MaterialTheme.typography.bodyMedium,
                   color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
               }
             }
           } else {
-            items(filteredMembers.size) { index ->
-              val member = filteredMembers[index]
+            items(displayMembers.size) { index ->
+              val member = displayMembers[index]
               MemberSelectionItem(
                 member = member,
                 selected = selectedMembers.contains(member),
-                choiceType = choiceType,
-                onClick = {
-                  when (choiceType) {
-                    MembersChoiceType.SINGLE -> {
-                      selectedMembers = setOf(member)
-                      onMembersSelected(listOf(member))
-                      onDismiss()
+                onSelectionChange = { isSelected ->
+                  selectedMembers = if (choiceType == MembersChoiceType.SINGLE) {
+                    if (isSelected) setOf(member) else emptySet()
+                  } else {
+                    if (isSelected) {
+                      selectedMembers + member
+                    } else {
+                      selectedMembers - member
                     }
-                    MembersChoiceType.MULTIPLE -> {
-                      selectedMembers =
-                        if (selectedMembers.contains(member)) {
-                          selectedMembers - member
-                        } else {
-                          selectedMembers + member
-                        }
+                  }
+                },
+                showRadioButton = choiceType == MembersChoiceType.SINGLE
+              )
+
+              // Trigger pagination when near end (last 5 items)
+              if (index >= displayMembers.size - 5) {
+                val hasNextPage = if (localSearchQuery.isBlank()) {
+                  uiState.hasNextPageRecent
+                } else {
+                  uiState.hasNextPageSearch
+                }
+
+                if (hasNextPage && !uiState.isLoadingMore) {
+                  LaunchedEffect(key1 = displayMembers.size) {
+                    viewModel.loadNextPage()
+                  }
+                }
+              }
+            }
+
+            // Show loading indicator at bottom during pagination
+            val hasNextPage = if (localSearchQuery.isBlank()) {
+              uiState.hasNextPageRecent
+            } else {
+              uiState.hasNextPageSearch
+            }
+
+            if (hasNextPage && displayMembers.isNotEmpty()) {
+              item {
+                Box(
+                  modifier = Modifier.fillMaxWidth().padding(16.dp),
+                  contentAlignment = Alignment.Center
+                ) {
+                  if (uiState.isLoadingMore) {
+                    Row(
+                      horizontalArrangement = Arrangement.spacedBy(8.dp),
+                      verticalAlignment = Alignment.CenterVertically
+                    ) {
+                      CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                      Text(
+                        "लोड हो रहा है...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                      )
                     }
                   }
                 }
-              )
+              }
             }
           }
         }
@@ -1345,14 +1443,14 @@ private fun MemberSelectionDialog(
 private fun MemberSelectionItem(
   member: Member,
   selected: Boolean,
-  choiceType: MembersChoiceType,
-  onClick: () -> Unit
+  onSelectionChange: (Boolean) -> Unit,
+  showRadioButton: Boolean
 ) {
   Row(
     modifier =
       Modifier
         .fillMaxWidth()
-        .clickable { onClick() }
+        .clickable { onSelectionChange(!selected) }
         .padding(12.dp),
     verticalAlignment = Alignment.CenterVertically
   ) {
@@ -1391,31 +1489,28 @@ private fun MemberSelectionItem(
         maxLines = 1,
         overflow = TextOverflow.Ellipsis
       )
-      if (member.email.isNotEmpty()) {
-        Text(
-          text = member.email,
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-          maxLines = 1,
-          overflow = TextOverflow.Ellipsis
-        )
-      }
+//      if (member.phoneNumber.isNotEmpty()) {
+//        Text(
+//          text = member.phoneNumber,
+//          style = MaterialTheme.typography.bodySmall,
+//          color = MaterialTheme.colorScheme.onSurfaceVariant,
+//          maxLines = 1,
+//          overflow = TextOverflow.Ellipsis
+//        )
+//      }
     }
 
     // Selection indicator
-    when (choiceType) {
-      MembersChoiceType.SINGLE -> {
-        RadioButton(
-          selected = selected,
-          onClick = { onClick() }
-        )
-      }
-      MembersChoiceType.MULTIPLE -> {
-        Checkbox(
-          checked = selected,
-          onCheckedChange = { onClick() }
-        )
-      }
+    if (showRadioButton) {
+      RadioButton(
+        selected = selected,
+        onClick = { onSelectionChange(!selected) }
+      )
+    } else {
+      Checkbox(
+        checked = selected,
+        onCheckedChange = { onSelectionChange(it) }
+      )
     }
   }
 }

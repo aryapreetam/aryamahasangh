@@ -2,9 +2,10 @@ package com.aryamahasangh.di
 
 import com.aryamahasangh.features.activities.ActivitiesViewModel
 import com.aryamahasangh.features.admin.AdminViewModel
-import com.aryamahasangh.features.admin.FamilyViewModel
+import com.aryamahasangh.features.admin.family.FamilyViewModel
 import com.aryamahasangh.features.admin.aryasamaj.AryaSamajSelectorViewModel
-import com.aryamahasangh.features.admin.data.AryaSamajViewModel
+import com.aryamahasangh.features.admin.aryasamaj.AryaSamajViewModel
+import com.aryamahasangh.features.admin.member.MembersSelectorViewModel
 import com.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
 import com.aryamahasangh.features.arya_nirman.SatraRegistrationViewModel
 import com.aryamahasangh.features.organisations.OrganisationsViewModel
@@ -43,4 +44,5 @@ val viewModelModule =
     factoryOf(::AryaSamajSelectorViewModel)
     factoryOf(::AryaSamajHomeViewModel)
     factoryOf(::FamilyViewModel)
+    factoryOf(::MembersSelectorViewModel)
   }

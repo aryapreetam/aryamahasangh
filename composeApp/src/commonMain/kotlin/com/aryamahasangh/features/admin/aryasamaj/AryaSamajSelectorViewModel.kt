@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.aryamahasangh.components.AryaSamaj
 import com.aryamahasangh.domain.error.AppError
-import com.aryamahasangh.domain.error.ErrorHandler
 import com.aryamahasangh.domain.error.getUserMessage
 import com.aryamahasangh.util.Result
 import kotlinx.coroutines.Job
@@ -19,9 +18,13 @@ data class AryaSamajSelectorUiState(
   val searchResults: List<AryaSamaj> = emptyList(),
   val isLoadingRecent: Boolean = false,
   val isSearching: Boolean = false,
-  val searchQuery: String = "",
+  val isLoadingMore: Boolean = false,
+  val hasNextPageRecent: Boolean = true,
+  val hasNextPageSearch: Boolean = true,
+  val currentSearchQuery: String = "", // For display/debugging only, not for TextField state
   val error: String? = null,
-  val showRetryButton: Boolean = false
+  val showRetryButton: Boolean = false,
+  val retryCount: Int = 0
 )
 
 class AryaSamajSelectorViewModel(
@@ -31,49 +34,68 @@ class AryaSamajSelectorViewModel(
   private val _uiState = MutableStateFlow(AryaSamajSelectorUiState())
   val uiState: StateFlow<AryaSamajSelectorUiState> = _uiState.asStateFlow()
 
+  // Internal search trigger - only for triggering network calls
+  private val _searchTrigger = MutableStateFlow("")
   private var searchJob: Job? = null
+  private var recentCursor: String? = null
+  private var searchCursor: String? = null
 
   /**
-   * Load recent AryaSamajs with optional location-based sorting
+   * Load recent AryaSamajs with pagination support
+   * @param latitude Optional latitude for proximity sorting
+   * @param longitude Optional longitude for proximity sorting
+   * @param resetPagination Whether to reset pagination (true for initial load)
    */
   fun loadRecentAryaSamajs(
     latitude: Double? = null,
     longitude: Double? = null,
-    limit: Int = 10
+    resetPagination: Boolean = true
   ) {
-    viewModelScope.launch {
-      _uiState.value = _uiState.value.copy(
-        isLoadingRecent = true,
-        error = null,
-        showRetryButton = false
-      )
+    if (resetPagination) {
+      recentCursor = null
+    }
 
+    viewModelScope.launch {
       repository.getRecentAryaSamajs(
-        limit = limit,
+        limit = 20,
+        cursor = recentCursor,
         latitude = latitude,
         longitude = longitude
       ).collect { result ->
-        when (result) {
-          is Result.Loading -> {
-            _uiState.value = _uiState.value.copy(isLoadingRecent = true)
-          }
+        _uiState.value = when (result) {
+          is Result.Loading -> _uiState.value.copy(
+            isLoadingRecent = resetPagination, // Only show loading for initial load
+            isLoadingMore = !resetPagination,  // Show loading more for pagination
+            error = null,
+            showRetryButton = false
+          )
 
           is Result.Success -> {
-            _uiState.value = _uiState.value.copy(
-              recentAryaSamajs = result.data,
+            val newAryaSamajs = if (resetPagination) {
+              result.data.items
+            } else {
+              _uiState.value.recentAryaSamajs + result.data.items
+            }
+
+            recentCursor = result.data.endCursor
+
+            _uiState.value.copy(
+              recentAryaSamajs = newAryaSamajs,
               isLoadingRecent = false,
+              isLoadingMore = false,
+              hasNextPageRecent = result.data.hasNextPage,
               error = null,
-              showRetryButton = false
+              showRetryButton = false,
+              retryCount = 0
             )
           }
 
           is Result.Error -> {
             val appError = result.exception as? AppError
-            appError?.let { ErrorHandler.logError(it, "AryaSamajSelectorViewModel.loadRecentAryaSamajs") }
-
-            _uiState.value = _uiState.value.copy(
+            _uiState.value.copy(
               isLoadingRecent = false,
-              error = appError?.getUserMessage() ?: result.exception?.message ?: "अज्ञात त्रुटि",
+              isLoadingMore = false,
+              error = appError?.getUserMessage() ?: result.exception?.message ?: "आर्य समाज लोड करने में त्रुटि",
               showRetryButton = true
             )
           }
@@ -83,60 +105,66 @@ class AryaSamajSelectorViewModel(
   }
 
   /**
-   * Search AryaSamajs with debounced input
-   * Optimized for Devanagari/Hindi typing - triggers after 2 characters with 500ms delay
+   * Search AryaSamajs with pagination support
+   * @param query Search term
+   * @param resetPagination Whether to reset pagination (true for new search)
    */
-  fun searchAryaSamajs(query: String) {
-    // Update search query immediately for UI feedback
-    _uiState.value = _uiState.value.copy(searchQuery = query)
-
-    // Cancel previous search job
-    searchJob?.cancel()
-
-    if (query.length < 2) {
-      // Clear search results if query is too short
-      _uiState.value = _uiState.value.copy(
-        searchResults = emptyList(),
-        isSearching = false,
-        error = null
-      )
-      return
+  private fun searchAryaSamajs(query: String, resetPagination: Boolean = true) {
+    if (resetPagination) {
+      searchCursor = null
     }
 
     searchJob = viewModelScope.launch {
-      // Debounce: Wait 500ms for user to stop typing
-      delay(500)
-
       _uiState.value = _uiState.value.copy(
-        isSearching = true,
+        isSearching = resetPagination,
+        isLoadingMore = !resetPagination,
+        currentSearchQuery = query,
         error = null,
         showRetryButton = false
       )
 
       repository.searchAryaSamajs(
-        query = query.trim(),
-        limit = 20
+        query = query,
+        limit = 20,
+        cursor = searchCursor
       ).collect { result ->
-        when (result) {
-          is Result.Loading -> {
-            _uiState.value = _uiState.value.copy(isSearching = true)
-          }
+        _uiState.value = when (result) {
+          is Result.Loading -> _uiState.value.copy(
+            isSearching = resetPagination,
+            isLoadingMore = !resetPagination,
+            currentSearchQuery = query,
+            error = null,
+            showRetryButton = false
+          )
 
           is Result.Success -> {
-            _uiState.value = _uiState.value.copy(
-              searchResults = result.data,
+            val newResults = if (resetPagination) {
+              result.data.items
+            } else {
+              _uiState.value.searchResults + result.data.items
+            }
+
+            searchCursor = result.data.endCursor
+
+            _uiState.value.copy(
+              searchResults = newResults,
               isSearching = false,
+              isLoadingMore = false,
+              hasNextPageSearch = result.data.hasNextPage,
+              currentSearchQuery = query,
               error = null,
-              showRetryButton = false
+              showRetryButton = false,
+              retryCount = 0
             )
           }
 
           is Result.Error -> {
             val appError = result.exception as? AppError
-            appError?.let { ErrorHandler.logError(it, "AryaSamajSelectorViewModel.searchAryaSamajs") }
 
-            _uiState.value = _uiState.value.copy(
+            _uiState.value.copy(
               isSearching = false,
+              isLoadingMore = false,
+              currentSearchQuery = query,
               error = appError?.getUserMessage() ?: result.exception?.message ?: "खोज में त्रुटि",
               showRetryButton = true
             )
@@ -147,34 +175,127 @@ class AryaSamajSelectorViewModel(
   }
 
   /**
+   * Load next page of results (either recent or search results)
+   */
+  fun loadNextPage() {
+    val currentState = _uiState.value
+
+    // Don't load if already loading or no more pages
+    if (currentState.isLoadingMore) return
+
+    if (currentState.currentSearchQuery.isBlank()) {
+      // Load more recent AryaSamajs
+      if (currentState.hasNextPageRecent) {
+        loadRecentAryaSamajs(resetPagination = false)
+      }
+    } else {
+      // Load more search results
+      if (currentState.hasNextPageSearch) {
+        searchAryaSamajs(currentState.currentSearchQuery, resetPagination = false)
+      }
+    }
+  }
+
+  /**
+   * Initialize search handling with optimized debouncing
+   */
+  fun initializeSearch() {
+    viewModelScope.launch {
+      _searchTrigger.collect { query ->
+        // Cancel previous search
+        searchJob?.cancel()
+
+        if (query.length >= 2) {
+          // Debounce: Wait 300ms for user to stop typing (optimized from 500ms)
+          delay(300)
+          searchAryaSamajs(query, resetPagination = true)
+        } else {
+          // Clear search results when query is too short
+          searchCursor = null
+          _uiState.value = _uiState.value.copy(
+            searchResults = emptyList(),
+            isSearching = false,
+            hasNextPageSearch = true,
+            currentSearchQuery = query,
+            error = null,
+            showRetryButton = false,
+            retryCount = 0
+          )
+        }
+      }
+    }
+  }
+
+  /**
+   * Trigger search (called from UI with debouncing)
+   */
+  fun triggerSearch(query: String) {
+    _searchTrigger.value = query
+  }
+
+  /**
+   * Auto-retry with exponential backoff (up to 3 times)
+   */
+  private suspend fun retryWithBackoff(operation: suspend () -> Unit, maxRetries: Int = 3) {
+    val currentState = _uiState.value
+    var attempt = currentState.retryCount
+
+    while (attempt < maxRetries) {
+      try {
+        operation()
+        break
+      } catch (e: Exception) {
+        attempt++
+        _uiState.value = _uiState.value.copy(retryCount = attempt)
+
+        if (attempt >= maxRetries) {
+          // Show manual retry button after max retries
+          _uiState.value = _uiState.value.copy(
+            error = "कुछ प्रयासों के बाद भी त्रुटि है",
+            showRetryButton = true
+          )
+        } else {
+          // Wait with exponential backoff
+          delay(1000L * attempt)
+        }
+      }
+    }
+  }
+
+  /**
    * Clear search query and results
    */
   fun clearSearch() {
     searchJob?.cancel()
-    _uiState.value = _uiState.value.copy(
-      searchQuery = "",
-      searchResults = emptyList(),
-      isSearching = false,
-      error = null,
-      showRetryButton = false
-    )
+    searchCursor = null
+    _searchTrigger.value = ""
   }
 
   /**
-   * Retry failed operation
+   * Retry loading with optional location parameters
+   * @param latitude Optional latitude for proximity sorting
+   * @param longitude Optional longitude for proximity sorting
    */
-  fun retry(
+  fun retryLoading(
     latitude: Double? = null,
     longitude: Double? = null
   ) {
-    val currentQuery = _uiState.value.searchQuery
+    val currentQuery = _uiState.value.currentSearchQuery
 
     if (currentQuery.isNotBlank()) {
       // Retry search
-      searchAryaSamajs(currentQuery)
+      viewModelScope.launch {
+        retryWithBackoff(operation = {
+          searchAryaSamajs(currentQuery, resetPagination = true)
+        })
+      }
     } else {
       // Retry loading recent AryaSamajs
-      loadRecentAryaSamajs(latitude, longitude)
+      viewModelScope.launch {
+        retryWithBackoff(operation = {
+          loadRecentAryaSamajs(latitude, longitude, resetPagination = true)
+        })
+      }
     }
   }
 
@@ -184,16 +305,17 @@ class AryaSamajSelectorViewModel(
   fun clearError() {
     _uiState.value = _uiState.value.copy(
       error = null,
-      showRetryButton = false
+      showRetryButton = false,
+      retryCount = 0
     )
   }
 
   /**
-   * Get current display results based on search state
+   * Get current results (recent or search) for external usage
    */
   fun getCurrentResults(): List<AryaSamaj> {
     val currentState = _uiState.value
-    return if (currentState.searchQuery.isNotBlank()) {
+    return if (currentState.currentSearchQuery.isNotBlank()) {
       currentState.searchResults
     } else {
       currentState.recentAryaSamajs

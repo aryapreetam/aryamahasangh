@@ -11,6 +11,7 @@ import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.*
 import androidx.compose.material3.MenuAnchorType.Companion.PrimaryNotEditable
 import androidx.compose.runtime.*
@@ -463,8 +464,8 @@ fun AryaSamajSelector(
   if (showDialog) {
     AryaSamajSelectionDialog(
       onDismiss = { showDialog = false },
-      onAryaSamajSelected = { aryaSamaj ->
-        onAryaSamajSelected(aryaSamaj)
+      onAryaSamajSelected = { selected ->
+        onAryaSamajSelected(selected)
         showDialog = false
       },
       selectedAryaSamaj = selectedAryaSamaj,
@@ -479,8 +480,8 @@ fun AryaSamajSelector(
 @Composable
 private fun AryaSamajSelectionDialog(
   onDismiss: () -> Unit,
-  onAryaSamajSelected: (AryaSamaj?) -> Unit,
-  selectedAryaSamaj: AryaSamaj?,
+  onAryaSamajSelected: (AryaSamaj) -> Unit,
+  selectedAryaSamaj: AryaSamaj? = null,
   latitude: Double? = null,
   longitude: Double? = null
 ) {
@@ -489,18 +490,20 @@ private fun AryaSamajSelectionDialog(
     org.koin.compose.koinInject()
 
   val uiState by viewModel.uiState.collectAsState()
-  var searchQuery by remember { mutableStateOf("") }
 
-  // Load recent AryaSamajs when dialog opens
+  // Local TextField state - prevents cursor position issues
+  var localSearchQuery by remember { mutableStateOf("") }
+
+  // Initialize search handling when dialog opens
   LaunchedEffect(Unit) {
+    viewModel.initializeSearch()
     viewModel.loadRecentAryaSamajs(latitude = latitude, longitude = longitude)
   }
 
-  // Handle search input
-  LaunchedEffect(searchQuery) {
-    if (searchQuery != uiState.searchQuery) {
-      viewModel.searchAryaSamajs(searchQuery)
-    }
+  // Debounced search trigger - only affects network calls, not TextField
+  LaunchedEffect(localSearchQuery) {
+    kotlinx.coroutines.delay(300) // Local debounce for network calls
+    viewModel.triggerSearch(localSearchQuery)
   }
 
   // Clear search when dialog is dismissed
@@ -510,13 +513,13 @@ private fun AryaSamajSelectionDialog(
     }
   }
 
-  val displayResults = if (searchQuery.isBlank()) {
+  val displayResults = if (localSearchQuery.isBlank()) {
     uiState.recentAryaSamajs
   } else {
     uiState.searchResults
   }
 
-  val isLoading = if (searchQuery.isBlank()) {
+  val isLoading = if (localSearchQuery.isBlank()) {
     uiState.isLoadingRecent
   } else {
     uiState.isSearching
@@ -544,25 +547,27 @@ private fun AryaSamajSelectionDialog(
           modifier = Modifier.padding(bottom = 16.dp)
         )
 
-        // Search field
+        // Search field - uses local state to prevent cursor issues
         OutlinedTextField(
-          value = searchQuery,
-          onValueChange = { searchQuery = it },
+          value = localSearchQuery, // Local state only
+          onValueChange = { localSearchQuery = it }, // Updates local state only
           label = { Text("खोजें") },
           placeholder = { Text("आर्य समाज का नाम") },
           leadingIcon = {
             Icon(Icons.Default.Search, contentDescription = "खोजें")
           },
           trailingIcon = {
-            if (searchQuery.isNotEmpty()) {
+            if (localSearchQuery.isNotEmpty()) {
               IconButton(
-                onClick = {
-                searchQuery = ""
-                  viewModel.clearSearch()
-                }
+                onClick = { localSearchQuery = "" }
               ) {
                 Icon(Icons.Default.Clear, contentDescription = "साफ़ करें")
               }
+            } else if (uiState.isSearching) {
+              CircularProgressIndicator(
+                modifier = Modifier.size(20.dp),
+                strokeWidth = 2.dp
+              )
             }
           },
           modifier = Modifier.fillMaxWidth(),
@@ -573,70 +578,93 @@ private fun AryaSamajSelectionDialog(
             ),
           keyboardActions =
             KeyboardActions(
-              onSearch = { viewModel.searchAryaSamajs(searchQuery) }
+              onSearch = { viewModel.triggerSearch(localSearchQuery) }
             )
         )
 
         Spacer(modifier = Modifier.height(16.dp))
 
         // Results list
-        LazyColumn(
-          modifier = Modifier.weight(1f),
-          verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-          if (isLoading) {
+        LazyColumn {
+          if (isLoading && displayResults.isEmpty()) {
+            item {
+              Column(
+                modifier = Modifier.fillMaxWidth().padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+              ) {
+                CircularProgressIndicator()
+                Text(
+                  text = if (localSearchQuery.isBlank()) "लोड हो रहा है..." else "खोजा जा रहा है...",
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+              }
+            }
+          } else if (localSearchQuery.length == 1) {
+            // Show minimum character requirement for single character
             item {
               Box(
                 modifier = Modifier.fillMaxWidth().padding(32.dp),
                 contentAlignment = Alignment.Center
               ) {
-                Column(
-                  horizontalAlignment = Alignment.CenterHorizontally,
-                  verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                  CircularProgressIndicator()
-                  Text(
-                    text = if (searchQuery.isBlank()) "लोड हो रहा है..." else "खोजा जा रहा है...",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                  )
-                }
+                Text(
+                  text = "न्यूनतम २ अक्षर आवश्यक",
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                  textAlign = TextAlign.Center
+                )
               }
             }
           } else {
-            items(displayResults) { aryaSamaj ->
+            items(displayResults.size) { index ->
+              val aryaSamaj = displayResults[index]
               AryaSamajItem(
                 aryaSamaj = aryaSamaj,
-                isSelected = selectedAryaSamaj?.id == aryaSamaj.id,
-                onClick = { onAryaSamajSelected(aryaSamaj) }
+                isSelected = aryaSamaj == selectedAryaSamaj,
+                onClick = {
+                  onAryaSamajSelected(aryaSamaj)
+                  onDismiss()
+                }
               )
+
+              // Trigger pagination when near end (last 5 items)
+              if (index >= displayResults.size - 5) {
+                val hasNextPage = if (localSearchQuery.isBlank()) {
+                  uiState.hasNextPageRecent
+                } else {
+                  uiState.hasNextPageSearch
+                }
+
+                if (hasNextPage && !uiState.isLoadingMore) {
+                  LaunchedEffect(key1 = displayResults.size) {
+                    viewModel.loadNextPage()
+                  }
+                }
+              }
             }
 
-            if (displayResults.isEmpty() && !isLoading) {
+            if (displayResults.isEmpty() && !isLoading && localSearchQuery.length >= 2) {
               item {
                 Column(
                   modifier = Modifier.fillMaxWidth().padding(32.dp),
                   horizontalAlignment = Alignment.CenterHorizontally,
-                  verticalArrangement = Arrangement.spacedBy(8.dp)
+                  verticalArrangement = Arrangement.Center
                 ) {
-                  if (uiState.error != null) {
-                    Text(
-                      text = uiState.error ?: "अज्ञात त्रुटि",
-                      style = MaterialTheme.typography.bodyMedium,
-                      color = MaterialTheme.colorScheme.error,
-                      textAlign = TextAlign.Center
-                    )
-                    if (uiState.showRetryButton) {
-                      Spacer(modifier = Modifier.height(8.dp))
-                      TextButton(
-                        onClick = { viewModel.retry(latitude, longitude) }
-                      ) {
-                        Text("पुनः प्रयास करें")
-                      }
+                  Icon(
+                    Icons.Default.SearchOff,
+                    contentDescription = null,
+                    modifier = Modifier.size(48.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                  )
+                  Spacer(modifier = Modifier.height(16.dp))
+                  if (uiState.showRetryButton) {
+                    Button(onClick = { viewModel.retryLoading() }) {
+                      Text("पुनः प्रयास करें")
                     }
                   } else {
                     Text(
-                      text = if (searchQuery.isBlank()) {
+                      text = if (localSearchQuery.isBlank()) {
                         "कोई आर्य समाज उपलब्ध नहीं"
                       } else {
                         "कोई आर्य समाज नहीं मिला"
@@ -645,6 +673,51 @@ private fun AryaSamajSelectionDialog(
                       color = MaterialTheme.colorScheme.onSurfaceVariant,
                       textAlign = TextAlign.Center
                     )
+                  }
+                }
+              }
+            } else if (displayResults.isEmpty() && !isLoading && localSearchQuery.isBlank()) {
+              // Show message for empty recent list
+              item {
+                Box(
+                  modifier = Modifier.fillMaxWidth().padding(32.dp),
+                  contentAlignment = Alignment.Center
+                ) {
+                  Text(
+                    text = "आर्य समाज सूची उपलब्ध नहीं",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                  )
+                }
+              }
+            }
+
+            // Show loading indicator at bottom during pagination
+            val hasNextPage = if (localSearchQuery.isBlank()) {
+              uiState.hasNextPageRecent
+            } else {
+              uiState.hasNextPageSearch
+            }
+
+            if (hasNextPage && displayResults.isNotEmpty()) {
+              item {
+                Box(
+                  modifier = Modifier.fillMaxWidth().padding(16.dp),
+                  contentAlignment = Alignment.Center
+                ) {
+                  if (uiState.isLoadingMore) {
+                    Row(
+                      horizontalArrangement = Arrangement.spacedBy(8.dp),
+                      verticalAlignment = Alignment.CenterVertically
+                    ) {
+                      CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                      Text(
+                        "लोड हो रहा है...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                      )
+                    }
                   }
                 }
               }
@@ -669,7 +742,7 @@ private fun AryaSamajSelectionDialog(
 @Composable
 private fun AryaSamajItem(
   aryaSamaj: AryaSamaj,
-  isSelected: Boolean,
+  isSelected: Boolean = false,
   onClick: () -> Unit
 ) {
   Card(

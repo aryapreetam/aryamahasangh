@@ -1,4 +1,4 @@
-package com.aryamahasangh.features.admin.data
+package com.aryamahasangh.features.admin.aryasamaj
 
 import com.aryamahasangh.components.AddressData
 import com.aryamahasangh.components.ImagePickerState

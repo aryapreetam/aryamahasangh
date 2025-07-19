@@ -1,4 +1,4 @@
-package com.aryamahasangh.features.admin
+package com.aryamahasangh.features.admin.member
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -28,6 +28,12 @@ import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
 import kotlinx.datetime.LocalDate
 import com.aryamahasangh.components.Gender
+import com.aryamahasangh.features.admin.ActivityInfo
+import com.aryamahasangh.features.admin.AdminViewModel
+import com.aryamahasangh.features.admin.MemberDetail
+import com.aryamahasangh.features.admin.OrganisationInfo
+import com.aryamahasangh.features.admin.ReferrerInfo
+import com.aryamahasangh.features.admin.SamajPositionInfo
 import com.aryamahasangh.features.arya_nirman.convertDates
 import com.aryamahasangh.fragment.AddressFields
 import com.aryamahasangh.fragment.AryaSamajFields

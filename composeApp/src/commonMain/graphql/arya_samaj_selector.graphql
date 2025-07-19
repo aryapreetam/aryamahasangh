@@ -1,7 +1,10 @@
-# Get recent AryaSamajs with optional location-based sorting
-query RecentAryaSamajsQuery($first: Int!, $lat: Float, $lng: Float) {
+# AryaSamaj selector queries with infinite scroll support
+
+# Get recent AryaSamajs with cursor-based pagination and optional location-based sorting
+query RecentAryaSamajsQuery($first: Int!, $after: Cursor, $lat: Float, $lng: Float) {
   aryaSamajCollection(
     first: $first,
+    after: $after,
     orderBy: { createdAt: DescNullsLast }
   ) {
     edges {
@@ -11,14 +14,20 @@ query RecentAryaSamajsQuery($first: Int!, $lat: Float, $lng: Float) {
           ...AddressFields
         }
       }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
     }
   }
 }
 
-# Search AryaSamajs by name
-query SearchAryaSamajsQuery($searchTerm: String!, $first: Int!) {
+# Search AryaSamajs by name with cursor-based pagination
+query SearchAryaSamajsQuery($searchTerm: String!, $first: Int!, $after: Cursor) {
   aryaSamajCollection(
     first: $first,
+    after: $after,
     filter: {
       name: { ilike: $searchTerm }
     },
@@ -31,6 +40,11 @@ query SearchAryaSamajsQuery($searchTerm: String!, $first: Int!) {
           ...AddressFields
         }
       }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
     }
   }
 }

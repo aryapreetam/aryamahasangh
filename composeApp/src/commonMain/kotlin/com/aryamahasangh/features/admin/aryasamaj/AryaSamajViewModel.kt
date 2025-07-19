@@ -1,4 +1,4 @@
-package com.aryamahasangh.features.admin.data
+package com.aryamahasangh.features.admin.aryasamaj
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -8,6 +8,7 @@ import com.aryamahasangh.domain.error.AppError
 import com.aryamahasangh.domain.error.ErrorHandler
 import com.aryamahasangh.domain.error.getUserMessage
 import com.aryamahasangh.features.activities.Member
+import com.aryamahasangh.features.admin.PaginationResult
 import com.aryamahasangh.features.admin.PaginationState
 import com.aryamahasangh.fragment.AryaSamajWithAddress
 import com.aryamahasangh.network.bucket
@@ -576,11 +577,11 @@ class AryaSamajViewModel(
 
       repository.getItemsPaginated(pageSize = pageSize, cursor = cursor).collect { result ->
         when (result) {
-          is com.aryamahasangh.features.admin.PaginationResult.Loading -> {
+          is PaginationResult.Loading -> {
             // Loading state already set above
           }
 
-          is com.aryamahasangh.features.admin.PaginationResult.Success -> {
+          is PaginationResult.Success -> {
             // Prevent duplication by ensuring clean state management
             val existingItems = if (shouldReset) emptyList() else currentState.items
             val newItems = existingItems + result.data
@@ -614,7 +615,7 @@ class AryaSamajViewModel(
             )
           }
 
-          is com.aryamahasangh.features.admin.PaginationResult.Error -> {
+          is PaginationResult.Error -> {
             _listUiState.value = _listUiState.value.copy(
               paginationState = currentState.copy(
                 isInitialLoading = false,
@@ -657,11 +658,11 @@ class AryaSamajViewModel(
         cursor = cursor
       ).collect { result ->
         when (result) {
-          is com.aryamahasangh.features.admin.PaginationResult.Loading -> {
+          is PaginationResult.Loading -> {
             // Loading state already set above
           }
 
-          is com.aryamahasangh.features.admin.PaginationResult.Success -> {
+          is PaginationResult.Success -> {
             val existingItems = if (resetPagination) emptyList() else currentState.items
             val newItems = existingItems + result.data
 
@@ -695,7 +696,7 @@ class AryaSamajViewModel(
             )
           }
 
-          is com.aryamahasangh.features.admin.PaginationResult.Error -> {
+          is PaginationResult.Error -> {
             _listUiState.value = _listUiState.value.copy(
               paginationState = currentState.copy(
                 isSearching = false,

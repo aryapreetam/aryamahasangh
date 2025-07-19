@@ -12,7 +12,11 @@ import androidx.compose.ui.unit.dp
 import com.aryamahasangh.components.ErrorSnackbar
 import com.aryamahasangh.components.InlineErrorMessage
 import com.aryamahasangh.features.activities.toDevanagariNumerals
-import com.aryamahasangh.features.admin.data.AryaSamajViewModel
+import com.aryamahasangh.features.admin.aryasamaj.AryaSamajListScreen
+import com.aryamahasangh.features.admin.aryasamaj.AryaSamajViewModel
+import com.aryamahasangh.features.admin.family.AryaPariwarListScreen
+import com.aryamahasangh.features.admin.family.FamilyViewModel
+import com.aryamahasangh.features.admin.member.EkalAryaListScreen
 import com.aryamahasangh.navigation.LocalSnackbarHostState
 
 @OptIn(ExperimentalMaterial3Api::class)

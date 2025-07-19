@@ -4,12 +4,14 @@ import com.aryamahasangh.features.activities.ActivityRepository
 import com.aryamahasangh.features.activities.ActivityRepositoryImpl
 import com.aryamahasangh.features.admin.AdminRepository
 import com.aryamahasangh.features.admin.AdminRepositoryImpl
-import com.aryamahasangh.features.admin.FamilyRepository
-import com.aryamahasangh.features.admin.FamilyRepositoryImpl
+import com.aryamahasangh.features.admin.family.FamilyRepository
+import com.aryamahasangh.features.admin.family.FamilyRepositoryImpl
 import com.aryamahasangh.features.admin.aryasamaj.AryaSamajSelectorRepository
 import com.aryamahasangh.features.admin.aryasamaj.data.AryaSamajSelectorRepositoryImpl
-import com.aryamahasangh.features.admin.data.AryaSamajRepository
-import com.aryamahasangh.features.admin.data.AryaSamajRepositoryImpl
+import com.aryamahasangh.features.admin.aryasamaj.AryaSamajRepository
+import com.aryamahasangh.features.admin.aryasamaj.AryaSamajRepositoryImpl
+import com.aryamahasangh.features.admin.member.MembersSelectorRepository
+import com.aryamahasangh.features.admin.member.data.MembersSelectorRepositoryImpl
 import com.aryamahasangh.features.arya_nirman.AryaNirmanRepository
 import com.aryamahasangh.features.arya_nirman.AryaNirmanRepositoryImpl
 import com.aryamahasangh.features.organisations.OrganisationsRepository
@@ -51,4 +53,5 @@ val repositoryModule =
     singleOf(::AryaSamajSelectorRepositoryImpl) { bind<AryaSamajSelectorRepository>() }
     singleOf(::AryaSamajHomeRepositoryImpl) { bind<AryaSamajHomeRepository>() }
     singleOf(::FamilyRepositoryImpl) { bind<FamilyRepository>() }
+    singleOf(::MembersSelectorRepositoryImpl) { bind<MembersSelectorRepository>() }
   }

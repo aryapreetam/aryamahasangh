@@ -1447,9 +1447,6 @@ private fun CreateActivityScreenContent(
           enableReordering = true
         ),
         error = if (contactPeopleError) "कम से कम एक संपर्क व्यक्ति आवश्यक है" else null,
-        searchMembers = { query -> members.filter { it.name.contains(query, ignoreCase = true) } },
-        allMembers = members,
-        onTriggerSearch = { /* trigger server search */ },
         modifier = Modifier
           .fillMaxWidth()
           .onGloballyPositioned { coordinates ->

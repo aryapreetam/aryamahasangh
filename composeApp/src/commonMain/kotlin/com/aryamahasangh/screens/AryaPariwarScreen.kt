@@ -13,8 +13,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.aryamahasangh.features.admin.FamiliesUiState
-import com.aryamahasangh.features.admin.FamilyViewModel
+import com.aryamahasangh.features.admin.family.FamiliesUiState
+import com.aryamahasangh.features.admin.family.FamilyViewModel
 
 @Composable
 fun AryaPariwarScreen(familyViewModel: FamilyViewModel? = null) {

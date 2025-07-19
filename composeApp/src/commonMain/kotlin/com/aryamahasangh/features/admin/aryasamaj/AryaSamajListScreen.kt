@@ -1,4 +1,4 @@
-package com.aryamahasangh.features.admin
+package com.aryamahasangh.features.admin.aryasamaj
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,28 +21,27 @@ import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowWidthSizeClass
 import coil3.compose.AsyncImage
 import com.aryamahasangh.features.activities.toDevanagariNumerals
-import com.aryamahasangh.features.admin.data.AryaSamajListItem
-import com.aryamahasangh.features.admin.data.AryaSamajViewModel
 import com.aryamahasangh.navigation.LocalSnackbarHostState
 import kotlinx.datetime.Clock
 
 // Global object to persist pagination state across ViewModel recreation
 internal object AryaSamajPageState {
   var aryaSamajs: List<com.aryamahasangh.fragment.AryaSamajWithAddress> = emptyList()
-  var paginationState: PaginationState<com.aryamahasangh.fragment.AryaSamajWithAddress> = PaginationState()
+  var paginationState: com.aryamahasangh.features.admin.PaginationState<com.aryamahasangh.fragment.AryaSamajWithAddress> =
+    _root_ide_package_.com.aryamahasangh.features.admin.PaginationState()
   var lastSearchQuery: String = ""
   var needsRefresh: Boolean = false
 
   fun clear() {
     aryaSamajs = emptyList()
-    paginationState = PaginationState()
+    paginationState = _root_ide_package_.com.aryamahasangh.features.admin.PaginationState()
     lastSearchQuery = ""
     needsRefresh = false
   }
 
   fun saveState(
     newAryaSamajs: List<com.aryamahasangh.fragment.AryaSamajWithAddress>,
-    newPaginationState: PaginationState<com.aryamahasangh.fragment.AryaSamajWithAddress>,
+    newPaginationState: com.aryamahasangh.features.admin.PaginationState<com.aryamahasangh.fragment.AryaSamajWithAddress>,
     searchQuery: String
     ) {
       aryaSamajs = newAryaSamajs
@@ -128,7 +127,7 @@ fun AryaSamajListScreen(
     }
   }
 
-  PaginatedListScreen(
+  _root_ide_package_.com.aryamahasangh.features.admin.PaginatedListScreen(
     items = uiState.aryaSamajs,
     paginationState = uiState.paginationState,
     searchQuery = uiState.searchQuery,

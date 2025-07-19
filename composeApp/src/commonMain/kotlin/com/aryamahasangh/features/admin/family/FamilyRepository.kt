@@ -1,4 +1,4 @@
-package com.aryamahasangh.features.admin
+package com.aryamahasangh.features.admin.family
 
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
@@ -8,6 +8,8 @@ import com.apollographql.apollo.cache.normalized.fetchPolicy
 import com.apollographql.apollo.cache.normalized.watch
 import com.apollographql.apollo.exception.CacheMissException
 import com.aryamahasangh.*
+import com.aryamahasangh.features.admin.PaginatedRepository
+import com.aryamahasangh.features.admin.PaginationResult
 import com.aryamahasangh.fragment.FamilyFields
 import com.aryamahasangh.fragment.MemberWithoutFamily
 import com.aryamahasangh.type.*
@@ -17,6 +19,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 
 @Serializable
 data class FamilyMemberJson(
@@ -479,7 +482,7 @@ class FamilyRepositoryImpl(private val apolloClient: ApolloClient) : FamilyRepos
             val jsonString = responseData.toString()
             // Parse using the same jsonConfig instance
             val jsonResponse =
-              jsonConfig.decodeFromString<Map<String, kotlinx.serialization.json.JsonElement>>(jsonString)
+              jsonConfig.decodeFromString<Map<String, JsonElement>>(jsonString)
 
             val successElement = jsonResponse["success"]?.toString()
             val success = successElement?.contains("true") == true

@@ -1,8 +1,9 @@
-package com.aryamahasangh.features.admin
+package com.aryamahasangh.features.admin.family
 
 import kotlinx.datetime.format
 import kotlinx.datetime.format.char
 import com.aryamahasangh.components.AddressData
+import kotlinx.datetime.LocalDate
 import com.aryamahasangh.components.FamilyRelation as ComponentsFamilyRelation
 import com.aryamahasangh.type.FamilyRelation as GraphQLFamilyRelation
 
@@ -47,7 +48,7 @@ data class FamilyMember(
   val name: String,
   val profileImage: String? = null,
   val phoneNumber: String? = null,
-  val joiningDate: kotlinx.datetime.LocalDate? = null,
+  val joiningDate: LocalDate? = null,
   val isHead: Boolean = false,
   val relationToHead: ComponentsFamilyRelation? = null
 )
@@ -112,9 +113,9 @@ fun GraphQLFamilyRelation.toComponents(): ComponentsFamilyRelation =
   }
 
 // Extension function to format joining date in Hindi
-fun kotlinx.datetime.LocalDate.toHindiDateString(): String {
+fun LocalDate.toHindiDateString(): String {
   val formatter =
-    kotlinx.datetime.LocalDate.Format {
+    LocalDate.Format {
       dayOfMonth()
       char('/')
       monthNumber()

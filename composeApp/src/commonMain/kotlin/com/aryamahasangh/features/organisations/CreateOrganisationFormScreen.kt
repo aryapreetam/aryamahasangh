@@ -12,7 +12,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.components.*
-import com.aryamahasangh.features.activities.Member
 import com.aryamahasangh.navigation.LocalSetBackHandler
 import com.aryamahasangh.navigation.LocalSnackbarHostState
 import com.aryamahasangh.network.bucket
@@ -39,10 +38,7 @@ fun NewOrganisationFormScreen(
   priority: Int,
   viewModel: OrganisationsViewModel,
   onOrganisationCreated: (String) -> Unit = {},
-  onCancel: () -> Unit = {},
-  searchMembers: (String) -> List<Member> = { emptyList() },
-  allMembers: List<Member> = emptyList(),
-  onTriggerSearch: (String) -> Unit = {}
+  onCancel: () -> Unit = {}
 ) {
   var formData by remember { mutableStateOf(OrganisationFormData()) }
   var errors by remember { mutableStateOf(OrganisationFormErrors()) }
@@ -303,10 +299,7 @@ fun NewOrganisationFormScreen(
             enableReordering = true,
             reorderingHint = "पदाधिकारियों का क्रम सुनिश्चित करें"
           ),
-        error = errors.membersError,
-        searchMembers = searchMembers,
-        allMembers = allMembers,
-        onTriggerSearch = onTriggerSearch
+        error = errors.membersError
       )
 
       // Error message
