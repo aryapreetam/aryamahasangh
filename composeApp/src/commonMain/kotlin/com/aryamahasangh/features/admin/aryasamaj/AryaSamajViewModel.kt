@@ -748,6 +748,10 @@ class AryaSamajViewModel(
     searchJob?.cancel()
     searchJob = viewModelScope.launch {
       if (query.isBlank()) {
+        // Clear search state and reset pagination completely for initial load
+        _listUiState.value = _listUiState.value.copy(
+          paginationState = PaginationState() // Reset pagination state completely
+        )
         // Load regular AryaSamajs when search is cleared
         loadAryaSamajsPaginated(resetPagination = true)
         return@launch
@@ -758,6 +762,11 @@ class AryaSamajViewModel(
 
       searchAryaSamajsPaginated(searchTerm = query.trim(), resetPagination = true)
     }
+  }
+
+  // Method to restore search query and trigger fresh search results
+  fun restoreAndSearchAryaSamaj(query: String) {
+    searchAryaSamajsWithDebounce(query)
   }
 
   // Calculate page size based on screen width  

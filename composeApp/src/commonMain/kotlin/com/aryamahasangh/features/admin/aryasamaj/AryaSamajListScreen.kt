@@ -28,13 +28,13 @@ import kotlinx.datetime.Clock
 internal object AryaSamajPageState {
   var aryaSamajs: List<com.aryamahasangh.fragment.AryaSamajWithAddress> = emptyList()
   var paginationState: com.aryamahasangh.features.admin.PaginationState<com.aryamahasangh.fragment.AryaSamajWithAddress> =
-    _root_ide_package_.com.aryamahasangh.features.admin.PaginationState()
+    com.aryamahasangh.features.admin.PaginationState()
   var lastSearchQuery: String = ""
   var needsRefresh: Boolean = false
 
   fun clear() {
     aryaSamajs = emptyList()
-    paginationState = _root_ide_package_.com.aryamahasangh.features.admin.PaginationState()
+    paginationState = com.aryamahasangh.features.admin.PaginationState()
     lastSearchQuery = ""
     needsRefresh = false
   }
@@ -43,11 +43,11 @@ internal object AryaSamajPageState {
     newAryaSamajs: List<com.aryamahasangh.fragment.AryaSamajWithAddress>,
     newPaginationState: com.aryamahasangh.features.admin.PaginationState<com.aryamahasangh.fragment.AryaSamajWithAddress>,
     searchQuery: String
-    ) {
-      aryaSamajs = newAryaSamajs
-      paginationState = newPaginationState
-      lastSearchQuery = searchQuery
-    }
+  ) {
+    aryaSamajs = newPaginationState.items
+    paginationState = newPaginationState
+    lastSearchQuery = searchQuery
+  }
 
   fun hasData(): Boolean = aryaSamajs.isNotEmpty()
 
@@ -81,8 +81,8 @@ fun AryaSamajListScreen(
         WindowWidthSizeClass.EXPANDED -> 1200f
         else -> 600f
       }
-        }
     }
+  }
   val pageSize = viewModel.calculatePageSize(screenWidthDp)
 
   // Generate a unique key when refresh is needed
@@ -96,20 +96,29 @@ fun AryaSamajListScreen(
       AryaSamajPageState.clear()
     }
 
-    // Preserve pagination if we have existing data (user navigated back from view-only)
-    if (!AryaSamajPageState.needsRefresh && AryaSamajPageState.hasData() && AryaSamajPageState.lastSearchQuery == uiState.searchQuery) {
-      viewModel.preserveAryaSamajPagination(AryaSamajPageState.aryaSamajs, AryaSamajPageState.paginationState)
+    when {
+      // Scenario 1: Have saved search query → restore and search with fresh results
+      !AryaSamajPageState.needsRefresh && AryaSamajPageState.lastSearchQuery.isNotEmpty() -> {
+        viewModel.restoreAndSearchAryaSamaj(AryaSamajPageState.lastSearchQuery)
+      }
+
+      // Scenario 2: Have saved non-search data → preserve pagination  
+      !AryaSamajPageState.needsRefresh && AryaSamajPageState.hasData() -> {
+        viewModel.preserveAryaSamajPagination(AryaSamajPageState.aryaSamajs, AryaSamajPageState.paginationState)
+      }
+
+      // Scenario 3: No saved data → load fresh initial data
+      else -> {
+        viewModel.loadAryaSamajsPaginated(pageSize = pageSize, resetPagination = true)
+      }
     }
 
-    // Load data (resetPagination = true when refreshing)
-    val shouldReset = AryaSamajPageState.needsRefresh || !AryaSamajPageState.hasData()
-    viewModel.loadAryaSamajsPaginated(pageSize = pageSize, resetPagination = shouldReset)
     AryaSamajPageState.needsRefresh = false
   }
 
   LaunchedEffect(uiState) {
     AryaSamajPageState.saveState(uiState.paginationState.items, uiState.paginationState, uiState.searchQuery)
-    }
+  }
 
   // Show deletion errors from ViewModel state
   LaunchedEffect(uiState.deleteError) {
@@ -127,7 +136,7 @@ fun AryaSamajListScreen(
     }
   }
 
-  _root_ide_package_.com.aryamahasangh.features.admin.PaginatedListScreen(
+  com.aryamahasangh.features.admin.PaginatedListScreen(
     items = uiState.aryaSamajs,
     paginationState = uiState.paginationState,
     searchQuery = uiState.searchQuery,
