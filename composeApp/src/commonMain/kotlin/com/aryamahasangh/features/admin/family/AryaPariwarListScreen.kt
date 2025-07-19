@@ -30,7 +30,7 @@ import coil3.compose.AsyncImage
 import com.aryamahasangh.features.activities.toDevanagariNumerals
 import com.aryamahasangh.features.admin.PaginatedListScreen
 import com.aryamahasangh.features.admin.PaginationState
-import com.aryamahasangh.navigation.LocalSnackbarHostState
+import com.aryamahasangh.util.GlobalMessageManager
 import kotlinx.datetime.Clock
 
 // Global object to persist pagination state across ViewModel recreation
@@ -71,8 +71,7 @@ fun AryaPariwarListScreen(
   onDataChanged: () -> Unit = {} // Add callback for count updates
 ) {
   val uiState by viewModel.familiesUiState.collectAsState()
-  val snackbarHostState = LocalSnackbarHostState.current
-  val scope = rememberCoroutineScope()
+  val deleteState by viewModel.deleteFamilyState.collectAsState()
   var showDeleteDialog by remember { mutableStateOf<FamilyShort?>(null) }
   val keyboardController = LocalSoftwareKeyboardController.current
   val windowInfo = currentWindowAdaptiveInfo()
@@ -97,27 +96,51 @@ fun AryaPariwarListScreen(
   }
 
   LaunchedEffect(refreshKey) {
-    // Clear preserved state if refresh is requested
     if (AryaPariwarPageState.needsRefresh) {
       AryaPariwarPageState.clear()
     }
 
-    // Preserve pagination if we have existing data (user navigated back from view-only)
-    if (!AryaPariwarPageState.needsRefresh && AryaPariwarPageState.hasData() && AryaPariwarPageState.lastSearchQuery == uiState.searchQuery) {
-      viewModel.preserveFamilyPagination(AryaPariwarPageState.families, AryaPariwarPageState.paginationState)
+    when {
+      // Scenario 1: Have saved search query → restore and search with fresh results
+      !AryaPariwarPageState.needsRefresh && AryaPariwarPageState.lastSearchQuery.isNotEmpty() -> {
+        viewModel.restoreAndSearchAryaPariwar(AryaPariwarPageState.lastSearchQuery)
+      }
+
+      // Scenario 2: Have saved non-search data → preserve pagination  
+      !AryaPariwarPageState.needsRefresh && AryaPariwarPageState.hasData() -> {
+        viewModel.preserveFamilyPagination(AryaPariwarPageState.families, AryaPariwarPageState.paginationState)
+      }
+
+      // Scenario 3: No saved data → load fresh initial data
+      else -> {
+        viewModel.loadFamiliesPaginated(pageSize = pageSize, resetPagination = true)
+      }
     }
 
-    // Load data: Reset pagination if refresh needed OR no existing data (initial load)
-    val shouldReset = AryaPariwarPageState.needsRefresh || !AryaPariwarPageState.hasData()
-    viewModel.loadFamiliesPaginated(pageSize = pageSize, resetPagination = shouldReset)
     AryaPariwarPageState.needsRefresh = false
   }
 
-  // Save state only when families list changes significantly
-  LaunchedEffect(uiState.families.size, uiState.searchQuery) {
-    // Only save state if we have families and it's not during initial loading
-    if (uiState.families.isNotEmpty() && !uiState.paginationState.isInitialLoading) {
-      AryaPariwarPageState.saveState(uiState.families, uiState.paginationState, uiState.searchQuery)
+  LaunchedEffect(uiState) {
+    AryaPariwarPageState.saveState(uiState.families, uiState.paginationState, uiState.searchQuery)
+  }
+
+  LaunchedEffect(deleteState.isDeleting) {
+    if (deleteState.isDeleting) {
+      GlobalMessageManager.showInfo("परिवार हटाने की प्रक्रिया में...")
+    }
+  }
+
+  LaunchedEffect(deleteState.deleteSuccess) {
+    if (deleteState.deleteSuccess) {
+      GlobalMessageManager.showSuccess("परिवार सफलतापूर्वक हटा दिया गया")
+      viewModel.resetDeleteState()
+    }
+  }
+
+  LaunchedEffect(deleteState.deleteError) {
+    deleteState.deleteError?.let { error ->
+      GlobalMessageManager.showError("परिवार हटाने में त्रुटि: $error")
+      viewModel.resetDeleteState()
     }
   }
 

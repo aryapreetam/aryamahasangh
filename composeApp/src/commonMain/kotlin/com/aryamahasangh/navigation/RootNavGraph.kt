@@ -27,7 +27,7 @@ import com.aryamahasangh.features.admin.family.CreateAryaParivarFormScreen
 import com.aryamahasangh.features.admin.family.FamilyDetailScreen
 import com.aryamahasangh.features.admin.family.FamilyViewModel
 import com.aryamahasangh.features.admin.member.AddMemberFormScreen
-import com.aryamahasangh.features.admin.member.EkalAryaPageState
+import com.aryamahasangh.features.admin.member.SingleMemberPageState
 import com.aryamahasangh.features.admin.member.MemberDetailScreen
 import com.aryamahasangh.features.arya_nirman.AryaNirmanHomeScreen
 import com.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
@@ -219,7 +219,7 @@ fun RootNavGraph(navController: NavHostController) {
           },
           onNavigateToMemberDetail = { memberId ->
             // Mark EkalArya list for refresh when member is created
-            EkalAryaPageState.markForRefresh()
+            SingleMemberPageState.markForRefresh()
             navController.navigate(Screen.MemberDetail(memberId)) {
               // Clear the AddMemberForm from back stack, AdminContainer will preserve its tab state
               popUpTo<Screen.AdminContainer> {
@@ -242,7 +242,7 @@ fun RootNavGraph(navController: NavHostController) {
           memberId = memberId,
           onNavigateToMemberDetail = { memberId ->
             // Mark EkalArya list for refresh when member is edited
-            EkalAryaPageState.markForRefresh()
+            SingleMemberPageState.markForRefresh()
             navController.navigate(Screen.MemberDetail(memberId)) {
               // Clear the EditMemberForm from back stack, AdminContainer will preserve its tab state
               popUpTo<Screen.AdminContainer> {

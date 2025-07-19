@@ -62,6 +62,13 @@ data class CreateFamilyUiState(
   val availableMembers: List<Member> = emptyList()
 )
 
+data class DeleteFamilyState(
+  val isDeleting: Boolean = false,
+  val deleteSuccess: Boolean = false,
+  val deleteError: String? = null,
+  val deletingFamilyId: String? = null // Track which family is being deleted
+)
+
 class FamilyViewModel(
   private val familyRepository: FamilyRepository,
   private val adminRepository: AdminRepository,
@@ -75,6 +82,9 @@ class FamilyViewModel(
 
   private val _familyDetailUiState = MutableStateFlow(FamilyDetailUiState())
   val familyDetailUiState: StateFlow<FamilyDetailUiState> = _familyDetailUiState.asStateFlow()
+
+  private val _deleteFamilyState = MutableStateFlow(DeleteFamilyState())
+  val deleteFamilyState: StateFlow<DeleteFamilyState> = _deleteFamilyState.asStateFlow()
 
   private var searchJob: Job? = null
 
@@ -144,7 +154,7 @@ class FamilyViewModel(
           is PaginationResult.Success -> {
             val familyShorts = result.data.map { it.toFamilyShort() }
 
-            // ✅ Query Watchers prevent duplication automatically
+            // Query Watchers prevent duplication automatically
             val existingFamilies = if (shouldReset) emptyList() else _familiesUiState.value.families
             val newFamilies = existingFamilies + familyShorts
 
@@ -214,7 +224,7 @@ class FamilyViewModel(
           is PaginationResult.Success -> {
             val familyShorts = result.data.map { it.toFamilyShort() }
 
-            // ✅ Query Watchers prevent duplication automatically
+            // Query Watchers prevent duplication automatically
             val existingFamilies = if (resetPagination) emptyList() else currentState.items
             val newFamilies = existingFamilies + familyShorts
 
@@ -287,6 +297,10 @@ class FamilyViewModel(
     searchJob?.cancel()
     searchJob = viewModelScope.launch {
       if (query.isBlank()) {
+        // Clear search state and reset pagination completely for initial load
+        _familiesUiState.value = _familiesUiState.value.copy(
+          paginationState = PaginationState() // Reset pagination state completely
+        )
         // Load regular families when search is cleared
         loadFamiliesPaginated(resetPagination = true)
         return@launch
@@ -297,6 +311,11 @@ class FamilyViewModel(
 
       searchFamiliesPaginated(searchTerm = query.trim(), resetPagination = true)
     }
+  }
+
+  // Method to restore search query and trigger fresh search results
+  fun restoreAndSearchAryaPariwar(query: String) {
+    searchFamiliesWithDebounce(query)
   }
 
   // Calculate page size based on screen width  
@@ -923,28 +942,44 @@ class FamilyViewModel(
 
   fun deleteFamily(familyId: String, onSuccess: (() -> Unit)? = null) {
     viewModelScope.launch {
+      _deleteFamilyState.value = DeleteFamilyState(
+        isDeleting = true,
+        deletingFamilyId = familyId
+      )
+
       familyRepository.deleteFamily(familyId).collect { result ->
         when (result) {
           is Result.Loading -> {
-            // Optionally show loading state
+            // Loading state already set above
           }
 
           is Result.Success -> {
             // Refresh the families list
             loadFamiliesPaginated(resetPagination = true)
+            // Clear shouldPreservePagination flag to prevent interference
+            shouldPreservePagination = false
             // Call the success callback for parent updates
             onSuccess?.invoke()
+            _deleteFamilyState.value = DeleteFamilyState(
+              deleteSuccess = true,
+              deletingFamilyId = familyId
+            )
           }
 
           is Result.Error -> {
-            _familiesUiState.value =
-              _familiesUiState.value.copy(
-                error = "परिवार हटाने में त्रुटि: ${result.message}"
-              )
+            _deleteFamilyState.value = DeleteFamilyState(
+              deleteError = result.message,
+              deletingFamilyId = familyId
+            )
           }
         }
       }
     }
+  }
+
+  fun resetDeleteState() {
+    _deleteFamilyState.value = DeleteFamilyState()
+    shouldPreservePagination = false
   }
 
   fun loadFamilyAndFamilyMemberCount() {

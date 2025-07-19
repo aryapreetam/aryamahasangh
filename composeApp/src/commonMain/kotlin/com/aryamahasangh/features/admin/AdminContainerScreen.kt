@@ -16,7 +16,7 @@ import com.aryamahasangh.features.admin.aryasamaj.AryaSamajListScreen
 import com.aryamahasangh.features.admin.aryasamaj.AryaSamajViewModel
 import com.aryamahasangh.features.admin.family.AryaPariwarListScreen
 import com.aryamahasangh.features.admin.family.FamilyViewModel
-import com.aryamahasangh.features.admin.member.EkalAryaListScreen
+import com.aryamahasangh.features.admin.member.SingleMemberListScreen
 import com.aryamahasangh.navigation.LocalSnackbarHostState
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -226,7 +226,7 @@ fun AdminContainerScreen(
             }
           )
         } else if (it == 3) {
-          EkalAryaListScreen(
+          SingleMemberListScreen(
             viewModel = viewModel,
             onNavigateToMemberDetail = onNavigateToMemberDetail,
             onNavigateToAddMember = { onNavigateToAddMember() },

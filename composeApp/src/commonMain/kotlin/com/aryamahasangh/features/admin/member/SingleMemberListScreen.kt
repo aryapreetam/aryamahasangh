@@ -33,7 +33,7 @@ import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
 // Global object to persist pagination state across ViewModel recreation
-internal object EkalAryaPageState {
+internal object SingleMemberPageState {
   var members: List<MemberShort> = emptyList()
   var paginationState: PaginationState<MemberShort> = PaginationState()
   var lastSearchQuery: String = ""
@@ -65,7 +65,7 @@ internal object EkalAryaPageState {
 
 @OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
-fun EkalAryaListScreen(
+fun SingleMemberListScreen(
   viewModel: AdminViewModel,
   onNavigateToMemberDetail: (String) -> Unit = {},
   onNavigateToAddMember: () -> Unit = {},
@@ -92,24 +92,24 @@ fun EkalAryaListScreen(
   }
   val pageSize = viewModel.calculatePageSize(screenWidthDp)
 
-  val refreshKey = remember(EkalAryaPageState.needsRefresh) {
-    if (EkalAryaPageState.needsRefresh) Clock.System.now().toEpochMilliseconds() else 0L
+  val refreshKey = remember(SingleMemberPageState.needsRefresh) {
+    if (SingleMemberPageState.needsRefresh) Clock.System.now().toEpochMilliseconds() else 0L
   }
 
   LaunchedEffect(refreshKey) {
-    if (EkalAryaPageState.needsRefresh) {
-      EkalAryaPageState.clear()
+    if (SingleMemberPageState.needsRefresh) {
+      SingleMemberPageState.clear()
     }
 
     when {
       // Scenario 1: Have saved search query → restore and search with fresh results
-      !EkalAryaPageState.needsRefresh && EkalAryaPageState.lastSearchQuery.isNotEmpty() -> {
-        viewModel.restoreAndSearchEkalArya(EkalAryaPageState.lastSearchQuery)
+      !SingleMemberPageState.needsRefresh && SingleMemberPageState.lastSearchQuery.isNotEmpty() -> {
+        viewModel.restoreAndSearchEkalArya(SingleMemberPageState.lastSearchQuery)
       }
 
       // Scenario 2: Have saved non-search data → preserve pagination  
-      !EkalAryaPageState.needsRefresh && EkalAryaPageState.hasData() -> {
-        viewModel.preserveEkalAryaPagination(EkalAryaPageState.members, EkalAryaPageState.paginationState)
+      !SingleMemberPageState.needsRefresh && SingleMemberPageState.hasData() -> {
+        viewModel.preserveEkalAryaPagination(SingleMemberPageState.members, SingleMemberPageState.paginationState)
       }
 
       // Scenario 3: No saved data → load fresh initial data
@@ -118,11 +118,11 @@ fun EkalAryaListScreen(
       }
     }
 
-    EkalAryaPageState.needsRefresh = false
+    SingleMemberPageState.needsRefresh = false
   }
 
   LaunchedEffect(uiState) {
-    EkalAryaPageState.saveState(uiState.members, uiState.paginationState, uiState.searchQuery)
+    SingleMemberPageState.saveState(uiState.members, uiState.paginationState, uiState.searchQuery)
   }
 
   // Snackbar logic for deletion feedback
@@ -176,7 +176,7 @@ fun EkalAryaListScreen(
         onItemClick = { onNavigateToMemberDetail(member.id) },
         onEditClick = { onEditMember(member.id) },
         onDeleteClick = {
-          EkalAryaPageState.markForRefresh()
+          SingleMemberPageState.markForRefresh()
           viewModel.deleteMember(member.id) {
             onDataChanged()
           }
