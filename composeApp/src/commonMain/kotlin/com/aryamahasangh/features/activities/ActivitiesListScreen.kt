@@ -18,7 +18,6 @@ import com.aryamahasangh.components.ActivityListItem
 import com.aryamahasangh.features.admin.PaginatedListScreen
 import com.aryamahasangh.features.admin.PaginationState
 import com.aryamahasangh.fragment.ActivityWithStatus
-import com.aryamahasangh.fragment.OrganisationalActivityShort
 import com.aryamahasangh.utils.WithTooltip
 import kotlinx.datetime.Clock
 
@@ -89,16 +88,23 @@ fun ActivitiesScreen(
       ActivitiesPageState.clear()
     }
 
-    // Preserve pagination only if not refreshing
-    if (!ActivitiesPageState.needsRefresh && ActivitiesPageState.hasData() &&
-      ActivitiesPageState.lastSearchQuery == uiState.searchQuery
-    ) {
-      viewModel.preserveActivityPagination(ActivitiesPageState.activities, ActivitiesPageState.paginationState)
+    when {
+      // Scenario 1: Have saved search query → restore and search with fresh results
+      !ActivitiesPageState.needsRefresh && ActivitiesPageState.lastSearchQuery.isNotEmpty() -> {
+        viewModel.restoreAndSearchActivities(ActivitiesPageState.lastSearchQuery)
+      }
+
+      // Scenario 2: Have saved non-search data → preserve pagination  
+      !ActivitiesPageState.needsRefresh && ActivitiesPageState.hasData() -> {
+        viewModel.preserveActivityPagination(ActivitiesPageState.activities, ActivitiesPageState.paginationState)
+      }
+
+      // Scenario 3: No saved data → load fresh initial data
+      else -> {
+        viewModel.loadActivitiesPaginated(pageSize = pageSize, resetPagination = true)
+      }
     }
 
-    // Load data: Reset pagination if refresh needed OR no existing data (initial load)
-    val shouldReset = ActivitiesPageState.needsRefresh || !ActivitiesPageState.hasData()
-    viewModel.loadActivitiesPaginated(pageSize = pageSize, resetPagination = shouldReset)
     ActivitiesPageState.needsRefresh = false
   }
 

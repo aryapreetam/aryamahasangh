@@ -200,6 +200,11 @@ class ActivitiesViewModel(
     searchJob?.cancel()
     searchJob = viewModelScope.launch {
       if (query.isBlank()) {
+        // Clear search state and reset pagination completely for initial load
+        _activitiesUiState.value = _activitiesUiState.value.copy(
+          paginationState = PaginationState() // Reset pagination state completely
+        )
+        // Load regular activities when search is cleared
         loadActivitiesPaginated(resetPagination = true)
         return@launch
       }
@@ -207,6 +212,12 @@ class ActivitiesViewModel(
       delay(1000) // 1 second debounce
       searchActivitiesPaginated(searchTerm = query.trim(), resetPagination = true)
     }
+  }
+
+  // NEW: Restore search query and trigger fresh search for preserved context
+  fun restoreAndSearchActivities(query: String) {
+    // Set search query state and trigger fresh search to ensure latest results
+    searchActivitiesWithDebounce(query)
   }
 
   fun searchActivitiesPaginated(searchTerm: String, pageSize: Int = 30, resetPagination: Boolean = true) {
