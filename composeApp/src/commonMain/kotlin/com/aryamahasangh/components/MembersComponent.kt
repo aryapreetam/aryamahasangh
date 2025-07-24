@@ -1347,6 +1347,10 @@ private fun MemberSelectionDialog(
                       selectedMembers - member
                     }
                   }
+                  if(choiceType == MembersChoiceType.SINGLE){
+                    onMembersSelected(selectedMembers.toList())
+                    onDismiss()
+                  }
                 },
                 showRadioButton = choiceType == MembersChoiceType.SINGLE
               )

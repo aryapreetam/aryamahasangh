@@ -3,15 +3,10 @@ package com.aryamahasangh.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.SearchOff
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.material3.MenuAnchorType.Companion.PrimaryNotEditable
 import androidx.compose.runtime.*
@@ -234,16 +229,15 @@ private fun DatePickerDialog(
       modifier =
         Modifier
           .wrapContentSize()
-          .padding(16.dp)
+          .padding(12.dp)
           .widthIn(max = 360.dp) // Add max width constraint to make it compact
     ) {
       Column(
-        modifier = Modifier.padding(16.dp)
       ) {
         Text(
           text = "दिनांक चुनें",
           style = MaterialTheme.typography.headlineSmall,
-          modifier = Modifier.padding(bottom = 16.dp)
+          modifier = Modifier.padding(top = 16.dp, start = 16.dp)
         )
 
         DatePicker(
@@ -252,7 +246,7 @@ private fun DatePickerDialog(
         )
 
         Row(
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier.fillMaxWidth().padding(end = 16.dp),
           horizontalArrangement = Arrangement.End
         ) {
           TextButton(onClick = onDismiss) {

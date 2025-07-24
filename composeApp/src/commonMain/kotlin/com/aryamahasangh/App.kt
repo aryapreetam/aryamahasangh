@@ -1,6 +1,7 @@
 package com.aryamahasangh
 
 import AppTheme
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
@@ -19,6 +20,7 @@ import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.crossfade
 import com.aryamahasangh.auth.SessionManager
 import com.aryamahasangh.di.KoinInitializer
+import com.aryamahasangh.examples.FormComponentsExample
 import com.aryamahasangh.navigation.AppDrawer
 import com.aryamahasangh.network.supabaseClient
 import com.aryamahasangh.utils.WithTooltip
@@ -63,6 +65,10 @@ fun App() {
     }
   } else {
     AppTheme {
+      BoxWithConstraints {
+        println("$maxWidth")
+        FormComponentsExample()
+      }
 
     }
     // ImagePickerExample()
