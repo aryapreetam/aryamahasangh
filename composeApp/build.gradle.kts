@@ -172,6 +172,9 @@ kotlin {
       api("com.diamondedge:logging:2.0.3")
       // list reorder
       implementation(libs.reorderable)
+
+      // Image compression module
+      implementation(projects.imgCompressCmp)
     }
     commonTest.dependencies {
       implementation(libs.kotlin.test)

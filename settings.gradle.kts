@@ -47,3 +47,6 @@ include(":composeApp")
 include(":shared")
 include(":ui-components")
 include(":ui-components-gallery")
+include(":img-compress-cmp")
+
+//includeBuild("/Users/preetam/projects/nhost-kt")
