@@ -23,3 +23,6 @@ composeApp/src/commonMain/kotlin/secrets/Secrets.kt
 # Firebender AI config
 firebender.json
 
+/docs/
+/node_modules/*
+/.junie/*
