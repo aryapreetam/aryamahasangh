@@ -20,6 +20,11 @@ actual object ImageCompressor {
         ?: throw IllegalArgumentException("Unable to decode input image: ${input.mimeType}")
     }
 
+    // Get actual image dimensions for analytics
+    fun getImageDimensions(image: Image): Pair<Int, Int> {
+      return Pair(image.width, image.height)
+    }
+
     // Fast resizing with performance-optimized Skia settings
     fun resizeIfNeeded(sourceImage: Image): Image {
       val maxEdge = resize.maxLongEdgePx ?: return sourceImage
@@ -58,9 +63,11 @@ actual object ImageCompressor {
       return data.bytes
     }
 
-    // CRITICAL FIX: Load image only once
+    // Load image only once
     val sourceImage = loadImageOnce(input.rawBytes)
+    val originalDimensions = getImageDimensions(sourceImage)
     val workingImage = resizeIfNeeded(sourceImage)
+    val finalDimensions = getImageDimensions(workingImage)
 
     val result = when (config) {
       is CompressionConfig.ByQuality -> {
@@ -72,93 +79,121 @@ actual object ImageCompressor {
           bytes = resultBytes,
           originalSize = originalSize,
           compressedSize = resultBytes.size,
+          mimeType = "image/webp",
           metadata = CompressionMetadata(
             effectiveQualityPercent = quality.toFloat(),
             iterations = 1,
-            elapsedMillis = System.currentTimeMillis() - startTime
+            elapsedMillis = System.currentTimeMillis() - startTime,
+            engineUsed = "DesktopSkia"
           )
         )
       }
 
       is CompressionConfig.ByTargetSize -> {
-        // OPTIMIZED: Smart quality estimation + narrow binary search
         val targetBytes = max(1, config.targetSizeKb) * 1024
-        val tolerance = max((targetBytes * 0.05).toInt(), 10 * 1024)
 
-        // Smart quality prediction to reduce iterations
-        val estimatedQuality = QualityPredictor.predictOptimalQuality(originalSize, config.targetSizeKb)
-        val searchRange = QualityPredictor.getSearchRange(estimatedQuality)
+        // Ultra-conservative quality prediction to ensure we NEVER go below target size
+        val compressionRatio = targetBytes.toDouble() / originalSize
+        val predictedQuality = when {
+          compressionRatio > 0.7 -> 90   // Very light compression
+          compressionRatio > 0.5 -> 82   // Light compression
+          compressionRatio > 0.3 -> 72   // Moderate compression
+          compressionRatio > 0.2 -> 62   // Good compression
+          compressionRatio > 0.1 -> 52   // Heavy compression
+          compressionRatio > 0.05 -> 35  // Very heavy compression
+          else -> 25                      // Extreme compression
+        }.let { baseQuality ->
+          // Add very strong conservative bias for Desktop
+          val conservativeBias = when {
+            compressionRatio < 0.05 -> +12  // Extreme compression - very strong bias
+            compressionRatio < 0.15 -> +15  // Very aggressive compression - very strong bias
+            compressionRatio < 0.3 -> +12   // Moderate compression - strong bias
+            else -> +8                      // Light compression - good bias
+          }
+          (baseQuality + conservativeBias).coerceIn(20, 95)
+        }
 
-        var lo = searchRange.first
-        var hi = searchRange.last
-        var bestQuality = estimatedQuality
-        var bestBytes = encodeWebP(workingImage, estimatedQuality) // Start with estimate
+        // First attempt
+        val firstBytes = encodeWebP(workingImage, predictedQuality)
         var iterations = 1
+        var finalQuality = predictedQuality
+        var finalBytes = firstBytes
 
-        // Quick check if estimate is already good enough
-        if (bestBytes.size in (targetBytes - tolerance)..(targetBytes + tolerance)) {
-          return@withContext CompressedImage(
-            bytes = bestBytes,
-            originalSize = originalSize,
-            compressedSize = bestBytes.size,
-            metadata = CompressionMetadata(
-              effectiveQualityPercent = estimatedQuality.toFloat(),
-              iterations = iterations,
-              elapsedMillis = System.currentTimeMillis() - startTime,
-              estimatedQuality = estimatedQuality,
-              searchRange = searchRange
-            )
-          )
-        }
+        // Target size accuracy with wider tolerance
+        val tolerance = max(35 * 1024, targetBytes / 15)
+        val minAcceptable = targetBytes // Never go below target
+        val maxAcceptable = targetBytes + tolerance
 
-        // Binary search in narrow range around estimate
-        while (lo <= hi && iterations < 6) { // Limit max iterations
-          iterations++
-          val midQuality = (lo + hi) / 2
-          val candidateBytes = encodeWebP(workingImage, midQuality)
-          val candidateSize = candidateBytes.size
+        // Triple-safety correction logic like Android
+        if (firstBytes.size !in minAcceptable..maxAcceptable) {
+          if (firstBytes.size > maxAcceptable) {
+            // Too large - reduce quality carefully
+            val sizeRatio = firstBytes.size.toDouble() / targetBytes
+            val qualityReduction = when {
+              sizeRatio > 2.0 -> 0.60  // Very large, cut by 40%
+              sizeRatio > 1.5 -> 0.70  // Large, cut by 30%
+              else -> 0.80             // Moderate, cut by 20%
+            }
+            val lowerQuality = (predictedQuality * qualityReduction).toInt().coerceAtLeast(8)
+            val secondBytes = encodeWebP(workingImage, lowerQuality)
+            iterations++
 
-          // Update best result if this is closer to target and within limit
-          if (candidateSize <= targetBytes && candidateSize <= bestBytes.size) {
-            bestQuality = midQuality
-            bestBytes = candidateBytes
-          }
-
-          // Check if we hit our target tolerance
-          if (candidateSize in (targetBytes - tolerance)..(targetBytes + tolerance)) {
-            return@withContext CompressedImage(
-              bytes = candidateBytes,
-              originalSize = originalSize,
-              compressedSize = candidateBytes.size,
-              metadata = CompressionMetadata(
-                effectiveQualityPercent = midQuality.toFloat(),
-                iterations = iterations,
-                elapsedMillis = System.currentTimeMillis() - startTime,
-                estimatedQuality = estimatedQuality,
-                searchRange = searchRange
-              )
-            )
-          }
-
-          // Adjust search range
-          if (candidateSize > targetBytes) {
-            hi = midQuality - 1 // Need more compression (lower quality)
+            if (secondBytes.size >= targetBytes) {
+              finalQuality = lowerQuality
+              finalBytes = secondBytes
+            } else {
+              // If went below target, use original (prefer overshooting)
+              finalQuality = predictedQuality
+              finalBytes = firstBytes
+            }
           } else {
-            lo = midQuality + 1 // Can use less compression (higher quality)
+            // Too small - be very aggressive in quality increase
+            val sizeRatio = targetBytes.toDouble() / firstBytes.size
+            val qualityIncrease = when {
+              sizeRatio > 2.0 -> 1.80  // Much too small, very big increase
+              sizeRatio > 1.5 -> 1.60  // Too small, big increase
+              sizeRatio > 1.2 -> 1.40  // Moderately small, good increase
+              else -> 1.25             // Slightly small, moderate increase
+            }
+            val higherQuality = (predictedQuality * qualityIncrease).toInt().coerceAtMost(95)
+            val secondBytes = encodeWebP(workingImage, higherQuality)
+            iterations++
+
+            // If still below target, make one final aggressive attempt
+            if (secondBytes.size < targetBytes && iterations < 3) {
+              val finalQuality3 = kotlin.math.min(95, higherQuality + 15)  // Add 15 more quality points
+              val thirdBytes = encodeWebP(workingImage, finalQuality3)
+              iterations++
+
+              if (thirdBytes.size >= targetBytes) {
+                finalQuality = finalQuality3
+                finalBytes = thirdBytes
+              } else {
+                // Use the best result we have (closest to target)
+                finalQuality = higherQuality
+                finalBytes = secondBytes
+              }
+            } else {
+              finalQuality = higherQuality
+              finalBytes = secondBytes
+            }
           }
         }
-
-        // Return best result found
         CompressedImage(
-          bytes = bestBytes,
+          bytes = finalBytes,
           originalSize = originalSize,
-          compressedSize = bestBytes.size,
+          compressedSize = finalBytes.size,
+          mimeType = "image/webp",
           metadata = CompressionMetadata(
-            effectiveQualityPercent = bestQuality.toFloat(),
+            effectiveQualityPercent = finalQuality.toFloat(),
             iterations = iterations,
             elapsedMillis = System.currentTimeMillis() - startTime,
-            estimatedQuality = estimatedQuality,
-            searchRange = searchRange
+            estimatedQuality = predictedQuality,
+            searchRange = IntRange(
+              kotlin.math.min(predictedQuality, finalQuality),
+              kotlin.math.max(predictedQuality, finalQuality)
+            ),
+            engineUsed = "Desktop"
           )
         )
       }

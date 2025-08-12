@@ -1,6 +1,7 @@
+
+import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 
 plugins {
   alias(libs.plugins.kotlinMultiplatform)
@@ -95,8 +96,10 @@ android {
 
   defaultConfig {
     minSdk = libs.versions.android.minSdk.get().toInt()
-    targetSdk = libs.versions.android.targetSdk.get().toInt()
     consumerProguardFiles("consumer-rules.pro")
+    testOptions {
+      targetSdk = libs.versions.android.targetSdk.get().toInt()
+    }
   }
 
   buildFeatures {

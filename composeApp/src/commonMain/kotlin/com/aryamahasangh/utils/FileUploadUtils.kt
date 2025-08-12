@@ -1,11 +1,42 @@
 package com.aryamahasangh.utils
 
-import io.github.vinceglb.filekit.core.PlatformFile
-import kotlinx.datetime.Clock
 import com.aryamahasangh.network.bucket
 import com.aryamahasangh.util.Result
+import io.github.vinceglb.filekit.core.PlatformFile
+import kotlinx.datetime.Clock
 
 object FileUploadUtils {
+  /**
+   * Upload compressed image ByteArray to Supabase storage
+   *
+   * @param imageBytes The compressed image data (e.g., WebP bytes)
+   * @param folder The folder in storage to upload to (e.g., "test")
+   * @param extension The file extension (default: "webp")
+   * @return Result containing the public URL of the uploaded file
+   */
+  suspend fun uploadCompressedImage(
+    imageBytes: ByteArray,
+    folder: String,
+    extension: String = "webp"
+  ): Result<String> {
+    return try {
+      val timestamp = Clock.System.now().epochSeconds
+      val randomSuffix = (1000..9999).random()
+      val fileName = "compressed_${timestamp}_$randomSuffix.$extension"
+      val path = if (folder.isNotEmpty()) "$folder/$fileName" else fileName
+
+      val uploadResponse = bucket.upload(
+        path = path,
+        data = imageBytes
+      )
+
+      val publicUrl = bucket.publicUrl(path)
+      Result.Success(publicUrl)
+    } catch (e: Exception) {
+      Result.Error(e.message ?: "Compressed image upload failed")
+    }
+  }
+
   /**
    * Upload an image file to Supabase storage
    *
@@ -19,7 +50,7 @@ object FileUploadUtils {
   ): Result<String> {
     return try {
       val timestamp = Clock.System.now().epochSeconds
-      val fileExtension = file.name.substringAfterLast('.', "jpg")
+      val fileExtension = "webp"
       val fileName = "${folder}_$timestamp.$fileExtension"
       val path = if (folder.isNotEmpty()) "$folder/$fileName" else fileName
 
@@ -46,7 +77,7 @@ object FileUploadUtils {
    */
   suspend fun uploadFile(file: PlatformFile): String {
     val timestamp = Clock.System.now().epochSeconds
-    val fileExtension = file.name.substringAfterLast('.', "jpg")
+    val fileExtension = "webp"
     val fileName = "$timestamp.$fileExtension"
 
     val uploadResponse =
@@ -85,7 +116,7 @@ object FileUploadUtils {
         // Upload file
         val timestamp = Clock.System.now().epochSeconds
         val randomSuffix = (1000..9999).random()
-        val fileExtension = file.name.substringAfterLast('.', "jpg")
+        val fileExtension = "webp"
         val fileName = "${timestamp}_$randomSuffix.$fileExtension"
         val path = if (folder.isNotEmpty()) "$folder/$fileName" else fileName
 
