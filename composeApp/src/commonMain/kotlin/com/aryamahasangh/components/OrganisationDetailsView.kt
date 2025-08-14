@@ -31,14 +31,7 @@ import androidx.compose.ui.window.Dialog
 import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.baseline_groups
 import aryamahasangh.composeapp.generated.resources.error_profile_image
-import aryamahasangh.composeapp.generated.resources.mahasangh_logo_without_background
 import coil3.compose.AsyncImage
-import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
-import io.github.vinceglb.filekit.core.PickerMode
-import io.github.vinceglb.filekit.core.PickerType
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
 import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.features.activities.Member
 import com.aryamahasangh.features.organisations.MemberManagementState
@@ -48,16 +41,17 @@ import com.aryamahasangh.features.organisations.OrganisationalMember
 import com.aryamahasangh.navigation.LocalSnackbarHostState
 import com.aryamahasangh.network.bucket
 import com.aryamahasangh.screens.EditImageButton
+import com.aryamahasangh.util.ImageCompressionService
+import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.core.PickerMode
+import io.github.vinceglb.filekit.core.PickerType
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyStaggeredGridState
-
-fun drawableFromImageName(imageName: String) =
-  when (imageName) {
-//  "sanchar_parishad" -> Res.drawable.sanchar_parishad
-    else -> Res.drawable.mahasangh_logo_without_background
-  }
 
 @Composable
 @Preview
@@ -200,10 +194,17 @@ fun OrganisationDetail(
                               )
                             }
 
+                          // Compress image to 50KB for organization logo
+                          val compressedBytes = ImageCompressionService.compressSync(
+                            file = file,
+                            targetKb = 50,
+                            maxLongEdge = 1920
+                          )
+
                           val uploadResponse =
                             bucket.upload(
-                              path = "org_logo_${Clock.System.now().epochSeconds}.jpg",
-                              data = file.readBytes()
+                              path = "org_logo_${Clock.System.now().epochSeconds}.webp",
+                              data = compressedBytes
                             )
                           val imageUrl = bucket.publicUrl(uploadResponse.path)
 

@@ -55,6 +55,7 @@ import com.aryamahasangh.screens.indianStatesToDistricts
 import com.aryamahasangh.type.ActivityType
 import com.aryamahasangh.ui.components.buttons.*
 import com.aryamahasangh.util.GlobalMessageManager
+import com.aryamahasangh.util.ImageCompressionService
 import io.github.vinceglb.filekit.core.PlatformFile
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
@@ -963,9 +964,14 @@ private fun CreateActivityScreenContent(
     // Upload new files
     try {
       imagePickerState.newImages.forEach { file ->
+        val imageBytes = if (imagePickerState.hasCompressedData(file)) {
+          imagePickerState.getCompressedBytes(file)!!
+        } else {
+          file.readBytes()
+        }
         val uploadResponse = bucket.upload(
-          path = "${System.now().epochSeconds}.jpg",
-          data = file.readBytes()
+          path = "${System.now().epochSeconds}.webp",
+          data = imageBytes
         )
         attachedImages.add(bucket.publicUrl(uploadResponse.path))
       }
@@ -1418,11 +1424,14 @@ private fun CreateActivityScreenContent(
           imagePickerState = newImagePickerState
         },
         config = ImagePickerConfig(
-          label = "संबधित चित्र एवं पत्रिकाएं",
+          label = "गतिविधि चित्र",
           allowMultiple = true,
           maxImages = 10,
           type = ImagePickerType.IMAGE_AND_DOCUMENT,
-          isMandatory = false
+          isMandatory = false,
+          enableBackgroundCompression = true,
+          compressionTargetKb = 100, // 100KB for activity images
+          showCompressionProgress = true
         ),
         validateFields = triggerImageValidation,
         onValidationResult = { valid ->

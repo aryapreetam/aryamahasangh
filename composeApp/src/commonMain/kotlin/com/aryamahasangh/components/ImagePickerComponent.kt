@@ -20,10 +20,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
+import com.aryamahasangh.imgcompress.CompressionConfig
+import com.aryamahasangh.imgcompress.ImageCompressor
+import com.aryamahasangh.imgcompress.ImageData
+import com.aryamahasangh.imgcompress.ResizeOptions
 import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.core.PickerMode
 import io.github.vinceglb.filekit.core.PickerType
 import io.github.vinceglb.filekit.core.PlatformFile
+import kotlinx.coroutines.launch
 
 /**
  * Type of picker - determines behavior and UI
@@ -47,7 +52,11 @@ data class ImagePickerConfig(
   val minImages: Int = 1,
   val showPreview: Boolean = true,
   val previewSize: Int = 100,
-  val allowCamera: Boolean = false // Future camera support
+  val allowCamera: Boolean = false, // Future camera support
+  val enableBackgroundCompression: Boolean = true,
+  val compressionTargetKb: Int = 100, // Default 100KB
+  val profilePhotoTargetKb: Int = 40, // Profile photos 40KB  
+  val showCompressionProgress: Boolean = true
 ) {
   // Computed properties based on type
   val effectiveAllowMultiple: Boolean
@@ -63,6 +72,12 @@ data class ImagePickerConfig(
         ImagePickerType.IMAGE_AND_DOCUMENT -> listOf("jpg", "jpeg", "png", "gif", "webp", "pdf", "doc", "docx")
         ImagePickerType.PROFILE_PHOTO -> listOf("jpg", "jpeg", "png")
       }
+
+  val effectiveCompressionTarget: Int
+    get() = when (type) {
+      ImagePickerType.PROFILE_PHOTO -> profilePhotoTargetKb
+      else -> compressionTargetKb
+    }
 }
 
 /**
@@ -70,6 +85,7 @@ data class ImagePickerConfig(
  */
 data class ImagePickerState(
   val newImages: List<PlatformFile> = emptyList(),
+  val compressedImageData: Map<PlatformFile, ByteArray> = emptyMap(),
   val existingImageUrls: List<String> = emptyList(),
   val deletedImageUrls: Set<String> = emptySet()
 ) {
@@ -78,6 +94,18 @@ data class ImagePickerState(
 
   val hasImages: Boolean
     get() = totalImages > 0
+
+  fun getCompressedBytes(file: PlatformFile): ByteArray? = compressedImageData[file]
+  fun hasCompressedData(file: PlatformFile): Boolean = compressedImageData.containsKey(file)
+
+  fun withCleanup(): ImagePickerState {
+    val validCompressedData = compressedImageData.filterKeys { it in newImages }
+    return if (validCompressedData.size != compressedImageData.size) {
+      copy(compressedImageData = validCompressedData)
+    } else {
+      this
+    }
+  }
 }
 
 /**
@@ -126,6 +154,13 @@ fun ImagePickerComponent(
       ImagePickerType.IMAGE_AND_DOCUMENT -> PickerType.ImageAndVideo // Using this as a proxy for all files
     }
 
+  // Compression state
+  var compressingFiles by remember { mutableStateOf<List<PlatformFile>>(emptyList()) }
+  var compressionProgress by remember { mutableStateOf<Int?>(null) }
+  var compressionError by remember { mutableStateOf<String?>(null) }
+
+  val coroutineScope = rememberCoroutineScope()
+
   val imagePickerLauncher =
     rememberFilePickerLauncher(
       type = pickerType,
@@ -152,11 +187,61 @@ fun ImagePickerComponent(
         val availableSlots = config.effectiveMaxImages - currentTotal
         val filesToKeep = validFiles.take(availableSlots)
 
-        onStateChange(
-          state.copy(
-            newImages = (state.newImages + filesToKeep).distinct()
+        if (config.enableBackgroundCompression && filesToKeep.isNotEmpty()) {
+          compressingFiles = filesToKeep
+          compressionError = null
+
+          coroutineScope.launch {
+            try {
+              compressionProgress = 0
+              val compressionResults = mutableMapOf<PlatformFile, ByteArray>()
+              
+              val processedFiles = filesToKeep.mapIndexed { idx, file ->
+                if (file.name.substringAfterLast('.').lowercase() in listOf("jpg", "jpeg", "png", "webp")) {
+                  try {
+                    val originalBytes = file.readBytes()
+                    val mimeType = determineMimeType(file.name)
+
+                    val compressed = ImageCompressor.compress(
+                      input = ImageData(originalBytes, mimeType),
+                      config = CompressionConfig.ByTargetSize(config.effectiveCompressionTarget),
+                      resize = ResizeOptions(maxLongEdgePx = 2560)
+                    )
+
+                    compressionResults[file] = compressed.bytes
+                    compressionProgress = ((idx + 1) * 100) / filesToKeep.size
+                    file
+                  } catch (e: Exception) {
+                    file
+                  }
+                } else {
+                  file
+                }
+              }
+              
+              compressingFiles = emptyList()
+              compressionProgress = null
+
+              onStateChange(
+                state.copy(
+                  newImages = (state.newImages + processedFiles).distinct(),
+                  compressedImageData = state.compressedImageData + compressionResults
+                ).withCleanup()
+              )
+            } catch (e: Exception) {
+              compressingFiles = emptyList()
+              compressionProgress = null
+              compressionError = "संपीड़न में त्रुटि: ${e.message ?: "अज्ञात"}"
+            }
+          }
+        } else {
+          // No compression required
+          onStateChange(
+            state.copy(
+              newImages = (state.newImages + filesToKeep).distinct()
+            ).withCleanup()
           )
-        )
+        }
       }
     }
 
@@ -204,6 +289,50 @@ fun ImagePickerComponent(
     modifier = modifier,
     verticalArrangement = Arrangement.spacedBy(8.dp)
   ) {
+    // Compression progress indicator
+    if (config.enableBackgroundCompression && compressingFiles.isNotEmpty() && config.showCompressionProgress) {
+      val label = if (config.type == ImagePickerType.PROFILE_PHOTO) "प्रोफ़ाइल चित्र" else "संचिका"
+      Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.4f)),
+        modifier = Modifier.fillMaxWidth()
+      ) {
+        Column(
+          modifier = Modifier.padding(16.dp),
+          verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            CircularProgressIndicator(
+              modifier = Modifier.size(28.dp),
+              strokeWidth = 3.dp,
+              color = MaterialTheme.colorScheme.primary
+            )
+//            Spacer(Modifier.width(10.dp))
+//            Text(
+//              "संपीड़न हो रहा है (${compressingFiles.size} $label${if (compressingFiles.size > 1) "ें" else ""})",
+//              style = MaterialTheme.typography.bodyMedium,
+//              color = MaterialTheme.colorScheme.onSurface
+//            )
+          }
+          compressionProgress?.let {
+            LinearProgressIndicator(
+              progress = { it / 100f },
+              modifier = Modifier.fillMaxWidth()
+            )
+          }
+        }
+      }
+    }
+
+    // Compression error, if any
+    compressionError?.let {
+      Text(
+        text = it,
+        color = MaterialTheme.colorScheme.error,
+        style = MaterialTheme.typography.bodySmall
+      )
+    }
+
     // Profile photo mode has different layout
     if (config.type == ImagePickerType.PROFILE_PHOTO) {
       ProfilePhotoPickerContent(
@@ -342,7 +471,7 @@ private fun ProfilePhotoPickerContent(
               .size(32.dp)
               .clickable {
                 if (state.newImages.isNotEmpty()) {
-                  onStateChange(state.copy(newImages = emptyList()))
+                  onStateChange(state.copy(newImages = emptyList()).withCleanup())
                 } else if (state.existingImageUrls.isNotEmpty()) {
                   onStateChange(
                     state.copy(
@@ -536,7 +665,7 @@ private fun RegularPickerContent(
               onStateChange(
                 state.copy(
                   newImages = state.newImages.filter { it != file }
-                )
+                ).withCleanup()
               )
             },
             showDeletedOverlay = false,
@@ -781,4 +910,20 @@ fun ImagePickerState.getActiveImageUrls(): List<String> {
  */
 fun ImagePickerState.hasChanges(): Boolean {
   return newImages.isNotEmpty() || deletedImageUrls.isNotEmpty()
+}
+
+/**
+ * Helper function to determine MIME type based on file extension
+ */
+fun determineMimeType(fileName: String): String {
+  return when (fileName.substringAfterLast('.', "").lowercase()) {
+    "jpg", "jpeg" -> "image/jpeg"
+    "png" -> "image/png"
+    "webp" -> "image/webp"
+    "gif" -> "image/gif"
+    "pdf" -> "application/pdf"
+    "doc" -> "application/msword"
+    "docx" -> "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    else -> "application/octet-stream"
+  }
 }

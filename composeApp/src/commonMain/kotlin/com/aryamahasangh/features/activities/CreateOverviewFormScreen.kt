@@ -124,7 +124,18 @@ fun CreateOverviewFormScreen(
 
         // Upload new images
         imagePickerState.newImages.forEach { file ->
-          val uploadResult = FileUploadUtils.uploadImage(file, "")
+          val imageBytes = if (imagePickerState.hasCompressedData(file)) {
+            imagePickerState.getCompressedBytes(file)!!
+          } else {
+            file.readBytes()
+          }
+
+          val uploadResult = FileUploadUtils.uploadCompressedImage(
+            imageBytes = imageBytes,
+            folder = "activity_overview",
+            extension = "webp"
+          )
+
           when (uploadResult) {
             is Result.Success -> uploadedUrls.add(uploadResult.data)
             is Result.Error -> {
@@ -133,7 +144,6 @@ fun CreateOverviewFormScreen(
               )
               return@launch
             }
-
             else -> {}
           }
         }
@@ -261,7 +271,10 @@ fun CreateOverviewFormScreen(
                 isMandatory = true,
                 minImages = 1,
                 maxImages = 5,
-                allowMultiple = true
+                allowMultiple = true,
+                enableBackgroundCompression = true,
+                compressionTargetKb = 100, // 100KB for overview images
+                showCompressionProgress = true
               ),
             error = imageError
           )

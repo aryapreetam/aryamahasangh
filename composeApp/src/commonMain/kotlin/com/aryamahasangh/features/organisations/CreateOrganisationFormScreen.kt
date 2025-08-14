@@ -15,6 +15,7 @@ import com.aryamahasangh.components.*
 import com.aryamahasangh.navigation.LocalSetBackHandler
 import com.aryamahasangh.navigation.LocalSnackbarHostState
 import com.aryamahasangh.network.bucket
+import com.aryamahasangh.util.ImageCompressionService
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 
@@ -138,10 +139,22 @@ fun NewOrganisationFormScreen(
         val logoUrl =
           if (formData.logo.newImages.isNotEmpty()) {
             val file = formData.logo.newImages.first()
+
+            val imageBytes = if (formData.logo.hasCompressedData(file)) {
+              formData.logo.getCompressedBytes(file)!!
+            } else {
+              // Fallback compression for files not compressed during selection
+              ImageCompressionService.compressSync(
+                file = file,
+                targetKb = 50, // 50KB for organization logos
+                maxLongEdge = 1920
+              )
+            }
+
             val uploadResponse =
               bucket.upload(
-                path = "org_logo_${Clock.System.now().epochSeconds}.jpg",
-                data = file.readBytes()
+                path = "org_logo_${Clock.System.now().epochSeconds}.webp",
+                data = imageBytes
               )
             bucket.publicUrl(uploadResponse.path)
           } else {
@@ -231,7 +244,10 @@ fun NewOrganisationFormScreen(
           label = "चित्र चुनिए",
           type = ImagePickerType.PROFILE_PHOTO,
           isMandatory = true,
-          allowMultiple = false
+          allowMultiple = false,
+          enableBackgroundCompression = true,
+          compressionTargetKb = 50, // 50KB for organization logos
+          showCompressionProgress = true
         ),
       error = errors.logoError,
       modifier = Modifier.fillMaxWidth()

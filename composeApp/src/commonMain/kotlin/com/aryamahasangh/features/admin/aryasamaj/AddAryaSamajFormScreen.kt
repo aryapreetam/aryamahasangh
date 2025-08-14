@@ -10,6 +10,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -133,7 +136,10 @@ fun AddAryaSamajFormScreen(
           label = "आर्य समाज के चित्र",
           allowMultiple = true,
           maxImages = 10,
-          isMandatory = false
+          isMandatory = false,
+          enableBackgroundCompression = true,
+          compressionTargetKb = 100, // 100KB for AryaSamaj images
+          showCompressionProgress = true
         )
     )
 
@@ -147,6 +153,9 @@ fun AddAryaSamajFormScreen(
       modifier = Modifier.padding(bottom = 8.dp)
     )
 
+    // Add validation trigger state for AddressComponent
+    var triggerAddressValidation by remember { mutableStateOf(false) }
+
     AddressComponent(
       addressData = currentFormData.addressData,
       onAddressChange = { newAddressData ->
@@ -159,15 +168,22 @@ fun AddAryaSamajFormScreen(
           showState = true,
           showDistrict = true,
           showVidhansabha = true,
-          showPincode = true
+          showPincode = true,
+          // Configure mandatory fields - location is required as per ViewModel validation
+          mandatoryLocation = true,
+          mandatoryAddress = true,
+          mandatoryState = true,
+          mandatoryDistrict = true,
+          mandatoryVidhansabha = false,
+          mandatoryPincode = false
         ),
-      errors =
-        AddressErrors(
-          locationError = formUiState.validationErrors["location"],
-          addressError = formUiState.validationErrors["address"],
-          stateError = formUiState.validationErrors["state"],
-          districtError = formUiState.validationErrors["district"]
-        )
+      // Use self-validation mode instead of external errors
+      validateFields = triggerAddressValidation,
+      onValidationResult = { isValid ->
+        // AddressComponent handles its own validation and error display
+        // We don't need to update ViewModel validation errors here
+        // since the SubmitButton validator will call viewModel.isFormValid()
+      }
     )
 
     Spacer(modifier = Modifier.height(24.dp))
@@ -202,6 +218,12 @@ fun AddAryaSamajFormScreen(
         viewModel.submitForm()
       },
       config = SubmitButtonConfig(
+        validator = {
+          // Trigger address validation so AddressComponent shows errors
+          triggerAddressValidation = !triggerAddressValidation
+          // Now check form validity
+          if (!viewModel.isFormValid()) SubmissionError.ValidationFailed else null
+        },
         texts = SubmitButtonTexts(
           submittingText = if (isEditMode) "संपादित हो रहा है..." else "सुरक्षित हो रहा है...",
           successText = if (isEditMode) "संपादित सफल!" else "सफल!"

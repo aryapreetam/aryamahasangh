@@ -59,7 +59,6 @@ object FileUploadUtils {
           path = path,
           data = file.readBytes()
         )
-      uploadResponse.key
 
       val publicUrl = bucket.publicUrl(path)
       Result.Success(publicUrl)
@@ -107,9 +106,9 @@ object FileUploadUtils {
       val uploadedUrls = mutableListOf<String>()
 
       for (file in files) {
-        // Validate file size
-        val fileSize = file.readBytes().size
-        if (fileSize > maxSizeBytes) {
+        // Validate original file size (before any compression)
+        val originalFileSize = file.readBytes().size
+        if (originalFileSize > maxSizeBytes) {
           return Result.Error("फ़ाइल ${file.name} का आकार ${maxFileSizeMB}MB से अधिक है")
         }
 
@@ -125,7 +124,6 @@ object FileUploadUtils {
             path = path,
             data = file.readBytes()
           )
-//        println(uploadResponse.path)
         val publicUrl = bucket.publicUrl(path)
         uploadedUrls.add(publicUrl)
       }

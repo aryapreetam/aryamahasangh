@@ -1,14 +1,19 @@
 package com.aryamahasangh.components
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
@@ -75,6 +80,11 @@ fun ImagePickerExample() {
 
     // Example 6: Image Compressor
     ImageCompressorExample()
+
+    HorizontalDivider()
+
+    // Example 7: Blur Effect Test
+    BlurEffectTestSection()
   }
 }
 
@@ -936,6 +946,74 @@ fun ActivityFormWithImagePickerExample() {
     ) {
       Text("गतिविधि बनाएं")
     }
+  }
+}
+
+@Composable
+private fun BlurEffectTestSection() {
+  var blurRadius by remember { mutableStateOf(0f) }
+  val imageUrl = "https://images.unsplash.com/photo-1519125323398-675f0ddb6308?w=400" // Free Unsplash photo
+
+  Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Text(
+      "Blur Effect Test (Modifier.blur)",
+      style = MaterialTheme.typography.headlineSmall
+    )
+
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+      Text("Blur: ${blurRadius.toInt()} px")
+      Slider(
+        value = blurRadius,
+        onValueChange = { blurRadius = it },
+        valueRange = 0f..30f,
+        steps = 29
+      )
+    }
+
+    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+      Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("No Blur", style = MaterialTheme.typography.bodySmall)
+        Box(
+          modifier = Modifier
+            .size(120.dp)
+            .padding(4.dp),
+        ) {
+          AsyncImage(
+            model = imageUrl,
+            contentDescription = "Original Image",
+            modifier = Modifier
+              .fillMaxSize()
+              .clip(MaterialTheme.shapes.medium),
+          )
+          // Outline for visibility
+          Box(Modifier.matchParentSize().border(2.dp, Color.LightGray, MaterialTheme.shapes.medium))
+        }
+      }
+      Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text("Blurred", style = MaterialTheme.typography.bodySmall)
+        Box(
+          modifier = Modifier
+            .size(120.dp)
+            .padding(4.dp)
+            .blur(blurRadius.dp)
+        ) {
+          AsyncImage(
+            model = imageUrl,
+            contentDescription = "Blurred Image",
+            modifier = Modifier
+              .fillMaxSize()
+              .clip(MaterialTheme.shapes.medium),
+          )
+          // Outline for visibility
+          Box(Modifier.matchParentSize().border(2.dp, Color.LightGray, MaterialTheme.shapes.medium))
+        }
+      }
+    }
+    Text(
+      "आपकी प्लेटफ़ॉर्म/ब्राउज़र/OS में ऊपर का Blur सही दिखता है? (Should look blurred if blur is supported)",
+      style = MaterialTheme.typography.bodySmall,
+      color = Color.Gray
+    )
   }
 }
 

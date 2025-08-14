@@ -238,7 +238,10 @@ fun CreateAryaParivarFormScreen(
               allowMultiple = true,
               maxImages = 5,
               showPreview = true,
-              type = ImagePickerType.IMAGE
+              type = ImagePickerType.IMAGE,
+              enableBackgroundCompression = true,
+              compressionTargetKb = 100, // 100KB for family images
+              showCompressionProgress = true
             ),
           modifier = Modifier.fillMaxWidth()
         )

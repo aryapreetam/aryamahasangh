@@ -13,6 +13,7 @@ import com.aryamahasangh.features.admin.PaginationState
 import com.aryamahasangh.fragment.AryaSamajWithAddress
 import com.aryamahasangh.network.bucket
 import com.aryamahasangh.util.GlobalMessageManager
+import com.aryamahasangh.util.ImageCompressionService
 import com.aryamahasangh.viewmodel.ErrorState
 import com.aryamahasangh.viewmodel.handleResult
 import kotlinx.coroutines.Job
@@ -277,11 +278,22 @@ class AryaSamajViewModel(
           try {
             // Simple random number for file naming
             val randomNum = Clock.System.now().epochSeconds
-            val fileType = file.name.substringAfterLast('.')
+
+            val imageBytes = if (formData.imagePickerState.hasCompressedData(file)) {
+              formData.imagePickerState.getCompressedBytes(file)!!
+            } else {
+              // Fallback compression for files not compressed during selection
+              ImageCompressionService.compressSync(
+                file = file,
+                targetKb = 100, // 100KB for AryaSamaj images
+                maxLongEdge = 2560
+              )
+            }
+
             val uploadResponse =
               bucket.upload(
-                path = "arya_samaj_$randomNum.$fileType",
-                data = file.readBytes()
+                path = "arya_samaj_$randomNum.webp",
+                data = imageBytes
               )
             val publicUrl = bucket.publicUrl(uploadResponse.path)
             uploadedImageUrls.add(publicUrl)
@@ -786,5 +798,9 @@ class AryaSamajViewModel(
   // NEW: Method to set delete success state
   fun setDeleteSuccess(message: String) {
     _listUiState.value = _listUiState.value.copy(deleteSuccess = message)
+  }
+
+  fun isFormValid(): Boolean {
+    return validateForm(_formUiState.value.formData).isEmpty()
   }
 }

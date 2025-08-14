@@ -19,9 +19,7 @@ import com.aryamahasangh.navigation.LocalSetBackHandler
 import com.aryamahasangh.navigation.LocalSnackbarHostState
 import com.aryamahasangh.network.bucket
 import com.aryamahasangh.ui.components.buttons.*
-import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
-import io.github.vinceglb.filekit.core.PickerMode
-import io.github.vinceglb.filekit.core.PickerType
+import com.aryamahasangh.util.ImageCompressionService
 import io.github.vinceglb.filekit.core.PlatformFile
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -76,6 +74,7 @@ fun AddMemberFormScreen(
   // Profile image state
   var selectedProfileImage by remember { mutableStateOf<PlatformFile?>(null) }
   var uploadedImageUrl by remember { mutableStateOf<String?>(null) }
+  var imagePickerState by remember { mutableStateOf(ImagePickerState()) }
 
   // Dialog states
   var showUnsavedChangesDialog by remember { mutableStateOf(false) }
@@ -113,6 +112,11 @@ fun AddMemberFormScreen(
       joiningDate = member.joiningDate
       introduction = member.introduction
       uploadedImageUrl = member.profileImage
+
+      // Initialize image picker state with existing image
+      if (member.profileImage.isNotBlank()) {
+        imagePickerState = ImagePickerState(existingImageUrls = listOf(member.profileImage))
+      }
 
       // Set permanent address
       member.addressFields?.let { addressFields ->
@@ -300,11 +304,16 @@ fun AddMemberFormScreen(
         // Upload profile image if selected
         if (selectedProfileImage != null && uploadedImageUrl == null) {
           try {
-            val uploadResponse =
-              bucket.upload(
-                path = "profile_${Clock.System.now().epochSeconds}.jpg",
-                data = selectedProfileImage!!.readBytes()
-              )
+            val imageBytes = if (imagePickerState.hasCompressedData(selectedProfileImage!!)) {
+              imagePickerState.getCompressedBytes(selectedProfileImage!!)!!
+            } else {
+              selectedProfileImage!!.readBytes()
+            }
+
+            val uploadResponse = bucket.upload(
+              path = "profile_${Clock.System.now().epochSeconds}.webp",
+              data = imageBytes
+            )
             finalImageUrl = bucket.publicUrl(uploadResponse.path)
             uploadedImageUrl = finalImageUrl
           } catch (e: Exception) {
@@ -482,16 +491,6 @@ fun AddMemberFormScreen(
     }
   }
 
-  // Profile image picker
-  val launcher =
-    rememberFilePickerLauncher(
-      type = PickerType.Image,
-      mode = PickerMode.Single,
-      title = "प्रोफ़ाइल फोटो चुनें"
-    ) { file ->
-      selectedProfileImage = file
-      uploadedImageUrl = null
-    }
 
   // Show loading while fetching member data
   if (isEditMode && isLoading) {
@@ -587,14 +586,27 @@ fun AddMemberFormScreen(
     ) {
       // Profile Image Section
       item {
-        ProfileImageSection(
-          selectedProfileImage = selectedProfileImage,
-          onImageSelected = { launcher.launch() },
-          onImageRemoved = {
-            selectedProfileImage = null
-            uploadedImageUrl = null
+        ImagePickerComponent(
+          state = imagePickerState,
+          onStateChange = { newState ->
+            imagePickerState = newState
+            selectedProfileImage = newState.newImages.firstOrNull()
+            // Handle existing image deletion
+            if (newState.deletedImageUrls.isNotEmpty() && uploadedImageUrl != null) {
+              uploadedImageUrl = null
+            }
           },
-          existingImageUrl = if (isEditMode) uploadedImageUrl else null
+          config = ImagePickerConfig(
+            label = "प्रोफ़ाइल फोटो",
+            type = ImagePickerType.PROFILE_PHOTO,
+            allowMultiple = false,
+            maxImages = 1,
+            isMandatory = false,
+            showPreview = true,
+            enableBackgroundCompression = true,
+            compressionTargetKb = 40, // 40KB for profile photos
+            showCompressionProgress = true
+          )
         )
       }
 

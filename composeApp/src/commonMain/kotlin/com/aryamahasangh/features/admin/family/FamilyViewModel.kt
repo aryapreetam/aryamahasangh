@@ -668,23 +668,31 @@ class FamilyViewModel(
         // Step 1: Upload images if any
         val imageUrls = mutableListOf<String>()
         if (currentState.imagePickerState.newImages.isNotEmpty()) {
-          val uploadResult =
-            fileUploadUtils.uploadFiles(
-              currentState.imagePickerState.newImages,
-              "family_photos"
-            )
-          when (uploadResult) {
-            is Result.Success -> imageUrls.addAll(uploadResult.data)
-            is Result.Error -> {
-              _createFamilyUiState.value =
-                _createFamilyUiState.value.copy(
-                  isSubmitting = false,
-                  error = uploadResult.message
-                )
-              return@launch
+          for (file in currentState.imagePickerState.newImages) {
+            val bytesToUpload = if (currentState.imagePickerState.hasCompressedData(file)) {
+              currentState.imagePickerState.getCompressedBytes(file)!!
+            } else {
+              file.readBytes()
             }
 
-            is Result.Loading -> {} // This shouldn't happen in a suspend function
+            val uploadResult = fileUploadUtils.uploadCompressedImage(
+              imageBytes = bytesToUpload,
+              folder = "family_photos",
+              extension = "webp"
+            )
+
+            when (uploadResult) {
+              is Result.Success -> imageUrls.add(uploadResult.data)
+              is Result.Error -> {
+                _createFamilyUiState.value = _createFamilyUiState.value.copy(
+                  isSubmitting = false,
+                  error = "चित्र अपलोड विफल: ${uploadResult.message}। कृपया पुनः प्रयास करें।"
+                )
+                return@launch
+              }
+
+              is Result.Loading -> {} // This shouldn't happen in a suspend function
+            }
           }
         }
 
@@ -825,23 +833,32 @@ class FamilyViewModel(
         // Step 1: Upload images if any
         val imageUrls = mutableListOf<String>()
         if (currentState.imagePickerState.newImages.isNotEmpty()) {
-          val uploadResult =
-            fileUploadUtils.uploadFiles(
-              currentState.imagePickerState.newImages,
-              "family_photos"
-            )
-          when (uploadResult) {
-            is Result.Success -> imageUrls.addAll(uploadResult.data)
-            is Result.Error -> {
-              _createFamilyUiState.value =
-                _createFamilyUiState.value.copy(
-                  isSubmitting = false,
-                  error = uploadResult.message
-                )
-              return@launch
+          for (file in currentState.imagePickerState.newImages) {
+            val bytesToUpload = if (currentState.imagePickerState.hasCompressedData(file)) {
+              currentState.imagePickerState.getCompressedBytes(file)!!
+            } else {
+              file.readBytes()
             }
 
-            is Result.Loading -> {} // This shouldn't happen in a suspend function
+            val uploadResult = fileUploadUtils.uploadCompressedImage(
+              imageBytes = bytesToUpload,
+              folder = "family_photos",
+              extension = "webp"
+            )
+
+            when (uploadResult) {
+              is Result.Success -> imageUrls.add(uploadResult.data)
+              is Result.Error -> {
+                _createFamilyUiState.value =
+                  _createFamilyUiState.value.copy(
+                    isSubmitting = false,
+                    error = "चित्र अपलोड विफल: ${uploadResult.message}। कृपया पुनः प्रयास करें।"
+                  )
+                return@launch
+              }
+
+              is Result.Loading -> {} // This shouldn't happen in a suspend function
+            }
           }
         }
 
