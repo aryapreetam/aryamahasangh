@@ -22,7 +22,7 @@ object FileUploadUtils {
     return try {
       val timestamp = Clock.System.now().epochSeconds
       val randomSuffix = (1000..9999).random()
-      val fileName = "compressed_${timestamp}_$randomSuffix.$extension"
+      val fileName = "${folder}_${timestamp}_$randomSuffix.$extension"
       val path = if (folder.isNotEmpty()) "$folder/$fileName" else fileName
 
       val uploadResponse = bucket.upload(

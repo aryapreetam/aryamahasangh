@@ -43,20 +43,13 @@ import coil3.compose.LocalPlatformContext
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.aryamahasangh.components.*
-import com.aryamahasangh.components.PhotoItem
 import com.aryamahasangh.isDesktop
 import com.aryamahasangh.navigation.LocalSetBackHandler
 import com.aryamahasangh.navigation.LocalSnackbarHostState
 import com.aryamahasangh.network.bucket
-import com.aryamahasangh.screens.ButtonForFilePicker
-import com.aryamahasangh.screens.DistrictDropdown
-import com.aryamahasangh.screens.StateDropdown
-import com.aryamahasangh.screens.indianStatesToDistricts
 import com.aryamahasangh.type.ActivityType
 import com.aryamahasangh.ui.components.buttons.*
 import com.aryamahasangh.util.GlobalMessageManager
-import com.aryamahasangh.util.ImageCompressionService
-import io.github.vinceglb.filekit.core.PlatformFile
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 import kotlinx.datetime.Clock.System
@@ -970,7 +963,7 @@ private fun CreateActivityScreenContent(
           file.readBytes()
         }
         val uploadResponse = bucket.upload(
-          path = "${System.now().epochSeconds}.webp",
+          path = "activity_${System.now().epochSeconds}.webp",
           data = imageBytes
         )
         attachedImages.add(bucket.publicUrl(uploadResponse.path))
