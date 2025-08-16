@@ -6,7 +6,7 @@ The app was crashing during logout with the following error:
 
 ```
 Error: (Supabase-Core) POST request to endpoint /auth/v1/logout failed with exception HTTP/1.1 header parser received no bytes
-Exception in thread "AWT-EventQueue-0" io.github.jan.supabase.exceptions.HttpRequestException: HTTP request to https://placeholder-dev-supabase.co/auth/v1/logout (POST) failed with message: HTTP/1.1 header parser received no bytes
+Exception in thread "AWT-EventQueue-0" io.github.jan.supabase.exceptions.HttpRequestException: HTTP request to https://afjtpdeohgdgkrwayayn.supabase.co/auth/v1/logout (POST) failed with message: HTTP/1.1 header parser received no bytes
 ```
 
 ## Root Cause

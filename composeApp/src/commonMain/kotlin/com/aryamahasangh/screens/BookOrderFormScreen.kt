@@ -33,7 +33,7 @@ fun BookOrderFormScreen(viewModel: BookOrderViewModel) {
 //
 //  Column(Modifier.padding(12.dp).verticalScroll(scrollState),) {
 //    AsyncImage(
-//      model = "https://placeholder-staging-supabase.co/storage/v1/object/public/images//ved_sanhita_order_form.webp",
+//      model = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/images//ved_sanhita_order_form.webp",
 //      contentDescription = "ved sanhita order form",
 //      contentScale = ContentScale.Inside,
 //    )

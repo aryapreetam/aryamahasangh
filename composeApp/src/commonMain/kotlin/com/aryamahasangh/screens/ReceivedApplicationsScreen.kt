@@ -76,7 +76,7 @@ fun ReceivedApplicationsScreen(viewModel: AdmissionsViewModel) {
 // val data = StudentApplicationsQuery.StudentsApplied(
 //  id = "fdfdfdf",
 //  studentName = "आर्य प्रितम",
-//  studentPhoto = "https://placeholder-staging-supabase.co/storage/v1/object/public/documents//123312312123_student_photo_1741460570.jpg",
+//  studentPhoto = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/documents//123312312123_student_photo_1741460570.jpg",
 //  previousClass = "7th",
 //  marksObtained = "73 %"
 // )

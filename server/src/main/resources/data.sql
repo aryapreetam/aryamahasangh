@@ -103,8 +103,9 @@ VALUES ('राष्ट्रीय आर्य निर्मात्री
      'https://placeholder-supabase-url.supabase.co/storage/v1/object/public/profile_image//arya_gurukul_mahavidyalaya.webp', 'आर्य महासंघ के तत्वाधान में आर्या निर्माण ग्राम-ग्राम, नगर-नगर चल रहा है। अब तक ५० हजार से ऊपर महिलाओं का आर्याकरण हो चूका है। इस अभियान की निरंतरता के लिए वैदिक विदुषियों की आवश्यकता है। जिसके लिए आर्या गुरुकुल का निर्माण किया गया है। ६ अक्टूबर २०१९ को इसका उद्घाटन हुआ तब से यहाँ आर्या निर्माण, आचार्या निर्माण की कक्षाएं निरंतर चल रही है।  आर्य परिवारों की बालिकाओं के बौद्धिक व शारीरिक उन्नति के लिए क्षात्र प्रशिक्षण शिविरों का आयोजन गुरुकुल में होता है। ५ अप्रैल २०२४ से आर्या गुरुकुल महाविद्यालय के अंतर्गत आर्ष कन्या गुरुकुल का प्रारम्भ हुआ है।
 अष्टाध्यायी व्याकरण आदि विषयों के माध्यम से संस्कृत को प्राथमिकता देकर छात्राओं को विदुषी बनाना गुरुकुल का उद्देश्य है।
 वर्तमान में आचार्या डॉ. सुशीला गुरुकुल की आचार्या है।
-यह गुरुकुल आर्य महासंघ के निर्देशानुसार संचालित हो रहा है।'),
-    ('आर्या परिषद्', 'https://placeholder-supabase-url.supabase.co/storage/v1/object/public/profile_image//arya_parishad.webp', 'आर्या परिषद् का गठन आर्याओं के हित, आर्याओं के निर्माण व् आर्याओं के संरक्षण के लिए किया गया है।
+यह गुरुकुल आर्य महासंघ के निर्देशन में संचालित हो रहा है।'),
+       ('आर्या परिषद्',
+        'https://placeholder-supabase-url.supabase.co/storage/v1/object/public/profile_image//arya_parishad.webp', 'आर्या परिषद् का गठन आर्याओं के हित, आर्याओं के निर्माण व् आर्याओं के संरक्षण के लिए किया गया है।
 
 इसके अंतर्गत केंद्रीय आर्या परिषद्, प्रांतीय आर्या परिषद् व् जनपद आर्या परिषद् का गठन किया गया है।
 आर्या परिषद्  की केंद्रीय अध्यक्षा आचार्या डॉ. सुशीला जी, केंद्रीय सचिव आचार्या डॉ मोनिका जी व केंद्रीय कोषाध्यक्ष आचार्या डॉ सुमन जी है।
@@ -118,7 +119,7 @@ VALUES ('राष्ट्रीय आर्य निर्मात्री
 वानप्रस्थ को उचित है की अग्नि में होम कर दीक्षित व्रत, सत्याचरण, नाना प्रकार की तपश्चर्या, सत्संग, योगाभ्यास, सुविचार से ज्ञान और पवित्रता प्राप्त करें।
 इसी उद्देश्य की पूर्ती हेतु आर्य महासंघ के निर्देशन में वानप्रस्थ आयोग का गठन हुआ है।'),
     ('राष्ट्रीय आर्य संचार परिषद',
-     'https://placeholder-supabase-url.supabase.co/storage/v1/object/public/profile_image//sanchar_parishad.webp',
+     'https://your-supabase-url.supabase.co/storage/v1/object/public/profile_image//sanchar_parishad.webp',
      'आर्य महासंघ का संचार प्रकल्प'),
     ('आर्य महासंघ', 'mahasangh_logo_without_background', 'सनातन धर्म का साक्षात् प्रतिनिधि ''आर्य'' ही होता है। आर्य ही धर्म को जीता है, समाज को मर्यादाओं में बांधता है और राष्ट्र को सम्पूर्ण भूमण्डल में प्रतिष्ठित करता है। आर्य के जीवन में अनेकता नहीं एकता रहती है अर्थात् एक ईश्वर, एक धर्म, एक धर्मग्रन्थ और एक उपासना पद्धति। ऐसे आर्यजन लाखों की संख्या में मिलकर संगठित, सुव्यवस्थित और सुनियोजित रीति से आगे बढ़ रहे हैं - आर्यावर्त की ओर--- यही है - आर्य महासंघ ।।');
 
@@ -129,7 +130,8 @@ VALUES ('आचार्य जितेन्द्र आर्य',
 
 INSERT INTO member (name, "profileImage", "phoneNumber", email, "educationalQualification")
 VALUES ('आचार्य डॉ० महेशचन्द्र आर्य',
-        'https://placeholder-supabase-url.supabase.co/storage/v1/object/public/profile_image/achary_mahesh.webp', '9813377510',
+        'https://placeholder-supabase-url.supabase.co/storage/v1/object/public/profile_image/achary_mahesh.webp',
+        '9813377510',
         'aryamaheshchander@gmail.com', '');
 
 INSERT INTO member (name, "profileImage", "phoneNumber", email, "educationalQualification")
@@ -156,7 +158,8 @@ VALUES ('आर्य प्रवेश ''प्रघोष''',
 
 INSERT INTO member (name, "profileImage", "phoneNumber", email, "educationalQualification")
 VALUES ('आचार्य संजीव आर्य',
-        'https://placeholder-supabase-url.supabase.co/storage/v1/object/public/profile_image/achary_sanjiv.webp', '9045353309',
+        'https://placeholder-supabase-url.supabase.co/storage/v1/object/public/profile_image/achary_sanjiv.webp',
+        '9045353309',
         'prachetas Arya@gmail.com', '');
 
 INSERT INTO member (name, "profileImage", "phoneNumber", email, "educationalQualification")
@@ -173,7 +176,8 @@ VALUES ('आर्य वेदप्रकाश', '', '8168491108', '', '');
 
 -- Member inserts for राष्ट्रीय आर्य दलितोद्धारिणी सभा
 INSERT INTO member (name, "profileImage", "phoneNumber", email, "educationalQualification")
-VALUES ('सुखविंदर आर्य', 'https://placeholder-supabase-url.supabase.co/storage/v1/object/public/profile_image/anil_arya.webp',
+VALUES ('सुखविंदर आर्य',
+        'https://placeholder-supabase-url.supabase.co/storage/v1/object/public/profile_image/anil_arya.webp',
         '8529616314', 'sukhvinderarya@gmail.com', '');
 
 INSERT INTO member (name, "profileImage", "phoneNumber", email, "educationalQualification")
@@ -187,7 +191,8 @@ VALUES ('आर्य संदीप शास्त्री', '', '9812492102
 -- Member inserts for आर्य गुरुकुल महाविद्यालय
 INSERT INTO member (name, "profileImage", "phoneNumber", email, "educationalQualification")
 VALUES ('आचार्य संजीव आर्य ',
-        'https://placeholder-supabase-url.supabase.co/storage/v1/object/public/profile_image/achary_sanjiv.webp', '9045353309',
+        'https://placeholder-supabase-url.supabase.co/storage/v1/object/public/profile_image/achary_sanjiv.webp',
+        '9045353309',
         'deepphotostatebk@gmail.com', '');
 
 INSERT INTO member (name, "profileImage", "phoneNumber", email, "educationalQualification")
@@ -198,12 +203,14 @@ VALUES ('अश्विनी आर्य',
 -- Member inserts for आर्या गुरुकुल महाविद्यालय
 INSERT INTO member (name, "profileImage", "phoneNumber", email, "educationalQualification")
 VALUES ('आचार्या इन्द्रा',
-        'https://placeholder-supabase-url.supabase.co/storage/v1/object/public/profile_image/acharya_indra.webp', '9868912128',
+        'https://placeholder-supabase-url.supabase.co/storage/v1/object/public/profile_image/acharya_indra.webp',
+        '9868912128',
         'deepphotostatebk@gmail.com', '');
 
 INSERT INTO member (name, "profileImage", "phoneNumber", email, "educationalQualification")
 VALUES ('आचार्या डॉ० सुशीला',
-        'https://placeholder-supabase-url.supabase.co/storage/v1/object/public/profile_image/acharya_suman.webp', '9355690824',
+        'https://placeholder-supabase-url.supabase.co/storage/v1/object/public/profile_image/acharya_suman.webp',
+        '9355690824',
         '', '');
 
 INSERT INTO member (name, "profileImage", "phoneNumber", email, "educationalQualification")
@@ -212,7 +219,8 @@ VALUES ('आर्या रेनु', '', '9999999999', '', '');
 -- Member inserts for आर्या परिषद्
 INSERT INTO member (name, "profileImage", "phoneNumber", email, "educationalQualification")
 VALUES ('आचार्या डॉ० सुशीला',
-        'https://placeholder-supabase-url.supabase.co/storage/v1/object/public/profile_image/acharya_indra.webp', '9355690824',
+        'https://placeholder-supabase-url.supabase.co/storage/v1/object/public/profile_image/acharya_indra.webp',
+        '9355690824',
         '', '');
 
 -- Member inserts for वानप्रस्थ आयोग
@@ -233,7 +241,8 @@ VALUES ('श्री शिवनारायणजी आर्य',
 
 -- Member inserts for राष्ट्रीय आर्य संचार परिषद
 INSERT INTO member (name, "profileImage", "phoneNumber", email, "educationalQualification")
-VALUES ('अनिल आर्य', 'https://placeholder-supabase-url.supabase.co/storage/v1/object/public/profile_image/anil_arya.webp',
+VALUES ('अनिल आर्य',
+        'https://placeholder-supabase-url.supabase.co/storage/v1/object/public/profile_image/anil_arya.webp',
         '9416037102', '', '');
 
 -- Member inserts for आर्य महासंघ
@@ -244,7 +253,8 @@ VALUES ('आचार्य हनुमत् प्रसाद',
 
 INSERT INTO member (name, "profileImage", "phoneNumber", email, "educationalQualification")
 VALUES ('आचार्य सतीश',
-        'https://placeholder-supabase-url.supabase.co/storage/v1/object/public/profile_image/achary_satish.webp', '9350945482',
+        'https://placeholder-supabase-url.supabase.co/storage/v1/object/public/profile_image/achary_satish.webp',
+        '9350945482',
         '', '');
 
 INSERT INTO member (name, "profileImage", "phoneNumber", email, "educationalQualification")

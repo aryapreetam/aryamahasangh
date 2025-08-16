@@ -84,7 +84,7 @@ fun AryaSamajHomeScreen(
           ) {
             // Maharshi Dayanand photo
             AsyncImage(
-              model = "https://placeholder-dev-supabase.co/storage/v1/object/public/images//rishi_dayanand.webp",
+              model = "https://afjtpdeohgdgkrwayayn.supabase.co/storage/v1/object/public/images//rishi_dayanand.webp",
               contentDescription = "महर्षि दयानंद सरस्वती",
               modifier = Modifier
                 .size(200.dp)
@@ -129,7 +129,7 @@ fun AryaSamajHomeScreen(
           ) {
             // Maharshi Dayanand photo
             AsyncImage(
-              model = "https://placeholder-dev-supabase.co/storage/v1/object/public/images//rishi_dayanand.webp",
+              model = "https://afjtpdeohgdgkrwayayn.supabase.co/storage/v1/object/public/images//rishi_dayanand.webp",
               contentDescription = "महर्षि दयानंद सरस्वती",
               modifier = Modifier
                 .size(200.dp)

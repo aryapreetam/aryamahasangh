@@ -282,7 +282,7 @@ fun RegisteredUsers(
 //        ContactPeople(
 //          member = OrganisationalActivityDetailQuery.Member(
 //            name = "आचार्य संजीव आर्य",
-//            profileImage = "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image/achary_sanjiv.webp",
+//            profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_sanjiv.webp",
 //            phoneNumber = "9045353309"
 //          ),
 //          post = "अध्यक्ष",
@@ -736,7 +736,7 @@ fun ContactPersonPreview() {
         Member(
           id = "",
           name = "आचार्य संजीव आर्य",
-          profileImage = "https://placeholder-staging-supabase.co/storage/v1/object/public/profile_image/achary_sanjiv.webp",
+          profileImage = "https://ftnwwiwmljcwzpsawdmf.supabase.co/storage/v1/object/public/profile_image/achary_sanjiv.webp",
           phoneNumber = "9045353309"
         ),
       post = "अध्यक्ष",
