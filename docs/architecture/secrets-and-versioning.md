@@ -29,7 +29,7 @@ environment=dev
 
 # Development Configuration
 dev_supabase_url=https://your-dev-project.supabase.co
-dev_supabase_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+dev_supabase_key=your-dev-jwt-token
 dev_server_url=http://localhost:4000
 dev_googlemaps_apikey=your-dev-maps-key
 dev_keystore_password=your-dev-keystore-pass
@@ -38,7 +38,7 @@ dev_key_password=your-dev-key-pass
 
 # Production Configuration
 prod_supabase_url=https://your-prod-project.supabase.co
-prod_supabase_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+prod_supabase_key=your-prod-jwt-token
 prod_server_url=https://your-production-server.com
 prod_googlemaps_apikey=your-prod-maps-key
 prod_keystore_password=your-prod-keystore-pass

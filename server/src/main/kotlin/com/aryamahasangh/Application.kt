@@ -47,8 +47,8 @@ import kotlin.uuid.Uuid
 
 val SERVER_PORT = System.getenv("PORT")?.toIntOrNull() ?: 4000
 
-val url = "https://placeholder-staging-supabase.co"
-val key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZ0bnd3aXdtbGpjd3pwc2F3ZG1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5MzE4OTMsImV4cCI6MjA1MDUwNzg5M30.cY4A4ZxqHA_1VRC-k6URVAHHkweHTR8FEYEzHYiu19A"
+val url = System.getenv("SUPABASE_URL") ?: "https://placeholder-supabase-url.supabase.co"
+val key = System.getenv("SUPABASE_KEY") ?: "placeholder-supabase-key"
 val supabase =  createSupabaseClient(url, key) {
   defaultSerializer = KotlinXSerializer(Json {
     ignoreUnknownKeys = true

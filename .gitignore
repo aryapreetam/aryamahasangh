@@ -5,7 +5,7 @@
 xcuserdata
 !src/**/build/
 local.properties
-.idea
+.idea/
 .DS_Store
 captures
 .externalNativeBuild
@@ -16,6 +16,8 @@ captures
 !*.xcodeproj/project.xcworkspace/
 !*.xcworkspace/contents.xcworkspacedata
 **/xcshareddata/WorkspaceSettings.xcsettings
+!.idea/inspections.xml
+.vscode/
 
 # Configuration secrets (never commit)
 composeApp/src/commonMain/kotlin/secrets/Secrets.kt
