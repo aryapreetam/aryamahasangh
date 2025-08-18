@@ -78,9 +78,6 @@ object AppConfig {
       else -> Secrets.dev_key_password
     }
 
-  val githubPat: String
-    get() = Secrets.github_pat
-
   fun getConfigInfo(): String =
     """
     Version: $versionName ($versionCode)

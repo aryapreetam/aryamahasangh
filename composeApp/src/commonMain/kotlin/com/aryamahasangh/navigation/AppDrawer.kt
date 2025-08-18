@@ -7,14 +7,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.automirrored.filled.Logout
-import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.LightMode
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,12 +22,7 @@ import aryamahasangh.composeapp.generated.resources.*
 import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.auth.SessionManager
 import com.aryamahasangh.components.LoginDialog
-import com.aryamahasangh.util.GlobalMessage
-import com.aryamahasangh.util.GlobalMessageDuration
-import com.aryamahasangh.util.GlobalMessageManager
-import com.aryamahasangh.util.GlobalMessageType
-import com.aryamahasangh.util.PlatformBackHandler
-import com.aryamahasangh.util.VersionInfo
+import com.aryamahasangh.util.*
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
@@ -572,7 +560,16 @@ fun MainContent(
             modifier = Modifier.fillMaxWidth().basicMarquee().padding(top = 2.dp),
             horizontalArrangement = Arrangement.Center
           ) {
-            // Text(if(screenTitle.isNotEmpty()) screenTitle else "॥ ओ३म् ॥")
+            // Show परीक्षणार्थ for non-production environments
+            val environment = VersionInfo.getEnvironment()
+            if (environment != "prod") {
+              Text(
+                "परीक्षणार्थ",
+                color = Color.Red.copy(alpha = 0.6f),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+              )
+            }
           }
         },
         navigationIcon = {
