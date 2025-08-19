@@ -1,0 +1,37 @@
+appId: com.aryamahasangh
+---
+- launchApp
+# Ensure the introductory paragraph is brought into view (by id)
+- assertVisible: 'सनातन धर्म.*'
+
+
+- assertVisible:
+    text: "गतिविधियां"
+- assertVisible:
+    text: "संलग्न संस्थाएं"
+# Scroll down to bottom area and verify section headers highlighted in reference
+- scroll
+- scroll
+- assertVisible:
+    text: "स्वाध्याय"
+
+# Scroll back to top reliably (swipe UP scrolls down, so use scrollUntilVisible upwards)
+- scrollUntilVisible:
+    element: "about_intro_paragraph"
+    direction: UP
+    centerElement: true
+- waitForAnimationToEnd
+
+# Tap on the introductory paragraph to open the detailed page (by id)
+- tapOn: "about_intro_paragraph"
+
+# Verify detail page content (कार्यकारिणी/पदाधिकारी section title)
+- assertVisible:
+    text: "कार्यकारिणी/पदाधिकारी"
+
+# Navigate back to main page
+- back
+
+# Verify we are back on About Us main page by checking a main-only header
+- assertVisible:
+    text: "उपलब्ध सुविधाएँ"

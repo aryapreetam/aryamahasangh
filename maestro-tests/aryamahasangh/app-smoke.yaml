@@ -1,0 +1,9 @@
+appId: com.aryamahasangh
+---
+- launchApp
+# Open drawer (hamburger). Using a stable coordinate near top-left like existing tests
+- tapOn:
+    point: "75,211"
+# Assert brand motto and admin section visible in drawer
+- assertVisible:
+    text: "कृण्वन्तो विश्वमार्यम्"

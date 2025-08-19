@@ -1,0 +1,28 @@
+appId: com.aryamahasangh
+---
+- launchApp
+# Open drawer
+- tapOn:
+    point: "75,211"
+# Go to Admin area
+- tapOn:
+    text: "व्यवस्थापकीय"
+# Switch to Arya Samaj tab/section (text "आर्य समाज" appears in admin container)
+- tapOn:
+    text: "आर्य समाज"
+# Tap 'Add new Arya Samaj' button
+- tapOn:
+    text: "नया आर्य समाज जोड़ें"
+# Fill form fields
+- tapOn:
+    text: "आर्य समाज का नाम"
+- inputText: "ए2ई आर्य समाज परीक्षण"
+- tapOn:
+    text: "विवरण"
+- inputText: "स्वचालित परीक्षण"
+# Submit form
+- tapOn:
+    text: "आर्य समाज जोड़ें"
+# Verify success message (GlobalMessageManager)
+- assertVisible:
+    text: "आर्य समाज सफलतापूर्वक जोड़ा गया"

@@ -1,0 +1,15 @@
+appId: com.aryamahasangh
+---
+- launchApp
+# Open drawer
+- tapOn:
+    point: "75,211"
+# Navigate to Arya Samaj section
+- tapOn:
+    text: "आर्य समाज संगठन"
+# Verify section headline(s)
+- assertVisible:
+    text: "आर्य समाज"
+# Optional: verify hint/action present on the screen
+- assertVisible:
+    text: "सभी आर्य समाज"

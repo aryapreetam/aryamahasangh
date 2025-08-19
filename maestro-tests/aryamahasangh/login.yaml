@@ -1,0 +1,47 @@
+appId: com.aryamahasangh
+---
+# Usage:
+# maestro test maestro-tests/aryamahasangh/login.yaml -e USERNAME=your_user -e PASSWORD=your_pass
+
+# Ensure a clean slate
+- stopApp
+- clearState
+
+- launchApp
+
+# Open the login dialog via top app bar action (contentDescription = "login")
+- tapOn: "login"
+
+# Fill credentials (USERNAME and PASSWORD are provided via CLI -e flags)
+- tapOn: "Username"
+- inputText: ${USERNAME}
+- tapOn: "Password"
+- inputText: ${PASSWORD}
+
+# Submit (prefer the button below Password, not the title)
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          text: "Login"
+          below: "Password"
+- waitForAnimationToEnd
+
+# Either the snackbar appears or the app bar switches to 'logout' icon
+- retry:
+    maxRetries: 5
+    commands:
+      - runFlow:
+          when:
+            visible: "Login successful"
+          commands:
+            - evalScript:
+                ${console.log('Snackbar shown: Login successful')}
+      - runFlow:
+          when:
+            visible: "logout"
+          commands:
+            - evalScript: ${console.log('Top bar switched to logout icon')}
+
+# Final assertion (prefer app bar icon state after login)
+- assertVisible: "logout"
