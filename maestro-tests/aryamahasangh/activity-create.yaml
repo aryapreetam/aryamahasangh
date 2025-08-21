@@ -1,0 +1,197 @@
+appId: com.aryamahasangh
+---
+# Clean slate
+- stopApp
+- clearState
+
+- launchApp
+
+# If already logged in, skip login; otherwise perform login via dialog
+- runFlow:
+    when:
+      visible: "logout"
+    commands:
+      - evalScript: ${console.log('Already logged in; skipping login')}
+- runFlow:
+    when:
+      notVisible: "logout"
+    commands:
+      - tapOn: "login"
+      - tapOn: "Username"
+      - inputText: ${USERNAME}
+      - tapOn: "Password"
+      - inputText: ${PASSWORD}
+      - retry:
+          maxRetries: 3
+          commands:
+            - tapOn:
+                text: "Login"
+                below: "Password"
+      - extendedWaitUntil:
+          visible: "logout"
+          timeout: 5000
+          optional: true
+
+# Ensure hamburger is visible; if back is shown, go back first
+- runFlow:
+    when:
+      visible: "nav_back"
+    commands:
+      - tapOn: "nav_back"
+
+# Open drawer - try multiple hamburger labels
+- tapOn:
+    text: "nav_hamburger"
+    optional: true
+- tapOn:
+    text: "Open Drawer"
+    optional: true
+- tapOn:
+    text: "Menu"
+    optional: true
+
+# Go to Activities
+- tapOn: "गतिविधियां"
+
+# Tap FAB to create new activity (robust: try id, then text tag, then Hindi label)
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          id: "create_activity_fab"
+          optional: true
+      - tapOn:
+          text: "create_activity_fab"
+          optional: true
+      - tapOn: "नयी गतिविधी बनायें"
+
+# Prepare a unique activity name
+- evalScript: ${output.activityName = 'गतिविधि ' + Date.now().toString()}
+
+# Name
+- scrollUntilVisible:
+    element: "नाम"
+    direction: DOWN
+- tapOn: "नाम"
+- inputText: ${output.activityName}
+
+# Select Activity Type (use अभियान to avoid mandatory address)
+- tapOn: "अभियान"
+# For CAMPAIGN, disable address if the toggle is shown
+- runFlow:
+    when:
+      visible: "स्थान जोड़ें"
+    commands:
+      - tapOn: "स्थान जोड़ें"
+
+# Short description
+- scrollUntilVisible:
+    element: "संक्षिप्त विवरण"
+    direction: DOWN
+- tapOn: "संक्षिप्त विवरण"
+- inputText: "संक्षिप्त विवरण परीक्षण"
+
+# Long description
+- scrollUntilVisible:
+    element: "विस्तृत विवरण"
+    direction: DOWN
+- tapOn: "विस्तृत विवरण"
+- inputText: "विस्तृत विवरण परीक्षण"
+
+# Associated organisations: open and pick first item without coordinates
+- scrollUntilVisible:
+    element: "संबधित संस्थाएं"
+    direction: DOWN
+- tapOn: "संबधित संस्थाएं"
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          index: 0
+          below: "संबधित संस्थाएं"
+
+# Start date/time = tomorrow 12:00
+- evalScript: ${ output.tomorrowDay = (new Date(Date.now() + 24*60*60*1000)).getDate().toString() }
+- tapOn:
+    text: "दिनांक"
+    below: "प्रारंभ:"
+- tapOn: ${output.tomorrowDay}
+- tapOn: "OK"
+- tapOn:
+    text: "समय"
+    below: "प्रारंभ:"
+- tapOn: "OK"
+
+# End date/time = tomorrow 13:00
+- tapOn:
+    text: "दिनांक"
+    below: "समाप्ति:"
+- tapOn: ${output.tomorrowDay}
+- tapOn: "OK"
+- tapOn:
+    text: "समय"
+    below: "समाप्ति:"
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn: "13"
+- tapOn: "OK"
+
+# Members (संपर्क सूत्र)
+- scrollUntilVisible:
+    element: "संपर्क व्यक्ति जोड़ें"
+    direction: DOWN
+- tapOn: "संपर्क व्यक्ति जोड़ें"
+
+# Wait for dialog to appear, pick first member, then confirm
+- extendedWaitUntil:
+    visible: "सदस्य चुनें"
+    timeout: 5000
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn:
+          index: 0
+          below: "सदस्य चुनें"
+- waitForAnimationToEnd
+- retry:
+    maxRetries: 3
+    commands:
+      - tapOn: "चुनें"
+- extendedWaitUntil:
+    notVisible: "सदस्य चुनें"
+    timeout: 5000
+
+# Set भूमिका to ASCII to avoid Unicode input flakiness
+- scrollUntilVisible:
+    element: "भूमिका"
+    direction: DOWN
+    centerElement: true
+- tapOn: "भूमिका"
+- inputText: "Sanyojak"
+- hideKeyboard
+
+# Submit the form
+- scrollUntilVisible:
+    element: "गतिविधि बनाएं"
+    direction: DOWN
+    centerElement: true
+- tapOn: "गतिविधि बनाएं"
+
+# Assert success via global message OR by presence of detail screen header shortly after
+- retry:
+    maxRetries: 5
+    commands:
+      - runFlow:
+          when:
+            visible: "नई गतिविधि सफलतापूर्वक बनाई गई"
+          commands:
+            - evalScript: ${console.log('Success snackbar visible')}
+      - extendedWaitUntil:
+          visible: "नई गतिविधि सफलतापूर्वक बनाई गई"
+          timeout: 10000
+      - runFlow:
+          when:
+            visible: ${output.activityName}
+          commands:
+            - evalScript: ${console.log('Navigated to details for newly created activity')}

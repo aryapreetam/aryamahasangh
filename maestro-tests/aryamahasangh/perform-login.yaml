@@ -1,0 +1,14 @@
+appId: your.app.id
+---
+- tapOn: "login"
+- tapOn: "Username"
+- inputText: ${USERNAME}
+- tapOn: "Password"
+- inputText: ${PASSWORD}
+- tapOn:
+    text: "Login"
+    below: "Password"
+- extendedWaitUntil:
+    visible: "logout"
+    timeout: 5000
+

@@ -13,6 +13,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
@@ -586,12 +589,15 @@ fun MainContent(
               } else {
                 navController.navigateUp()
               }
-            }) {
-              Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back Arrow")
+            }, modifier = Modifier.semantics { contentDescription = "nav_back" }.testTag("nav_back")) {
+              Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "nav_back")
             }
           } else {
-            IconButton(onClick = { scope.launch { drawerState.open() } }) {
-              Icon(Icons.Default.Menu, contentDescription = "Open Drawer")
+            IconButton(
+              onClick = { scope.launch { drawerState.open() } },
+              modifier = Modifier.semantics { contentDescription = "nav_hamburger" }.testTag("nav_hamburger")
+            ) {
+              Icon(Icons.Default.Menu, contentDescription = "nav_hamburger")
             }
           }
         },

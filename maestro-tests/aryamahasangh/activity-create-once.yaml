@@ -1,0 +1,317 @@
+appId: com.aryamahasangh
+---
+- launchApp: com.aryamahasangh
+
+# Generate unique activity name
+- evalScript: ${output.activityName = "Activity "  + new Date().getTime()}
+
+- assertVisible: about_intro_paragraph
+- runFlow:
+    when:
+      visible: login
+    file: perform-login.yaml
+- tapOn: Open Drawer
+- tapOn:
+    text: गतिविधियां
+    index: 1
+- tapOn: नयी गतिविधी बनायें
+- tapOn: "नाम"
+- inputText: ${output.activityName}
+- tapOn: "सत्र"
+- tapOn: "संक्षिप्त विवरण"
+- inputText: "Short description"
+- tapOn: "विस्तृत विवरण"
+- inputText: "Detailed description"
+- tapOn:
+    id: "com.google.android.apps.inputmethod.hindi:id/icon"
+    index: 3
+- tapOn: "संबधित संस्थाएं"
+- tapOn: "आर्य गुरुकुल महाविद्यालय"
+- tapOn:
+    text: "मानचित्र से चुनें"
+    index: 0
+- tapOn: "स्थान खोजें..."
+- inputText: "Bhiwani"
+- tapOn:
+    text: "भिवानी"
+    index: 0
+- tapOn: "चुनें"
+- scrollUntilVisible:
+    element: "जनपद"
+    direction: DOWN
+- tapOn: "जनपद"
+- tapOn:
+    text: "भिवानी"
+    index: 0
+- scrollUntilVisible:
+    element: "दिनांक"
+    direction: DOWN
+- tapOn:
+    text: "दिनांक"
+    index: 0
+- tapOn: "Saturday, August 23, 2025"
+- tapOn: "OK"
+- tapOn:
+    text: "समय"
+    index: 0
+- tapOn: "8 hours"
+- tapOn: "0 minutes"
+- tapOn: "OK"
+- tapOn:
+    text: "दिनांक"
+    index: 1
+- tapOn: "Sunday, August 24, 2025"
+- tapOn: "OK"
+- tapOn:
+    text: "समय"
+    index: 1
+- tapOn: "18 hours"
+- tapOn: "0 minutes"
+- tapOn: "OK"
+- scrollUntilVisible:
+    element: "संपर्क व्यक्ति जोड़ें"
+    direction: DOWN
+- tapOn: "संपर्क व्यक्ति जोड़ें"
+- tapOn: "Test user23"
+- tapOn: "चुनें"
+- tapOn: "भूमिका"
+- inputText: "Helper"
+- tapOn:
+    id: "com.google.android.apps.inputmethod.hindi:id/icon"
+    index: 4
+- tapOn: "अतिरिक्त निर्देश"
+- inputText: "- Sample instructions 1"
+- inputText: "- Sample instructions 2"
+- inputText: "sdfsdf"
+- tapOn:
+    id: "com.google.android.apps.inputmethod.hindi:id/icon"
+    index: 7
+- scrollUntilVisible:
+    element: "गतिविधि बनाएं"
+    direction: DOWN
+- tapOn:
+    text: "गतिविधि बनाएं"
+    index: 1
+- assertVisible: "पंजीकरण"
+- assertVisible: "कुल पंजीकरण (० / १००):"
+- tapOn: "Back Arrow"
+- assertVisible: ${output.activityName}
+- tapOn: "Open Drawer"
+- tapOn:
+    text: "आर्य-आर्या निर्माण(सत्र)"
+    index: 1
+- scrollUntilVisible:
+    element: ${output.activityName + " "}
+    direction: DOWN
+- assertVisible: "पंजीकरण"
+- assertVisible: "पंजीकरण चालू"
+
+## Ensure top app bar shows hamburger (if back is visible, go back first)
+#- runFlow:
+#    when:
+#      visible:
+#        id: "nav_back"
+#    commands:
+#      - tapOn:
+#          id: "nav_back"
+#
+## Open drawer (robust attempts)
+#- retry:
+#    maxRetries: 3
+#    commands:
+#      - tapOn:
+#          id: "nav_hamburger"
+#          optional: true
+#      - tapOn:
+#          text: "Open Drawer"
+#          optional: true
+#      - tapOn:
+#          text: "Menu"
+#          optional: true
+#
+## Navigate to Activities
+#- tapOn: "गतिविधियां"
+#
+## Open Create Activity screen via FAB with fallbacks
+#- retry:
+#    maxRetries: 5
+#    commands:
+#      - tapOn:
+#          id: "create_activity_fab"
+#          optional: true
+#      - tapOn:
+#          text: "create_activity_fab"
+#          optional: true
+#      - tapOn:
+#          text: "नयी गतिविधी बनायें"
+#          optional: true
+#
+## Fill form
+#- scrollUntilVisible:
+#    element: "नाम"
+#    direction: DOWN
+#    timeout: 10000
+#    centerElement: true
+#- tapOn: "नाम"
+#- inputText: ${activityName}
+#
+## Activity Type: अभियान (Campaign)
+#- tapOn: "अभियान"
+## If address toggle visible, turn it off
+#- tapOn:
+#    text: "स्थान जोड़ें"
+#    optional: true
+#
+## Short Description
+#- tapOn: "संक्षिप्त विवरण"
+#- inputText: "संक्षिप्त विवरण: संक्षेप में अभिप्राय।"
+#
+## Long Description
+#- tapOn: "विस्तृत विवरण"
+#- inputText: "विस्तृत विवरण: यह गतिविधि संघटन, समन्वय एवं समाजहित हेतु नियोजित है। उद्देश्य, कार्य-योजना तथा अपेक्षित परिणाम निर्दिष्ट हैं।"
+#
+## Associated Organisations dropdown: select first item using index below the label
+#- tapOn: "संबधित संस्थाएं"
+#- retry:
+#    maxRetries: 3
+#    commands:
+#      - tapOn:
+#          index: 0
+#          below:
+#            text: "संबधित संस्थाएं"
+#
+## Dates/Times
+## Start Date (प्रारंभ:)
+#- tapOn:
+#    text: "दिनांक"
+#    below:
+#      text: "प्रारंभ:"
+#- retry:
+#    maxRetries: 3
+#    commands:
+#      - tapOn:
+#          text: "कल"
+#          optional: true
+#      - tapOn:
+#          text: "Tomorrow"
+#          optional: true
+#      - tapOn:
+#          text: "ठीक है"
+#          optional: true
+#      - tapOn:
+#          text: "OK"
+#          optional: true
+#
+## Start Time (accept default)
+#- tapOn:
+#    text: "समय"
+#    below:
+#      text: "प्रारंभ:"
+#- retry:
+#    maxRetries: 3
+#    commands:
+#      - tapOn:
+#          text: "ठीक है"
+#          optional: true
+#      - tapOn:
+#          text: "OK"
+#          optional: true
+#
+## End Date (समाप्ति:)
+#- tapOn:
+#    text: "दिनांक"
+#    below:
+#      text: "समाप्ति:"
+#- retry:
+#    maxRetries: 3
+#    commands:
+#      - tapOn:
+#          text: "कल"
+#          optional: true
+#      - tapOn:
+#          text: "Tomorrow"
+#          optional: true
+#      - tapOn:
+#          text: "ठीक है"
+#          optional: true
+#      - tapOn:
+#          text: "OK"
+#          optional: true
+#
+## End Time (accept default, attempt to pick 13 if a time wheel is present)
+#- tapOn:
+#    text: "समय"
+#    below:
+#      text: "समाप्ति:"
+#- retry:
+#    maxRetries: 3
+#    commands:
+#      - tapOn:
+#          text: "13"
+#          optional: true
+#      - tapOn:
+#          text: "ठीक है"
+#          optional: true
+#      - tapOn:
+#          text: "OK"
+#          optional: true
+#
+## Members (संपर्क सूत्र)
+#- tapOn: "संपर्क व्यक्ति जोड़ें"
+#- extendedWaitUntil:
+#    visible: "सदस्य चुनें"
+#    timeout: 15000
+#- retry:
+#    maxRetries: 3
+#    commands:
+#      - tapOn:
+#          index: 0
+#          below:
+#            text: "आर्य का नाम/दूरभाष"
+#          optional: true
+#      - tapOn:
+#          index: 0
+#          below:
+#            text: "सदस्य चुनें"
+#          optional: true
+#- tapOn: "चुनें"
+#- extendedWaitUntil:
+#    notVisible: "सदस्य चुनें"
+#    timeout: 15000
+#
+## Role (भूमिका)
+#- scrollUntilVisible:
+#    element: "भूमिका"
+#    direction: DOWN
+#    timeout: 10000
+#    centerElement: true
+#- tapOn: "भूमिका"
+#- inputText: "Sanyojak"
+#- hideKeyboard
+#
+## Submit
+#- scrollUntilVisible:
+#    element: "गतिविधि बनाएं"
+#    direction: DOWN
+#    timeout: 10000
+#    centerElement: true
+#- retry:
+#    maxRetries: 5
+#    commands:
+#      - tapOn: "गतिविधि बनाएं"
+#
+## Assert success via snackbar, else by title visibility
+#- extendedWaitUntil:
+#    visible: "नई गतिविधि सफलतापूर्वक बनाई गई"
+#    timeout: 15000
+#    optional: true
+#- runFlow:
+#    when:
+#      visible: "नई गतिविधि सफलतापूर्वक बनाई गई"
+#    commands:
+#      - assertVisible: "नई गतिविधि सफलतापूर्वक बनाई गई"
+#- runFlow:
+#    when:
+#      notVisible: "नई गतिविधि सफलतापूर्वक बनाई गई"
+#    commands:
+#      - assertVisible: ${activityName}

@@ -22,6 +22,9 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -1419,7 +1422,10 @@ private fun MemberSelectionDialog(
                 onMembersSelected(selectedMembers.toList())
                 onDismiss()
               },
-              enabled = selectedMembers.isNotEmpty()
+              enabled = selectedMembers.isNotEmpty(),
+              modifier = Modifier
+                .testTag("select_member_confirm_button")
+                .semantics { contentDescription = "select_member_confirm_button" }
             ) {
               Text("चुनें")
             }
@@ -1454,6 +1460,8 @@ private fun MemberSelectionItem(
     modifier =
       Modifier
         .fillMaxWidth()
+        .semantics { contentDescription = "member_list_item" }
+        .testTag("member_list_item")
         .clickable { onSelectionChange(!selected) }
         .padding(12.dp),
     verticalAlignment = Alignment.CenterVertically

@@ -5,3 +5,4 @@ appId: com.aryamahasangh
 - runFlow: arya-samaj-list-smoke.yaml
 - runFlow: satr-registration.yaml
 - runFlow: admin-arya-samaj-create.yaml
+- runFlow: activity-create.yaml

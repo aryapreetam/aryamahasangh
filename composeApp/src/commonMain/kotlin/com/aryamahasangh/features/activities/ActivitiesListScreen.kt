@@ -11,6 +11,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowWidthSizeClass
 import com.aryamahasangh.LocalIsAuthenticated
@@ -148,11 +151,12 @@ fun ActivitiesScreen(
       FloatingActionButton(
         onClick = { onNavigateToCreateOrganisation(uiState.activities.size + 1) },
         modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
+          .semantics { contentDescription = "create_activity_fab" }.testTag("create_activity_fab")
       ) {
         WithTooltip("नयी गतिविधी बनायें") {
           Icon(
             Icons.Default.Add,
-            contentDescription = "नयी गतिविधी बनायें",
+            contentDescription = "create_activity_fab",
             modifier = Modifier.padding(16.dp)
           )
         }
