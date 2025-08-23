@@ -17,7 +17,7 @@ composeRememberSetting = "1.0.3"
 junit = "4.13.2"
 ktlint = "12.3.0"
 
-kotlin = "2.1.20"
+kotlin = "2.1.21"
 
 # kotlin = "2.1.0-firework.32" # custom version for experimental hot reload support
 compose-hot-reload = "1.0.0-beta05"

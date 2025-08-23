@@ -1,17 +1,16 @@
 package com.aryamahasangh
 
 import AppTheme
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.family_add
 import coil3.ImageLoader
@@ -20,12 +19,14 @@ import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.crossfade
 import com.aryamahasangh.auth.SessionManager
 import com.aryamahasangh.di.KoinInitializer
-import com.aryamahasangh.examples.FormComponentsExample
 import com.aryamahasangh.navigation.AppDrawer
 import com.aryamahasangh.network.supabaseClient
 import com.aryamahasangh.utils.WithTooltip
 import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.coil.coil3
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import org.jetbrains.compose.resources.vectorResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -41,7 +42,7 @@ private val initKoin by lazy {
 @Composable
 fun App() {
 
-  initializeCoilImageLoader()
+  //initializeCoilImageLoader()
 
   val demo = false // Set to true to show form components example
   if (!demo) {
@@ -67,9 +68,10 @@ fun App() {
     AppTheme {
       BoxWithConstraints {
         println("$maxWidth")
-        FormComponentsExample()
+        val viewModel = CounterViewModel()
+        CounterScreen(viewModel = viewModel)
+//        FormComponentsExample()
       }
-
     }
     // ImagePickerExample()
     // ActivityFormImagePickerIntegration()
@@ -117,3 +119,35 @@ fun Test() {
     }
   }
 }
+
+class CounterViewModel {
+  private val _count = MutableStateFlow(0)
+  val count: StateFlow<Int> = _count.asStateFlow()
+
+  fun increment() {
+    _count.value += 1
+  }
+}
+@Composable
+fun CounterScreen(viewModel: CounterViewModel) {
+  val count by viewModel.count.collectAsState()
+
+  Column(
+    modifier = Modifier.padding(16.dp),
+    horizontalAlignment = Alignment.CenterHorizontally
+  ) {
+    Text(
+      text = count.toString(),
+      fontSize = 24.sp,
+      modifier = Modifier.testTag("counterText")
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+    Button(
+      onClick = { viewModel.increment() },
+      modifier = Modifier.testTag("incrementButton")
+    ) {
+      Text("Increment")
+    }
+  }
+}
+

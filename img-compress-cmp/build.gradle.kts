@@ -25,9 +25,16 @@ kotlin {
   jvm("desktop")
 
   // iOS targets
-  iosX64()
-  iosArm64()
-  iosSimulatorArm64()
+  val iosX64 = iosX64()
+  val iosArm64 = iosArm64()
+  val iosSimArm64 = iosSimulatorArm64()
+
+  listOf(iosX64, iosArm64, iosSimArm64).forEach { t ->
+    t.binaries.framework {
+      baseName = "ImgCompressCmp"
+      isStatic = true
+    }
+  }
 
   @OptIn(ExperimentalWasmDsl::class)
   wasmJs {

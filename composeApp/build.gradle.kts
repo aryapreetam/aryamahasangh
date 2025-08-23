@@ -7,6 +7,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
 import java.util.*
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   alias(libs.plugins.kotlinMultiplatform)
@@ -69,16 +70,24 @@ kotlin {
     instrumentedTestVariant.sourceSetTree.set(KotlinSourceSetTree.test)
   }
 
-  listOf(
-    iosX64(),
-    iosArm64(),
-    iosSimulatorArm64()
-  ).forEach { iosTarget ->
+  val iosX64 = iosX64()
+  val iosArm64 = iosArm64()
+  val iosSimArm64 = iosSimulatorArm64()
+
+  listOf(iosX64, iosArm64, iosSimArm64).forEach { iosTarget ->
     iosTarget.binaries.framework {
       baseName = "ComposeApp"
       isStatic = true
     }
   }
+
+  iosSimArm64.binaries.getTest("DEBUG").apply {
+    val libwebpDir =
+      project(":img-compress-cmp").buildDir.resolve("cocoapods/synthetic/ios/build/Debug-iphonesimulator/libwebp")
+    linkerOpts("-F${libwebpDir.absolutePath}", "-framework", "libwebp")
+    linkTaskProvider.configure { dependsOn(":img-compress-cmp:podBuildLibwebpIosSimulator") }
+  }
+
 
   jvm("desktop")
 
@@ -307,9 +316,51 @@ compose.desktop {
   }
 }
 
-//tasks.withType<ComposeHotRun>().configureEach {
-//  mainClass.set("com.aryamahasangh.MainKt")
-//}
+// Ensure Android compile runs after secrets generation for all test variants
+// Removed helper wiring to avoid DSL type inference issues
+
+// Ensure iOS simulator secrets before compile (if present)
+// Removed helper wiring to avoid DSL type inference issues
+
+tasks.named("compileKotlinDesktop").configure {
+  dependsOn("generateSecretsDesktopTest")
+}
+
+// Minimal wasmJs fixes: ensure codegen/secrets available before compile
+tasks.named("compileKotlinWasmJs").configure {
+  dependsOn(
+    "generateSecretsWasmJsMain",
+    "generateSecretsWasmJsTest",
+    "generateServiceApolloSources"
+  )
+}
+
+tasks.named("compileTestKotlinWasmJs").configure {
+  dependsOn(
+    "generateSecretsWasmJsTest",
+    "generateServiceApolloSources"
+  )
+}
+
+tasks.named("compileKotlinIosSimulatorArm64").configure {
+  dependsOn(
+    "generateSecretsIosSimulatorArm64Main",
+    "generateSecretsIosSimulatorArm64Test"
+  )
+}
+
+tasks.named("compileTestKotlinIosSimulatorArm64").configure {
+  dependsOn("generateSecretsIosSimulatorArm64Test")
+}
+
+
+// Android: ensure secrets for AndroidTest are generated before compiling debug main and androidTest
+// Use configureEach to avoid failing when task names differ across plugin versions
+ tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class.java).configureEach {
+   if (name.contains("Android") && name.contains("Debug")) {
+     dependsOn("generateSecretsAndroidDebugAndroidTest")
+   }
+ }
 
 apollo {
   service("service") {
