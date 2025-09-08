@@ -60,19 +60,19 @@ data class DrawerOption(val title: String, val icon: DrawableResource, val route
 val drawerOptions =
   listOf(
     DrawerOption("हमारे बारे मे", Res.drawable.info, Screen.AboutSection),
-    DrawerOption("गतिविधियां", Res.drawable.local_activity, Screen.ActivitiesSection),
-    DrawerOption("संलग्न संस्थाएं", Res.drawable.account_tree, Screen.OrgsSection),
+    DrawerOption("आर्य गतिविधियां", Res.drawable.local_activity, Screen.ActivitiesSection),
+    DrawerOption("संलग्न आर्य संस्थाएं", Res.drawable.account_tree, Screen.OrgsSection),
     DrawerOption("हमसें जुडें", Res.drawable.handshake, Screen.JoinUs),
-    DrawerOption(
-      "आर्य गुरुकुल",
-      Res.drawable.school,
-      Screen.AryaGurukulSection
-    ),
-    DrawerOption(
-      "आर्या गुरुकुल",
-      Res.drawable.school,
-      Screen.AryaaGurukulSection
-    ),
+//    DrawerOption(
+//      "आर्य गुरुकुल",
+//      Res.drawable.school,
+//      Screen.AryaGurukulSection
+//    ),
+//    DrawerOption(
+//      "आर्या गुरुकुल",
+//      Res.drawable.school,
+//      Screen.AryaaGurukulSection
+//    ),
     DrawerOption(
       "आर्य-आर्या निर्माण(सत्र)",
       Res.drawable.interactive_space,
@@ -80,17 +80,17 @@ val drawerOptions =
     ),
     DrawerOption("आर्य परिवार", Res.drawable.family, Screen.AryaPariwarSection),
     DrawerOption("आर्य समाज संगठन", Res.drawable.diversity_3, Screen.AryaSamajSection),
-    DrawerOption(
-      "आर्य क्षात्र शिविर पंजीकरण",
-      Res.drawable.person,
-      Screen.KshatraTrainingSection
-    ),
-    DrawerOption(
-      "आर्य छात्रा शिविर पंजीकरण",
-      Res.drawable.face_4,
-      Screen.ChatraTrainingSection
-    ),
-    DrawerOption("आओ स्वाध्याय करें", Res.drawable.menu_book, Screen.Learning)
+//    DrawerOption(
+//      "आर्य क्षात्र शिविर पंजीकरण",
+//      Res.drawable.person,
+//      Screen.KshatraTrainingSection
+//    ),
+//    DrawerOption(
+//      "आर्य छात्रा शिविर पंजीकरण",
+//      Res.drawable.face_4,
+//      Screen.ChatraTrainingSection
+//    ),
+//    DrawerOption("आओ स्वाध्याय करें", Res.drawable.menu_book, Screen.Learning)
   )
 
 @Composable
@@ -212,28 +212,30 @@ fun DrawerContent(
             )
           }
         )
-        if (option.title == "हमसें जुडें") {
+//        if (option.title == "हमसें जुडें") {
+//          HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+//          Text(
+//            "आर्य गुरुकुल महाविद्यालय",
+//            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
+//            style = MaterialTheme.typography.titleMedium
+//          )
+//        } else
+          if (option.title == "हमसें जुडें") {
           HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
           Text(
-            "आर्ष विद्या",
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
-            style = MaterialTheme.typography.titleMedium
-          )
-        } else if (option.title == "आर्या गुरुकुल") {
-          HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-          Text(
-            "संगठन कार्य ",
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
-            style = MaterialTheme.typography.titleMedium
-          )
-        } else if (option.title == "आर्य छात्रा शिविर पंजीकरण") {
-          HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-          Text(
-            "स्वाध्याय ",
+            "सांगठनिक कार्य",
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
             style = MaterialTheme.typography.titleMedium
           )
         }
+//          else if (option.title == "आर्य समाज संगठन") {
+//          HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+//          Text(
+//            "स्वाध्याय ",
+//            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
+//            style = MaterialTheme.typography.titleMedium
+//          )
+//        }
       }
     }
 
@@ -568,6 +570,14 @@ fun MainContent(
             if (environment != "prod") {
               Text(
                 "परीक्षणार्थ",
+                color = Color.Red.copy(alpha = 0.6f),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+              )
+            }
+            else if (environment == "prod") {
+              Text(
+                "परीक्षणार्थ-1",
                 color = Color.Red.copy(alpha = 0.6f),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold

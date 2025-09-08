@@ -1122,7 +1122,7 @@ private fun CreateActivityScreenContent(
         maxLines = 30,
         isError = descriptionError,
         supportingText = { if (descriptionError) Text("Description is required") },
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default)
       )
 
       // Associated Organisations
@@ -1478,7 +1478,7 @@ private fun CreateActivityScreenContent(
             },
         minLines = 3,
         maxLines = 10,
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default)
       )
 
       // Removed 300dp spacer since we now handle keyboard scrolling for individual fields
