@@ -13,10 +13,7 @@ import com.aryamahasangh.viewmodel.AdmissionFormSubmissionState
 import com.aryamahasangh.viewmodel.BaseViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
@@ -133,13 +130,18 @@ class ActivitiesViewModel(
     viewModelScope.launch {
       val currentState = _activitiesUiState.value.paginationState
 
-      // Check if we should preserve existing data
-      val shouldPreserveExistingData = shouldPreservePagination && resetPagination && hasExistingActivityData()
+      // FIX: When shouldPreservePagination is true, it means we're restoring from navigation
+      // However, if the user is explicitly requesting specific filters, we should load that data
+      // Only preserve existing data if this is a generic call without specific filter requirements
+      val shouldPreserveExistingData = shouldPreservePagination && resetPagination &&
+        hasExistingActivityData() && filterOptions.isEmpty()
 
       if (shouldPreservePagination) {
         shouldPreservePagination = false
         if (shouldPreserveExistingData) {
           return@launch
+        } else {
+          println("DEBUG: Not preserving data - user requested new filters or other conditions not met")
         }
       }
 
@@ -284,11 +286,15 @@ class ActivitiesViewModel(
       savedFilterOptions
     }
 
+    // FIX: Immediate and synchronous state update to prevent sync issues
     _activitiesUiState.value = _activitiesUiState.value.copy(
       activities = savedActivities,
       paginationState = savedPaginationState.copy(items = savedActivities), // Ensure consistency
-      activeFilterOptions = normalizedFilterOptions
+      activeFilterOptions = normalizedFilterOptions,
+      // FIX: Also preserve search query if it exists in the saved pagination state
+      searchQuery = savedPaginationState.currentSearchTerm
     )
+
     shouldPreservePagination = true
     // FIX: Don't automatically load data here - let the screen coordinate the loading
     // This prevents race conditions and allows proper state coordination
@@ -370,12 +376,27 @@ class ActivitiesViewModel(
     searchJob?.cancel()
     searchJob = viewModelScope.launch {
       if (query.isBlank()) {
-        // Clear search state and reset pagination completely for initial load
+        // Search cleared - reset pagination completely for initial load
         _activitiesUiState.value = _activitiesUiState.value.copy(
           paginationState = PaginationState() // Reset pagination state completely
         )
-        // Load activities based on current filter state when search is cleared
-        loadActivitiesWithCurrentState(resetPagination = true)
+
+        // FIX: Improved search + filter combination handling
+        // When search is cleared, return to filtered results if filters are active
+        val currentFilters = _activitiesUiState.value.activeFilterOptions
+        val hasActiveFilters = currentFilters.isNotEmpty() &&
+          !currentFilters.contains(ActivityFilterOption.ShowAll)
+
+        if (hasActiveFilters) {
+          // Filters are active - show filtered results
+          loadActivitiesPaginatedWithFilters(
+            filterOptions = currentFilters,
+            resetPagination = true
+          )
+        } else {
+          // No filters - show all activities
+          loadActivitiesPaginated(resetPagination = true)
+        }
         return@launch
       }
 
@@ -1004,7 +1025,7 @@ class ActivitiesViewModel(
    * Toggle a filter option on/off with exclusive ShowAll handling
    */
   fun toggleFilterOption(option: ActivityFilterOption) {
-    _activitiesUiState.update { currentState ->
+    val updatedState = _activitiesUiState.updateAndGet { currentState ->
       val currentFilters = currentState.activeFilterOptions
 
       when (option) {
@@ -1036,8 +1057,40 @@ class ActivitiesViewModel(
       }
     }
 
-    // Automatically trigger filtered data load
-    loadActivitiesWithCurrentState(resetPagination = true)
+    // FIX: Use the updated state directly instead of reading state again
+    // This ensures we're using the exact state that was just set
+    val hasFilters = updatedState.hasActiveFilters
+    val hasSearch = updatedState.searchQuery.isNotBlank()
+    val filterOptions = updatedState.activeFilterOptions
+
+    // Trigger appropriate data loading based on the updated state
+    when {
+      hasSearch && hasFilters -> {
+        searchActivitiesPaginatedWithFilters(
+          searchTerm = updatedState.searchQuery,
+          filterOptions = filterOptions,
+          resetPagination = true
+        )
+      }
+
+      hasSearch -> {
+        searchActivitiesPaginated(
+          searchTerm = updatedState.searchQuery,
+          resetPagination = true
+        )
+      }
+
+      hasFilters -> {
+        loadActivitiesPaginatedWithFilters(
+          filterOptions = filterOptions,
+          resetPagination = true
+        )
+      }
+
+      else -> {
+        loadActivitiesPaginated(resetPagination = true)
+      }
+    }
   }
 
   /**
@@ -1048,8 +1101,16 @@ class ActivitiesViewModel(
       currentState.copy(activeFilterOptions = setOf(ActivityFilterOption.ShowAll))
     }
 
-    // FIX: Use regular pagination loading when clearing filters (ShowAll means no filters)
-    loadActivitiesPaginated(resetPagination = true)
+    // Improved search + filter combination handling
+    // If search is active, show search results; otherwise show all activities
+    val currentSearchQuery = _activitiesUiState.value.searchQuery
+    if (currentSearchQuery.isNotBlank()) {
+      // Search is active - show search results without filters
+      searchActivitiesPaginated(searchTerm = currentSearchQuery, resetPagination = true)
+    } else {
+      // No search - show all activities
+      loadActivitiesPaginated(resetPagination = true)
+    }
   }
 
   /**

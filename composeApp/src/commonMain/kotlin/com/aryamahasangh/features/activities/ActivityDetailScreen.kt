@@ -49,8 +49,8 @@ fun ActivityDetailScreen(
   onNavigateToCreateOverview: (String, String?, List<String>) -> Unit = { _, _, _ -> },
   viewModel: ActivitiesViewModel = koinInject()
 ) {
-  // FIX: Mark as staying within Activities section
-  ActivitiesPageState.enterActivitiesSection()
+  // Remove incorrect section tracking - this screen is part of Activities section
+  // ActivitiesPageState.enterActivitiesSection()
   
   val snackbarHostState = LocalSnackbarHostState.current
 

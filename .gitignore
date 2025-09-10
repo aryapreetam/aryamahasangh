@@ -29,3 +29,4 @@ firebender.json
 /node_modules/*
 /.junie/*
 /scripts/
+/composeApp/release/

@@ -421,7 +421,7 @@ fun RootNavGraph(navController: NavHostController) {
             ActivitiesPageState.markForRefresh()
             // Navigate to activity details after save
             navController.navigate(Screen.ActivityDetails(activityId)) {
-              popUpTo(Screen.Activities)
+              popUpTo<Screen.Activities>()
             }
           },
           onCancel = {

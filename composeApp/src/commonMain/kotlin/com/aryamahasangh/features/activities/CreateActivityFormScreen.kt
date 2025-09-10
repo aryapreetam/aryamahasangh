@@ -472,8 +472,8 @@ fun CreateActivityScreen(
   onActivitySaved: (String) -> Unit,
   onCancel: () -> Unit = {}
 ) {
-  // FIX: Mark as staying within Activities section
-  ActivitiesPageState.enterActivitiesSection()
+  // Remove incorrect section tracking - this screen is part of Activities section
+  // ActivitiesPageState.enterActivitiesSection()
 
   BoxWithConstraints {
     // Consider screens smaller than 600dp as mobile-sized, but exclude desktop

@@ -67,9 +67,13 @@ internal object ActivitiesPageState {
 
   // FIX: Explicit section tracking methods
   fun enterActivitiesSection() {
+    // FIX: Be more conservative about clearing state
+    // Only clear if we've been away from Activities section for a significant time
+    // or if this is truly external entry (not internal navigation)
     if (!isInActivitiesSection && hasInitialized) {
-      // Coming from outside activities section - clear state
-      clear()
+      // For now, don't auto-clear on section re-entry to preserve user context
+      // Users can manually clear filters if they want a fresh start
+      // clear()  // Commented out to preserve filters/search during internal navigation
     }
     isInActivitiesSection = true
     hasInitialized = true
@@ -131,7 +135,11 @@ fun ActivitiesScreen(
     }
 
     if (ActivitiesPageState.needsRefresh) {
-      ActivitiesPageState.clear()
+      // FIX: Only clear data, preserve filter and search state to maintain user context
+      ActivitiesPageState.activities = emptyList()
+      ActivitiesPageState.paginationState = PaginationState()
+      ActivitiesPageState.needsRefresh = false
+      // Keep lastSearchQuery and activeFilters intact for better UX
     }
 
     when {
@@ -150,9 +158,20 @@ fun ActivitiesScreen(
       }
 
       // Scenario 3: No saved data → load fresh initial data
-      // FIX: Use smart loading that respects current filter state
+      // FIX: Use preserved filters from PageState if available, otherwise use current state
       else -> {
-        viewModel.loadActivitiesWithCurrentState(resetPagination = true)
+        // Check if PageState has preserved filters that should take priority
+        val preservedFilters = ActivitiesPageState.activeFilters
+        val hasPreservedFilters = preservedFilters.isNotEmpty() &&
+          !preservedFilters.contains(ActivityFilterOption.ShowAll)
+
+        if (hasPreservedFilters) {
+          // Use preserved filters from PageState and update ViewModel state
+          viewModel.applyFilters(preservedFilters)
+        } else {
+          // Use current ViewModel state
+          viewModel.loadActivitiesWithCurrentState(resetPagination = true)
+        }
       }
     }
 

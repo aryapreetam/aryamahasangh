@@ -108,8 +108,8 @@ class LoggingApolloInterceptor : ApolloInterceptor {
   ): Flow<ApolloResponse<D>> {
     return chain.proceed(request).onEach {
       if(AppConfig.environment != "prod") {
-        println("Request: ${request.operation}")
-        println("Response ${it.data}")
+        //println("Request: ${request.operation}")
+        //println("Response ${it.data}")
       }
     }
   }
