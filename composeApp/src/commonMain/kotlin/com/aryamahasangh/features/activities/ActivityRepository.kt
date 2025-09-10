@@ -84,6 +84,16 @@ interface ActivityRepository : PaginatedRepository<ActivityWithStatus> {
     overview: String,
     mediaUrls: List<String>
   ): Flow<Result<Boolean>>
+
+  /**
+   * Get activities with combined filter options and search
+   */
+  suspend fun getItemsPaginatedWithFilters(
+    pageSize: Int,
+    cursor: String?,
+    searchTerm: String? = null,
+    filterOptions: Set<ActivityFilterOption> = emptySet()
+  ): Flow<PaginationResult<ActivityWithStatus>>
 }
 
 /**
@@ -588,6 +598,70 @@ class ActivityRepositoryImpl(
         }
       emit(result)
     }
+  }
+
+  override suspend fun getItemsPaginatedWithFilters(
+    pageSize: Int,
+    cursor: String?,
+    searchTerm: String?,
+    filterOptions: Set<ActivityFilterOption>
+  ): Flow<PaginationResult<ActivityWithStatus>> = flow {
+    emit(PaginationResult.Loading())
+
+    // Build filter logic here
+    val filter = buildFilter(searchTerm, filterOptions)
+    apolloClient.query(
+      GetActivitiesQuery(
+        first = pageSize,
+        after = Optional.presentIfNotNull(cursor),
+        filter = Optional.presentIfNotNull(filter),
+        orderBy = Optional.present(
+          listOf(
+            ActivitiesWithStatusOrderBy(statusPriority = Optional.present(OrderByDirection.AscNullsLast)),
+            ActivitiesWithStatusOrderBy(startDatetime = Optional.present(OrderByDirection.AscNullsLast)),
+            ActivitiesWithStatusOrderBy(id = Optional.present(OrderByDirection.AscNullsLast))
+          )
+        )
+      )
+    )
+      .fetchPolicy(FetchPolicy.CacheAndNetwork)
+      .watch()
+      .collect { response ->
+        val isCacheMissWithEmptyData = response.exception is CacheMissException &&
+          response.data?.activitiesWithStatusCollection?.edges.isNullOrEmpty()
+
+        if (isCacheMissWithEmptyData) {
+          return@collect
+        }
+
+        val result = safeCall {
+          if (response.hasErrors()) {
+            throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+          }
+
+          val activities = response.data?.activitiesWithStatusCollection?.edges?.map {
+            it.node.activityWithStatus
+          } ?: emptyList()
+
+          val pageInfo = response.data?.activitiesWithStatusCollection?.pageInfo
+
+          PaginationResult.Success(
+            data = activities,
+            hasNextPage = pageInfo?.hasNextPage ?: false,
+            endCursor = pageInfo?.endCursor
+          )
+        }
+
+        when (result) {
+          is Result.Success -> emit(result.data)
+          is Result.Error -> emit(PaginationResult.Error(result.exception?.message ?: "Unknown error"))
+          is Result.Loading -> {}
+        }
+      }
+  }
+
+  private fun buildFilter(searchTerm: String?, filterOptions: Set<ActivityFilterOption>): ActivitiesWithStatusFilter? {
+    return buildCombinedFilter(filterOptions, searchTerm)
   }
 }
 

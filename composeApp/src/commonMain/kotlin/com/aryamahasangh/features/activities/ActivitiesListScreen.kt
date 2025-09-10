@@ -1,6 +1,8 @@
 package com.aryamahasangh.features.activities
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -18,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowWidthSizeClass
 import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.components.ActivityListItem
+import com.aryamahasangh.features.activities.ui.SearchAndFilterRow
 import com.aryamahasangh.features.admin.PaginatedListScreen
 import com.aryamahasangh.features.admin.PaginationState
 import com.aryamahasangh.fragment.ActivityWithStatus
@@ -29,29 +32,51 @@ internal object ActivitiesPageState {
   var activities: List<ActivityWithStatus> = emptyList()
   var paginationState: PaginationState<ActivityWithStatus> = PaginationState()
   var lastSearchQuery: String = ""
+  var activeFilters: Set<ActivityFilterOption> = setOf(ActivityFilterOption.ShowAll)
   var needsRefresh: Boolean = false
+
+  // FIX: Add explicit section tracking
+  private var isInActivitiesSection = false
+  private var hasInitialized = false
 
   fun clear() {
     activities = emptyList()
     paginationState = PaginationState()
     lastSearchQuery = ""
+    activeFilters = setOf(ActivityFilterOption.ShowAll)
     needsRefresh = false
   }
 
   fun saveState(
     newActivities: List<ActivityWithStatus>,
     newPaginationState: PaginationState<ActivityWithStatus>,
-    searchQuery: String
+    searchQuery: String,
+    filterOptions: Set<ActivityFilterOption>
   ) {
     activities = newActivities
     paginationState = newPaginationState
     lastSearchQuery = searchQuery
+    activeFilters = filterOptions
   }
 
   fun hasData(): Boolean = activities.isNotEmpty()
 
   fun markForRefresh() {
     needsRefresh = true
+  }
+
+  // FIX: Explicit section tracking methods
+  fun enterActivitiesSection() {
+    if (!isInActivitiesSection && hasInitialized) {
+      // Coming from outside activities section - clear state
+      clear()
+    }
+    isInActivitiesSection = true
+    hasInitialized = true
+  }
+
+  fun exitActivitiesSection() {
+    isInActivitiesSection = false
   }
 }
 
@@ -63,6 +88,8 @@ fun ActivitiesScreen(
   viewModel: ActivitiesViewModel,
   onDataChanged: () -> Unit = {}
 ) {
+  ActivitiesPageState.enterActivitiesSection()
+
   val uiState by viewModel.activitiesUiState.collectAsState()
   val windowInfo = currentWindowAdaptiveInfo()
   val isCompact = windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT
@@ -86,7 +113,23 @@ fun ActivitiesScreen(
     if (ActivitiesPageState.needsRefresh) Clock.System.now().toEpochMilliseconds() else 0L
   }
 
-  LaunchedEffect(refreshKey) {
+  // FIX: Coordinate with navigation filter application to prevent race conditions
+  val isApplyingFilter by viewModel.isApplyingInitialFilter.collectAsState()
+
+  // FIX: Handle initial loading since ViewModel no longer auto-loads
+  LaunchedEffect(Unit) {
+    // Only load initially if no data exists and no contextual filter is being applied
+    if (!isApplyingFilter && uiState.activities.isEmpty() && !ActivitiesPageState.hasData()) {
+      viewModel.loadActivitiesWithCurrentState(resetPagination = true)
+    }
+  }
+
+  LaunchedEffect(refreshKey, isApplyingFilter) {
+    // Wait for initial filter application to complete if it's in progress
+    if (isApplyingFilter) {
+      return@LaunchedEffect
+    }
+
     if (ActivitiesPageState.needsRefresh) {
       ActivitiesPageState.clear()
     }
@@ -99,12 +142,17 @@ fun ActivitiesScreen(
 
       // Scenario 2: Have saved non-search data → preserve pagination  
       !ActivitiesPageState.needsRefresh && ActivitiesPageState.hasData() -> {
-        viewModel.preserveActivityPagination(ActivitiesPageState.activities, ActivitiesPageState.paginationState)
+        viewModel.preserveActivityPagination(
+          ActivitiesPageState.activities,
+          ActivitiesPageState.paginationState,
+          ActivitiesPageState.activeFilters
+        )
       }
 
       // Scenario 3: No saved data → load fresh initial data
+      // FIX: Use smart loading that respects current filter state
       else -> {
-        viewModel.loadActivitiesPaginated(pageSize = pageSize, resetPagination = true)
+        viewModel.loadActivitiesWithCurrentState(resetPagination = true)
       }
     }
 
@@ -112,44 +160,77 @@ fun ActivitiesScreen(
   }
 
   LaunchedEffect(uiState) {
-    ActivitiesPageState.saveState(uiState.paginationState.items, uiState.paginationState, uiState.searchQuery)
+    ActivitiesPageState.saveState(
+      uiState.paginationState.items,
+      uiState.paginationState,
+      uiState.searchQuery,
+      uiState.activeFilterOptions
+    )
+  }
+
+  DisposableEffect(Unit) {
+    onDispose {
+      ActivitiesPageState.exitActivitiesSection()
+    }
   }
 
   Box {
-    PaginatedListScreen(
-      items = uiState.activities,
-      paginationState = uiState.paginationState,
-      searchQuery = uiState.searchQuery,
-      onSearchChange = viewModel::searchActivitiesWithDebounce,
-      onLoadMore = viewModel::loadNextActivityPage,
-      onRetry = viewModel::retryActivityLoad,
-      searchPlaceholder = "गतिविधि खोजें",
-      emptyStateText = "कोई गतिविधि नहीं मिली",
-      endOfListText = { count -> "सभी गतिविधियां दिखाई गईं (${count.toString().toDevanagariNumerals()})" },
-      addButtonText = "नयी गतिविधी", // Not used since showAddButton = false
-      onAddClick = { }, // Not used since showAddButton = false
-      showAddButton = false, // Hide the add button in search bar
-      isCompactLayout = isCompact,
-      itemsPerRow = if (isCompact) 1 else 2,
-      itemContent = { activity: ActivityWithStatus ->
-        ActivityListItem(
-          activity = activity,
-          handleOnClick = { onNavigateToActivityDetails(activity.id ?: "") },
-          handleEditActivity = { onNavigateToEditActivity(activity.id ?: "") },
-          handleDeleteActivity = {
-            ActivitiesPageState.markForRefresh()
-            viewModel.deleteActivity(activity.id ?: "") {
-              onDataChanged()
+    Column(
+      modifier = Modifier.fillMaxSize()
+    ) {
+      // Always visible search and filter header (outside scrollable area)
+      SearchAndFilterRow(
+        modifier = Modifier.padding(8.dp),
+        searchQuery = uiState.searchQuery,
+        onSearchChange = viewModel::searchActivitiesWithDebounce,
+        isSearching = uiState.paginationState.isSearching,
+        selectedFilters = uiState.activeFilterOptions,
+        isFilterDropdownOpen = uiState.isFilterDropdownOpen,
+        onFilterButtonClick = viewModel::toggleFilterDropdown,
+        onClearFilters = viewModel::clearAllFilters,
+        onFilterToggle = viewModel::toggleFilterOption,
+        onDismissDropdown = viewModel::closeFilterDropdown
+      )
+
+      // Scrollable content (list or empty state)
+      PaginatedListScreen(
+        items = uiState.paginationState.items,
+        paginationState = uiState.paginationState,
+        searchQuery = uiState.searchQuery,
+        onSearchChange = viewModel::searchActivitiesWithDebounce,
+        onLoadMore = viewModel::loadNextActivityPage,
+        onRetry = viewModel::retryActivityLoad,
+        searchPlaceholder = "गतिविधि खोजें",
+        emptyStateText = "कोई गतिविधि नहीं मिली",
+        endOfListText = { count -> "सभी गतिविधियां दिखाई गईं (${count.toString().toDevanagariNumerals()})" },
+        addButtonText = "नयी गतिविधी", // Not used since showAddButton = false
+        onAddClick = { }, // Not used since showAddButton = false
+        showAddButton = false, // Hide the add button in search bar
+        isCompactLayout = isCompact,
+        itemsPerRow = if (isCompact) 1 else 2,
+        modifier = Modifier.weight(1f), // Take remaining space
+        showBuiltInSearchBar = false, // No built-in search bar
+        headerContent = null, // No header content - it's above now
+        itemContent = { activity: ActivityWithStatus ->
+          ActivityListItem(
+            activity = activity,
+            handleOnClick = { onNavigateToActivityDetails(activity.id ?: "") },
+            handleEditActivity = { onNavigateToEditActivity(activity.id ?: "") },
+            handleDeleteActivity = {
+              ActivitiesPageState.markForRefresh()
+              viewModel.deleteActivity(activity.id ?: "") {
+                onDataChanged()
+              }
             }
-          }
-        )
-      }
-    )
+          )
+        }
+      )
+    }
 
     // FAB for authenticated users
     if (isLoggedIn) {
       FloatingActionButton(
-        onClick = { onNavigateToCreateOrganisation(uiState.activities.size + 1) },
+        onClick = { onNavigateToCreateOrganisation(uiState.paginationState.items.size + 1) },
         modifier = Modifier.align(Alignment.BottomEnd).padding(16.dp)
           .semantics { contentDescription = "create_activity_fab" }.testTag("create_activity_fab")
       ) {

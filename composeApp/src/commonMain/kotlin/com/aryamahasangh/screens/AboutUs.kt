@@ -126,11 +126,19 @@ private fun QuickLinksSection(
       title = "आर्य गतिविधियां",
       icon = Icons.Default.Event,
       items = listOf(
-        QuickLinkItem("आर्य प्रशिक्षण सत्र", "व्यक्तित्व विकास हेतु प्रशिक्षण", Screen.Activities),
-        QuickLinkItem("बोध सत्र", "धार्मिक ज्ञान वृद्धि हेतु सत्र", Screen.Activities),
-        QuickLinkItem("क्षात्र प्रशिक्षण", "क्षत्रिय धर्म का प्रशिक्षण", Screen.Activities),
-        QuickLinkItem("आर्य वीरांगना प्रशिक्षण", "महिला सशक्तिकरण प्रशिक्षण", Screen.Activities),
-        QuickLinkItem("अभियान", "सामाजिक कार्य हेतु अभियान", Screen.Activities)
+        QuickLinkItem(
+          "आर्य प्रशिक्षण सत्र",
+          "आर्य प्रशिक्षण",
+          Screen.Activities("आर्य प्रशिक्षण सत्र")
+        ),
+        QuickLinkItem("बोध सत्र", "धार्मिक ज्ञान वृद्धि हेतु सत्र", Screen.Activities("बोध सत्र")),
+        QuickLinkItem("क्षात्र प्रशिक्षण", "क्षात्र धर्म का प्रशिक्षण", Screen.Activities("क्षात्र प्रशिक्षण")),
+        QuickLinkItem(
+          "आर्य वीरांगना प्रशिक्षण",
+          "वीरांगना प्रशिक्षण",
+          Screen.Activities("आर्य वीरांगना प्रशिक्षण")
+        ),
+        QuickLinkItem("अभियान", "सामाजिक कार्य हेतु अभियान", Screen.Activities("अभियान"))
       ),
       navigateToScreen = navigateToScreen,
       cardColor = CardBackgroundColor.Blue

@@ -53,6 +53,7 @@ import com.aryamahasangh.util.GlobalMessageManager
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 import kotlinx.datetime.Clock.System
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -466,11 +467,14 @@ val genderAllowedDisplayOptions = GenderAllowed.entries.map { it.toDisplayName()
 @ExperimentalMaterial3Api
 @Composable
 fun CreateActivityScreen(
-  viewModel: ActivitiesViewModel,
+  viewModel: ActivitiesViewModel = koinInject(),
   editingActivityId: String? = null,
-  onActivitySaved: (String) -> Unit = {},
+  onActivitySaved: (String) -> Unit,
   onCancel: () -> Unit = {}
 ) {
+  // FIX: Mark as staying within Activities section
+  ActivitiesPageState.enterActivitiesSection()
+
   BoxWithConstraints {
     // Consider screens smaller than 600dp as mobile-sized, but exclude desktop
     val isSmallScreen = maxWidth < 600.dp && !isDesktop()

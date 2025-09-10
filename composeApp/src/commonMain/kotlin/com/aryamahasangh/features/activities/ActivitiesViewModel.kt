@@ -31,8 +31,17 @@ data class ActivitiesUiState(
   val searchQuery: String = "",
   val paginationState: PaginationState<ActivityWithStatus> = PaginationState(),
   val isLoading: Boolean = false,
-  val error: String? = null
-)
+  val error: String? = null,
+  // Filter-related fields - default to ShowAll selected
+  val activeFilterOptions: Set<ActivityFilterOption> = setOf(ActivityFilterOption.ShowAll),
+  val isFilterDropdownOpen: Boolean = false
+) {
+  val filterCount: Int
+    get() =
+      if (activeFilterOptions.contains(ActivityFilterOption.ShowAll)) 0
+      else activeFilterOptions.size
+  val hasActiveFilters: Boolean get() = filterCount > 0
+}
 
 /**
  * UI state for the Activity Detail screen
@@ -105,8 +114,159 @@ class ActivitiesViewModel(
   private var searchJob: Job? = null
   private var shouldPreservePagination = false
 
+  // FIX: Add coordination flag to prevent race conditions
+  private val _isApplyingInitialFilter = MutableStateFlow(false)
+  val isApplyingInitialFilter: StateFlow<Boolean> = _isApplyingInitialFilter.asStateFlow()
+
   init {
-    loadActivitiesPaginated()
+    // No automatic loading
+  }
+
+  /**
+   * Load activities with filters applied (no search)
+   */
+  fun loadActivitiesPaginatedWithFilters(
+    filterOptions: Set<ActivityFilterOption> = emptySet(),
+    pageSize: Int = 30,
+    resetPagination: Boolean = false
+  ) {
+    viewModelScope.launch {
+      val currentState = _activitiesUiState.value.paginationState
+
+      // Check if we should preserve existing data
+      val shouldPreserveExistingData = shouldPreservePagination && resetPagination && hasExistingActivityData()
+
+      if (shouldPreservePagination) {
+        shouldPreservePagination = false
+        if (shouldPreserveExistingData) {
+          return@launch
+        }
+      }
+
+      // Bounds checking
+      if (!resetPagination && currentState.hasNextPage == false) {
+        return@launch
+      }
+
+      val shouldReset = resetPagination
+      val cursor = if (shouldReset) null else currentState.endCursor
+
+      // Update loading states
+      _activitiesUiState.value = _activitiesUiState.value.copy(
+        paginationState = currentState.copy(
+          isInitialLoading = shouldReset && currentState.items.isEmpty(),
+          isLoadingNextPage = !shouldReset && currentState.items.isNotEmpty()
+        )
+      )
+
+      activityRepository.getItemsPaginatedWithFilters(
+        pageSize = pageSize,
+        cursor = cursor,
+        searchTerm = null,
+        filterOptions = filterOptions
+      ).collect { result ->
+        when (result) {
+          is PaginationResult.Success -> {
+            val existingActivities = if (shouldReset) emptyList() else currentState.items
+            val newActivities = existingActivities + result.data
+
+            _activitiesUiState.value = _activitiesUiState.value.copy(
+              activities = newActivities,
+              paginationState = currentState.copy(
+                items = newActivities,
+                isInitialLoading = false,
+                isLoadingNextPage = false,
+                hasNextPage = result.hasNextPage,
+                endCursor = result.endCursor,
+                hasReachedEnd = !result.hasNextPage,
+                error = null
+              )
+            )
+          }
+
+          is PaginationResult.Error -> {
+            _activitiesUiState.value = _activitiesUiState.value.copy(
+              paginationState = currentState.copy(
+                isInitialLoading = false,
+                isLoadingNextPage = false,
+                error = result.message,
+                showRetryButton = true
+              )
+            )
+          }
+
+          is PaginationResult.Loading -> {
+            // Loading state handled by pagination state
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Search activities with filters applied
+   */
+  fun searchActivitiesPaginatedWithFilters(
+    searchTerm: String,
+    filterOptions: Set<ActivityFilterOption> = emptySet(),
+    pageSize: Int = 30,
+    resetPagination: Boolean = true
+  ) {
+    viewModelScope.launch {
+      val currentState = _activitiesUiState.value.paginationState
+      val cursor = if (resetPagination) null else currentState.endCursor
+
+      // Update loading states
+      _activitiesUiState.value = _activitiesUiState.value.copy(
+        paginationState = currentState.copy(
+          isSearching = resetPagination,
+          isLoadingNextPage = !resetPagination
+        )
+      )
+
+      activityRepository.getItemsPaginatedWithFilters(
+        pageSize = pageSize,
+        cursor = cursor,
+        searchTerm = searchTerm.trim(),
+        filterOptions = filterOptions
+      ).collect { result ->
+        when (result) {
+          is PaginationResult.Success -> {
+            val existingActivities = if (resetPagination) emptyList() else currentState.items
+            val newActivities = existingActivities + result.data
+
+            _activitiesUiState.value = _activitiesUiState.value.copy(
+              activities = newActivities,
+              paginationState = currentState.copy(
+                items = newActivities,
+                isSearching = false,
+                isLoadingNextPage = false,
+                hasNextPage = result.hasNextPage,
+                endCursor = result.endCursor,
+                hasReachedEnd = !result.hasNextPage,
+                error = null,
+                currentSearchTerm = searchTerm
+              )
+            )
+          }
+
+          is PaginationResult.Error -> {
+            _activitiesUiState.value = _activitiesUiState.value.copy(
+              paginationState = currentState.copy(
+                isSearching = false,
+                isLoadingNextPage = false,
+                error = result.message,
+                showRetryButton = true
+              )
+            )
+          }
+
+          is PaginationResult.Loading -> {
+            // Loading state handled by pagination state
+          }
+        }
+      }
+    }
   }
 
   fun hasExistingActivityData(): Boolean {
@@ -115,13 +275,23 @@ class ActivitiesViewModel(
 
   fun preserveActivityPagination(
     savedActivities: List<ActivityWithStatus>,
-    savedPaginationState: PaginationState<ActivityWithStatus>
+    savedPaginationState: PaginationState<ActivityWithStatus>,
+    savedFilterOptions: Set<ActivityFilterOption> = emptySet()
   ) {
+    val normalizedFilterOptions = if (savedFilterOptions.isEmpty()) {
+      setOf(ActivityFilterOption.ShowAll)
+    } else {
+      savedFilterOptions
+    }
+
     _activitiesUiState.value = _activitiesUiState.value.copy(
       activities = savedActivities,
-      paginationState = savedPaginationState.copy(items = savedActivities) // Ensure consistency
+      paginationState = savedPaginationState.copy(items = savedActivities), // Ensure consistency
+      activeFilterOptions = normalizedFilterOptions
     )
     shouldPreservePagination = true
+    // FIX: Don't automatically load data here - let the screen coordinate the loading
+    // This prevents race conditions and allows proper state coordination
   }
 
   fun loadActivitiesPaginated(pageSize: Int = 30, resetPagination: Boolean = false) {
@@ -204,13 +374,23 @@ class ActivitiesViewModel(
         _activitiesUiState.value = _activitiesUiState.value.copy(
           paginationState = PaginationState() // Reset pagination state completely
         )
-        // Load regular activities when search is cleared
-        loadActivitiesPaginated(resetPagination = true)
+        // Load activities based on current filter state when search is cleared
+        loadActivitiesWithCurrentState(resetPagination = true)
         return@launch
       }
 
       delay(1000) // 1 second debounce
-      searchActivitiesPaginated(searchTerm = query.trim(), resetPagination = true)
+      // Use filter-aware search if filters are active
+      val currentFilters = _activitiesUiState.value.activeFilterOptions
+      if (currentFilters.isNotEmpty() && !currentFilters.contains(ActivityFilterOption.ShowAll)) {
+        searchActivitiesPaginatedWithFilters(
+          searchTerm = query.trim(),
+          filterOptions = currentFilters,
+          resetPagination = true
+        )
+      } else {
+        searchActivitiesPaginated(searchTerm = query.trim(), resetPagination = true)
+      }
     }
   }
 
@@ -280,13 +460,35 @@ class ActivitiesViewModel(
   fun loadNextActivityPage() {
     val currentState = _activitiesUiState.value.paginationState
     if (currentState.hasNextPage && !currentState.isLoadingNextPage) {
-      if (currentState.currentSearchTerm.isNotBlank()) {
-        searchActivitiesPaginated(
-          searchTerm = currentState.currentSearchTerm,
-          resetPagination = false
-        )
-      } else {
-        loadActivitiesPaginated(resetPagination = false)
+      val hasSearch = _activitiesUiState.value.searchQuery.isNotBlank()
+      val hasFilters = _activitiesUiState.value.hasActiveFilters
+
+      when {
+        hasSearch && hasFilters -> {
+          searchActivitiesPaginatedWithFilters(
+            searchTerm = currentState.currentSearchTerm,
+            filterOptions = _activitiesUiState.value.activeFilterOptions,
+            resetPagination = false
+          )
+        }
+
+        hasSearch -> {
+          searchActivitiesPaginated(
+            searchTerm = currentState.currentSearchTerm,
+            resetPagination = false
+          )
+        }
+
+        hasFilters -> {
+          loadActivitiesPaginatedWithFilters(
+            filterOptions = _activitiesUiState.value.activeFilterOptions,
+            resetPagination = false
+          )
+        }
+
+        else -> {
+          loadActivitiesPaginated(resetPagination = false)
+        }
       }
     }
   }
@@ -297,13 +499,35 @@ class ActivitiesViewModel(
       paginationState = currentState.copy(showRetryButton = false)
     )
 
-    if (currentState.currentSearchTerm.isNotBlank()) {
-      searchActivitiesPaginated(
-        searchTerm = currentState.currentSearchTerm,
-        resetPagination = currentState.items.isEmpty()
-      )
-    } else {
-      loadActivitiesPaginated(resetPagination = currentState.items.isEmpty())
+    val hasSearch = _activitiesUiState.value.searchQuery.isNotBlank()
+    val hasFilters = _activitiesUiState.value.hasActiveFilters
+
+    when {
+      hasSearch && hasFilters -> {
+        searchActivitiesPaginatedWithFilters(
+          searchTerm = currentState.currentSearchTerm,
+          filterOptions = _activitiesUiState.value.activeFilterOptions,
+          resetPagination = currentState.items.isEmpty()
+        )
+      }
+
+      hasSearch -> {
+        searchActivitiesPaginated(
+          searchTerm = currentState.currentSearchTerm,
+          resetPagination = currentState.items.isEmpty()
+        )
+      }
+
+      hasFilters -> {
+        loadActivitiesPaginatedWithFilters(
+          filterOptions = _activitiesUiState.value.activeFilterOptions,
+          resetPagination = currentState.items.isEmpty()
+        )
+      }
+
+      else -> {
+        loadActivitiesPaginated(resetPagination = currentState.items.isEmpty())
+      }
     }
   }
 
@@ -702,6 +926,167 @@ class ActivitiesViewModel(
   override fun onCleared() {
     stopListeningForRegistrations()
     super.onCleared()
+  }
+
+  /**
+   * Load activities based on current filter and search state
+   */
+  fun loadActivitiesWithCurrentState(resetPagination: Boolean = false) {
+    val currentState = _activitiesUiState.value
+    val hasFilters = currentState.hasActiveFilters
+    val hasSearch = currentState.searchQuery.isNotBlank()
+
+    when {
+      hasSearch && hasFilters -> {
+        // Both search and filters active - use filtered search
+        searchActivitiesPaginatedWithFilters(
+          searchTerm = currentState.searchQuery,
+          filterOptions = currentState.activeFilterOptions,
+          resetPagination = resetPagination
+        )
+      }
+
+      hasSearch -> {
+        // Only search active - use existing search method
+        searchActivitiesPaginated(
+          searchTerm = currentState.searchQuery,
+          resetPagination = resetPagination
+        )
+      }
+
+      hasFilters -> {
+        // Only filters active - use filtered pagination
+        loadActivitiesPaginatedWithFilters(
+          filterOptions = currentState.activeFilterOptions,
+          resetPagination = resetPagination
+        )
+      }
+
+      else -> {
+        // No filters or search - use regular pagination
+        loadActivitiesPaginated(resetPagination = resetPagination)
+      }
+    }
+  }
+
+  // Filter management methods
+
+  /**
+   * Apply initial filter for contextual navigation (e.g., from AboutUs page)
+   */
+  fun applyInitialFilter(initialFilter: ActivityFilterOption?) {
+    initialFilter?.let { filter ->
+      viewModelScope.launch {
+        // Set coordination flag to prevent interference
+        _isApplyingInitialFilter.value = true
+
+        // Update UI state first
+        _activitiesUiState.update { currentState ->
+          currentState.copy(
+            activeFilterOptions = setOf(filter),
+            isFilterDropdownOpen = false
+          )
+        }
+
+        // Use explicit filter value to avoid race condition - don't rely on state read
+        loadActivitiesPaginatedWithFilters(
+          filterOptions = setOf(filter),
+          resetPagination = true
+        )
+
+        // Clear coordination flag after loading is initiated
+        _isApplyingInitialFilter.value = false
+      }
+    }
+  }
+
+  /**
+   * Toggle a filter option on/off with exclusive ShowAll handling
+   */
+  fun toggleFilterOption(option: ActivityFilterOption) {
+    _activitiesUiState.update { currentState ->
+      val currentFilters = currentState.activeFilterOptions
+
+      when (option) {
+        is ActivityFilterOption.ShowAll -> {
+          // ShowAll is exclusive - clear all other filters
+          currentState.copy(activeFilterOptions = setOf(ActivityFilterOption.ShowAll))
+        }
+        else -> {
+          // For any other filter option
+          val filtersWithoutShowAll = currentFilters - ActivityFilterOption.ShowAll
+
+          val newFilters = if (filtersWithoutShowAll.contains(option)) {
+            // Remove the filter if already selected
+            filtersWithoutShowAll - option
+          } else {
+            // Add the filter if not selected
+            filtersWithoutShowAll + option
+          }
+
+          // If no filters remain, default to ShowAll
+          val finalFilters = if (newFilters.isEmpty()) {
+            setOf(ActivityFilterOption.ShowAll)
+          } else {
+            newFilters // ShowAll is automatically excluded
+          }
+
+          currentState.copy(activeFilterOptions = finalFilters)
+        }
+      }
+    }
+
+    // Automatically trigger filtered data load
+    loadActivitiesWithCurrentState(resetPagination = true)
+  }
+
+  /**
+   * Clear all active filters (same as selecting ShowAll)
+   */
+  fun clearAllFilters() {
+    _activitiesUiState.update { currentState ->
+      currentState.copy(activeFilterOptions = setOf(ActivityFilterOption.ShowAll))
+    }
+
+    // FIX: Use regular pagination loading when clearing filters (ShowAll means no filters)
+    loadActivitiesPaginated(resetPagination = true)
+  }
+
+  /**
+   * Apply multiple selected filters at once
+   */
+  fun applyFilters(selectedFilters: Set<ActivityFilterOption>) {
+    _activitiesUiState.update { currentState ->
+      val sanitizedFilters = if (selectedFilters.contains(ActivityFilterOption.ShowAll)) {
+        // If ShowAll is in the set, make it exclusive
+        setOf(ActivityFilterOption.ShowAll)
+      } else {
+        selectedFilters
+      }
+
+      currentState.copy(activeFilterOptions = sanitizedFilters)
+    }
+
+    // Trigger filtered data load
+    loadActivitiesWithCurrentState(resetPagination = true)
+  }
+
+  /**
+   * Toggle filter dropdown visibility
+   */
+  fun toggleFilterDropdown() {
+    _activitiesUiState.update { currentState ->
+      currentState.copy(isFilterDropdownOpen = !currentState.isFilterDropdownOpen)
+    }
+  }
+
+  /**
+   * Close filter dropdown
+   */
+  fun closeFilterDropdown() {
+    _activitiesUiState.update { currentState ->
+      currentState.copy(isFilterDropdownOpen = false)
+    }
   }
 }
 

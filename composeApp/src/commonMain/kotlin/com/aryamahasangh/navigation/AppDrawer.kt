@@ -575,14 +575,6 @@ fun MainContent(
                 fontWeight = FontWeight.Bold
               )
             }
-            else if (environment == "prod") {
-              Text(
-                "परीक्षणार्थ-1",
-                color = Color.Red.copy(alpha = 0.6f),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-              )
-            }
           }
         },
         navigationIcon = {

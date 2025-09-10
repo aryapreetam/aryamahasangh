@@ -27,8 +27,8 @@ import com.aryamahasangh.features.admin.family.CreateAryaParivarFormScreen
 import com.aryamahasangh.features.admin.family.FamilyDetailScreen
 import com.aryamahasangh.features.admin.family.FamilyViewModel
 import com.aryamahasangh.features.admin.member.AddMemberFormScreen
-import com.aryamahasangh.features.admin.member.SingleMemberPageState
 import com.aryamahasangh.features.admin.member.MemberDetailScreen
+import com.aryamahasangh.features.admin.member.SingleMemberPageState
 import com.aryamahasangh.features.arya_nirman.AryaNirmanHomeScreen
 import com.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
 import com.aryamahasangh.features.arya_nirman.SatraRegistrationFormScreen
@@ -358,9 +358,21 @@ fun RootNavGraph(navController: NavHostController) {
         )
       }
     }
-    navigation<Screen.ActivitiesSection>(startDestination = Screen.Activities) {
+    navigation<Screen.ActivitiesSection>(startDestination = Screen.Activities()) {
       composable<Screen.Activities> {
+        val route = it.toRoute<Screen.Activities>()
         val viewModel = koinInject<ActivitiesViewModel>()
+
+        // Apply initial filter if provided
+        LaunchedEffect(route.initialFilter) {
+          val filterOption = route.initialFilter?.let { filterName ->
+            ActivityFilterOption.getAllOptions().find { option ->
+              option.displayName == filterName
+            }
+          }
+          viewModel.applyInitialFilter(filterOption)
+        }
+
         val onNavigateToDetails = { id: String ->
           navController.navigate(Screen.ActivityDetails(id))
         }
@@ -388,7 +400,7 @@ fun RootNavGraph(navController: NavHostController) {
             ActivitiesPageState.markForRefresh()
             navController.navigate(Screen.ActivityDetails(activityId)) {
               // Clear the CreateActivity form from back stack
-              popUpTo(Screen.Activities) {
+              popUpTo<Screen.Activities>() {
                 inclusive = false
               }
             }

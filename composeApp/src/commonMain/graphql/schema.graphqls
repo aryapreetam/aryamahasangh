@@ -240,6 +240,8 @@ type ActivitiesWithStatus implements Node {
 
   type: ActivityType
 
+  allowedGender: GenderFilter
+
   district: String
 
   state: String
@@ -289,6 +291,8 @@ input ActivitiesWithStatusFilter {
 
   type: ActivityTypeFilter
 
+  allowedGender: GenderFilterFilter
+
   district: StringFilter
 
   state: StringFilter
@@ -326,6 +330,8 @@ input ActivitiesWithStatusInsertInput {
 
   type: ActivityType
 
+  allowedGender: GenderFilter
+
   district: String
 
   state: String
@@ -358,6 +364,8 @@ input ActivitiesWithStatusOrderBy {
 
   type: OrderByDirection
 
+  allowedGender: OrderByDirection
+
   district: OrderByDirection
 
   state: OrderByDirection
@@ -377,6 +385,8 @@ input ActivitiesWithStatusUpdateInput {
   endDatetime: Datetime
 
   type: ActivityType
+
+  allowedGender: GenderFilter
 
   district: String
 
@@ -1929,6 +1939,8 @@ type Family implements Node {
 
   photos: [String]
 
+  updatedAt: Datetime
+
   address: Address
 
   aryaSamaj: AryaSamaj
@@ -1978,6 +1990,8 @@ input FamilyFilter {
 
   photos: StringListFilter
 
+  updatedAt: DatetimeFilter
+
   nodeId: IDFilter
 
   """
@@ -2008,6 +2022,8 @@ input FamilyInsertInput {
   name: String
 
   photos: [String]
+
+  updatedAt: Datetime
 }
 
 type FamilyInsertResponse {
@@ -2181,6 +2197,8 @@ input FamilyOrderBy {
   aryaSamajId: OrderByDirection
 
   name: OrderByDirection
+
+  updatedAt: OrderByDirection
 }
 
 enum FamilyRelation {
@@ -2252,6 +2270,8 @@ input FamilyUpdateInput {
   name: String
 
   photos: [String]
+
+  updatedAt: Datetime
 }
 
 type FamilyUpdateResponse {
@@ -3054,6 +3074,10 @@ type MemberUpdateResponse {
 The root type for creating and mutating data
 """
 type Mutation {
+  cleanupOldActivityLogs(retentionDays: Int = 365): Int
+
+  countConcurrentOperations(tableName: String!, operation: String!): Int
+
   deleteAryaSamaj(pAryaSamajId: String!): JSON
 
   """
@@ -3156,7 +3180,26 @@ type Mutation {
   """
   deleteFromSatrRegistrationCollection("Restricts the mutation's impact to records matching the criteria" filter: SatrRegistrationFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): SatrRegistrationDeleteResponse!
 
+  """
+  Deletes zero or more records from the `StorageCleanupQueue` collection
+  """
+  deleteFromStorageCleanupQueueCollection("Restricts the mutation's impact to records matching the criteria" filter: StorageCleanupQueueFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): StorageCleanupQueueDeleteResponse!
+
+  """
+  Deletes zero or more records from the `TriggerDebugLog` collection
+  """
+  deleteFromTriggerDebugLogCollection("Restricts the mutation's impact to records matching the criteria" filter: TriggerDebugLogFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): TriggerDebugLogDeleteResponse!
+
+  """
+  Deletes zero or more records from the `UserActivityLog` collection
+  """
+  deleteFromUserActivityLogCollection("Restricts the mutation's impact to records matching the criteria" filter: UserActivityLogFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): UserActivityLogDeleteResponse!
+
   deleteMember(pMemberId: String!): JSON
+
+  httpResetCurlopt: Boolean
+
+  httpSetCurlopt(curlopt: String!, value: String!): Boolean
 
   insertAryaSamajDetails(pSamajName: String!, pSamajDescription: String!, pBasicAddress: String!, pState: String!, pDistrict: String!, pSamajMediaUrls: [String], pPincode: String, pLatitude: Float, pLongitude: Float, pVidhansabha: String, pMemberId: String, pPost: String = "प्रधान", pPriority: Int = 1): JSON
 
@@ -3262,7 +3305,24 @@ type Mutation {
   """
   insertIntoSatrRegistrationCollection(objects: [SatrRegistrationInsertInput!]!): SatrRegistrationInsertResponse
 
+  """
+  Adds one or more `StorageCleanupQueue` records to the collection
+  """
+  insertIntoStorageCleanupQueueCollection(objects: [StorageCleanupQueueInsertInput!]!): StorageCleanupQueueInsertResponse
+
+  """
+  Adds one or more `TriggerDebugLog` records to the collection
+  """
+  insertIntoTriggerDebugLogCollection(objects: [TriggerDebugLogInsertInput!]!): TriggerDebugLogInsertResponse
+
+  """
+  Adds one or more `UserActivityLog` records to the collection
+  """
+  insertIntoUserActivityLogCollection(objects: [UserActivityLogInsertInput!]!): UserActivityLogInsertResponse
+
   insertMemberDetails(pName: String!, pPhoneNumber: String!, pProfileImage: String, pEducationalQualification: String, pEmail: String, pDob: Date, pAddressId: String, pAryaSamajId: String, pJoiningDate: Date, pTempAddressId: String, pReferrerId: String, pOccupation: String, pIntroduction: String, pGender: String, pBasicAddress: String, pState: String, pDistrict: String, pPincode: String, pLatitude: Float, pLongitude: Float, pVidhansabha: String, pTempBasicAddress: String, pTempState: String, pTempDistrict: String, pTempPincode: String, pTempLatitude: Float, pTempLongitude: Float, pTempVidhansabha: String): JSON
+
+  testActivityLogging: String
 
   """
   Updates zero or more records in the `Activities` collection
@@ -3371,6 +3431,21 @@ type Mutation {
   Updates zero or more records in the `SatrRegistration` collection
   """
   updateSatrRegistrationCollection("Fields that are set will be updated for all records matching the `filter`" set: SatrRegistrationUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: SatrRegistrationFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): SatrRegistrationUpdateResponse!
+
+  """
+  Updates zero or more records in the `StorageCleanupQueue` collection
+  """
+  updateStorageCleanupQueueCollection("Fields that are set will be updated for all records matching the `filter`" set: StorageCleanupQueueUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: StorageCleanupQueueFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): StorageCleanupQueueUpdateResponse!
+
+  """
+  Updates zero or more records in the `TriggerDebugLog` collection
+  """
+  updateTriggerDebugLogCollection("Fields that are set will be updated for all records matching the `filter`" set: TriggerDebugLogUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: TriggerDebugLogFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): TriggerDebugLogUpdateResponse!
+
+  """
+  Updates zero or more records in the `UserActivityLog` collection
+  """
+  updateUserActivityLogCollection("Fields that are set will be updated for all records matching the `filter`" set: UserActivityLogUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: UserActivityLogFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): UserActivityLogUpdateResponse!
 }
 
 interface Node {
@@ -3860,6 +3935,8 @@ type Query {
   """
   bookOrdersCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: BookOrdersFilter, "Sort order to apply to the collection" orderBy: [BookOrdersOrderBy!]): BookOrdersConnection
 
+  byteaToText(data: Opaque!): String
+
   """
   A pagable collection of type `Family`
   """
@@ -3919,6 +3996,23 @@ type Query {
   A pagable collection of type `SatrRegistration`
   """
   satrRegistrationCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: SatrRegistrationFilter, "Sort order to apply to the collection" orderBy: [SatrRegistrationOrderBy!]): SatrRegistrationConnection
+
+  """
+  A pagable collection of type `StorageCleanupQueue`
+  """
+  storageCleanupQueueCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: StorageCleanupQueueFilter, "Sort order to apply to the collection" orderBy: [StorageCleanupQueueOrderBy!]): StorageCleanupQueueConnection
+
+  textToBytea(data: String!): Opaque
+
+  """
+  A pagable collection of type `TriggerDebugLog`
+  """
+  triggerDebugLogCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: TriggerDebugLogFilter, "Sort order to apply to the collection" orderBy: [TriggerDebugLogOrderBy!]): TriggerDebugLogConnection
+
+  """
+  A pagable collection of type `UserActivityLog`
+  """
+  userActivityLogCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: UserActivityLogFilter, "Sort order to apply to the collection" orderBy: [UserActivityLogOrderBy!]): UserActivityLogConnection
 }
 
 type SamajMember implements Node {
@@ -4297,6 +4391,170 @@ type SatrRegistrationUpdateResponse {
   records: [SatrRegistration!]!
 }
 
+type StorageCleanupQueue implements Node {
+  """
+  Globally Unique Record Identifier
+  """
+  nodeId: ID!
+
+  id: Int!
+
+  createdAt: Datetime
+
+  processedAt: Datetime
+
+  tableName: String!
+
+  operation: String!
+
+  recordId: String!
+
+  fileUrls: [String]!
+
+  status: String
+
+  errorMessage: String
+}
+
+type StorageCleanupQueueConnection {
+  edges: [StorageCleanupQueueEdge!]!
+
+  pageInfo: PageInfo!
+}
+
+type StorageCleanupQueueDeleteResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [StorageCleanupQueue!]!
+}
+
+type StorageCleanupQueueEdge {
+  cursor: String!
+
+  node: StorageCleanupQueue!
+}
+
+input StorageCleanupQueueFilter {
+  id: IntFilter
+
+  createdAt: DatetimeFilter
+
+  processedAt: DatetimeFilter
+
+  tableName: StringFilter
+
+  operation: StringFilter
+
+  recordId: StringFilter
+
+  fileUrls: StringListFilter
+
+  status: StringFilter
+
+  errorMessage: StringFilter
+
+  nodeId: IDFilter
+
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [StorageCleanupQueueFilter!]
+
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [StorageCleanupQueueFilter!]
+
+  """
+  Negates a filter
+  """
+  not: StorageCleanupQueueFilter
+}
+
+input StorageCleanupQueueInsertInput {
+  createdAt: Datetime
+
+  processedAt: Datetime
+
+  tableName: String
+
+  operation: String
+
+  recordId: String
+
+  fileUrls: [String]
+
+  status: String
+
+  errorMessage: String
+}
+
+type StorageCleanupQueueInsertResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [StorageCleanupQueue!]!
+}
+
+input StorageCleanupQueueOrderBy {
+  id: OrderByDirection
+
+  createdAt: OrderByDirection
+
+  processedAt: OrderByDirection
+
+  tableName: OrderByDirection
+
+  operation: OrderByDirection
+
+  recordId: OrderByDirection
+
+  status: OrderByDirection
+
+  errorMessage: OrderByDirection
+}
+
+input StorageCleanupQueueUpdateInput {
+  createdAt: Datetime
+
+  processedAt: Datetime
+
+  tableName: String
+
+  operation: String
+
+  recordId: String
+
+  fileUrls: [String]
+
+  status: String
+
+  errorMessage: String
+}
+
+type StorageCleanupQueueUpdateResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [StorageCleanupQueue!]!
+}
+
 """
 Boolean expression comparing fields on type "String"
 """
@@ -4384,6 +4642,152 @@ input TimeListFilter {
   overlaps: [Time!]
 }
 
+type TriggerDebugLog implements Node {
+  """
+  Globally Unique Record Identifier
+  """
+  nodeId: ID!
+
+  id: Int!
+
+  createdAt: Datetime
+
+  triggerName: String
+
+  tableName: String
+
+  operation: String
+
+  oldRecordId: String
+
+  message: String
+}
+
+type TriggerDebugLogConnection {
+  edges: [TriggerDebugLogEdge!]!
+
+  pageInfo: PageInfo!
+}
+
+type TriggerDebugLogDeleteResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [TriggerDebugLog!]!
+}
+
+type TriggerDebugLogEdge {
+  cursor: String!
+
+  node: TriggerDebugLog!
+}
+
+input TriggerDebugLogFilter {
+  id: IntFilter
+
+  createdAt: DatetimeFilter
+
+  triggerName: StringFilter
+
+  tableName: StringFilter
+
+  operation: StringFilter
+
+  oldRecordId: StringFilter
+
+  message: StringFilter
+
+  nodeId: IDFilter
+
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [TriggerDebugLogFilter!]
+
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [TriggerDebugLogFilter!]
+
+  """
+  Negates a filter
+  """
+  not: TriggerDebugLogFilter
+}
+
+input TriggerDebugLogInsertInput {
+  createdAt: Datetime
+
+  triggerName: String
+
+  tableName: String
+
+  operation: String
+
+  oldRecordId: String
+
+  message: String
+}
+
+type TriggerDebugLogInsertResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [TriggerDebugLog!]!
+}
+
+input TriggerDebugLogOrderBy {
+  id: OrderByDirection
+
+  createdAt: OrderByDirection
+
+  triggerName: OrderByDirection
+
+  tableName: OrderByDirection
+
+  operation: OrderByDirection
+
+  oldRecordId: OrderByDirection
+
+  message: OrderByDirection
+}
+
+input TriggerDebugLogUpdateInput {
+  createdAt: Datetime
+
+  triggerName: String
+
+  tableName: String
+
+  operation: String
+
+  oldRecordId: String
+
+  message: String
+}
+
+type TriggerDebugLogUpdateResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [TriggerDebugLog!]!
+}
+
 """
 A universally unique identifier
 """
@@ -4415,6 +4819,216 @@ input UUIDListFilter {
   is: FilterIs
 
   overlaps: [UUID!]
+}
+
+type UserActivityLog implements Node {
+  """
+  Globally Unique Record Identifier
+  """
+  nodeId: ID!
+
+  id: UUID!
+
+  userId: UUID!
+
+  userEmail: String
+
+  actionName: String!
+
+  primaryEntityTable: String!
+
+  primaryEntityId: String!
+
+  affectedTables: [String]
+
+  operationContext: String
+
+  isBulk: Boolean
+
+  recordCount: Int
+
+  changedFields: JSON
+
+  metadata: JSON
+
+  performedAt: Datetime
+
+  transactionId: BigInt
+}
+
+type UserActivityLogConnection {
+  edges: [UserActivityLogEdge!]!
+
+  pageInfo: PageInfo!
+}
+
+type UserActivityLogDeleteResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [UserActivityLog!]!
+}
+
+type UserActivityLogEdge {
+  cursor: String!
+
+  node: UserActivityLog!
+}
+
+input UserActivityLogFilter {
+  id: UUIDFilter
+
+  userId: UUIDFilter
+
+  userEmail: StringFilter
+
+  actionName: StringFilter
+
+  primaryEntityTable: StringFilter
+
+  primaryEntityId: StringFilter
+
+  affectedTables: StringListFilter
+
+  operationContext: StringFilter
+
+  isBulk: BooleanFilter
+
+  recordCount: IntFilter
+
+  performedAt: DatetimeFilter
+
+  transactionId: BigIntFilter
+
+  nodeId: IDFilter
+
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [UserActivityLogFilter!]
+
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [UserActivityLogFilter!]
+
+  """
+  Negates a filter
+  """
+  not: UserActivityLogFilter
+}
+
+input UserActivityLogInsertInput {
+  id: UUID
+
+  userId: UUID
+
+  userEmail: String
+
+  actionName: String
+
+  primaryEntityTable: String
+
+  primaryEntityId: String
+
+  affectedTables: [String]
+
+  operationContext: String
+
+  isBulk: Boolean
+
+  recordCount: Int
+
+  changedFields: JSON
+
+  metadata: JSON
+
+  performedAt: Datetime
+
+  transactionId: BigInt
+}
+
+type UserActivityLogInsertResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [UserActivityLog!]!
+}
+
+input UserActivityLogOrderBy {
+  id: OrderByDirection
+
+  userId: OrderByDirection
+
+  userEmail: OrderByDirection
+
+  actionName: OrderByDirection
+
+  primaryEntityTable: OrderByDirection
+
+  primaryEntityId: OrderByDirection
+
+  operationContext: OrderByDirection
+
+  isBulk: OrderByDirection
+
+  recordCount: OrderByDirection
+
+  performedAt: OrderByDirection
+
+  transactionId: OrderByDirection
+}
+
+input UserActivityLogUpdateInput {
+  id: UUID
+
+  userId: UUID
+
+  userEmail: String
+
+  actionName: String
+
+  primaryEntityTable: String
+
+  primaryEntityId: String
+
+  affectedTables: [String]
+
+  operationContext: String
+
+  isBulk: Boolean
+
+  recordCount: Int
+
+  changedFields: JSON
+
+  metadata: JSON
+
+  performedAt: Datetime
+
+  transactionId: BigInt
+}
+
+type UserActivityLogUpdateResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [UserActivityLog!]!
 }
 
 """

@@ -52,7 +52,12 @@ fun <T> PaginatedListScreen(
     isCompactLayout: Boolean = true,
     itemsPerRow: Int = 1,
     showAddButton: Boolean = true,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+
+  // Optional header content
+    headerContent: (@Composable () -> Unit)? = null,
+  // Flag to control built-in search bar
+    showBuiltInSearchBar: Boolean = true
 ) {
     val windowInfo = currentWindowAdaptiveInfo()
     val isCompact = windowInfo.windowSizeClass.windowWidthSizeClass == WindowWidthSizeClass.COMPACT
@@ -105,84 +110,83 @@ fun <T> PaginatedListScreen(
     }
 
     Column(
-        modifier = modifier.fillMaxSize().padding(16.dp)
+        modifier = modifier.fillMaxSize().padding(8.dp)
     ) {
+      // Only show built-in search & add if showBuiltInSearchBar is true
+      if (showBuiltInSearchBar) {
         // Search bar and add button
         Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = if (isCompact) Arrangement.SpaceBetween else Arrangement.Start
+          modifier = Modifier.fillMaxWidth(),
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = if (isCompact) Arrangement.SpaceBetween else Arrangement.Start
         ) {
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = onSearchChange,
-                modifier = if (isCompact) Modifier.weight(1f) else Modifier.width(490.dp),
-                placeholder = { Text(searchPlaceholder) },
-                leadingIcon = if (searchQuery.isEmpty()) {
-                  { Icon(Icons.Default.Search, contentDescription = "Search") }
-                } else null,
-                trailingIcon = {
-                    if (paginationState.isSearching) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp
-                        )
-                    }else if(searchQuery.isNotEmpty()){
-                      // close icon that when clicked, clears the input field
-                      IconButton(onClick = { onSearchChange("") }) {
-                        Icon(
-                          Icons.Default.Close,
-                          contentDescription = "हटाएँ",
-                          modifier = Modifier.size(20.dp)
-                        )
-                      }
-                    }else{
-                      null
-                    }
-                },
-                singleLine = true
-            )
-
-            if (!isCompact) {
-                Spacer(modifier = Modifier.weight(1f))
-            } else {
-                Spacer(modifier = Modifier.width(16.dp))
-            }
-
-          if (showAddButton) {
-            if (isCompact) {
-              TooltipBox(
-                positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
-                tooltip = {
-                  PlainTooltip {
-                    Text(addButtonText)
-                  }
-                },
-                state = rememberTooltipState()
-              ) {
-                IconButton(onClick = onAddClick) {
+          OutlinedTextField(
+            value = searchQuery,
+            onValueChange = onSearchChange,
+            modifier = if (isCompact) Modifier.weight(1f) else Modifier.width(490.dp),
+            placeholder = { Text(searchPlaceholder) },
+            leadingIcon = if (searchQuery.isEmpty()) {
+              { Icon(Icons.Default.Search, contentDescription = "Search") }
+            } else null,
+            trailingIcon = {
+              if (paginationState.isSearching) {
+                CircularProgressIndicator(
+                  modifier = Modifier.size(20.dp),
+                  strokeWidth = 2.dp
+                )
+              } else if (searchQuery.isNotEmpty()) {
+                // close icon that when clicked, clears the input field
+                IconButton(onClick = { onSearchChange("") }) {
                   Icon(
-                    modifier = Modifier.size(24.dp),
-                    imageVector = Icons.Default.Add,
-                    contentDescription = addButtonText
+                    Icons.Default.Close,
+                    contentDescription = "हटाएँ",
+                    modifier = Modifier.size(20.dp)
                   )
-                        }
+                }
+              } else {
+                null
+              }
+            },
+            singleLine = true
+          )
+
+              if (!isCompact) {
+                Spacer(modifier = Modifier.weight(1f))
+              } else {
+                Spacer(modifier = Modifier.width(16.dp))
+              }
+
+              if (showAddButton) {
+                if (isCompact) {
+                  TooltipBox(
+                    positionProvider = TooltipDefaults.rememberPlainTooltipPositionProvider(),
+                    tooltip = { PlainTooltip { Text(addButtonText) } },
+                    state = rememberTooltipState()
+                  ) {
+                    IconButton(onClick = onAddClick) {
+                      Icon(
+                        modifier = Modifier.size(24.dp),
+                        imageVector = Icons.Default.Add,
+                        contentDescription = addButtonText
+                      )
                     }
-                } else {
-                  Button(onClick = onAddClick) {
+                        }
+                    } else {
+                      Button(onClick = onAddClick) {
                         Icon(
-                            modifier = Modifier.size(24.dp),
-                            imageVector = Icons.Default.Add,
+                          modifier = Modifier.size(24.dp),
+                          imageVector = Icons.Default.Add,
                           contentDescription = null
                         )
-                      Spacer(modifier = Modifier.width(8.dp))
-                      Text(addButtonText)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(addButtonText)
+                      }
                     }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+          Spacer(modifier = Modifier.height(16.dp))
+        }
 
         // Loading state
         if (paginationState.isInitialLoading) {
@@ -231,15 +235,22 @@ fun <T> PaginatedListScreen(
             }
         } else {
             // List content with scrollbar
-            Box(
+          Row(
                 modifier = Modifier.fillMaxSize()
             ) {
                 LazyColumn(
                     state = listState,
                     verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxSize()
+                  modifier = Modifier.weight(1f) // Takes up all remaining width
                 ) {
-                    if (isCompactLayout || itemsPerRow == 1) {
+                  // Optional header content
+                  headerContent?.let {
+                    item {
+                      it()
+                    }
+                    }
+
+                  if (isCompactLayout || itemsPerRow == 1) {
                         items(items) { item ->
                             itemContent(item)
                         }
@@ -284,9 +295,12 @@ fun <T> PaginatedListScreen(
                     }
                 }
 
-                // Custom scrollbar
+              // Custom scrollbar (dedicated space, no overlap)
                 CustomScrollbar(
-                    modifier = Modifier.align(Alignment.CenterEnd).fillMaxHeight(),
+                  modifier = Modifier
+                    .fillMaxHeight()
+                    .width(12.dp)
+                    .padding(start = 2.dp, end = 2.dp),
                     scrollState = listState
                 )
             }
