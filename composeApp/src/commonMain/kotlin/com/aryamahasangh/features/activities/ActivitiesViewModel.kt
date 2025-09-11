@@ -413,12 +413,38 @@ class ActivitiesViewModel(
         searchActivitiesPaginated(searchTerm = query.trim(), resetPagination = true)
       }
     }
+    shouldPreservePagination = false
   }
 
   // NEW: Restore search query and trigger fresh search for preserved context
   fun restoreAndSearchActivities(query: String) {
     // Set search query state and trigger fresh search to ensure latest results
     searchActivitiesWithDebounce(query)
+  }
+
+  // NEW: Restore both search and filters and trigger a filtered search
+  fun restoreSearchAndFilters(query: String, filters: Set<ActivityFilterOption>) {
+    // Update UI state synchronously so UI reflects restored state immediately
+    _activitiesUiState.update { currentState ->
+      currentState.copy(
+        searchQuery = query,
+        activeFilterOptions = if (filters.isEmpty()) setOf(ActivityFilterOption.ShowAll) else filters,
+        paginationState = currentState.paginationState.copy(isSearching = true)
+      )
+    }
+
+    // Ensure preservation does not short-circuit this explicit restore
+    shouldPreservePagination = false
+
+    // Sync PageState filters to avoid timing issues on fast navigations
+    ActivitiesPageState.activeFilters = if (filters.isEmpty()) setOf(ActivityFilterOption.ShowAll) else filters
+
+    // Trigger combined filtered search with reset
+    searchActivitiesPaginatedWithFilters(
+      searchTerm = query.trim(),
+      filterOptions = if (filters.isEmpty()) setOf(ActivityFilterOption.ShowAll) else filters,
+      resetPagination = true
+    )
   }
 
   fun searchActivitiesPaginated(searchTerm: String, pageSize: Int = 30, resetPagination: Boolean = true) {
@@ -1009,6 +1035,11 @@ class ActivitiesViewModel(
           )
         }
 
+        // SYNCHRONIZATION FIX: Also update PageState so LaunchedEffect logic works correctly
+        // This ensures that when the screen's LaunchedEffect runs, it finds the correct preserved filters
+        // and doesn't fall to the else clause that might override the filter state
+        ActivitiesPageState.activeFilters = setOf(filter)
+
         // Use explicit filter value to avoid race condition - don't rely on state read
         loadActivitiesPaginatedWithFilters(
           filterOptions = setOf(filter),
@@ -1057,6 +1088,12 @@ class ActivitiesViewModel(
       }
     }
 
+    shouldPreservePagination = false
+    // RUNTIME STATE SYNCHRONIZATION FIX: Also update PageState immediately
+    // This ensures that when user adds/removes filters during normal usage,
+    // the PageState stays synchronized with ViewModel state for proper restoration
+    ActivitiesPageState.activeFilters = updatedState.activeFilterOptions
+
     // FIX: Use the updated state directly instead of reading state again
     // This ensures we're using the exact state that was just set
     val hasFilters = updatedState.hasActiveFilters
@@ -1091,6 +1128,10 @@ class ActivitiesViewModel(
         loadActivitiesPaginated(resetPagination = true)
       }
     }
+    // RUNTIME STATE SYNCHRONIZATION FIX: Also update PageState immediately
+    // This ensures that when user adds/removes filters during normal usage,
+    // the PageState stays synchronized with ViewModel state for proper restoration
+    ActivitiesPageState.activeFilters = updatedState.activeFilterOptions
   }
 
   /**
@@ -1100,6 +1141,10 @@ class ActivitiesViewModel(
     _activitiesUiState.update { currentState ->
       currentState.copy(activeFilterOptions = setOf(ActivityFilterOption.ShowAll))
     }
+
+    shouldPreservePagination = false
+    // RUNTIME STATE SYNCHRONIZATION FIX: Also update PageState immediately
+    ActivitiesPageState.activeFilters = setOf(ActivityFilterOption.ShowAll)
 
     // Improved search + filter combination handling
     // If search is active, show search results; otherwise show all activities
@@ -1117,16 +1162,20 @@ class ActivitiesViewModel(
    * Apply multiple selected filters at once
    */
   fun applyFilters(selectedFilters: Set<ActivityFilterOption>) {
-    _activitiesUiState.update { currentState ->
-      val sanitizedFilters = if (selectedFilters.contains(ActivityFilterOption.ShowAll)) {
-        // If ShowAll is in the set, make it exclusive
-        setOf(ActivityFilterOption.ShowAll)
-      } else {
-        selectedFilters
-      }
-
-      currentState.copy(activeFilterOptions = sanitizedFilters)
+    val finalFilters = if (selectedFilters.contains(ActivityFilterOption.ShowAll)) {
+      // If ShowAll is in the set, make it exclusive
+      setOf(ActivityFilterOption.ShowAll)
+    } else {
+      selectedFilters
     }
+
+    _activitiesUiState.update { currentState ->
+      currentState.copy(activeFilterOptions = finalFilters)
+    }
+
+    shouldPreservePagination = false
+    // RUNTIME STATE SYNCHRONIZATION FIX: Also update PageState immediately
+    ActivitiesPageState.activeFilters = finalFilters
 
     // Trigger filtered data load
     loadActivitiesWithCurrentState(resetPagination = true)

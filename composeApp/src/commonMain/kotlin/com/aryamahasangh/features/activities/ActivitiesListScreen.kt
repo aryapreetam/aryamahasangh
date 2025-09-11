@@ -35,6 +35,9 @@ internal object ActivitiesPageState {
   var activeFilters: Set<ActivityFilterOption> = setOf(ActivityFilterOption.ShowAll)
   var needsRefresh: Boolean = false
 
+  // New: track if an initialFilter from navigation has already been consumed
+  var consumedInitialFilter: String? = null
+
   // FIX: Add explicit section tracking
   private var isInActivitiesSection = false
   private var hasInitialized = false
@@ -45,6 +48,7 @@ internal object ActivitiesPageState {
     lastSearchQuery = ""
     activeFilters = setOf(ActivityFilterOption.ShowAll)
     needsRefresh = false
+    // Do not reset consumedInitialFilter here to avoid reapplying on internal returns
   }
 
   fun saveState(
@@ -143,9 +147,20 @@ fun ActivitiesScreen(
     }
 
     when {
-      // Scenario 1: Have saved search query → restore and search with fresh results
+      // Scenario 1: Have saved search query → restore both filters and search if filters preserved
       !ActivitiesPageState.needsRefresh && ActivitiesPageState.lastSearchQuery.isNotEmpty() -> {
-        viewModel.restoreAndSearchActivities(ActivitiesPageState.lastSearchQuery)
+        val preservedFilters = ActivitiesPageState.activeFilters
+        val hasPreservedFilters = preservedFilters.isNotEmpty() &&
+          !preservedFilters.contains(ActivityFilterOption.ShowAll)
+
+        if (hasPreservedFilters) {
+          viewModel.restoreSearchAndFilters(
+            ActivitiesPageState.lastSearchQuery,
+            preservedFilters
+          )
+        } else {
+          viewModel.restoreAndSearchActivities(ActivitiesPageState.lastSearchQuery)
+        }
       }
 
       // Scenario 2: Have saved non-search data → preserve pagination  
