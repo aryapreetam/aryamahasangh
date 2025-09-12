@@ -5,9 +5,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material3.MenuAnchorType.Companion.PrimaryNotEditable
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
+import androidx.compose.material3.MenuAnchorType.Companion.PrimaryNotEditable
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -16,7 +16,6 @@ import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.components.ActivityListItem
 import com.aryamahasangh.components.LoadingErrorState
 import com.aryamahasangh.fragment.ActivityWithStatus
-import com.aryamahasangh.fragment.OrganisationalActivityShort
 import com.aryamahasangh.navigation.LocalSnackbarHostState
 import com.aryamahasangh.viewmodel.JoinUsUiState
 import com.aryamahasangh.viewmodel.JoinUsViewModel
@@ -426,7 +425,7 @@ val indianStatesToDistricts =
     "छत्तीसगढ़" to listOf("बालोद", "बालोदाबाजार", "बलरामपुर", "बस्तर", "बेमेतरा", "बीजापुर", "बिलासपुर", "दंतेवाड़ा", "धमतरी", "दुर्ग", "गरियाबंद", "जांजगीर-चांपा", "जशपुर", "कबीरधाम", "कांकेर", "कोंडागांव", "कोरबा", "कोरिया", "महासमुंद", "मुंगेली", "नारायणपुर", "रायगढ़", "रायपुर", "सुकमा", "सूरजपुर"),
     "गोवा" to listOf("उत्तर गोवा", "दक्षिण गोवा"),
     "गुजरात" to listOf("अहमदाबाद", "अमरेली", "आणंद", "अरवल्ली", "बनासकांठा", "भरूच", "भावनगर", "बोटाद", "छोटा उदेपुर", "दाहोद", "डांग", "देवभूमि द्वारका", "गांधीनगर", "गिर सोमनाथ", "जामनगर", "जूनागढ़", "खेड़ा", "कच्छ", "महीसागर", "महिसागर", "महेसाणा", "मोरबी", "नर्मदा", "नवसारी", "पंचमहल", "पाटण", "पोरबंदर", "राजकोट", "साबरकांठा", "सुरत", "सुरेंद्रनगर", "तापी", "वडोदरा", "वलसाड"),
-    "हरियाणा" to listOf("अंबाला", "भिवानी", "चरखी दादरी", "फरीदाबाद", "फतेहाबाद", "गुरुग्राम", "हिसार", "झज्जर", "जींद", "कैथल", "करनाल", "कुरुक्षेत्र", "महेंद्रगढ़", "मेवात", "पलवल", "पंचकूला", "पानीपत", "रेवाड़ी", "रोहतक", "सिरसा", "सोनीपत", "यमुनानगर"),
+    "हरियाणा" to listOf("अंबाला", "भिवानी", "चरखी दादरी", "फरीदाबाद", "फतेहाबाद", "गुरुग्राम", "हिसार", "झज्जर", "जींद", "कैथल", "करनाल", "कुरुक्षेत्र", "महेंद्रगढ़", "नुंह", "पलवल", "पंचकूला", "पानीपत", "रेवाड़ी", "रोहतक", "सिरसा", "सोनीपत", "यमुनानगर"),
     "हिमाचल प्रदेश" to listOf("बिलासपुर", "चंबा", "हमीरपुर", "कांगड़ा", "किन्नौर", "कुल्लू", "लाहौल और स्पीति", "मंडी", "शिमला", "सिरमौर", "सोलन", "उना"),
     "झारखंड" to listOf("बोकारो", "चतरा", "देवघर", "धनबाद", "दुमका", "पूर्वी सिंहभूम", "गढ़वा", "गिरिडीह", "गोड्डा", "गुमला", "हजारीबाग", "जामताड़ा", "खूंटी", "कोडरमा", "लातेहार", "लोहरदगा", "पाकुड़", "पलामू", "रामगढ़", "रांची", "साहिबगंज", "सरायकेला-खरसावां", "सिमडेगा", "पश्चिमी सिंहभूम"),
     "कर्नाटक" to listOf("बागलकोट", "बेंगलुरु ग्रामीण", "बेंगलुरु शहरी", "बेलगावी", "बेल्लारी", "बीदर", "विजयपुरा", "चामराजनगर", "चिकबल्लापुर", "चिकमगलूर", "चित्रदुर्ग", "दक्षिण कन्नड़", "दावणगेरे", "धारवाड़", "गदग", "गुलबर्गा", "हसन", "हावेरी", "कोडगु", "कोलार", "कोप्पल", "मांड्या", "मैसूर", "रायचूर", "रामनगरा", "शिवमोग्गा", "तुमकुर", "उडुपी", "उत्तर कन्नड़", "यादगीर"),
@@ -456,6 +455,42 @@ val indianStatesToDistricts =
     "लक्षद्वीप" to listOf("लक्षद्वीप"),
     "पुदुचेरी" to listOf("करैकल", "माही", "पुदुचेरी", "यानम")
   )
+
+val haryanaAssemblyByDistrict: Map<String, List<String>> = mapOf(
+  "पंचकुला" to listOf("कालका", "पंचकुला"),
+  "अंबाला" to listOf("नारायणगढ़", "अंबाला कैंट", "अंबाला सिटी", "मुलाना"),
+  "यमुनानगर" to listOf("सढोरा", "जगाधरी", "यमुनानगर", "रादौर"),
+  "कुरुक्षेत्र" to listOf("लाडवा", "शाहबाद (SC)", "थानेसर", "पहेवा"),
+  "कैथल" to listOf("गुहला (SC)", "कलायत", "कैथल", "पुंडरी"),
+  "करनाल" to listOf("नीलोखेड़ी (SC)", "इंद्री", "करनाल", "घरौंडा", "असंध"),
+  "पानीपत" to listOf("पानीपत ग्रामीण", "पानीपत सिटी", "इसराना (SC)", "समालखा"),
+  "सोनीपत" to listOf("गनौर", "राई", "खरखौदा (SC)", "सोनीपत", "गोहाना", "बरौदा"),
+  "जींद" to listOf("जुलाना", "सफीदों", "जींद", "उचाना कलां", "नरवाना (SC)"),
+  "फतेहाबाद" to listOf("टोहाना", "फतेहाबाद", "रतिया (SC)"),
+  "सिरसा" to listOf("कालांवाली (SC)", "डबवाली", "रानिया", "सिरसा", "ऐलनाबाद"),
+  "हिसार" to listOf("आदमपुर", "उकलाना (SC)", "नारनौंद", "हांसी", "बरवाला", "हिसार", "नलवा"),
+  "भिवानी" to listOf("लोहरू", "भिवानी", "तोशाम", "बवानी खेड़ा (SC)"),
+  "रोहतक" to listOf("महम", "गढ़ी सांपला किलोई", "रोहतक", "कलानौर (SC)"),
+  "झज्जर" to listOf("बादली (Badli)", "बहादुरगढ़", "झज्जर (SC)", "बेरी"),
+  "चरखी दादरी" to listOf("बाढड़ा", "दादरी"),
+  "महेंद्रगढ़" to listOf("अटेली", "महेंद्रगढ़", "नारनौल", "नांगल चौधरी"),
+  "रेवाड़ी" to listOf("बावल (SC)", "कोसली", "रेवाड़ी"),
+  "गुरुग्राम" to listOf("पटौदी (SC)", "बादशाहपुर", "गुरुग्राम", "सोहना"),
+  "नुंह" to listOf("नुंह", "फिरोजपुर झिरका", "पुन्हाना"),
+  "पलवल" to listOf("हथीन", "होडल (SC)", "पलवल"),
+  "फरीदाबाद" to listOf("पृत्थला", "फरीदाबाद NIT", "बड़खल", "बल्लभगढ़", "फरीदाबाद", "तिगांव")
+)
+
+fun getVidhansabhaByStateAndDistrict(state: String, district: String): List<String> {
+  return when(state) {
+    "हरियाणा" -> {
+      haryanaAssemblyByDistrict[district] ?: vidhansabhaByState["हरियाणा"] ?: emptyList()
+    }
+    else -> {
+      emptyList()
+    }
+  }
+}
 
 val vidhansabhaByState =
   mapOf(

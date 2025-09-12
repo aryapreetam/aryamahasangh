@@ -27,8 +27,8 @@ import com.aryamahasangh.features.admin.family.CreateAryaParivarFormScreen
 import com.aryamahasangh.features.admin.family.FamilyDetailScreen
 import com.aryamahasangh.features.admin.family.FamilyViewModel
 import com.aryamahasangh.features.admin.member.AddMemberFormScreen
-import com.aryamahasangh.features.admin.member.SingleMemberPageState
 import com.aryamahasangh.features.admin.member.MemberDetailScreen
+import com.aryamahasangh.features.admin.member.SingleMemberPageState
 import com.aryamahasangh.features.arya_nirman.AryaNirmanHomeScreen
 import com.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
 import com.aryamahasangh.features.arya_nirman.SatraRegistrationFormScreen
@@ -358,9 +358,43 @@ fun RootNavGraph(navController: NavHostController) {
         )
       }
     }
-    navigation<Screen.ActivitiesSection>(startDestination = Screen.Activities) {
+    navigation<Screen.ActivitiesSection>(startDestination = Screen.Activities()) {
       composable<Screen.Activities> {
+        val route = it.toRoute<Screen.Activities>()
         val viewModel = koinInject<ActivitiesViewModel>()
+
+        // Apply initial filter if provided, with one-time consumption and guards
+        LaunchedEffect(route.initialFilter) {
+          val incomingFilterName = route.initialFilter
+          val filterOption = incomingFilterName?.let { filterName ->
+            ActivityFilterOption.getAllOptions().find { option ->
+              option.displayName == filterName
+            }
+          }
+
+          // Determine existing state from PageState for safe decisions
+          val existingFilters = ActivitiesPageState.activeFilters
+          val hasNonShowAll = existingFilters.isNotEmpty() &&
+            !existingFilters.contains(ActivityFilterOption.ShowAll)
+          val hasData = ActivitiesPageState.hasData()
+
+          val shouldApply = when {
+            // No incoming filter or mapping failed
+            filterOption == null -> false
+            // If we don't have any data yet or only ShowAll is active, apply
+            !hasData || !hasNonShowAll -> true
+            // If a different initial filter arrives, treat as new context and apply
+            ActivitiesPageState.consumedInitialFilter != incomingFilterName -> true
+            // Otherwise, we've already consumed this context and user modified filters; do not clobber
+            else -> false
+          }
+
+          if (shouldApply) {
+            viewModel.applyInitialFilter(filterOption)
+            ActivitiesPageState.consumedInitialFilter = incomingFilterName
+          }
+        }
+
         val onNavigateToDetails = { id: String ->
           navController.navigate(Screen.ActivityDetails(id))
         }
@@ -388,7 +422,7 @@ fun RootNavGraph(navController: NavHostController) {
             ActivitiesPageState.markForRefresh()
             navController.navigate(Screen.ActivityDetails(activityId)) {
               // Clear the CreateActivity form from back stack
-              popUpTo(Screen.Activities) {
+              popUpTo<Screen.Activities>() {
                 inclusive = false
               }
             }
@@ -409,7 +443,7 @@ fun RootNavGraph(navController: NavHostController) {
             ActivitiesPageState.markForRefresh()
             // Navigate to activity details after save
             navController.navigate(Screen.ActivityDetails(activityId)) {
-              popUpTo(Screen.Activities)
+              popUpTo<Screen.Activities>()
             }
           },
           onCancel = {

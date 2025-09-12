@@ -202,18 +202,28 @@ fun EventListItem(
         modifier = Modifier.fillMaxWidth()
       ) {
         if (event.isFull) {
-          Text(
-            text = "पंजीकरण बंद", // "Registrations closed"
-            style = MaterialTheme.typography.labelLarge,
-            color = SeatsFullColor,
-            fontWeight = FontWeight.Bold
+          SuggestionChip(
+            onClick = {},
+            label = {
+              Text(
+                text = "पंजीकरण बंद", // "Registrations closed"
+                style = MaterialTheme.typography.labelLarge,
+                color = SeatsFullColor,
+                fontWeight = FontWeight.Bold
+              )
+            }
           )
         } else {
-          Text(
-            text = "पंजीकरण चालू", // "X seats left"
-            style = MaterialTheme.typography.labelLarge,
-            color = SeatsAvailableColor,
-            fontWeight = FontWeight.Bold
+          SuggestionChip(
+            onClick = {},
+            label = {
+              Text(
+                text = "पंजीकरण चालू", // "X seats left"
+                style = MaterialTheme.typography.labelLarge,
+                color = SeatsAvailableColor,
+                fontWeight = FontWeight.Bold
+              )
+            }
           )
         }
 

@@ -29,6 +29,7 @@ import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.error_profile_image
 import coil3.compose.AsyncImage
 import com.aryamahasangh.LocalIsAuthenticated
+import com.aryamahasangh.features.activities.ActivitiesPageState
 import com.aryamahasangh.components.activityTypeData
 import com.aryamahasangh.isWeb
 import com.aryamahasangh.navigation.LocalSnackbarHostState
@@ -48,6 +49,9 @@ fun ActivityDetailScreen(
   onNavigateToCreateOverview: (String, String?, List<String>) -> Unit = { _, _, _ -> },
   viewModel: ActivitiesViewModel = koinInject()
 ) {
+  // Remove incorrect section tracking - this screen is part of Activities section
+  // ActivitiesPageState.enterActivitiesSection()
+  
   val snackbarHostState = LocalSnackbarHostState.current
 
   val isLoggedIn = LocalIsAuthenticated.current

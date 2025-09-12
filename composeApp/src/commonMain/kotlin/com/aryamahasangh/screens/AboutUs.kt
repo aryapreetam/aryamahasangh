@@ -123,14 +123,22 @@ private fun QuickLinksSection(
 
     // गतिविधियां Section
     QuickLinkGroup(
-      title = "गतिविधियां",
+      title = "आर्य गतिविधियां",
       icon = Icons.Default.Event,
       items = listOf(
-        QuickLinkItem("आर्य प्रशिक्षण सत्र", "व्यक्तित्व विकास हेतु प्रशिक्षण", Screen.Activities),
-        QuickLinkItem("बोध सत्र", "धार्मिक ज्ञान वृद्धि हेतु सत्र", Screen.Activities),
-        QuickLinkItem("क्षात्र प्रशिक्षण", "क्षत्रिय धर्म का प्रशिक्षण", Screen.Activities),
-        QuickLinkItem("आर्य वीरांगना प्रशिक्षण", "महिला सशक्तिकरण प्रशिक्षण", Screen.Activities),
-        QuickLinkItem("अभियान", "सामाजिक कार्य हेतु अभियान", Screen.Activities)
+        QuickLinkItem(
+          "आर्य प्रशिक्षण सत्र",
+          "आर्य प्रशिक्षण",
+          Screen.Activities("आर्य प्रशिक्षण सत्र")
+        ),
+        QuickLinkItem("बोध सत्र", "धार्मिक ज्ञान वृद्धि हेतु सत्र", Screen.Activities("बोध सत्र")),
+        QuickLinkItem("क्षात्र प्रशिक्षण", "क्षात्र धर्म का प्रशिक्षण", Screen.Activities("क्षात्र प्रशिक्षण")),
+        QuickLinkItem(
+          "आर्य वीरांगना प्रशिक्षण",
+          "वीरांगना प्रशिक्षण",
+          Screen.Activities("आर्य वीरांगना प्रशिक्षण")
+        ),
+        QuickLinkItem("अभियान", "सामाजिक कार्य हेतु अभियान", Screen.Activities("अभियान"))
       ),
       navigateToScreen = navigateToScreen,
       cardColor = CardBackgroundColor.Blue
@@ -138,7 +146,7 @@ private fun QuickLinksSection(
 
     // संलग्न संस्थाएं Section
     QuickLinkGroup(
-      title = "संलग्न संस्थाएं",
+      title = "संलग्न आर्य संस्थाएं",
       icon = Icons.Default.Business,
       items = organisationNames.map { org ->
         QuickLinkItem(
@@ -153,28 +161,28 @@ private fun QuickLinksSection(
 
     // आर्य गुरुकुल Section
     QuickLinkGroup(
-      title = "आर्य गुरुकुल",
+      title = "आर्य गुरुकुल महाविद्यालय",
       icon = Icons.Default.School,
       items = emptyList(),
       navigateToScreen = navigateToScreen,
       cardColor = CardBackgroundColor.Purple,
       subSections = listOf(
         QuickLinkSubSection(
-          title = "आर्ष गुरुकुल",
+          title = "आर्य गुरुकुल",
           items = listOf(
-            QuickLinkItem("वर्तमान कार्य", "चालू गतिविधियां", Screen.AryaGurukulCollege),
-            QuickLinkItem("गुरुकुल प्रवेश", "नए छात्रों का प्रवेश", Screen.AryaGurukulCollege),
-            QuickLinkItem("आगामी बैठक", "भविष्य की बैठकें", Screen.AryaGurukulCollege),
-            QuickLinkItem("कक्षाएं", "शिक्षा कार्यक्रम", Screen.AryaGurukulCollege)
+//            QuickLinkItem("वर्तमान कार्य", "चालू गतिविधियां", Screen.AryaGurukulCollege),
+//            QuickLinkItem("गुरुकुल प्रवेश", "नए छात्रों का प्रवेश", Screen.AryaGurukulCollege),
+//            QuickLinkItem("आगामी बैठक", "भविष्य की बैठकें", Screen.AryaGurukulCollege),
+//            QuickLinkItem("कक्षाएं", "शिक्षा कार्यक्रम", Screen.AryaGurukulCollege)
           )
         ),
         QuickLinkSubSection(
           title = "आर्या गुरुकुल",
           items = listOf(
-            QuickLinkItem("वर्तमान कार्य", "चालू गतिविधियां", Screen.AryaaGurukulCollege),
-            QuickLinkItem("गुरुकुल प्रवेश", "नए छात्राओं का प्रवेश", Screen.AryaaGurukulCollege),
-            QuickLinkItem("आगामी बैठक", "भविष्य की बैठकें", Screen.AryaaGurukulCollege),
-            QuickLinkItem("कक्षाएं", "शिक्षा कार्यक्रम", Screen.AryaaGurukulCollege)
+//            QuickLinkItem("वर्तमान कार्य", "चालू गतिविधियां", Screen.AryaaGurukulCollege),
+//            QuickLinkItem("गुरुकुल प्रवेश", "नए छात्राओं का प्रवेश", Screen.AryaaGurukulCollege),
+//            QuickLinkItem("आगामी बैठक", "भविष्य की बैठकें", Screen.AryaaGurukulCollege),
+//            QuickLinkItem("कक्षाएं", "शिक्षा कार्यक्रम", Screen.AryaaGurukulCollege)
           )
         )
       )
@@ -182,29 +190,29 @@ private fun QuickLinksSection(
 
     // संगठन Section
     QuickLinkGroup(
-      title = "संगठन",
+      title = "आर्य संगठन",
       icon = Icons.Default.Groups,
       items = listOf(
         QuickLinkItem("सत्र पंजीकरण", "कार्यक्रमों में भाग लेने हेतु", Screen.AryaNirmanHome),
         QuickLinkItem("आर्य परिवार", "पारिवारिक पंजीकरण", Screen.AryaPariwarHome),
         QuickLinkItem("आर्य समाज संगठन", "स्थानीय समाज", Screen.AryaSamajHome),
-        QuickLinkItem("क्षात्र शिविर पंजीकरण", "प्रशिक्षण शिविर", Screen.KshatraTrainingHome),
-        QuickLinkItem("छात्रा शिविर पंजीकरण", "महिला प्रशिक्षण", Screen.ChatraTrainingHome)
+//        QuickLinkItem("क्षात्र शिविर पंजीकरण", "प्रशिक्षण शिविर", Screen.KshatraTrainingHome),
+//        QuickLinkItem("छात्रा शिविर पंजीकरण", "महिला प्रशिक्षण", Screen.ChatraTrainingHome)
       ),
       navigateToScreen = navigateToScreen,
       cardColor = CardBackgroundColor.Gray
     )
 
     // स्वाध्याय Section
-    QuickLinkGroup(
-      title = "स्वाध्याय",
-      icon = Icons.Default.MenuBook,
-      items = listOf(
-        QuickLinkItem("सत्यार्थ प्रकाश", "महर्षि दयानंद का मुख्य ग्रंथ", Screen.Learning)
-      ),
-      navigateToScreen = navigateToScreen,
-      cardColor = CardBackgroundColor.Teal
-    )
+//    QuickLinkGroup(
+//      title = "स्वाध्याय",
+//      icon = Icons.Default.MenuBook,
+//      items = listOf(
+//        QuickLinkItem("सत्यार्थ प्रकाश", "महर्षि दयानंद का मुख्य ग्रंथ", Screen.Learning)
+//      ),
+//      navigateToScreen = navigateToScreen,
+//      cardColor = CardBackgroundColor.Teal
+//    )
 
     // व्यवस्थापकीय Section (Only for authenticated users)
     if (isAuthenticated) {

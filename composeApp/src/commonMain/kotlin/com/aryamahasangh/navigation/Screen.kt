@@ -14,7 +14,7 @@ sealed class Screen {
   data object ActivitiesSection : Screen()
 
   @Serializable
-  data object Activities : Screen()
+  data class Activities(val initialFilter: String? = null) : Screen()
   @Serializable
   data object CreateActivity : Screen()
   @Serializable

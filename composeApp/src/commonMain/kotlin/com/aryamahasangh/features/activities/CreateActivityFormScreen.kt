@@ -53,6 +53,7 @@ import com.aryamahasangh.util.GlobalMessageManager
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 import kotlinx.datetime.Clock.System
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -466,11 +467,14 @@ val genderAllowedDisplayOptions = GenderAllowed.entries.map { it.toDisplayName()
 @ExperimentalMaterial3Api
 @Composable
 fun CreateActivityScreen(
-  viewModel: ActivitiesViewModel,
+  viewModel: ActivitiesViewModel = koinInject(),
   editingActivityId: String? = null,
-  onActivitySaved: (String) -> Unit = {},
+  onActivitySaved: (String) -> Unit,
   onCancel: () -> Unit = {}
 ) {
+  // Remove incorrect section tracking - this screen is part of Activities section
+  // ActivitiesPageState.enterActivitiesSection()
+
   BoxWithConstraints {
     // Consider screens smaller than 600dp as mobile-sized, but exclude desktop
     val isSmallScreen = maxWidth < 600.dp && !isDesktop()
@@ -1122,7 +1126,7 @@ private fun CreateActivityScreenContent(
         maxLines = 30,
         isError = descriptionError,
         supportingText = { if (descriptionError) Text("Description is required") },
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default)
       )
 
       // Associated Organisations
@@ -1478,7 +1482,7 @@ private fun CreateActivityScreenContent(
             },
         minLines = 3,
         maxLines = 10,
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done)
+        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default)
       )
 
       // Removed 300dp spacer since we now handle keyboard scrolling for individual fields

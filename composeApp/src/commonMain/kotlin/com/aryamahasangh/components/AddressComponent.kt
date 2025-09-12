@@ -21,8 +21,8 @@ import com.aryamahasangh.features.activities.LatLng
 import com.aryamahasangh.features.activities.MapLocationPickerDialog
 import com.aryamahasangh.screens.DistrictDropdown
 import com.aryamahasangh.screens.StateDropdown
+import com.aryamahasangh.screens.getVidhansabhaByStateAndDistrict
 import com.aryamahasangh.screens.indianStatesToDistricts
-import com.aryamahasangh.screens.vidhansabhaByState
 import io.ktor.client.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
@@ -525,8 +525,8 @@ fun AddressComponent(
       }
 
       // Vidhansabha Dropdown
-      if (fieldsConfig.showVidhansabha && addressData.state.isNotEmpty()) {
-        val vidhansabhas = vidhansabhaByState[addressData.state] ?: emptyList()
+      if (fieldsConfig.showVidhansabha && addressData.state.isNotEmpty() && addressData.district.isNotEmpty()) {
+        val vidhansabhas = getVidhansabhaByStateAndDistrict(addressData.state, addressData.district)
         VidhansabhaDropdown(
           vidhansabhas = vidhansabhas,
           selectedVidhansabha = addressData.vidhansabha,

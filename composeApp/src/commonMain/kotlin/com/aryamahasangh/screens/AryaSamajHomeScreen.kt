@@ -166,41 +166,44 @@ fun AryaSamajHomeScreen(
         }
       }
 
-      item {
-        // Total count section
-        Card(
-          modifier = Modifier.widthIn(max = 500.dp).padding(vertical = 12.dp),
-          colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-          )
-        ) {
-          Box(
-            modifier = Modifier
-              .fillMaxWidth()
-              .padding(16.dp),
-            contentAlignment = Alignment.Center
-          ) {
-            Column(
-              horizontalAlignment = Alignment.CenterHorizontally,
-              verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-              Text(
-                text = "आर्य समाज (आर्य महासंघ के अंतर्गत)",
-                style = MaterialTheme.typography.titleMedium.copy(
-                  fontWeight = FontWeight.SemiBold
-                )
-              )
+      if(uiState.totalCount > 0) {
 
-              if (paginationState.isInitialLoading && paginationState.items.isEmpty()) {
-                CircularProgressIndicator(modifier = Modifier.size(32.dp))
-              } else {
+        item {
+          // Total count section
+          Card(
+            modifier = Modifier.widthIn(max = 500.dp).padding(vertical = 12.dp),
+            colors = CardDefaults.cardColors(
+              containerColor = MaterialTheme.colorScheme.primaryContainer
+            )
+          ) {
+            Box(
+              modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+              contentAlignment = Alignment.Center
+            ) {
+              Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+              ) {
                 Text(
-                  text = "${uiState.totalCount}",
-                  style = MaterialTheme.typography.displaySmall.copy(
-                    fontWeight = FontWeight.Bold
-                  ),
-                  color = MaterialTheme.colorScheme.primary
+                  text = "आर्य समाज (आर्य महासंघ के अंतर्गत)",
+                  style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.SemiBold
+                  )
                 )
+
+                if (paginationState.isInitialLoading && paginationState.items.isEmpty()) {
+                  CircularProgressIndicator(modifier = Modifier.size(32.dp))
+                } else {
+                  Text(
+                    text = "${uiState.totalCount}",
+                    style = MaterialTheme.typography.displaySmall.copy(
+                      fontWeight = FontWeight.Bold
+                    ),
+                    color = MaterialTheme.colorScheme.primary
+                  )
+                }
               }
             }
           }

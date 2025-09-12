@@ -34,14 +34,22 @@ fun WithTooltip(
 }
 
 fun LocalDateTime.toHumanReadable(): String {
-  val daysOfWeek = listOf("रविवार", "सोमवार", "मंगलवार", "बुधवार", "गुरुवार", "शुक्रवार", "शनिवार")
   val months =
     listOf(
       "जनवरी", "फरवरी", "मार्च", "अप्रैल", "मई", "जून",
       "जुलाई", "अगस्त", "सितंबर", "अक्टूबर", "नवंबर", "दिसंबर"
     )
 
-  val dayOfWeek = daysOfWeek[this.dayOfWeek.ordinal]
+  val dayOfWeek = when (this.dayOfWeek) {
+    kotlinx.datetime.DayOfWeek.MONDAY -> "सोमवार"
+    kotlinx.datetime.DayOfWeek.TUESDAY -> "मंगलवार"
+    kotlinx.datetime.DayOfWeek.WEDNESDAY -> "बुधवार"
+    kotlinx.datetime.DayOfWeek.THURSDAY -> "गुरुवार"
+    kotlinx.datetime.DayOfWeek.FRIDAY -> "शुक्रवार"
+    kotlinx.datetime.DayOfWeek.SATURDAY -> "शनिवार"
+    kotlinx.datetime.DayOfWeek.SUNDAY -> "रविवार"
+    else -> "रविवार"
+  }
   val month = months[this.monthNumber - 1]
   val day = this.dayOfMonth
   val year = this.year
