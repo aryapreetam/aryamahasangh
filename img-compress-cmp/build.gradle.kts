@@ -2,17 +2,19 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
+import org.jetbrains.kotlin.konan.target.Family
+import org.jetbrains.kotlin.konan.target.KonanTarget
 
 plugins {
   alias(libs.plugins.kotlinMultiplatform)
   alias(libs.plugins.composeMultiplatform)
   alias(libs.plugins.androidLibrary)
   alias(libs.plugins.composeCompiler)
-  kotlin("native.cocoapods")
 }
 
 kotlin {
-  jvmToolchain(11)
+  jvmToolchain(17)
 
   androidTarget {
     @OptIn(ExperimentalKotlinGradlePluginApi::class)
@@ -46,18 +48,34 @@ kotlin {
     binaries.executable()
   }
 
-  cocoapods {
-    // Keep defaults consistent with the project
-    summary = "KMP image compression to WebP"
-    homepage = "https://github.com/aryapreetam/img-compress-cmp"
-    version = "1.0.0"
-    ios.deploymentTarget = "14.0"
-    framework {
-      baseName = "ImgCompressCmp"
-      isStatic = true
-    }
-    pod("libwebp") {
-      version = "1.3.2"
+  // Toggle native interop via -PimgCompress.enableNative=true
+  val enableNativeInterop = (project.findProperty("imgCompress.enableNative") as String?)?.toBoolean() ?: false
+
+  // Self-contained native interop for iOS: vendor libwebp headers and static libs inside this module
+  // Directory structure expected:
+  // - src/nativeInterop/cinterop/include/webp/*.h
+  // - src/nativeInterop/cinterop/libs/ios/iphoneos/libwebp.a
+  // - src/nativeInterop/cinterop/libs/ios/iphonesimulator/libwebp.a
+  targets.withType<KotlinNativeTarget>().configureEach {
+    if (konanTarget.family == Family.IOS && enableNativeInterop) {
+      val isDevice = (konanTarget == KonanTarget.IOS_ARM64)
+      val platformDir = if (isDevice) "iphoneos" else "iphonesimulator"
+      val libsDir = project.file("src/nativeInterop/cinterop/libs/ios/${platformDir}").absolutePath
+      val includeDir = project.file("src/nativeInterop/cinterop/include").absolutePath
+
+      compilations.getByName("main").cinterops.create("libwebp") {
+        defFile(project.file("src/nativeInterop/cinterop/libwebp.def"))
+        // Use vendored headers under include/webp
+        compilerOpts("-I$includeDir")
+      }
+
+      // Ensure final test/main binaries link transitively without consumer config
+      binaries.all {
+        // Link against the static lib for current target
+        linkerOpts("-L$libsDir", "-lwebp")
+      }
+    } else if (konanTarget.family == Family.IOS && !enableNativeInterop) {
+      project.logger.lifecycle("img-compress-cmp: Native interop disabled for ${konanTarget}. Set -PimgCompress.enableNative=true to enable.")
     }
   }
 
@@ -94,6 +112,13 @@ kotlin {
         // No heavy deps; use DOM/Web APIs via Kotlin/Wasm interop
       }
     }
+  }
+
+  // Select iOS source directory based on interop toggle without relying on iosMain availability
+  listOf(iosX64, iosArm64, iosSimArm64).forEach { t ->
+    t.compilations.getByName("main").defaultSourceSet.kotlin.srcDirs(
+      if (enableNativeInterop) listOf("src/iosMainNative/kotlin") else listOf("src/iosMainStub/kotlin")
+    )
   }
 }
 

@@ -54,4 +54,31 @@ class CrossPlatformUiSmokeTest {
     onNodeWithTag("incrementButton").performClick()
     onNodeWithTag("counterText").assertTextEquals("4")
   }
+
+  @Test
+  fun smoke_counter_increments_fifth() = runComposeUiTest {
+    val viewModel = CounterViewModel()
+
+    setContent { CounterScreen(viewModel) }
+
+    onNodeWithTag("counterText").assertTextEquals("0")
+    onNodeWithTag("incrementButton").performClick()
+    onNodeWithTag("incrementButton").performClick()
+    onNodeWithTag("incrementButton").performClick()
+    onNodeWithTag("incrementButton").performClick()
+    onNodeWithTag("incrementButton").performClick()
+    onNodeWithTag("counterText").assertTextEquals("5")
+  }
+
+  @Test
+  fun smoke_counter_increments_fifty() = runComposeUiTest {
+    val viewModel = CounterViewModel()
+
+    setContent { CounterScreen(viewModel) }
+
+    onNodeWithTag("counterText").assertTextEquals("0")
+    for(i in 1..50) onNodeWithTag("incrementButton").performClick()
+
+    onNodeWithTag("counterText").assertTextEquals("50")
+  }
 }

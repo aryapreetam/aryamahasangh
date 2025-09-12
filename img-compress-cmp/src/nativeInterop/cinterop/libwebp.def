@@ -1,0 +1,2 @@
+headers = webp/decode.h webp/encode.h webp/types.h
+headerFilter = webp/**

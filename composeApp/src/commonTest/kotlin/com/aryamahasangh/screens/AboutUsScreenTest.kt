@@ -67,8 +67,10 @@ class AboutUsScreenTest {
       waitForIdle()
 
       // Click on the description text (using the content description of the parent column)
-      onNode(hasClickAction() and hasAnyDescendant(hasText("सनातन धर्म का साक्षात् प्रतिनिधि", substring = true)))
-        .performClick()
+      onNode(
+        hasClickAction() and hasAnyDescendant(hasText("सनातन धर्म का साक्षात् प्रतिनिधि", substring = true)),
+        useUnmergedTree = true
+      ).performClick()
 
       assertTrue(navigationTriggered, "Navigation to organisation details was not triggered")
     }
@@ -85,7 +87,7 @@ class FakeAboutUsRepository : AboutUsRepository {
           OrganisationDetail(
             id = "test-id",
             name = "आर्य महासंघ",
-            description = "Test description",
+            description = "सनातन धर्म का साक्षात् प्रतिनिधि 'आर्य' ही होता है।",
             logo = null,
             members = emptyList()
           )

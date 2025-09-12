@@ -1,13 +1,13 @@
+@file:OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
 
-import com.apollographql.apollo.gradle.internal.ApolloGenerateSourcesTask
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
+import org.jetbrains.kotlin.gradle.tasks.AbstractKotlinCompileTool
 import java.util.*
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
   alias(libs.plugins.kotlinMultiplatform)
@@ -18,7 +18,7 @@ plugins {
   alias(libs.plugins.kotlinx.serialization)
   alias(libs.plugins.apollo)
   alias(libs.plugins.ktlint)
-  id("io.github.tarasovvp.kmp-secrets-plugin") version "1.2.0"
+  id("io.github.tarasovvp.kmp-secrets-plugin") version "1.3.0"
 }
 
 // Load secrets from local.properties for build-time operations
@@ -56,14 +56,40 @@ val environment = project.findProperty("env")?.toString() ?: localProps.getPrope
 // Apply the test reporting configuration
 apply(from = "$rootDir/composeApp/testreporting.gradle.kts")
 
+secretsConfig {
+  outputDir = layout.buildDirectory
+    .dir("generated/kmp-secrets/commonMain/kotlin")
+    .get()
+    .asFile
+    .absolutePath
+}
+
+// NOTE: Do not add name-based matching here (e.g., tasks.matching { it.name.startsWith("compileKotlin") })
+// because it is hard to keep precise and can trigger IDE generic inference warnings.
+// A single, type-safe wiring is provided below in the afterEvaluate block for all backends
+// (JVM/Android, Native, and Wasm/JS) using their concrete compile task types.
+
+// Disable secrets generation for all *Test compilations to avoid shared-output conflicts.
+// Why this is necessary:
+// - The secrets plugin is configured to write into a single shared outputDir under commonMain.
+// - If test variants also generate into the same directory, Gradle may run multiple
+//   generators concurrently and race/overwrite files, causing intermittent failures.
+// - Tests can still use the generated secrets from commonMain (read-only).
+// If you later need test-only secrets, configure a distinct outputDir for tests to avoid clashes.
+tasks.configureEach {
+  if (name.startsWith("generateSecrets") && name.contains("Test")) {
+    enabled = false
+  }
+}
+
 kotlin {
 
-  jvmToolchain(11)
+  jvmToolchain(17)
 
   androidTarget {
     @OptIn(ExperimentalKotlinGradlePluginApi::class)
     compilerOptions {
-      jvmTarget.set(JvmTarget.JVM_11)
+      jvmTarget.set(JvmTarget.JVM_17)
     }
     // to run instrumented (emulator) tests for Android
     @OptIn(ExperimentalKotlinGradlePluginApi::class)
@@ -80,14 +106,6 @@ kotlin {
       isStatic = true
     }
   }
-
-  iosSimArm64.binaries.getTest("DEBUG").apply {
-    val libwebpDir =
-      project(":img-compress-cmp").buildDir.resolve("cocoapods/synthetic/ios/build/Debug-iphonesimulator/libwebp")
-    linkerOpts("-F${libwebpDir.absolutePath}", "-framework", "libwebp")
-    linkTaskProvider.configure { dependsOn(":img-compress-cmp:podBuildLibwebpIosSimulator") }
-  }
-
 
   jvm("desktop")
 
@@ -111,19 +129,30 @@ kotlin {
       }
       testTask {
         useKarma {
-          useChrome()
+          useChromeHeadless()
           useConfigDirectory(
             project.projectDir.resolve("karma.config.d").apply {
               mkdirs()
             }
           )
         }
+        // Always execute tests to surface println/console output
+        outputs.upToDateWhen { false }
       }
     }
     binaries.executable()
   }
 
   sourceSets {
+    val commonMain by getting {
+      kotlin.srcDir(
+        layout.buildDirectory
+          .dir("generated/kmp-secrets/commonMain/kotlin")
+          .get()
+          .asFile
+          .absolutePath
+      )
+    }
     val desktopMain by getting
     val desktopTest by getting
     commonMain.dependencies {
@@ -188,7 +217,6 @@ kotlin {
     commonTest.dependencies {
       implementation(libs.kotlin.test)
       implementation(libs.kotlinx.coroutines.test)
-      @OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
       implementation(compose.uiTest)
 
       // Koin test dependencies
@@ -197,7 +225,6 @@ kotlin {
     androidMain.dependencies {
       implementation(libs.androidx.activity.compose)
       implementation(libs.compose.ui.tooling.preview)
-      implementation("androidx.compose.ui:ui:${libs.versions.compose.android.get()}")
       implementation(libs.ktor.client.android)
       implementation(libs.koin.androidx.compose)
     }
@@ -218,6 +245,7 @@ kotlin {
     }
     desktopTest.dependencies {
       implementation(compose.desktop.currentOs)
+      implementation(libs.kotlin.test.junit)
     }
     wasmJsMain.dependencies {
       implementation(libs.ktor.client.wasm)
@@ -244,10 +272,8 @@ android {
     buildConfigField("String", "VERSION_NAME", "\"${versionName}\"")
     buildConfigField("int", "VERSION_CODE", "$versionCode")
     buildConfigField("String", "ENVIRONMENT", "\"$environment\"")
-    
-    // Debug output for development
-    println("📱 Android version: $versionName ($versionCode)")
-    println("🌍 Environment: $environment")
+
+    // Debug output removed to reduce configuration noise
   }
 
   buildFeatures {
@@ -316,51 +342,27 @@ compose.desktop {
   }
 }
 
-// Ensure Android compile runs after secrets generation for all test variants
-// Removed helper wiring to avoid DSL type inference issues
-
-// Ensure iOS simulator secrets before compile (if present)
-// Removed helper wiring to avoid DSL type inference issues
-
-tasks.named("compileKotlinDesktop").configure {
-  dependsOn("generateSecretsDesktopTest")
+// Ensure ALL Kotlin compile tasks that read the shared secrets output run AFTER the secrets generators.
+// Why this is necessary (Gradle 8 validation):
+// - compile tasks (JVM/Android, Native, Wasm/JS) consume the generated sources under
+//   build/generated/kmp-secrets/commonMain/kotlin.
+// - Gradle 8 enforces explicit dependencies between producers and consumers.
+// - Without dependsOn, you will see errors like:
+//   "compileKotlinWasmJs uses output of generateSecrets... without declared dependency".
+// This single, type-safe wiring targets the common superclass for all Kotlin compile tasks
+// so any future backend is covered automatically.
+tasks.withType(AbstractKotlinCompileTool::class.java).configureEach {
+  dependsOn(tasks.matching { it.name.startsWith("generateSecrets") && !it.name.contains("Test") })
 }
-
-// Minimal wasmJs fixes: ensure codegen/secrets available before compile
-tasks.named("compileKotlinWasmJs").configure {
+// by default composeApp:allTests only works for wasm & ios
+tasks.register("allKmpTests") {
   dependsOn(
-    "generateSecretsWasmJsMain",
-    "generateSecretsWasmJsTest",
-    "generateServiceApolloSources"
+    "testDebugUnitTest",        // Android unit (JVM)
+    "desktopTest",              // Desktop JVM
+    "iosX64Test",               // iOS simulator (or iosSimulatorArm64Test)
+    "wasmJsBrowserTest"         // Wasm/browser
   )
 }
-
-tasks.named("compileTestKotlinWasmJs").configure {
-  dependsOn(
-    "generateSecretsWasmJsTest",
-    "generateServiceApolloSources"
-  )
-}
-
-tasks.named("compileKotlinIosSimulatorArm64").configure {
-  dependsOn(
-    "generateSecretsIosSimulatorArm64Main",
-    "generateSecretsIosSimulatorArm64Test"
-  )
-}
-
-tasks.named("compileTestKotlinIosSimulatorArm64").configure {
-  dependsOn("generateSecretsIosSimulatorArm64Test")
-}
-
-
-// Android: ensure secrets for AndroidTest are generated before compiling debug main and androidTest
-// Use configureEach to avoid failing when task names differ across plugin versions
- tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile::class.java).configureEach {
-   if (name.contains("Android") && name.contains("Debug")) {
-     dependsOn("generateSecretsAndroidDebugAndroidTest")
-   }
- }
 
 apollo {
   service("service") {
@@ -385,18 +387,6 @@ apollo {
       headers.put("apikey", supabaseKey)
     }
   }
-}
-
-// not generating all models properly. needs refactoring. until that time don't use
-// tasks.register<GenerateKto>("generateKtoModels") {
-//  dependsOn("generateApolloSources")
-//  doLast {
-//    println("Generating DTO models...")
-//  }
-// }
-
-tasks.withType(ApolloGenerateSourcesTask::class.java).configureEach {
-  doNotTrackState("i don't know")
 }
 
 // ============================================================================
@@ -428,72 +418,20 @@ ktlint {
   }
 }
 
-
-
-//
-// abstract class AddWasmPreloadLinksTask : DefaultTask() {
-//    @get:Internal
-//    abstract val buildDirectory: DirectoryProperty
-//
-//    init {
-//        description = "Adds preload links for WASM files to index.html"
-//        group = "wasm"
-//    }
-//
-//    @TaskAction
-//    fun execute() {
-//        val distDir = buildDirectory.get().dir("dist/wasmJs/productionExecutable").asFile
-//        println("Checking for WASM files in: ${distDir.absolutePath}")
-//
-//        if (!distDir.exists()) {
-//            throw GradleException("Distribution directory not found at ${distDir.absolutePath}")
-//        }
-//
-//        val indexFile = File(distDir, "index.html")
-//        if (!indexFile.exists()) {
-//            throw GradleException("index.html not found in ${distDir.absolutePath}")
-//        }
-//
-//        // Find all .wasm files in the directory
-//        val wasmFiles = distDir.listFiles { file -> file.name.endsWith(".wasm") }
-//            ?: throw GradleException("No .wasm files found in ${distDir.absolutePath}")
-//
-//        if (wasmFiles.isEmpty()) {
-//            throw GradleException("No .wasm files found in ${distDir.absolutePath}")
-//        }
-//
-//        // Read the current content of index.html
-//        var content = indexFile.readText()
-//
-//        // Check if preload links already exist to avoid duplicates
-//        if (content.contains("""rel="preload" href="/.+\.wasm"""".toRegex())) {
-//            println("WASM preload links already exist in index.html, skipping...")
-//            return
-//        }
-//
-//        // Create preload links for each .wasm file
-//        val preloadLinks = wasmFiles.joinToString("\n") { wasmFile ->
-//            """    <link rel="preload" href="/${wasmFile.name}" as="fetch" type="application/wasm" crossorigin="anonymous" />"""
-//        }
-//
-//        // Insert the preload links after the opening <head> tag
-//        content = content.replace("<head>", "<head>\n$preloadLinks")
-//
-//        // Write the modified content back to the file
-//        indexFile.writeText(content)
-//
-//        println("✅ Successfully added preload links for ${wasmFiles.size} WASM files to index.html:")
-//        wasmFiles.forEach { file ->
-//            println("  - ${file.name}")
-//        }
-//    }
-// }
-//
-// tasks.register<AddWasmPreloadLinksTask>("addWasmPreloadLinks") {
-//    buildDirectory.set(layout.buildDirectory)
-// }
-//
-// // Hook the task to run after wasmJsBrowserDistribution
-// tasks.named("wasmJsBrowserDistribution") {
-//    finalizedBy("addWasmPreloadLinks")
-// }
+// -----------------------------------------------------------------------------
+// Desktop test configuration: ensure JUnit runner for kotlin-test-junit
+// -----------------------------------------------------------------------------
+tasks.named("desktopTest", org.gradle.api.tasks.testing.Test::class).configure {
+  useJUnit()
+  // Force execution to ensure discovery runs and console output is visible
+  outputs.upToDateWhen { false }
+  // Include all tests in our package hierarchy (works with Kotlin-compiled classes)
+  filter {
+    includeTestsMatching("com.aryamahasangh.*")
+  }
+  testLogging {
+    events("passed", "skipped", "failed")
+    exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+    showStandardStreams = true
+  }
+}

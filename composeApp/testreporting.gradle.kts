@@ -99,6 +99,8 @@ tasks.register("allUiTests") {
           excludeTestsMatching("org.aryamahasangh.*SimpleTest")
           excludeTestsMatching("org.aryamahasangh.*UnitTest")
           excludeTestsMatching("org.aryamahasangh.*ViewModelTest")
+          // Do not fail the whole build when no tests match on a platform (e.g., Desktop UI tests absent)
+          isFailOnNoMatchingTests = false
         }
         logger.lifecycle("Configured $taskName for $platform UI tests")
       }

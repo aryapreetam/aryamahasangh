@@ -1,2 +1,6 @@
 # Auto-generated .gitignore
 src/commonMain/kotlin/secrets/Secrets.kt
+
+property 'buildDir'/generated/kmp-secrets/commonMain/kotlin/secrets/Secrets.kt
+
+build/generated/kmp-secrets/commonMain/kotlin/secrets/Secrets.kt
