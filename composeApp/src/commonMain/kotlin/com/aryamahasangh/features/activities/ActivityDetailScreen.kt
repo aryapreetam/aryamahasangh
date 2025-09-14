@@ -29,7 +29,6 @@ import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.error_profile_image
 import coil3.compose.AsyncImage
 import com.aryamahasangh.LocalIsAuthenticated
-import com.aryamahasangh.features.activities.ActivitiesPageState
 import com.aryamahasangh.components.activityTypeData
 import com.aryamahasangh.isWeb
 import com.aryamahasangh.navigation.LocalSnackbarHostState
@@ -523,25 +522,23 @@ fun ActivityDisplay(
             modifier = Modifier.padding(horizontal = 24.dp)
           )
         }
-
-        // Show overview write button next to registration if applicable
-        if (isLoggedIn && !activity.hasOverview() && (activity.isFromPast() || activity.getStatus() == ActivityStatus.ONGOING)) {
-          Button(
-            onClick = {
-              onNavigateToCreateOverview(
-                activity.id,
-                activity.overviewDescription,
-                activity.overviewMediaUrls
-              )
-            },
-            modifier = Modifier.weight(1f)
-          ) {
-            Text(
-              text = "अवलोकन लिखें",
-              style = MaterialTheme.typography.labelLarge
-            )
-          }
-        }
+      }
+      // Show overview write button next to registration if applicable
+    }else if (isLoggedIn && !activity.hasOverview() && (activity.isFromPast() || activity.getStatus() == ActivityStatus.ONGOING)) {
+      Spacer(modifier = Modifier.height(16.dp))
+      Button(
+        onClick = {
+          onNavigateToCreateOverview(
+            activity.id,
+            activity.overviewDescription,
+            activity.overviewMediaUrls
+          )
+        },
+      ) {
+        Text(
+          text = "अवलोकन लिखें",
+          style = MaterialTheme.typography.labelLarge
+        )
       }
     }
 
@@ -643,6 +640,7 @@ fun OverviewSection(
     modifier = Modifier.padding(8.dp)
   ) {
     if (!isLoggedIn) {
+      Spacer(Modifier.height(16.dp))
       Text(
         text = "अवलोकन",
         style = MaterialTheme.typography.titleLarge,

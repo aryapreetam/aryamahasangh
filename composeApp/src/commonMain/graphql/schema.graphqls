@@ -3336,6 +3336,8 @@ type Mutation {
 
   updateActivityDetails(pRequest: JSON!): JSON
 
+  updateActivityDetailsSmart(pRequest: JSON!): JSON
+
   """
   Updates zero or more records in the `ActivityMember` collection
   """
