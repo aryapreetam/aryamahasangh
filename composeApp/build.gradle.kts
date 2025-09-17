@@ -18,7 +18,7 @@ plugins {
   alias(libs.plugins.kotlinx.serialization)
   alias(libs.plugins.apollo)
   alias(libs.plugins.ktlint)
-  id("io.github.tarasovvp.kmp-secrets-plugin") version "1.3.0"
+  alias(libs.plugins.kmp.secrets.plugin)
 }
 
 // Load secrets from local.properties for build-time operations
@@ -186,9 +186,9 @@ kotlin {
 
       // filekit
       // Enables FileKit without Compose dependencies
-      implementation("io.github.vinceglb:filekit-core:0.8.8")
+      implementation(libs.filekit.core)
       // Enables FileKit with Composable utilities
-      implementation("io.github.vinceglb:filekit-compose:0.8.8")
+      implementation(libs.filekit.compose)
 
       // supabase
       implementation(project.dependencies.platform(libs.supabase.bom)) // 
@@ -204,7 +204,7 @@ kotlin {
       implementation(libs.apollo.adapters.kotlinx.datetime)
 
       // apollo normalized cache
-      implementation("com.apollographql.apollo:apollo-normalized-cache:4.1.1")
+      implementation(libs.apollo.normalized.cache)
 
       // logging
       api("com.diamondedge:logging:2.0.3")

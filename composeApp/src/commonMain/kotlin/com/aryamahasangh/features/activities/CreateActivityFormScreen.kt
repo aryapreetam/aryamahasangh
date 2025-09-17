@@ -32,6 +32,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
@@ -572,13 +573,20 @@ private fun CreateActivityScreenContent(
   // Update includeAddress when activity type changes
   LaunchedEffect(selectedType) {
     if (selectedType == ActivityType.CAMPAIGN) {
-      includeAddress = false
-      // Clear address fields when switching to CAMPAIGN
-      addressData = AddressData()
-      // Clear errors
-      addressError = false
-      latitudeError = null
-      longitudeError = null
+      // Only set to false if we don't have an editing activity with address!
+      includeAddress = if (editingActivity != null &&
+        ((editingActivity?.addressId ?: "").isNotEmpty() && (editingActivity?.state ?: "").isNotEmpty())
+      ) {
+        true // activity has address, show
+      } else {
+        false // new or no address
+      }
+      if (!includeAddress) {
+        addressData = AddressData()
+        addressError = false
+        latitudeError = null
+        longitudeError = null
+      }
     } else if (selectedType != null) {
       includeAddress = true
     }
@@ -737,12 +745,11 @@ private fun CreateActivityScreenContent(
       name = activity.name
       selectedType = activity.type
 
-      // Determine if address was included based on whether address fields have values
+      // Determine if address was included based on whether addressId or address fields have values
       includeAddress =
         if (activity.type == ActivityType.CAMPAIGN) {
-          // For CAMPAIGN type, check if any address field has content
-          activity.address.isNotEmpty() || activity.state.isNotEmpty() ||
-            activity.district.isNotEmpty() || activity.latitude != null || activity.longitude != null
+          // For CAMPAIGN type, check if an address is linked (addressId is non-null and not empty)
+          activity.addressId != null && activity.addressId.isNotEmpty()  && activity.state.isNotEmpty()
         } else {
           // For other types, address is always included
           true
@@ -1151,9 +1158,13 @@ private fun CreateActivityScreenContent(
         ) {
           Checkbox(
             checked = includeAddress,
-            onCheckedChange = { includeAddress = it }
+            onCheckedChange = { includeAddress = it },
+            modifier = Modifier.testTag("AddAddressCheckbox")
           )
-          Text("स्थान जोड़ें")
+          Text(
+            text = "स्थान जोड़ें",
+            modifier = Modifier.testTag("AddAddressCheckboxLabel")
+          )
         }
       }
 
@@ -1184,6 +1195,7 @@ private fun CreateActivityScreenContent(
             isAddressValid = isValid
             addressError = !isValid
           },
+          modifier = Modifier.testTag("AddressFieldsGroup"),
           onFieldFocused = if (isSmallScreen) { offset -> scrollToFocusedField(offset) } else null,
           isSmallScreen = isSmallScreen
         )
@@ -1500,6 +1512,7 @@ private fun CreateActivityScreenContent(
             shortDescription = shortDescription,
             longDescription = description,
             type = selectedType!!,
+            addressId = if (!includeAddress && selectedType == ActivityType.CAMPAIGN) null else activityDetailState.activity?.addressId,
             address = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.address else "",
             state = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.state else "",
             district = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.district else "",

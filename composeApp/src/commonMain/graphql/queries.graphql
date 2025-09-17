@@ -358,6 +358,7 @@ query OrganisationalActivityDetailById($activityId: String!) {
         ...OrganisationalActivityShort
         longDescription
         address {
+          id
           basicAddress
           state
           latitude

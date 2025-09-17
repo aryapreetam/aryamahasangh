@@ -10,10 +10,8 @@ import com.aryamahasangh.features.admin.PaginationResult
 import com.aryamahasangh.fragment.ActivityWithStatus
 import com.aryamahasangh.fragment.OrganisationalActivityShort
 import com.aryamahasangh.network.supabaseClient
-import com.aryamahasangh.type.ActivitiesInsertInput
-import com.aryamahasangh.type.ActivitiesWithStatusFilter
-import com.aryamahasangh.type.ActivitiesWithStatusOrderBy
-import com.aryamahasangh.type.OrderByDirection
+import com.aryamahasangh.type.*
+import com.aryamahasangh.util.GlobalMessageManager
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.util.safeCall
 import io.github.jan.supabase.annotations.SupabaseExperimental
@@ -236,7 +234,7 @@ class ActivityRepositoryImpl(
       emit(Result.Loading)
 
       apolloClient.query(OrganisationalActivityDetailByIdQuery(id))
-        .fetchPolicy(FetchPolicy.CacheAndNetwork)
+        .fetchPolicy(FetchPolicy.NetworkFirst)
         .toFlow()
         .collect { response ->
           val cameFromEmptyCache =
@@ -296,16 +294,22 @@ class ActivityRepositoryImpl(
     address: CreateAddressMutation.Builder
   ): Result<String> {
     return safeCall {
+      
+      var inputWithAddressData = activityInputData
       address.pincode("")
-      val addressResp = apolloClient.mutation(address.build()).execute()
-      if (addressResp.hasErrors()) {
-        throw Exception(addressResp.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+      val addressMutation = address.build()
+      if(addressMutation.state.isNotEmpty() && addressMutation.district.isNotEmpty()) {
+        val addressResp = apolloClient.mutation(addressMutation).execute()
+        if (addressResp.hasErrors()) {
+          throw Exception(addressResp.errors?.firstOrNull()?.message ?: "Unknown error occurred")
+        }
+        if (addressResp.data?.insertIntoAddressCollection?.affectedCount!! != 1) {
+          throw Exception(addressResp.errors?.firstOrNull()?.message ?: "Couldn't create address. please try again")
+        }
+        val addressId = addressResp.data?.insertIntoAddressCollection?.records?.first()?.id!!
+        inputWithAddressData = activityInputData.copy(addressId = Optional.present(addressId))
       }
-      if (addressResp.data?.insertIntoAddressCollection?.affectedCount!! != 1) {
-        throw Exception(addressResp.errors?.firstOrNull()?.message ?: "Couldn't create address. please try again")
-      }
-      val addressId = addressResp.data?.insertIntoAddressCollection?.records?.first()?.id!!
-      val inputWithAddressData = activityInputData.copy(addressId = Optional.present(addressId))
+       
       val response = apolloClient.mutation(AddOrganisationActivityMutation(inputWithAddressData)).execute()
       if (response.hasErrors()) {
         throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
@@ -342,55 +346,202 @@ class ActivityRepositoryImpl(
     activityId: String,
     originalActivity: OrganisationalActivity?,
     newActivityData: ActivityInputData
-  ): Result<Boolean> {
-    return safeCall {
-      val updateRequest = buildActivityUpdateRequest(
+  ): Result<Boolean> = safeCall {
+    // Address mutation block
+    val origAddr = originalActivity?.address
+    val origAddrId = originalActivity?.addressId
+    val newAddr = newActivityData.address
+    var addressIdForUpdate = origAddrId
+
+    // If adding a new address
+    if (originalActivity?.addressId == null && (newActivityData.address.isNotBlank() || newActivityData.state.isNotBlank() || newActivityData.district.isNotBlank())) {
+      println("Adding a new address")
+      val resp = apolloClient.mutation(
+            CreateAddressMutation.Builder()
+              .basicAddress(newActivityData.address)
+                .state(newActivityData.state)
+                .district(newActivityData.district)
+                .latitude(newActivityData.latitude ?: 0.0)
+                .longitude(newActivityData.longitude ?: 0.0)
+                .pincode("")
+                .vidhansabha("")
+                .build()
+        ).execute()
+        val newId = resp.data?.insertIntoAddressCollection?.records?.firstOrNull()?.id
+        if (resp.hasErrors() || newId == null) {
+            GlobalMessageManager.showError("पता जोड़ने में त्रुटि, पुनः प्रयास करें")
+            return@safeCall false
+        }
+        apolloClient.mutation(AddAddressToActivityMutation(activityId, newId)).execute()
+        addressIdForUpdate = newId
+    }
+    // If removing address
+    else if (origAddr != null && (newActivityData.addressId == null || (newActivityData.address.isBlank() && newActivityData.state.isBlank() && newActivityData.district.isBlank()))) {
+      println("Removing address")
+
+      val removeAddressResp = apolloClient.mutation(RemoveAddressFromActivityMutation(activityId)).execute()
+
+      // original addressId non-null guaranteed
+        val delResp = apolloClient.mutation(DeleteAddressMutation(origAddrId!!)).execute()
+      println(delResp)
+        if (delResp.hasErrors()) {
+          println("Address removal failed ${delResp.errors?.firstOrNull()?.message}")
+          return@safeCall false
+            GlobalMessageManager.showError("पता हटाने में त्रुटि, पुनः प्रयास करें")
+            return@safeCall false
+        }
+        val deleteAddressSuccess = delResp.data?.deleteFromAddressCollection?.affectedCount ?: 0
+      if(deleteAddressSuccess > 0){
+        println("Address removed successfully")
+      }else{
+        println("Address removal failed")
+      }
+
+        addressIdForUpdate = null
+    }
+    // If address has changed
+    else if (origAddr != null && newActivityData.addressId != null && (
+        originalActivity.address != newActivityData.address ||
+          originalActivity.state != newActivityData.state ||
+          originalActivity.district != newActivityData.district ||
+        (originalActivity.latitude ?: 0.0) != (newActivityData.latitude ?: 0.0) ||
+        (originalActivity.longitude ?: 0.0) != (newActivityData.longitude ?: 0.0)
+    )) {
+      println("Updating address")
+        // Only update changed address fields
+        val updResp = apolloClient.mutation(
+            UpdateAddressMutation.Builder()
+                .id(origAddrId!!)
+              .basicAddress(newActivityData.address)
+                .state(newActivityData.state)
+                .district(newActivityData.district)
+                .latitude(newActivityData.latitude ?: 0.0)
+                .longitude(newActivityData.longitude ?: 0.0)
+                .pincode("")
+                .vidhansabha("")
+                .build()
+        ).execute()
+        if (updResp.hasErrors() || (updResp.data?.updateAddressCollection?.affectedCount ?: 0) == 0) {
+            GlobalMessageManager.showError("पता अद्यतन करने में त्रुटि, पुनः प्रयास करें")
+            return@safeCall false
+        }
+        // keep addressIdForUpdate as origAddrId
+    }
+    // Else, if no address at all (both null or empty), just leave addressIdForUpdate as is
+
+    // Now perform the main update mutation with addressIdForUpdate set
+    val updateRequest = buildActivityUpdateRequest(
         activityId = activityId,
         originalActivity = originalActivity,
-        newActivityData = newActivityData
-      )
+        newActivityData = newActivityData.copy(addressId = addressIdForUpdate)
+    )
 
-      if (isActivityUpdateRequestEmpty(updateRequest)) {
+    if (isActivityUpdateRequestEmpty(updateRequest)) {
         return@safeCall true
-      }
+    }
 
-      val requestJson = Json.encodeToString(updateRequest)
-
-      val response = apolloClient.mutation(
+    val requestJson = Json.encodeToString(updateRequest)
+    val response = apolloClient.mutation(
         UpdateActivityDetailsSmartMutation(requestJson)
-      ).execute()
-
-      if (response.hasErrors()) {
+    ).execute()
+    if (response.hasErrors()) {
         throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-      }
-
-      val responseData = response.data?.updateActivityDetails
-      if (responseData == null) {
+    }
+    val responseData = response.data?.updateActivityDetails
+    if (responseData == null) {
         throw Exception("No response data received")
-      }
-
-      try {
+    }
+    try {
         val jsonConfig = Json {
-          ignoreUnknownKeys = true
-          encodeDefaults = true
-          isLenient = true
+            ignoreUnknownKeys = true
+            encodeDefaults = true
+            isLenient = true
         }
         val jsonString = responseData.toString()
         val parsedResponse = jsonConfig.decodeFromString<ActivityUpdateResponse>(jsonString)
-
         if (parsedResponse.success) {
-          true
+            // After main activity update (and address if required) succeed:
+            val originalMembers = originalActivity?.contactPeople ?: emptyList()
+            val newMembers = newActivityData.contactPeople
+
+            // Diff
+            val toAdd = newMembers.filter { nm -> originalMembers.none { om -> om.member.id == nm.member.id } }
+            val toRemove = originalMembers.filter { om -> newMembers.none { nm -> nm.member.id == om.member.id } }
+            val toUpdate = newMembers.filter { nm ->
+                originalMembers.any { om ->
+                    om.member.id == nm.member.id && (om.post != nm.post || om.priority != nm.priority)
+                }
+            }
+
+            //println("toAdd: $toAdd")
+            //println("toRemove: $toRemove")
+            //println("toUpdate: $toUpdate")
+
+            // Add
+            for (member in toAdd) {
+
+                val input = ActivityMemberInsertInput(
+                  activityId = Optional.present(originalActivity?.id),
+                  memberId = Optional.present(member.member.id),
+                  post = Optional.present(member.post),
+                  priority = Optional.present(member.priority)
+                )
+                val resp = apolloClient.mutation(
+                    AddActivityMemberMutation.Builder().input(input).build()
+                ).execute()
+              println(resp)
+                if (resp.hasErrors() || (resp.data?.insertIntoActivityMemberCollection?.affectedCount ?: 0) <= 0) {
+                    GlobalMessageManager.showError("संपर्क व्यक्ति जोड़ने में त्रुटि, पुनः प्रयास करें")
+                    return@safeCall false
+                }
+            }
+            // Remove
+            for (member in toRemove) {
+                // We need activityMemberId, assuming stored in member.id
+                val resp = apolloClient.mutation(
+                    RemoveActivityMemberMutation.Builder().activityMemberId(member.id).build()
+                ).execute()
+              println(resp)
+                if (resp.hasErrors() || (resp.data?.deleteFromActivityMemberCollection?.affectedCount ?: 0) <= 0) {
+                    GlobalMessageManager.showError("संपर्क व्यक्ति हटाने में त्रुटि, पुनः प्रयास करें")
+                    return@safeCall false
+                }
+            }
+            // Update (assuming member.id is activityMemberId for update, adjust if another id is needed)
+            for (member in toUpdate) {
+                val resp = apolloClient.mutation(
+                    UpdateActivityMemberMutation.Builder()
+                      .activityMemberId(member.id)
+                      .activityMemberUpdateInput(
+                        ActivityMemberUpdateInput(
+                          post = Optional.present(member.post),
+                          priority = Optional.present(member.priority)
+                        )
+                      )
+                      .build()
+                ).execute()
+                if (resp.hasErrors() || (resp.data?.updateActivityMemberCollection?.affectedCount ?: 0) <= 0) {
+                    GlobalMessageManager.showError("संपर्क व्यक्ति अद्यतन करने में त्रुटि, पुनः प्रयास करें")
+                    return@safeCall false
+                }
+            }
+            apolloClient.apolloStore.clearAll()
+            true
         } else {
-          throw Exception("Update failed: ${parsedResponse.error_code ?: "UNKNOWN_ERROR"}${parsedResponse.error_details?.let { " - $it" } ?: ""}")
+            throw Exception(
+              ("Update failed: ${parsedResponse.error_code ?: "UNKNOWN_ERROR"}" +
+                parsedResponse.error_details?.let { " - $it" }) ?: ""
+            )
         }
-      } catch (e: Exception) {
+    } catch (e: Exception) {
+        println("Activity update failed: $e")
         val responseString = responseData.toString()
         if (responseString.contains("\"success\":true")) {
-          true
+            apolloClient.apolloStore.clearAll()
+            true
         } else {
-          throw Exception("Activity update failed: $responseString")
+            throw Exception("Activity update failed: $responseString")
         }
-      }
     }
   }
 

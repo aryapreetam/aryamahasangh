@@ -370,9 +370,10 @@ fun ActivityDisplay(
     }
 
     // Place - only show if address data is present
-    val hasAddressData =
-      activity.address.isNotEmpty() || activity.state.isNotEmpty() ||
-        activity.district.isNotEmpty() || activity.latitude != null || activity.longitude != null
+    val hasAddressData = activity.addressId != null
+      && activity.state.isNotEmpty() && activity.district.isNotEmpty()
+    //activity.address.isNotEmpty() || activity.latitude != null || activity.longitude != null
+
 
     if (hasAddressData) {
       Row(

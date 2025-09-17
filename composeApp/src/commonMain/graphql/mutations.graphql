@@ -512,3 +512,44 @@ mutation UpdateMemberAddress(
     }
   }
 }
+
+mutation addActivityMember($input: ActivityMemberInsertInput!){
+  insertIntoActivityMemberCollection(objects: [$input]){
+    affectedCount
+  }
+}
+
+mutation removeActivityMember($activityMemberId: UUID!){
+  deleteFromActivityMemberCollection(filter: { id: { eq: $activityMemberId } }){
+    affectedCount
+  }
+}
+
+mutation updateActivityMember($activityMemberId: UUID!, $activityMemberUpdateInput: ActivityMemberUpdateInput!){
+  updateActivityMemberCollection(
+    set: $activityMemberUpdateInput,
+    filter: {
+      id: { eq: $activityMemberId }
+    }
+  ) {
+    affectedCount
+  }
+}
+
+mutation addAddressToActivity($activityId: String!, $addressId: String!){
+  updateActivitiesCollection(
+    filter: { id: {eq: $activityId} },
+    set: {addressId: $addressId}
+  ){
+    affectedCount
+  }
+}
+
+mutation removeAddressFromActivity($activityId: String!){
+  updateActivitiesCollection(
+    filter: { id: {eq: $activityId} },
+    set: {addressId: null}
+  ){
+    affectedCount
+  }
+}

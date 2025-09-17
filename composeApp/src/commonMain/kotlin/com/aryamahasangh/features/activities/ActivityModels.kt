@@ -1,13 +1,13 @@
 package com.aryamahasangh.features.activities
 
-import kotlinx.datetime.*
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
 import com.aryamahasangh.OrganisationalActivityDetailByIdQuery
 import com.aryamahasangh.fragment.ActivityWithStatus
 import com.aryamahasangh.fragment.OrganisationalActivityShort
 import com.aryamahasangh.type.ActivityType
 import com.aryamahasangh.type.ActivityType.*
+import kotlinx.datetime.*
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 data class ActivityResponse(
   val data: ActivityData?
@@ -127,6 +127,7 @@ data class OrganisationalActivity(
   val name: String,
   val type: ActivityType,
   val state: String = "",
+  val addressId: String? = null,
   val address: String = "",
   val capacity: Int,
   val district: String = "",
@@ -231,6 +232,7 @@ fun OrganisationalActivity.Companion.camelCased(
   )
   if(organisationalActivityShort.address != null){
     org = org.copy(
+      addressId = node.address?.id,
       district = organisationalActivityShort.address?.district ?: "",
       state = node.address?.state!!,
       address = node.address.basicAddress ?: "",
@@ -259,6 +261,7 @@ data class ActivityInputData(
   val name: String,
   val type: ActivityType,
   val state: String,
+  val addressId: String? = null,
   val address: String,
   val capacity: Int,
   val district: String,
