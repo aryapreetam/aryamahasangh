@@ -19,6 +19,7 @@ import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
+import kotlin.time.ExperimentalTime
 
 /**
  * UI state for the Activities screen
@@ -122,6 +123,7 @@ class ActivitiesViewModel(
   /**
    * Load activities with filters applied (no search)
    */
+  @OptIn(ExperimentalTime::class)
   fun loadActivitiesPaginatedWithFilters(
     filterOptions: Set<ActivityFilterOption> = emptySet(),
     pageSize: Int = 30,
@@ -171,11 +173,13 @@ class ActivitiesViewModel(
           is PaginationResult.Success -> {
             val existingActivities = if (shouldReset) emptyList() else currentState.items
             val newActivities = existingActivities + result.data
-
+            val (currentAndFuture, past) = newActivities.partition { activity -> activity.endDatetime!! > kotlinx.datetime.Clock.System.now()}
+            val pastSortedByEndTimeDesc = past.sortedByDescending { activity -> activity.endDatetime }
+            val finalNewActivities = currentAndFuture + pastSortedByEndTimeDesc
             _activitiesUiState.value = _activitiesUiState.value.copy(
-              activities = newActivities,
+              activities = finalNewActivities,
               paginationState = currentState.copy(
-                items = newActivities,
+                items = finalNewActivities,
                 isInitialLoading = false,
                 isLoadingNextPage = false,
                 hasNextPage = result.hasNextPage,
@@ -237,10 +241,14 @@ class ActivitiesViewModel(
             val existingActivities = if (resetPagination) emptyList() else currentState.items
             val newActivities = existingActivities + result.data
 
+            val (currentAndFuture, past) = newActivities.partition { activity -> activity.endDatetime!! > kotlinx.datetime.Clock.System.now()}
+            val pastSortedByEndTimeDesc = past.sortedByDescending { activity -> activity.endDatetime }
+            val finalNewActivities = currentAndFuture + pastSortedByEndTimeDesc
+
             _activitiesUiState.value = _activitiesUiState.value.copy(
-              activities = newActivities,
+              activities = finalNewActivities,
               paginationState = currentState.copy(
-                items = newActivities,
+                items = finalNewActivities,
                 isSearching = false,
                 isLoadingNextPage = false,
                 hasNextPage = result.hasNextPage,
@@ -337,10 +345,14 @@ class ActivitiesViewModel(
             val existingActivities = if (shouldReset) emptyList() else currentState.items
             val newActivities = existingActivities + result.data
 
+            val (currentAndFuture, past) = newActivities.partition { activity -> activity.endDatetime!! > kotlinx.datetime.Clock.System.now()}
+            val pastSortedByEndTimeDesc = past.sortedByDescending { activity -> activity.endDatetime }
+            val finalNewActivities = currentAndFuture + pastSortedByEndTimeDesc
+
             _activitiesUiState.value = _activitiesUiState.value.copy(
-              activities = newActivities,
+              activities = finalNewActivities,
               paginationState = currentState.copy(
-                items = newActivities, // Keep UI and pagination state in sync
+                items = finalNewActivities, // Keep UI and pagination state in sync
                 isInitialLoading = false,
                 isLoadingNextPage = false,
                 hasNextPage = result.hasNextPage,
@@ -470,10 +482,15 @@ class ActivitiesViewModel(
             val existingActivities = if (resetPagination) emptyList() else currentState.items
             val newActivities = existingActivities + result.data
 
+            val (currentAndFuture, past) = newActivities.partition { activity -> activity.endDatetime!! > kotlinx.datetime.Clock.System.now()}
+            val pastSortedByEndTimeDesc = past.sortedByDescending { activity -> activity.endDatetime }
+            val finalNewActivities = currentAndFuture + pastSortedByEndTimeDesc
+
+
             _activitiesUiState.value = _activitiesUiState.value.copy(
-              activities = newActivities,
+              activities = finalNewActivities,
               paginationState = currentState.copy(
-                items = newActivities,
+                items = finalNewActivities,
                 isSearching = false,
                 isLoadingNextPage = false,
                 hasNextPage = result.hasNextPage,

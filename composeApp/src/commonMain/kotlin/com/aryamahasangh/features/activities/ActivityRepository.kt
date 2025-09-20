@@ -8,7 +8,6 @@ import com.aryamahasangh.*
 import com.aryamahasangh.features.admin.PaginatedRepository
 import com.aryamahasangh.features.admin.PaginationResult
 import com.aryamahasangh.fragment.ActivityWithStatus
-import com.aryamahasangh.fragment.OrganisationalActivityShort
 import com.aryamahasangh.network.supabaseClient
 import com.aryamahasangh.type.*
 import com.aryamahasangh.util.GlobalMessageManager
@@ -34,7 +33,7 @@ interface ActivityRepository : PaginatedRepository<ActivityWithStatus> {
   /**
    * Get all activities
    */
-  fun getActivities(): Flow<Result<List<OrganisationalActivityShort>>>
+  //fun getActivities(): Flow<Result<List<OrganisationalActivityShort>>>
 
   /**
    * Get activity details by ID
@@ -205,29 +204,6 @@ class ActivityRepositoryImpl(
       }
     }
   }
-
-  override fun getActivities(): Flow<Result<List<OrganisationalActivityShort>>> =
-    flow {
-      emit(Result.Loading)
-
-//      apolloClient.query(OrganisationalActivitiesQuery())
-//        .fetchPolicy(FetchPolicy.CacheAndNetwork)
-//        .toFlow()
-//        .collect { response ->
-//          val cameFromEmptyCache =
-//            response.isFromCache && response.cacheInfo?.isCacheHit == false
-//          val result = safeCall {
-//            if(!cameFromEmptyCache) {
-//              if (response.hasErrors()) {
-//                throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
-//              }
-//            }
-//            response.data?.activitiesCollection?.edges?.map { it.node.organisationalActivityShort }
-//              ?: emptyList()
-//          }
-//          emit(result)
-//        }
-    }
 
   override suspend fun getActivityDetail(id: String): Flow<Result<OrganisationalActivity>> =
     flow {

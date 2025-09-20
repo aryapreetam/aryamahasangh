@@ -792,13 +792,9 @@ private fun CreateActivityScreenContent(
 
       additionalInstructions = activity.additionalInstructions
       eventCapacity = activity.capacity.toString()
-
+      //println(activity.allowedGender)
       // Convert from allowedGender String to Gender
-      genderAllowed = when {
-        activity.allowedGender.contains("महिला") -> Gender.FEMALE
-        activity.allowedGender.contains("पुरुष") -> Gender.MALE
-        else -> Gender.ANY
-      }
+      genderAllowed = Gender.valueOf(activity.allowedGender)
 
       // Convert existing media URLs to ImagePickerState
       imagePickerState = ImagePickerState(

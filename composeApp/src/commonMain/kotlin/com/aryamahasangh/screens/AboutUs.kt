@@ -132,13 +132,15 @@ private fun QuickLinksSection(
           Screen.Activities("आर्य प्रशिक्षण सत्र")
         ),
         QuickLinkItem("बोध सत्र", "धार्मिक ज्ञान वृद्धि हेतु सत्र", Screen.Activities("बोध सत्र")),
-        QuickLinkItem("क्षात्र प्रशिक्षण", "क्षात्र धर्म का प्रशिक्षण", Screen.Activities("क्षात्र प्रशिक्षण")),
+        QuickLinkItem("क्षात्र प्रशिक्षण", "क्षात्र प्रशिक्षण", Screen.Activities("क्षात्र प्रशिक्षण")),
         QuickLinkItem(
           "आर्य वीरांगना प्रशिक्षण",
           "वीरांगना प्रशिक्षण",
           Screen.Activities("आर्य वीरांगना प्रशिक्षण")
         ),
-        QuickLinkItem("अभियान", "सामाजिक कार्य हेतु अभियान", Screen.Activities("अभियान"))
+        QuickLinkItem("अभियान", "अभियान", Screen.Activities("अभियान")),
+        QuickLinkItem("कक्षा", "कक्षा", Screen.Activities("कक्षा")),
+        QuickLinkItem("कार्यक्रम", "कार्यक्रम", Screen.Activities("कार्यक्रम"))
       ),
       navigateToScreen = navigateToScreen,
       cardColor = CardBackgroundColor.Blue

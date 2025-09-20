@@ -57,27 +57,6 @@ object AppConfig {
 
   const val STORAGE_BUCKET = "documents"
 
-  val keystorePassword: String
-    get() = when (environment) {
-      "prod" -> Secrets.prod_keystore_password
-      "staging" -> Secrets.staging_keystore_password
-      else -> Secrets.dev_keystore_password
-    }
-
-  val keyAlias: String
-    get() = when (environment) {
-      "prod" -> Secrets.prod_key_alias
-      "staging" -> Secrets.staging_key_alias
-      else -> Secrets.dev_key_alias
-    }
-
-  val keyPassword: String
-    get() = when (environment) {
-      "prod" -> Secrets.prod_key_password
-      "staging" -> Secrets.staging_key_password
-      else -> Secrets.dev_key_password
-    }
-
   fun getConfigInfo(): String =
     """
     Version: $versionName ($versionCode)
