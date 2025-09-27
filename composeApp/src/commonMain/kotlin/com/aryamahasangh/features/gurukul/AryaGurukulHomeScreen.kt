@@ -7,38 +7,34 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.aryamahasangh.features.gurukul.ui.UpcomingCoursesScreen
+import com.aryamahasangh.features.gurukul.viewmodel.CourseIntent
+import com.aryamahasangh.features.gurukul.viewmodel.UpcomingCoursesViewModel
+import com.aryamahasangh.type.GenderFilter
+import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
 @Composable
-fun GurukulCollegeHomeScreen(navigateToAdmissionForm: () -> Unit) {
+fun GurukulCollegeHomeScreen(
+  onNavigateToRegister: (courseId: String) -> Unit,
+) {
   Column(Modifier.padding(8.dp)) {
-    listOf("आर्य गुरुकुल महाविद्यालय").forEach { name ->
-      Text(
-        text = name,
-        style = MaterialTheme.typography.headlineSmall,
-        modifier = Modifier.padding(vertical = 8.dp)
-      )
-//      FlowRow(
-//        horizontalArrangement = Arrangement.spacedBy(8.dp),
-//        verticalArrangement = Arrangement.spacedBy(8.dp),
-//        modifier = Modifier.padding(bottom = 16.dp)
-//      ) {
-//        listOf("वर्तमान कार्य", "गुरुकुल प्रवेश", "आगामी बैठक", "कक्षाएं").forEach {
-//          OutlinedCard(
-//            onClick = {
-//              if (it == "गुरुकुल प्रवेश") {
-//                // navigateToAdmissionForm()
-//              }
-//            }
-//          ) {
-//            Text(
-//              text = it,
-//              style = MaterialTheme.typography.titleMedium,
-//              modifier = Modifier.padding(vertical = 16.dp, horizontal = 24.dp)
-//            )
-//          }
-//        }
+    Text(
+      text = "आगामी कक्षाएं",
+      style = MaterialTheme.typography.headlineSmall,
+      modifier = Modifier.padding(vertical = 8.dp)
+    )
+    val viewModel: UpcomingCoursesViewModel = koinInject(parameters = { parametersOf(GenderFilter.MALE) })
+    // Provide intent-based lambda (CourseIntent) -> Unit
+    val uiState = viewModel.collectUiStateAsState{}
+//    { intent ->
+//      when (intent) {
+//        is CourseIntent.OnCourseRegisterClicked -> onNavigateToRegister(intent.courseId)
 //      }
-    }
-    // tabs for "कक्षाएं" & प्राप्त आवेदन
+//    }
+    UpcomingCoursesScreen(
+      uiState = uiState,
+      onNavigateToRegister = { courseId -> viewModel.sendIntent(CourseIntent.OnCourseRegisterClicked(courseId)) },
+    )
   }
 }

@@ -34,6 +34,8 @@ type Activities implements Node {
 
   address: Address
 
+  courseRegistrationsCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: CourseRegistrationsFilter, "Sort order to apply to the collection" orderBy: [CourseRegistrationsOrderBy!]): CourseRegistrationsConnection
+
   activityMemberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: ActivityMemberFilter, "Sort order to apply to the collection" orderBy: [ActivityMemberOrderBy!]): ActivityMemberConnection
 
   organisationalActivityCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: OrganisationalActivityFilter, "Sort order to apply to the collection" orderBy: [OrganisationalActivityOrderBy!]): OrganisationalActivityConnection
@@ -1834,6 +1836,169 @@ input BooleanListFilter {
   overlaps: [Boolean!]
 }
 
+type CourseRegistrations implements Node {
+  """
+  Globally Unique Record Identifier
+  """
+  nodeId: ID!
+
+  id: BigInt!
+
+  createdAt: Datetime!
+
+  name: String
+
+  satrDate: Datetime
+
+  satrPlace: String
+
+  recommendation: String
+
+  activityId: String
+
+  paymentReceiptUrl: String
+
+  activity: Activities
+}
+
+type CourseRegistrationsConnection {
+  edges: [CourseRegistrationsEdge!]!
+
+  pageInfo: PageInfo!
+
+  """
+  The total number of records matching the `filter` criteria
+  """
+  totalCount: Int!
+}
+
+type CourseRegistrationsDeleteResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [CourseRegistrations!]!
+}
+
+type CourseRegistrationsEdge {
+  cursor: String!
+
+  node: CourseRegistrations!
+}
+
+input CourseRegistrationsFilter {
+  id: BigIntFilter
+
+  createdAt: DatetimeFilter
+
+  name: StringFilter
+
+  satrDate: DatetimeFilter
+
+  satrPlace: StringFilter
+
+  recommendation: StringFilter
+
+  activityId: StringFilter
+
+  paymentReceiptUrl: StringFilter
+
+  nodeId: IDFilter
+
+  """
+  Returns true only if all its inner filters are true, otherwise returns false
+  """
+  and: [CourseRegistrationsFilter!]
+
+  """
+  Returns true if at least one of its inner filters is true, otherwise returns false
+  """
+  or: [CourseRegistrationsFilter!]
+
+  """
+  Negates a filter
+  """
+  not: CourseRegistrationsFilter
+}
+
+input CourseRegistrationsInsertInput {
+  createdAt: Datetime
+
+  name: String
+
+  satrDate: Datetime
+
+  satrPlace: String
+
+  recommendation: String
+
+  activityId: String
+
+  paymentReceiptUrl: String
+}
+
+type CourseRegistrationsInsertResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [CourseRegistrations!]!
+}
+
+input CourseRegistrationsOrderBy {
+  id: OrderByDirection
+
+  createdAt: OrderByDirection
+
+  name: OrderByDirection
+
+  satrDate: OrderByDirection
+
+  satrPlace: OrderByDirection
+
+  recommendation: OrderByDirection
+
+  activityId: OrderByDirection
+
+  paymentReceiptUrl: OrderByDirection
+}
+
+input CourseRegistrationsUpdateInput {
+  createdAt: Datetime
+
+  name: String
+
+  satrDate: Datetime
+
+  satrPlace: String
+
+  recommendation: String
+
+  activityId: String
+
+  paymentReceiptUrl: String
+}
+
+type CourseRegistrationsUpdateResponse {
+  """
+  Count of the records impacted by the mutation
+  """
+  affectedCount: Int!
+
+  """
+  Array of records impacted by the mutation
+  """
+  records: [CourseRegistrations!]!
+}
+
 """
 An opaque string using for tracking a position in results during pagination
 """
@@ -3126,6 +3291,11 @@ type Mutation {
   deleteFromBookOrdersCollection("Restricts the mutation's impact to records matching the criteria" filter: BookOrdersFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): BookOrdersDeleteResponse!
 
   """
+  Deletes zero or more records from the `CourseRegistrations` collection
+  """
+  deleteFromCourseRegistrationsCollection("Restricts the mutation's impact to records matching the criteria" filter: CourseRegistrationsFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): CourseRegistrationsDeleteResponse!
+
+  """
   Deletes zero or more records from the `Family` collection
   """
   deleteFromFamilyCollection("Restricts the mutation's impact to records matching the criteria" filter: FamilyFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): FamilyDeleteResponse!
@@ -3249,6 +3419,11 @@ type Mutation {
   Adds one or more `BookOrders` records to the collection
   """
   insertIntoBookOrdersCollection(objects: [BookOrdersInsertInput!]!): BookOrdersInsertResponse
+
+  """
+  Adds one or more `CourseRegistrations` records to the collection
+  """
+  insertIntoCourseRegistrationsCollection(objects: [CourseRegistrationsInsertInput!]!): CourseRegistrationsInsertResponse
 
   """
   Adds one or more `Family` records to the collection
@@ -3376,6 +3551,11 @@ type Mutation {
   Updates zero or more records in the `BookOrders` collection
   """
   updateBookOrdersCollection("Fields that are set will be updated for all records matching the `filter`" set: BookOrdersUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: BookOrdersFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): BookOrdersUpdateResponse!
+
+  """
+  Updates zero or more records in the `CourseRegistrations` collection
+  """
+  updateCourseRegistrationsCollection("Fields that are set will be updated for all records matching the `filter`" set: CourseRegistrationsUpdateInput!, "Restricts the mutation's impact to records matching the criteria" filter: CourseRegistrationsFilter, "The maximum number of records in the collection permitted to be affected" atMost: Int! = 1): CourseRegistrationsUpdateResponse!
 
   """
   Updates zero or more records in the `Family` collection
@@ -3938,6 +4118,11 @@ type Query {
   bookOrdersCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: BookOrdersFilter, "Sort order to apply to the collection" orderBy: [BookOrdersOrderBy!]): BookOrdersConnection
 
   byteaToText(data: Opaque!): String
+
+  """
+  A pagable collection of type `CourseRegistrations`
+  """
+  courseRegistrationsCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: CourseRegistrationsFilter, "Sort order to apply to the collection" orderBy: [CourseRegistrationsOrderBy!]): CourseRegistrationsConnection
 
   """
   A pagable collection of type `Family`

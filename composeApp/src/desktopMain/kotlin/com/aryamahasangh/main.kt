@@ -16,7 +16,7 @@ fun main() =
       alwaysOnTop = true,
       state =
         rememberWindowState(
-          width = 360.dp,
+          width = 380.dp,
           height = 1200.dp,
           position = WindowPosition.Aligned(Alignment.TopEnd)
         ),

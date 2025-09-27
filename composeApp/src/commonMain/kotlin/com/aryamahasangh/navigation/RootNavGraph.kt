@@ -699,9 +699,9 @@ fun RootNavGraph(navController: NavHostController) {
     }
     navigation<Screen.AryaGurukulSection>(startDestination = Screen.AryaGurukulCollege) {
       composable<Screen.AryaGurukulCollege> {
-        GurukulCollegeHomeScreen(
-          navigateToAdmissionForm = {
-            navController.navigate(Screen.AdmissionForm)
+        GurukulCollegeHomeScreen (
+          onNavigateToRegister = { courseId ->
+            navController.navigate(Screen.CourseRegistrationForm(courseId))
           }
         )
       }

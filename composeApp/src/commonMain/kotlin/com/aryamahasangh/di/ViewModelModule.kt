@@ -2,14 +2,16 @@ package com.aryamahasangh.di
 
 import com.aryamahasangh.features.activities.ActivitiesViewModel
 import com.aryamahasangh.features.admin.AdminViewModel
-import com.aryamahasangh.features.admin.family.FamilyViewModel
 import com.aryamahasangh.features.admin.aryasamaj.AryaSamajSelectorViewModel
 import com.aryamahasangh.features.admin.aryasamaj.AryaSamajViewModel
+import com.aryamahasangh.features.admin.family.FamilyViewModel
 import com.aryamahasangh.features.admin.member.MembersSelectorViewModel
 import com.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
 import com.aryamahasangh.features.arya_nirman.SatraRegistrationViewModel
+import com.aryamahasangh.features.gurukul.viewmodel.UpcomingCoursesViewModel
 import com.aryamahasangh.features.organisations.OrganisationsViewModel
 import com.aryamahasangh.features.public_arya_samaj.AryaSamajHomeViewModel
+import com.aryamahasangh.type.GenderFilter
 import com.aryamahasangh.viewmodel.*
 import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
@@ -45,4 +47,5 @@ val viewModelModule =
     factoryOf(::AryaSamajHomeViewModel)
     factoryOf(::FamilyViewModel)
     factoryOf(::MembersSelectorViewModel)
+    factory { (gender: GenderFilter) -> UpcomingCoursesViewModel(get(), gender) }
   }

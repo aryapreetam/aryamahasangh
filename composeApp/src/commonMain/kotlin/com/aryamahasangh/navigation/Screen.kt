@@ -152,4 +152,7 @@ sealed class Screen {
 
   @Serializable
   data object ChatraTrainingHome : Screen()
+
+  @Serializable
+  data class CourseRegistrationForm(val courseId: String) : Screen()
 }

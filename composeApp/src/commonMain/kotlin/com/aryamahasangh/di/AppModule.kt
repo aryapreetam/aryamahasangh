@@ -5,6 +5,7 @@ import com.aryamahasangh.network.supabaseClient
 import com.aryamahasangh.utils.FileUploadUtils
 import org.koin.core.module.Module
 import org.koin.dsl.module
+import com.aryamahasangh.di.useCaseModule
 
 /**
  * Main application module for Koin dependency injection
@@ -25,6 +26,7 @@ fun getAppModules(): List<Module> {
   return listOf(
     appModule,
     viewModelModule,
-    repositoryModule
+    repositoryModule,
+    useCaseModule,
   )
 }

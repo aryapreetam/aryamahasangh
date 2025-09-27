@@ -282,7 +282,7 @@ fun AppTheme(
   ) {
     val isDark by isDarkState
     MaterialTheme(
-      colorScheme = if (isDark) darkScheme else lightScheme,
+      colorScheme = lightScheme, // if (isDark) darkScheme else lightScheme,
       //motionScheme = MotionScheme.expressive(),
       typography = AppTypography(),
       content = content

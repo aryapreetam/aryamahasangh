@@ -1,0 +1,94 @@
+query courseRegistrationsForActivity($activityId: String!){
+  courseRegistrationsCollection(filter: {activityId: {eq: $activityId}}){
+    totalCount
+    edges{
+      node{
+        id
+        name
+        satrDate
+        satrPlace
+        recommendation
+        paymentReceiptUrl
+      }
+    }
+  }
+}
+
+query loadAllCourses($gender: GenderFilter){
+  activitiesCollection(
+    filter: {
+      type: {eq: COURSE},
+      allowedGender: {eq: $gender}
+    }
+  ) {
+    edges {
+      node {
+        id
+        name
+        startDatetime
+        endDatetime
+        allowedGender
+        address {
+          district
+          state
+          latitude
+          longitude
+        }
+        capacity
+        courseRegistrationsCollection {
+          pageInfo {
+            startCursor
+          }
+          edges {
+            node {
+              id
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+mutation registerForCourse($input: CourseRegistrationsInsertInput!){
+  insertIntoCourseRegistrationsCollection(objects: [$input]){
+    affectedCount
+  }
+}
+
+query allUpcomingCourses($currentDateTime: Datetime!, $gender: GenderFilter) {
+  activitiesCollection(
+    filter: {
+      startDatetime: {gt: $currentDateTime},
+      type: {eq: COURSE},
+      allowedGender: {eq: $gender}
+    }
+  ) {
+    edges {
+      node {
+        id
+        name
+        startDatetime
+        endDatetime
+        allowedGender
+        address {
+          district
+          state
+          latitude
+          longitude
+        }
+        capacity
+        courseRegistrationsCollection {
+          pageInfo {
+            startCursor
+          }
+          edges {
+            node {
+              id
+            }
+          }
+        }
+      }
+    }
+  }
+}
