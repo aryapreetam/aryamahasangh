@@ -63,16 +63,16 @@ val drawerOptions =
     DrawerOption("आर्य गतिविधियां", Res.drawable.local_activity, Screen.ActivitiesSection),
     DrawerOption("संलग्न आर्य संस्थाएं", Res.drawable.account_tree, Screen.OrgsSection),
     DrawerOption("हमसें जुडें", Res.drawable.handshake, Screen.JoinUs),
-//    DrawerOption(
-//      "आर्य गुरुकुल",
-//      Res.drawable.school,
-//      Screen.AryaGurukulSection
-//    ),
-//    DrawerOption(
-//      "आर्या गुरुकुल",
-//      Res.drawable.school,
-//      Screen.AryaaGurukulSection
-//    ),
+    DrawerOption(
+      "आर्य गुरुकुल",
+      Res.drawable.school,
+      Screen.AryaGurukulSection
+    ),
+    DrawerOption(
+      "आर्या गुरुकुल",
+      Res.drawable.school,
+      Screen.AryaaGurukulSection
+    ),
     DrawerOption(
       "आर्य-आर्या निर्माण(सत्र)",
       Res.drawable.interactive_space,
@@ -212,15 +212,16 @@ fun DrawerContent(
             )
           }
         )
-//        if (option.title == "हमसें जुडें") {
-//          HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-//          Text(
-//            "आर्य गुरुकुल महाविद्यालय",
-//            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
-//            style = MaterialTheme.typography.titleMedium
-//          )
-//        } else
-          if (option.title == "हमसें जुडें") {
+        if (option.title == "हमसें जुडें") {
+          HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+          Text(
+            "आर्य गुरुकुल महाविद्यालय",
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
+            style = MaterialTheme.typography.titleMedium
+          )
+        }
+        else
+          if (option.title == "आर्या गुरुकुल") {
           HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
           Text(
             "सांगठनिक कार्य",

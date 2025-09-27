@@ -1,4 +1,4 @@
-package com.aryamahasangh.screens
+package com.aryamahasangh.features.gurukul
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -9,9 +9,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun GurukulCollegeHomeScreen(navigateToAdmissionForm: () -> Unit) {
+fun AryaaGurukulHomeScreen(navigateToAdmissionForm: () -> Unit) {
   Column(Modifier.padding(8.dp)) {
-    listOf("आर्य गुरुकुल महाविद्यालय").forEach { name ->
+    listOf("आर्या गुरुकुल महाविद्यालय").forEach { name ->
       Text(
         text = name,
         style = MaterialTheme.typography.headlineSmall,

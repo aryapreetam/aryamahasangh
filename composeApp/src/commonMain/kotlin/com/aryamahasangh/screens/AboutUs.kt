@@ -175,7 +175,7 @@ private fun QuickLinksSection(
 //            QuickLinkItem("वर्तमान कार्य", "चालू गतिविधियां", Screen.AryaGurukulCollege),
 //            QuickLinkItem("गुरुकुल प्रवेश", "नए छात्रों का प्रवेश", Screen.AryaGurukulCollege),
 //            QuickLinkItem("आगामी बैठक", "भविष्य की बैठकें", Screen.AryaGurukulCollege),
-//            QuickLinkItem("कक्षाएं", "शिक्षा कार्यक्रम", Screen.AryaGurukulCollege)
+            QuickLinkItem("कक्षाएं", "शिक्षा कार्यक्रम", Screen.AryaGurukulCollege)
           )
         ),
         QuickLinkSubSection(
@@ -184,7 +184,7 @@ private fun QuickLinksSection(
 //            QuickLinkItem("वर्तमान कार्य", "चालू गतिविधियां", Screen.AryaaGurukulCollege),
 //            QuickLinkItem("गुरुकुल प्रवेश", "नए छात्राओं का प्रवेश", Screen.AryaaGurukulCollege),
 //            QuickLinkItem("आगामी बैठक", "भविष्य की बैठकें", Screen.AryaaGurukulCollege),
-//            QuickLinkItem("कक्षाएं", "शिक्षा कार्यक्रम", Screen.AryaaGurukulCollege)
+            QuickLinkItem("कक्षाएं", "शिक्षा कार्यक्रम", Screen.AryaaGurukulCollege)
           )
         )
       )

@@ -33,6 +33,8 @@ import com.aryamahasangh.features.arya_nirman.AryaNirmanHomeScreen
 import com.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
 import com.aryamahasangh.features.arya_nirman.SatraRegistrationFormScreen
 import com.aryamahasangh.features.arya_nirman.SatraRegistrationViewModel
+import com.aryamahasangh.features.gurukul.AryaaGurukulHomeScreen
+import com.aryamahasangh.features.gurukul.GurukulCollegeHomeScreen
 import com.aryamahasangh.features.organisations.NewOrganisationFormScreen
 import com.aryamahasangh.features.organisations.OrgDetailScreen
 import com.aryamahasangh.features.organisations.OrganisationsViewModel

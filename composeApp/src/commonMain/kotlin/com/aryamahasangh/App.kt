@@ -18,6 +18,7 @@ import coil3.compose.setSingletonImageLoaderFactory
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.crossfade
 import com.aryamahasangh.auth.SessionManager
+import com.aryamahasangh.components.OngoingIcon
 import com.aryamahasangh.di.KoinInitializer
 import com.aryamahasangh.navigation.AppDrawer
 import com.aryamahasangh.network.supabaseClient
@@ -68,9 +69,47 @@ fun App() {
     AppTheme {
       BoxWithConstraints {
         println("$maxWidth")
-        val viewModel = CounterViewModel()
-        CounterScreen(viewModel = viewModel)
+        //val viewModel = CounterViewModel()
+        //CounterScreen(viewModel = viewModel)
 //        FormComponentsExample()
+        FlowRow{
+          OngoingIcon(Modifier.size(48.dp))
+          Spacer(modifier = Modifier.width(16.dp))
+//          UpcomingIcon(Modifier.size(48.dp))
+//          Spacer(modifier = Modifier.width(16.dp))
+//          OpenForRegistrationIcon(Modifier.size(48.dp))
+//          Spacer(modifier = Modifier.width(16.dp))
+//          RegistrationAvailableIcon(Modifier.size(48.dp))
+//          Spacer(modifier = Modifier.width(16.dp))
+//          OpenGateIcon(Modifier.size(48.dp))
+//          Spacer(modifier = Modifier.width(16.dp))
+//          OpenRegistrationIcon(Modifier.size(48.dp))
+//          Spacer(modifier = Modifier.width(16.dp))
+//          StarburstIcon(Modifier.size(48.dp))
+//          Spacer(modifier = Modifier.width(16.dp))
+//          JoinNowIcon(Modifier.size(48.dp))
+//          Spacer(modifier = Modifier.width(16.dp))
+//          OngoingIcon1(Modifier.size(48.dp))
+//          Spacer(modifier = Modifier.width(16.dp))
+//          OngoingIcon2(Modifier.size(48.dp))
+//          Spacer(modifier = Modifier.width(16.dp))
+//          AlivePulsingOngoingIcon(Modifier.size(48.dp))
+//          Spacer(modifier = Modifier.width(16.dp))
+//          //LiveNowIcon(Modifier.size(48.dp))
+//          Spacer(modifier = Modifier.width(16.dp))
+//          GlowOngoingIcon(Modifier.size(48.dp))
+//          Spacer(modifier = Modifier.width(16.dp))
+//          WaveOngoingIcon(Modifier.size(48.dp))
+//          Spacer(modifier = Modifier.width(16.dp))
+//          BreathingOngoingIcon(Modifier.size(48.dp))
+//          Spacer(modifier = Modifier.width(16.dp))
+//          OrbitingOngoingIcon(Modifier.size(48.dp))
+//          PeacefulOngoingIconsRow()
+//          ElegantOrbitingOngoingIcon()
+//          RippleHaloOngoingIcon()
+//          OrbitingOngoingIconEnhanced()
+//          EccentricOrbitingIcon()
+        }
       }
     }
     // ImagePickerExample()

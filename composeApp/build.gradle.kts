@@ -213,6 +213,7 @@ kotlin {
 
       // Image compression module
       implementation(projects.imgCompressCmp)
+      implementation("app.cash.molecule:molecule-runtime:2.2.0")
     }
     commonTest.dependencies {
       implementation(libs.kotlin.test)

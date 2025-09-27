@@ -31,11 +31,13 @@ import com.aryamahasangh.features.activities.toDisplayName
 import com.aryamahasangh.features.activities.toLocalDateTime
 import com.aryamahasangh.features.arya_nirman.convertDates
 import com.aryamahasangh.fragment.ActivityWithStatus
-import com.aryamahasangh.fragment.OrganisationalActivityShort
 import com.aryamahasangh.type.ActivityType
 import com.aryamahasangh.utils.WithTooltip
 import com.aryamahasangh.utils.formatShort
 import org.jetbrains.compose.resources.painterResource
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
 
 val activityTypeData = ActivityType.entries.associateWith { it.toDisplayName() }
 
@@ -181,7 +183,7 @@ fun ActivityListItem(
 //          Spacer(modifier = Modifier.width(4.dp))
 //          Text(text = "समाप्ति: $endDate", style = MaterialTheme.typography.bodySmall)
         }
-        
+
         Spacer(modifier = Modifier.height(4.dp))
         Row(
           verticalAlignment = Alignment.CenterVertically,
@@ -200,9 +202,13 @@ fun ActivityListItem(
           }else{
             Spacer(modifier = Modifier.width(24.dp))
           }
-          WithTooltip(activityStatus.toDisplayName()) {
+          val tooltip = if(activity.type == ActivityType.SESSION || activity.type == ActivityType.COURSE)
+            if(activityStatus == ActivityStatus.UPCOMING) "पंजीकरण चालू" else activityStatus.toDisplayName()
+          else activityStatus.toDisplayName()
+
+          WithTooltip(tooltip) {
             // Activity status indicator
-            StatusChip(status = activityStatus)
+            StatusChip(status = activityStatus, activityType = activity.type!!)
           }
         }
       }
@@ -231,20 +237,21 @@ fun ActivityListItem(
 }
 
 @Composable
-fun StatusChip(status: ActivityStatus) {
-  EventIcon(status)
+fun StatusChip(status: ActivityStatus, activityType: ActivityType = ActivityType.SESSION) {
+  EventIcon(status, activityType = activityType)
 }
 
 @Composable
 fun EventIcon(
   state: ActivityStatus,
   modifier: Modifier = Modifier,
-  size: Dp = 24.dp
+  size: Dp = 24.dp,
+  activityType: ActivityType = ActivityType.SESSION
 ) {
   when (state) {
     ActivityStatus.PAST -> PastIcon(modifier.size(size))
-    ActivityStatus.ONGOING -> OngoingIcon(modifier.size(size))
-    ActivityStatus.UPCOMING -> FutureIcon(modifier.size(size))
+    ActivityStatus.ONGOING -> OngoingIcon1(modifier.size(size))
+    ActivityStatus.UPCOMING -> if(activityType == ActivityType.SESSION || activityType == ActivityType.COURSE) OngoingIcon(modifier.size(size)) else FutureIcon(modifier.size(size))
   }
 }
 
@@ -301,6 +308,95 @@ fun OngoingIcon(
   }
 }
 
+
+@Composable
+fun OngoingIcon1(
+  modifier: Modifier = Modifier,
+  color: Color = Color(0xFFFFA726)
+) {
+  val rippleRadius = remember { Animatable(0f) }
+
+  LaunchedEffect(Unit) {
+    while (true) {
+      rippleRadius.snapTo(0f)
+      rippleRadius.animateTo(
+        targetValue = 1f,
+        animationSpec = tween(durationMillis = 1500, easing = LinearEasing)
+      )
+    }
+  }
+
+  Canvas(modifier = modifier.size(48.dp)) {
+    val center = Offset(size.width / 2, size.height / 2)
+    val maxRadius = size.minDimension / 2
+
+    // Draw 3 ripples at different phases
+    for (i in 0..2) {
+      val progress = (rippleRadius.value + i * 0.33f) % 1f
+      val alpha = 1f - progress
+      val radius = progress * maxRadius
+      drawCircle(
+        color = color.copy(alpha = alpha),
+        radius = radius,
+        center = center,
+        style = Stroke(width = 2.dp.toPx())
+      )
+    }
+
+    // Draw a solid center
+    drawCircle(
+      color = color,
+      radius = maxRadius * 0.2f,
+      center = center
+    )
+  }
+}
+
+
+
+
+@Composable
+fun OrbitingOngoingIcon(
+  modifier: Modifier = Modifier,
+  orbitDots: Int = 8, // more dots now
+  color: Color = Color(0xFFFFA726) // warm orange
+) {
+  val transition = rememberInfiniteTransition()
+  val rotation by transition.animateFloat(
+    initialValue = 0f,
+    targetValue = 360f,
+    animationSpec = infiniteRepeatable(
+      animation = tween(3000, easing = LinearEasing)
+    )
+  )
+
+  Canvas(modifier = modifier.size(64.dp)) {
+    val center = Offset(size.width / 2, size.height / 2)
+    val radius = size.minDimension / 2
+
+    // Solid center
+    drawCircle(
+      color = color,
+      radius = radius * 0.25f,
+      center = center
+    )
+
+    // Orbiting dots
+    for (i in 0 until orbitDots) {
+      val angle = (rotation + i * 360f / orbitDots) * (PI / 180f) // degrees to radians
+      val dotX = center.x + radius * 0.6f * cos(angle).toFloat()
+      val dotY = center.y + radius * 0.6f * sin(angle).toFloat()
+      drawCircle(
+        color = color.copy(alpha = 0.7f),
+        radius = radius * 0.08f,
+        center = Offset(dotX, dotY)
+      )
+    }
+  }
+}
+
+
+
 @Composable
 fun FutureIcon(modifier: Modifier = Modifier) {
   val bounceAnim = remember { Animatable(0.7f) }
@@ -323,3 +419,4 @@ fun FutureIcon(modifier: Modifier = Modifier) {
     tint = MaterialTheme.colorScheme.secondary
   )
 }
+

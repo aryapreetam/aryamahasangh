@@ -16,8 +16,8 @@ fun main() =
       alwaysOnTop = true,
       state =
         rememberWindowState(
-          width = 400.dp,
-          height = 800.dp,
+          width = 360.dp,
+          height = 1200.dp,
           position = WindowPosition.Aligned(Alignment.TopEnd)
         ),
       title = "Arya Mahasangh"
