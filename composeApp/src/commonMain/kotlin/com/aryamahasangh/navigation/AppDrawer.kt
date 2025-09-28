@@ -30,6 +30,12 @@ import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
 
+// Track which Gurukul section originated the CourseRegistrationForm navigation
+object CourseRegistrationContext {
+  // Default to null - no specific source selected
+  var sourceGurukulSection: Screen? = null
+}
+
 val LocalSnackbarHostState =
   compositionLocalOf<SnackbarHostState> { error("SnackbarHostState is not found") }
 
@@ -186,6 +192,11 @@ fun DrawerContent(
                   else -> false
                 }
 
+              // Store the source section for CourseRegistrationForm navigation context
+              if (option.route == Screen.AryaGurukulSection || option.route == Screen.AryaaGurukulSection) {
+                CourseRegistrationContext.sourceGurukulSection = option.route
+              }
+
               if (isStartDestination) {
                 // For section start destinations, clear back stack completely to root
                 popUpTo(Screen.AboutSection) {
@@ -280,6 +291,27 @@ private fun checkIfSelected(
   currentDestination: String?,
   currentDrawerItem: String
 ): Boolean {
+  // Special handling for CourseRegistrationForm - use our saved context
+  if (currentDestination?.contains("CourseRegistrationForm") == true) {
+    val currentSourceSection = CourseRegistrationContext.sourceGurukulSection
+    val drawerItemScreen = when (currentDrawerItem) {
+      Screen.AryaGurukulSection.toString() -> Screen.AryaGurukulSection
+      Screen.AryaaGurukulSection.toString() -> Screen.AryaaGurukulSection
+      else -> null
+    }
+
+    // Only highlight the drawer item that matches our saved source section
+    return currentSourceSection == drawerItemScreen
+  }
+
+  // For other screens, store the source section when navigating to the respective home screens
+  if (currentDestination?.contains("AryaGurukulCollege") == true) {
+    CourseRegistrationContext.sourceGurukulSection = Screen.AryaGurukulSection
+  } else if (currentDestination?.contains("AryaaGurukulCollege") == true) {
+    CourseRegistrationContext.sourceGurukulSection = Screen.AryaaGurukulSection
+  }
+
+  // Handle normal cases
   return if ((currentDestination?.contains("AboutUs") == true || currentDestination?.contains("AboutUsDetails") == true) && currentDrawerItem == Screen.AboutSection.toString()) {
     true
   } else if (
@@ -345,14 +377,12 @@ private fun checkIfSelected(
   ) {
     true
   } else if (
-    (currentDestination?.contains("AryaGurukulCollege") == true ||
-      currentDestination?.contains("CourseRegistrationForm") == true) &&
-      currentDrawerItem == Screen.AryaGurukulSection.toString()
+    currentDestination?.contains("AryaGurukulCollege") == true &&
+    currentDrawerItem == Screen.AryaGurukulSection.toString()
   ) {
     true
   } else if (
-    (currentDestination?.contains("AryaaGurukulCollege") == true ||
-    currentDestination?.contains("CourseRegistrationForm") == true) &&
+    currentDestination?.contains("AryaaGurukulCollege") == true &&
     currentDrawerItem == Screen.AryaaGurukulSection.toString()
   ) {
     true

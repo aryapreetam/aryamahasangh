@@ -5,7 +5,13 @@ import com.aryamahasangh.features.gurukul.data.CourseRegistrationRepository
 import com.aryamahasangh.features.gurukul.data.ImageUploadRepository
 import com.aryamahasangh.features.gurukul.domain.models.CourseRegistrationFormData
 import com.aryamahasangh.type.CourseRegistrationsInsertInput
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.plus
 
 class RegisterForCourseUseCase(
   private val courseRegistrationRepository: CourseRegistrationRepository,
@@ -24,7 +30,10 @@ class RegisterForCourseUseCase(
 
     // Step 2: Build insert input
     val satrDateInstant = try {
-      Instant.parse(formData.satrDate)
+      // Convert LocalDate string to Instant for database storage
+      val localDate = LocalDate.parse(formData.satrDate)
+      // Get start of day as Instant in UTC, then add 12 hours to get noon time
+      localDate.atStartOfDayIn(TimeZone.UTC).plus(12, DateTimeUnit.HOUR, TimeZone.UTC)
     } catch (e: Exception) {
       null
     }

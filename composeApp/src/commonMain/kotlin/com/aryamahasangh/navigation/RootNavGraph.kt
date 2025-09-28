@@ -718,24 +718,27 @@ fun RootNavGraph(navController: NavHostController) {
         )
       }
 
-      composable<Screen.AryaaGurukulCollege> {
-        val viewModel: UpcomingCoursesViewModel = koinInject(parameters = { parametersOf(GenderFilter.FEMALE) })
-        AryaaGurukulHomeScreen(
-          viewModel = viewModel,
-          onNavigateToRegistration = { courseId ->
-            try {
-              navController.navigate(Screen.CourseRegistrationForm(courseId))
-            } catch (e: Exception) {
-              e.printStackTrace()
-            }
-          }
-        )
-      }
+//      composable<Screen.AryaaGurukulCollege> {
+//        val viewModel: UpcomingCoursesViewModel = koinInject(parameters = { parametersOf(GenderFilter.FEMALE) })
+//        AryaaGurukulHomeScreen(
+//          viewModel = viewModel,
+//          onNavigateToRegistration = { courseId ->
+//            try {
+//              navController.navigate(Screen.CourseRegistrationForm(courseId))
+//            } catch (e: Exception) {
+//              e.printStackTrace()
+//            }
+//          }
+//        )
+//      }
 
       composable<Screen.CourseRegistrationForm> {
         val args = it.toRoute<Screen.CourseRegistrationForm>()
         com.aryamahasangh.features.gurukul.ui.CourseRegistrationFormScreen(
-          activityId = args.activityId
+          activityId = args.activityId,
+          onNavigateBack = {
+            navController.popBackStack()
+          }
         )
       }
     }
@@ -755,7 +758,7 @@ fun RootNavGraph(navController: NavHostController) {
             }
           }
         }
-        com.aryamahasangh.features.gurukul.AryaaGurukulHomeScreen(
+        AryaaGurukulHomeScreen(
           viewModel = viewModel,
           onNavigateToRegistration = { activityId ->
             try {
@@ -764,6 +767,16 @@ fun RootNavGraph(navController: NavHostController) {
               println("Navigation error: ${e.message}")
               e.printStackTrace()
             }
+          }
+        )
+      }
+
+      composable<Screen.CourseRegistrationForm> {
+        val args = it.toRoute<Screen.CourseRegistrationForm>()
+        com.aryamahasangh.features.gurukul.ui.CourseRegistrationFormScreen(
+          activityId = args.activityId,
+          onNavigateBack = {
+            navController.popBackStack()
           }
         )
       }
