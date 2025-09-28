@@ -219,16 +219,15 @@ fun DrawerContent(
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
             style = MaterialTheme.typography.titleMedium
           )
-        }
-        else
+        } else
           if (option.title == "आर्या गुरुकुल") {
-          HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-          Text(
-            "सांगठनिक कार्य",
-            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
-            style = MaterialTheme.typography.titleMedium
-          )
-        }
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+            Text(
+              "सांगठनिक कार्य",
+              modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 4.dp),
+              style = MaterialTheme.typography.titleMedium
+            )
+          }
 //          else if (option.title == "आर्य समाज संगठन") {
 //          HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 //          Text(
@@ -289,7 +288,7 @@ private fun checkIfSelected(
         currentDestination?.contains("ActivityDetails") == true ||
         currentDestination?.contains("EditActivity") == true ||
         currentDestination?.contains("CreateActivity") == true
-    ) &&
+      ) &&
     currentDrawerItem == Screen.ActivitiesSection.toString()
   ) {
     true
@@ -297,7 +296,7 @@ private fun checkIfSelected(
     (
       currentDestination?.contains("Orgs") == true ||
         currentDestination?.contains("OrgDetails") == true
-    ) &&
+      ) &&
     currentDrawerItem == Screen.OrgsSection.toString()
   ) {
     true
@@ -305,7 +304,7 @@ private fun checkIfSelected(
     (
       currentDestination?.contains("Learning") == true ||
         currentDestination?.contains("VideoDetails") == true
-    ) &&
+      ) &&
     currentDrawerItem == Screen.LearningSection.toString()
   ) {
     true
@@ -313,7 +312,7 @@ private fun checkIfSelected(
     (
       currentDestination?.contains("BookOrderForm") == true ||
         currentDestination?.contains("BookOrderDetails") == true
-    ) &&
+      ) &&
     currentDrawerItem == Screen.BookSection.toString()
   ) {
     true
@@ -321,7 +320,7 @@ private fun checkIfSelected(
     (
       currentDestination?.contains("AryaNirmanHome") == true ||
         currentDestination?.contains("AryaNirmanRegistrationForm") == true
-    ) &&
+      ) &&
     currentDrawerItem == Screen.AryaNirmanSection.toString()
   ) {
     true
@@ -346,15 +345,14 @@ private fun checkIfSelected(
   ) {
     true
   } else if (
-    currentDestination?.contains("AryaGurukulCollege") == true &&
-    currentDrawerItem == Screen.AryaGurukulSection.toString()
+    (currentDestination?.contains("AryaGurukulCollege") == true ||
+      currentDestination?.contains("CourseRegistrationForm") == true) &&
+      currentDrawerItem == Screen.AryaGurukulSection.toString()
   ) {
     true
   } else if (
-    (
-      currentDestination?.contains("AryaaGurukulCollege") == true ||
-        currentDestination?.contains("AdmissionForm") == true
-    ) &&
+    (currentDestination?.contains("AryaaGurukulCollege") == true ||
+    currentDestination?.contains("CourseRegistrationForm") == true) &&
     currentDrawerItem == Screen.AryaaGurukulSection.toString()
   ) {
     true
@@ -369,7 +367,7 @@ private fun checkIfSelected(
         currentDestination?.contains("CreateFamilyForm") == true ||
         currentDestination?.contains("EditFamilyForm") == true ||
         currentDestination?.contains("FamilyDetail") == true
-    ) &&
+      ) &&
     currentDrawerItem == Screen.AdminSection.toString()
   ) {
     true
@@ -890,7 +888,8 @@ private fun shouldShowBackButtonFor(currentScreen: String?): Boolean = listOf(
   "AryaSamajDetail",
   "CreateFamilyForm",
   "EditFamilyForm",
-  "FamilyDetail"
+  "FamilyDetail",
+  "CourseRegistrationForm"
 ).any {
   currentScreen?.startsWith(it) == true
 }

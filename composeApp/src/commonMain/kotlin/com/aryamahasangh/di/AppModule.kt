@@ -6,6 +6,7 @@ import com.aryamahasangh.utils.FileUploadUtils
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import com.aryamahasangh.di.useCaseModule
+import com.aryamahasangh.features.gurukul.viewmodel.GurukulCourseRegistrationModule
 
 /**
  * Main application module for Koin dependency injection
@@ -28,5 +29,6 @@ fun getAppModules(): List<Module> {
     viewModelModule,
     repositoryModule,
     useCaseModule,
+    GurukulCourseRegistrationModule,
   )
 }

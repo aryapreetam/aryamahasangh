@@ -30,7 +30,7 @@ import kotlinx.datetime.toLocalDateTime
 @Composable
 fun UpcomingCoursesScreen(
     uiState: UpcomingCoursesUiState,
-    onNavigateToRegister: (courseId: String) -> Unit,
+    onRegisterClick: (courseId: String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     when(uiState) {
@@ -67,7 +67,10 @@ fun UpcomingCoursesScreen(
                   val event = course.toUpcomingActivityWithInstantParse()
                   EventListItem(
                     event = event,
-                    onRegisterClick = { onNavigateToRegister(course.id) },
+                    onRegisterClick = {
+                      println("DEBUG: Register button clicked for course: ${course.id}")
+                      onRegisterClick(course.id)
+                    },
                     onDirectionsClick = null, // implement if needed
                     modifier = Modifier
                       .testTag("course_card_${course.id}")

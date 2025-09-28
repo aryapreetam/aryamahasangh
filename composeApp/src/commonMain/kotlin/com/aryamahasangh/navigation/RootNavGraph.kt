@@ -35,14 +35,21 @@ import com.aryamahasangh.features.arya_nirman.SatraRegistrationFormScreen
 import com.aryamahasangh.features.arya_nirman.SatraRegistrationViewModel
 import com.aryamahasangh.features.gurukul.AryaaGurukulHomeScreen
 import com.aryamahasangh.features.gurukul.GurukulCollegeHomeScreen
+import com.aryamahasangh.features.gurukul.viewmodel.UpcomingCoursesEffect
+import com.aryamahasangh.features.gurukul.viewmodel.UpcomingCoursesViewModel
 import com.aryamahasangh.features.organisations.NewOrganisationFormScreen
 import com.aryamahasangh.features.organisations.OrgDetailScreen
 import com.aryamahasangh.features.organisations.OrganisationsViewModel
 import com.aryamahasangh.features.organisations.OrgsScreen
 import com.aryamahasangh.features.public_arya_samaj.AryaSamajHomeViewModel
 import com.aryamahasangh.screens.*
-import com.aryamahasangh.viewmodel.*
+import com.aryamahasangh.type.GenderFilter
+import com.aryamahasangh.viewmodel.AboutUsViewModel
+import com.aryamahasangh.viewmodel.BookOrderViewModel
+import com.aryamahasangh.viewmodel.JoinUsViewModel
+import com.aryamahasangh.viewmodel.LearningViewModel
 import org.koin.compose.koinInject
+import org.koin.core.parameter.parametersOf
 
 @ExperimentalMaterial3Api
 @Composable
@@ -699,28 +706,66 @@ fun RootNavGraph(navController: NavHostController) {
     }
     navigation<Screen.AryaGurukulSection>(startDestination = Screen.AryaGurukulCollege) {
       composable<Screen.AryaGurukulCollege> {
-        GurukulCollegeHomeScreen (
-          onNavigateToRegister = { courseId ->
-            navController.navigate(Screen.CourseRegistrationForm(courseId))
+        val viewModel: UpcomingCoursesViewModel = koinInject(parameters = { parametersOf(GenderFilter.MALE) })
+        GurukulCollegeHomeScreen(
+          onNavigateToRegistration = { courseId ->
+            try {
+              navController.navigate(Screen.CourseRegistrationForm(courseId))
+            } catch (e: Exception) {
+              e.printStackTrace()
+            }
           }
+        )
+      }
+
+      composable<Screen.AryaaGurukulCollege> {
+        val viewModel: UpcomingCoursesViewModel = koinInject(parameters = { parametersOf(GenderFilter.FEMALE) })
+        AryaaGurukulHomeScreen(
+          viewModel = viewModel,
+          onNavigateToRegistration = { courseId ->
+            try {
+              navController.navigate(Screen.CourseRegistrationForm(courseId))
+            } catch (e: Exception) {
+              e.printStackTrace()
+            }
+          }
+        )
+      }
+
+      composable<Screen.CourseRegistrationForm> {
+        val args = it.toRoute<Screen.CourseRegistrationForm>()
+        com.aryamahasangh.features.gurukul.ui.CourseRegistrationFormScreen(
+          activityId = args.activityId
         )
       }
     }
     navigation<Screen.AryaaGurukulSection>(startDestination = Screen.AryaaGurukulCollege) {
       composable<Screen.AryaaGurukulCollege> {
-        AryaaGurukulHomeScreen(
-          navigateToAdmissionForm = {
-            navController.navigate(Screen.AdmissionForm)
+        val viewModel: UpcomingCoursesViewModel = koinInject(parameters = { parametersOf(GenderFilter.FEMALE) })
+
+        LaunchedEffect(viewModel) {
+          viewModel.effect.collect { effect ->
+            effect?.let { nonNullEffect ->
+              when (nonNullEffect) {
+                is UpcomingCoursesEffect.NavigateToRegistration -> {
+                  navController.navigate(Screen.CourseRegistrationForm(nonNullEffect.activityId))
+                  viewModel.clearEffect()
+                }
+              }
+            }
+          }
+        }
+        com.aryamahasangh.features.gurukul.AryaaGurukulHomeScreen(
+          viewModel = viewModel,
+          onNavigateToRegistration = { activityId ->
+            try {
+              navController.navigate(Screen.CourseRegistrationForm(activityId))
+            } catch (e: Exception) {
+              println("Navigation error: ${e.message}")
+              e.printStackTrace()
+            }
           }
         )
-      }
-      composable<Screen.AdmissionForm> {
-        val viewModel = koinInject<AdmissionsViewModel>()
-        if (isLoggedIn) {
-          AdmissionScreen(viewModel)
-        } else {
-          RegistrationForm(viewModel)
-        }
       }
     }
     navigation<Screen.KshatraTrainingSection>(startDestination = Screen.KshatraTrainingHome) {

@@ -153,6 +153,9 @@ sealed class Screen {
   @Serializable
   data object ChatraTrainingHome : Screen()
 
+  /**
+   * Type-safe navigation route for Course Registration Form
+   */
   @Serializable
-  data class CourseRegistrationForm(val courseId: String) : Screen()
+  data class CourseRegistrationForm(val activityId: String) : Screen()
 }

@@ -11,6 +11,9 @@ import com.aryamahasangh.features.gurukul.domain.usecase.GetCoursesUseCase
 import com.aryamahasangh.features.gurukul.presenter.UpcomingCoursesPresenter
 import com.aryamahasangh.features.gurukul.presenter.UpcomingCoursesUiState
 import com.aryamahasangh.type.GenderFilter
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Multiplatform ViewModel for upcoming courses listing.
@@ -22,18 +25,23 @@ class UpcomingCoursesViewModel(
 ) : ViewModel() {
   // All deps injected via constructor; no KoinComponent required.
 
+  // Effect for navigation
+  private val _effect = MutableStateFlow<UpcomingCoursesEffect?>(null)
+  val effect = _effect.asStateFlow()
+
   /**
    * Handle UI/user intents (unit-testable with direct method call).
    * Future: Support more CourseIntent types for full event/MVI/side-effect modeling.
    */
   fun sendIntent(intent: CourseIntent) {
     when (intent) {
-      is CourseIntent.OnCourseRegisterClicked -> {
-        // Handle navigation logic or emit effect (e.g., update effect Flow/State for parent to observe)
-        // In production, may want Effect state (MutableSharedFlow, etc.) here.
-        println("Register clicked for courseId: ${intent.courseId}")
-      }
+      is CourseIntent.OnCourseRegisterClicked ->
+        _effect.value = UpcomingCoursesEffect.NavigateToRegistration(intent.courseId)
     }
+  }
+
+  fun clearEffect() {
+    _effect.value = null
   }
 
   /**
@@ -63,4 +71,8 @@ class UpcomingCoursesViewModel(
 // Intents: All user actions forwarded to ViewModel for separation, MVI pattern, testability
 sealed class CourseIntent {
   data class OnCourseRegisterClicked(val courseId: String) : CourseIntent()
+}
+
+sealed class UpcomingCoursesEffect {
+  data class NavigateToRegistration(val activityId: String) : UpcomingCoursesEffect()
 }
