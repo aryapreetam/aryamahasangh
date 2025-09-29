@@ -1,9 +1,12 @@
 package com.aryamahasangh.features.gurukul.data
 
 import com.apollographql.apollo.ApolloClient
+import com.aryamahasangh.CourseRegistrationsForActivityQuery
 import com.aryamahasangh.LoadAllCoursesQuery
+import com.aryamahasangh.RegisterForCourseMutation
 import com.aryamahasangh.features.gurukul.domain.models.Address
 import com.aryamahasangh.features.gurukul.domain.models.Course
+import com.aryamahasangh.features.gurukul.ui.CourseRegistrationReceivedItem
 import com.aryamahasangh.type.GenderFilter
 
 class GurukulRepositoryImpl(
@@ -20,6 +23,7 @@ class GurukulRepositoryImpl(
       Course(
         id = node.id,
         name = node.name,
+        shortDescription = node.shortDescription,
         startDatetime = node.startDatetime,
         endDatetime = node.endDatetime,
         allowedGender = node.allowedGender?.name ?: "",
@@ -34,5 +38,42 @@ class GurukulRepositoryImpl(
         capacity = node.capacity
       )
     }.orEmpty()
+  }
+
+  override suspend fun registerForCourse(mutation: RegisterForCourseMutation): Result<Unit> {
+    return try {
+      val response = apolloClient.mutation(mutation).execute()
+      if (response.hasErrors()) {
+        Result.failure(Exception(response.errors?.firstOrNull()?.message ?: "पंजीकरण विफल"))
+      } else {
+        Result.success(Unit)
+      }
+    } catch (e: Exception) {
+      Result.failure(Exception("पंजीकरण विफल: ${e.message}"))
+    }
+  }
+
+  override suspend fun getCourseRegistrationsForActivity(activityId: String): Result<List<CourseRegistrationReceivedItem>> {
+    return try {
+      val response = apolloClient.query(CourseRegistrationsForActivityQuery(activityId)).execute()
+      if (response.hasErrors()) {
+        Result.failure(Exception(response.errors?.firstOrNull()?.message ?: "त्रुटि आ गई"))
+      } else {
+        val userList = response.data?.courseRegistrationsCollection?.edges?.map { edge ->
+          val node = edge.node
+          CourseRegistrationReceivedItem(
+            id = node.id.toString(),
+            name = node.name ?: "",
+            satrDate = node.satrDate?.toString() ?: "",
+            satrPlace = node.satrPlace ?: "",
+            recommendation = node.recommendation ?: "",
+            receiptUrl = node.paymentReceiptUrl
+          )
+        } ?: emptyList()
+        Result.success(userList)
+      }
+    } catch (e: Exception) {
+      Result.failure(e)
+    }
   }
 }

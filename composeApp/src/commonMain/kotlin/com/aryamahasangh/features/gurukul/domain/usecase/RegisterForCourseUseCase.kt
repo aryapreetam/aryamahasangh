@@ -1,20 +1,14 @@
 package com.aryamahasangh.features.gurukul.domain.usecase
 
 import com.aryamahasangh.RegisterForCourseMutation
-import com.aryamahasangh.features.gurukul.data.CourseRegistrationRepository
+import com.aryamahasangh.features.gurukul.data.GurukulRepository
 import com.aryamahasangh.features.gurukul.data.ImageUploadRepository
 import com.aryamahasangh.features.gurukul.domain.models.CourseRegistrationFormData
 import com.aryamahasangh.type.CourseRegistrationsInsertInput
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.Instant
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atStartOfDayIn
-import kotlinx.datetime.plus
+import kotlinx.datetime.*
 
 class RegisterForCourseUseCase(
-  private val courseRegistrationRepository: CourseRegistrationRepository,
+  private val courseRegistrationRepository: GurukulRepository,
   private val imageUploadRepository: ImageUploadRepository
 ) {
   suspend fun execute(formData: CourseRegistrationFormData): Result<Unit> {

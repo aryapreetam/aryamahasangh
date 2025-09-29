@@ -10,6 +10,7 @@ import kotlinx.datetime.Instant
 data class Course(
   val id: String,
   val name: String,
+  val shortDescription: String,
   val startDatetime: Instant,
   val endDatetime: Instant,
   val allowedGender: String, // GenderFilter
@@ -19,8 +20,8 @@ data class Course(
 
 // Address nested domain model, matches query
 data class Address(
-  val district: String?,
-  val state: String?,
+  val district: String?, // Can be empty but needed for 'place' in UI
+  val state: String?, // Can be empty but needed for 'place' in UI
   val latitude: Double?,
   val longitude: Double?,
 )

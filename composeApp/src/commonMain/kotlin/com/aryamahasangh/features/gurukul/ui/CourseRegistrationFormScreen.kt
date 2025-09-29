@@ -2,29 +2,16 @@ package com.aryamahasangh.features.gurukul.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationFormEffect
 import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationFormIntent
 import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationFormUiState
 import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationFormViewModel
 import com.aryamahasangh.ui.components.buttons.*
-import com.aryamahasangh.ui.components.buttons.SubmissionError
-import com.aryamahasangh.ui.components.buttons.SubmissionError.ValidationFailed
-import io.github.jan.supabase.auth.exception.AuthErrorCode
-import kotlinx.coroutines.delay
 import org.koin.compose.koinInject
 import org.koin.core.parameter.parametersOf
 
@@ -227,7 +214,7 @@ fun CourseRegistrationFormScreen(
       config = SubmitButtonConfig(
         fillMaxWidth = false,
         validator = {
-          if(!uiState.isSubmitEnabled) SubmissionError.ValidationFailed else null
+          null
         },
         texts = SubmitButtonTexts(
           submittingText = "प्रेषित किया जा रहा है...",

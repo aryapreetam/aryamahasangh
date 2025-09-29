@@ -25,6 +25,7 @@ query loadAllCourses($gender: GenderFilter){
       node {
         id
         name
+        shortDescription
         startDatetime
         endDatetime
         allowedGender

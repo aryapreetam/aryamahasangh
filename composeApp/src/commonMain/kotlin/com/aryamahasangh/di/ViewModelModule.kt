@@ -8,6 +8,7 @@ import com.aryamahasangh.features.admin.family.FamilyViewModel
 import com.aryamahasangh.features.admin.member.MembersSelectorViewModel
 import com.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
 import com.aryamahasangh.features.arya_nirman.SatraRegistrationViewModel
+import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationsReceivedViewModel
 import com.aryamahasangh.features.gurukul.viewmodel.UpcomingCoursesViewModel
 import com.aryamahasangh.features.organisations.OrganisationsViewModel
 import com.aryamahasangh.features.public_arya_samaj.AryaSamajHomeViewModel
@@ -48,4 +49,5 @@ val viewModelModule =
     factoryOf(::FamilyViewModel)
     factoryOf(::MembersSelectorViewModel)
     factory { (gender: GenderFilter) -> UpcomingCoursesViewModel(get(), gender) }
+    factory { (gender: GenderFilter) -> CourseRegistrationsReceivedViewModel(get(), gender) }
   }

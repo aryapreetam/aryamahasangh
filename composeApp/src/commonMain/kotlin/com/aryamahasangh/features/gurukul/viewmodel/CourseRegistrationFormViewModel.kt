@@ -1,11 +1,12 @@
 package com.aryamahasangh.features.gurukul.viewmodel
 
-import androidx.compose.runtime.*
-import app.cash.molecule.RecompositionMode
-import app.cash.molecule.launchMolecule
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import com.aryamahasangh.components.ImagePickerState
-import com.aryamahasangh.features.gurukul.data.CourseRegistrationRepository
-import com.aryamahasangh.features.gurukul.data.CourseRegistrationRepositoryImpl
+import com.aryamahasangh.features.gurukul.data.GurukulRepository
+import com.aryamahasangh.features.gurukul.data.GurukulRepositoryImpl
 import com.aryamahasangh.features.gurukul.data.ImageUploadRepository
 import com.aryamahasangh.features.gurukul.data.ImageUploadRepositoryImpl
 import com.aryamahasangh.features.gurukul.domain.models.CourseRegistrationFormData
@@ -571,7 +572,7 @@ sealed class CourseRegistrationFormIntent {
 val GurukulCourseRegistrationModule = module {
   // Use the existing ApolloClient instead of creating a new one
   single<ImageUploadRepository> { ImageUploadRepositoryImpl() }
-  single<CourseRegistrationRepository> { CourseRegistrationRepositoryImpl(get()) }
+  single<GurukulRepository> { GurukulRepositoryImpl(get()) }
   single { RegisterForCourseUseCase(get(), get()) }
   // We use GlobalMessageManager directly as it's a Kotlin object singleton
   factory { (activityId: String) -> 

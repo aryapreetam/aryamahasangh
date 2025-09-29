@@ -12,6 +12,7 @@ import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.features.gurukul.ui.CourseRegistrationsReceivedScreen
 import com.aryamahasangh.features.gurukul.ui.UpcomingCoursesScreen
 import com.aryamahasangh.features.gurukul.viewmodel.CourseIntent
+import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationsReceivedViewModel
 import com.aryamahasangh.features.gurukul.viewmodel.UpcomingCoursesEffect
 import com.aryamahasangh.features.gurukul.viewmodel.UpcomingCoursesViewModel
 import com.aryamahasangh.type.GenderFilter
@@ -54,9 +55,11 @@ fun GurukulCollegeHomeScreen(
           modifier = Modifier.fillMaxSize().padding(8.dp)
         ) {
           if (it == 0) {
-            UpcomingCoursesList { courseId -> onNavigateToRegistration(courseId) }
+            UpcomingCoursesList(GenderFilter.MALE) { courseId -> onNavigateToRegistration(courseId) }
           } else if (it == 1) {
-            CourseRegistrationsReceivedScreen()
+            val registrationsReceivedViewModel: CourseRegistrationsReceivedViewModel =
+              koinInject(parameters = { parametersOf(GenderFilter.MALE) })
+            CourseRegistrationsReceivedScreen(viewModel = registrationsReceivedViewModel)
           }
         }
       }
@@ -68,14 +71,14 @@ fun GurukulCollegeHomeScreen(
         style = MaterialTheme.typography.headlineSmall,
         modifier = Modifier.padding(vertical = 8.dp)
       )
-      UpcomingCoursesList { courseId -> onNavigateToRegistration(courseId) }
+      UpcomingCoursesList(GenderFilter.MALE) { courseId -> onNavigateToRegistration(courseId) }
     }
   }
 }
 
 @Composable
-fun UpcomingCoursesList(onNavigateToRegistration: (String) -> Unit) {
-  val viewModel: UpcomingCoursesViewModel = koinInject(parameters = { parametersOf(GenderFilter.MALE) })
+fun UpcomingCoursesList(genderFilter: GenderFilter, onNavigateToRegistration: (String) -> Unit) {
+  val viewModel: UpcomingCoursesViewModel = koinInject(parameters = { parametersOf(genderFilter) })
   val uiState = viewModel.collectUiStateAsState {
     // Handle unexpected errors
   }
