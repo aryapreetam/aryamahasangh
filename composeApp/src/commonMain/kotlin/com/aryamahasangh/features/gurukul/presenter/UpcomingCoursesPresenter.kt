@@ -21,8 +21,8 @@ sealed class UpcomingCoursesUiState {
 data class CourseItemUiModel(
   val id: String,
   val name: String,
-  val startDatetime: String, // ISO or human display, retained for legacy
-  val endDatetime: String,
+  val startDatetime: String, // Always ISO-8601 string from Instant.toString() for LocalDateTime.parse
+  val endDatetime: String,   // Always ISO-8601 string from Instant.toString() for LocalDateTime.parse
   val panjikaranOpen: Boolean, // registration open
   val allowedGender: String,
   val district: String, // never null, may be empty

@@ -17,38 +17,13 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.aryamahasangh.features.gurukul.viewmodel.CourseDropdownItem
+import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationReceivedItem
+import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationsReceivedUiState
 import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationsReceivedViewModel
 import com.aryamahasangh.utils.WithTooltip
-import com.aryamahasangh.utils.formatDateOnly
 
 // Use a simple data class for entries
-data class CourseRegistrationReceivedItem(
-  val id: String,
-  val name: String,
-  val satrDate: String,
-  val satrPlace: String,
-  val recommendation: String,
-  val receiptUrl: String?
-)
-
-data class CourseDropdownItem(
-  val id: String,
-  val name: String,
-  val shortDescription: String,
-  val startDate: String, // formatted
-  val endDate: String, // formatted, may be blank
-  val place: String, // district/state, may be blank
-)
-
-data class CourseRegistrationsReceivedUiState(
-  val isLoading: Boolean = false,
-  val isError: Boolean = false,
-  val courses: List<CourseDropdownItem> = emptyList(),
-  val selectedCourseId: String? = null,
-  val registrations: List<CourseRegistrationReceivedItem> = emptyList(),
-  val errorMessage: String? = null, // message_code for snackbar
-  val isDropdownExpanded: Boolean = false
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -110,43 +85,96 @@ fun CourseDropdown(
       courses.forEachIndexed { index, item ->
         DropdownMenuItem(
           text = {
-            Column(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {
+            Column(
+              Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
+                .testTag("courseDropdownItem_${item.id}"),
+              verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
               Text(
                 text = item.name,
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.testTag("courseDropdownItem_title_${item.id}")
               )
-              Text(
-                text = item.shortDescription,
-                style = MaterialTheme.typography.bodySmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-              )
-              Text(
-                text = "${item.startDate}${if (item.endDate.isNotBlank()) " - ${item.endDate}" else ""}",
-                style = MaterialTheme.typography.bodySmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-              )
-              if (item.place.isNotBlank()) {
+              if (item.shortDescription.isNotBlank()) {
                 Text(
-                  text = item.place,
+                  text = item.shortDescription,
                   style = MaterialTheme.typography.bodySmall,
                   maxLines = 1,
-                  overflow = TextOverflow.Ellipsis
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                  overflow = TextOverflow.Ellipsis,
+                  modifier = Modifier.testTag("courseDropdownItem_desc_${item.id}")
                 )
+              }
+              // Date & time row
+              Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                modifier = Modifier.testTag("courseDropdownItem_dates_${item.id}")
+              ) {
+                Icon(
+                  Icons.Filled.CalendarMonth,
+                  contentDescription = null,
+                  modifier = Modifier.size(18.dp),
+                  tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                  text = item.formattedDateRange,
+                  style = MaterialTheme.typography.bodySmall,
+                  maxLines = 1,
+                  color = MaterialTheme.colorScheme.onSurface,
+                  overflow = TextOverflow.Ellipsis,
+                  modifier = Modifier.testTag("courseDropdownItem_date_${item.id}")
+                )
+                if (item.formattedTimeRange.isNotBlank()) {
+                  Text(
+                    text = "| ${item.formattedTimeRange}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.testTag("courseDropdownItem_time_${item.id}")
+                  )
+                }
+              }
+              // Place row
+              if (item.place.isNotBlank()) {
+                Row(
+                  verticalAlignment = Alignment.CenterVertically,
+                  horizontalArrangement = Arrangement.spacedBy(4.dp),
+                  modifier = Modifier.testTag("courseDropdownItem_place_${item.id}")
+                ) {
+                  Icon(
+                    Icons.Filled.Place,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.secondary
+                  )
+                  Text(
+                    text = item.place,
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    overflow = TextOverflow.Ellipsis
+                  )
+                }
               }
             }
           },
           onClick = {
             onCourseSelected(item.id)
             onDropdownExpandChanged(false)
-          },
-          modifier = Modifier.testTag("courseDropdownItem_${item.id}")
+          }
         )
+        // Add light divider except after the last item
         if(index != courses.lastIndex){
-          Spacer(modifier = Modifier.height(8.dp))
+          HorizontalDivider(
+            modifier = Modifier.padding(top = 4.dp, bottom = 4.dp),
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+          )
         }
       }
     }
@@ -160,11 +188,6 @@ fun CourseRegistrationReceivedCard(
   modifier: Modifier = Modifier
 ) {
   val uriHandler = LocalUriHandler.current
-  val formattedDate = try {
-    formatDateOnly(item.satrDate)
-  } catch (_: Exception) {
-    item.satrDate
-  }
   Card(
     modifier = modifier
       .fillMaxWidth()
@@ -199,9 +222,9 @@ fun CourseRegistrationReceivedCard(
           }
         }
       }
-      if (item.satrDate.isNotBlank() || item.satrPlace.isNotBlank()) {
+      if (item.date.isNotBlank() || item.place.isNotBlank()) {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-          if (item.satrDate.isNotBlank()) {
+          if (item.date.isNotBlank()) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("registrationDate_${item.id}")) {
               Icon(
                 imageVector = Icons.Filled.CalendarMonth,
@@ -211,14 +234,14 @@ fun CourseRegistrationReceivedCard(
               )
               Spacer(modifier = Modifier.width(4.dp))
               Text(
-                text = formattedDate,
+                text = item.date,
                 style = MaterialTheme.typography.bodySmall,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
               )
             }
           }
-          if (item.satrPlace.isNotBlank()) {
+          if (item.place.isNotBlank()) {
             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("registrationPlace_${item.id}")) {
               Icon(
                 imageVector = Icons.Filled.Place,
@@ -228,7 +251,7 @@ fun CourseRegistrationReceivedCard(
               )
               Spacer(modifier = Modifier.width(4.dp))
               Text(
-                text = item.satrPlace,
+                text = item.place,
                 style = MaterialTheme.typography.bodySmall,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis

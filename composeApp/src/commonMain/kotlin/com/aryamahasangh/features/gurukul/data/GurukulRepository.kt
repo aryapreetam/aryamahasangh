@@ -2,8 +2,8 @@ package com.aryamahasangh.features.gurukul.data
 
 import com.aryamahasangh.RegisterForCourseMutation
 import com.aryamahasangh.features.gurukul.domain.models.Course
-import com.aryamahasangh.features.gurukul.ui.CourseRegistrationReceivedItem
 import com.aryamahasangh.type.GenderFilter
+import com.aryamahasangh.CourseRegistrationsForActivityQuery
 
 // Repository contract for Gurukul feature data operations.
 // Future phases will add more methods as needed.
@@ -17,5 +17,5 @@ interface GurukulRepository {
 
   suspend fun registerForCourse(mutation: RegisterForCourseMutation): Result<Unit>
 
-  suspend fun getCourseRegistrationsForActivity(activityId: String): Result<List<CourseRegistrationReceivedItem>>
+  suspend fun getCourseRegistrationsForActivity(activityId: String): Result<List<CourseRegistrationsForActivityQuery.Node>>
 }

@@ -6,7 +6,6 @@ import com.aryamahasangh.LoadAllCoursesQuery
 import com.aryamahasangh.RegisterForCourseMutation
 import com.aryamahasangh.features.gurukul.domain.models.Address
 import com.aryamahasangh.features.gurukul.domain.models.Course
-import com.aryamahasangh.features.gurukul.ui.CourseRegistrationReceivedItem
 import com.aryamahasangh.type.GenderFilter
 
 class GurukulRepositoryImpl(
@@ -53,22 +52,14 @@ class GurukulRepositoryImpl(
     }
   }
 
-  override suspend fun getCourseRegistrationsForActivity(activityId: String): Result<List<CourseRegistrationReceivedItem>> {
+  override suspend fun getCourseRegistrationsForActivity(activityId: String): Result<List<CourseRegistrationsForActivityQuery.Node>> {
     return try {
       val response = apolloClient.query(CourseRegistrationsForActivityQuery(activityId)).execute()
       if (response.hasErrors()) {
         Result.failure(Exception(response.errors?.firstOrNull()?.message ?: "त्रुटि आ गई"))
       } else {
         val userList = response.data?.courseRegistrationsCollection?.edges?.map { edge ->
-          val node = edge.node
-          CourseRegistrationReceivedItem(
-            id = node.id.toString(),
-            name = node.name ?: "",
-            satrDate = node.satrDate?.toString() ?: "",
-            satrPlace = node.satrPlace ?: "",
-            recommendation = node.recommendation ?: "",
-            receiptUrl = node.paymentReceiptUrl
-          )
+          edge.node
         } ?: emptyList()
         Result.success(userList)
       }

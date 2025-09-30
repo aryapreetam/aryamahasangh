@@ -1,6 +1,8 @@
 package com.aryamahasangh.features.gurukul.viewmodel
 
+import com.aryamahasangh.features.arya_nirman.convertDates
 import com.aryamahasangh.features.gurukul.data.GurukulRepository
+import com.aryamahasangh.features.gurukul.domain.models.Course
 import com.aryamahasangh.type.GenderFilter
 import com.aryamahasangh.utils.formatShortForBook
 import kotlinx.coroutines.CoroutineScope
@@ -8,9 +10,36 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import com.aryamahasangh.features.gurukul.ui.CourseDropdownItem
-import com.aryamahasangh.features.gurukul.ui.CourseRegistrationReceivedItem
-import com.aryamahasangh.features.gurukul.ui.CourseRegistrationsReceivedUiState
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+
+data class CourseRegistrationReceivedItem(
+  val id: String,
+  val name: String,
+  val date: String,
+  val place: String,
+  val recommendation: String,
+  val receiptUrl: String?
+)
+
+data class CourseDropdownItem(
+  val id: String,
+  val name: String,
+  val shortDescription: String,
+  val formattedDateRange: String,
+  val formattedTimeRange: String,
+  val place: String
+)
+
+data class CourseRegistrationsReceivedUiState(
+  val isLoading: Boolean = false,
+  val isError: Boolean = false,
+  val courses: List<CourseDropdownItem> = emptyList(),
+  val selectedCourseId: String? = null,
+  val registrations: List<CourseRegistrationReceivedItem> = emptyList(),
+  val errorMessage: String? = null,
+  val isDropdownExpanded: Boolean = false
+)
 
 class CourseRegistrationsReceivedViewModel(
   private val gurukulRepository: GurukulRepository,
@@ -29,16 +58,7 @@ class CourseRegistrationsReceivedViewModel(
       try {
         val courses = gurukulRepository.getCourses(genderFilter)
         val dropdownItems = courses.map { course ->
-          CourseDropdownItem(
-            id = course.id,
-            name = course.name,
-            shortDescription = course.shortDescription,
-            startDate = formatShortForBook(course.startDatetime.toString()),
-            endDate = formatShortForBook(course.endDatetime.toString()),
-            place = listOfNotNull(course.address?.district, course.address?.state)
-              .filter { it.isNotBlank() }
-              .joinToString(", ")
-          )
+          mapCourseDropdown(course)
         }
         _uiState.value = _uiState.value.copy(isLoading = false, isError = false, courses = dropdownItems)
       } catch (e: Exception) {
@@ -53,9 +73,12 @@ class CourseRegistrationsReceivedViewModel(
       try {
         val result = gurukulRepository.getCourseRegistrationsForActivity(courseId)
         if (result.isSuccess) {
+          val registrations = result.getOrThrow().map { registration ->
+            mapRegistration(registration)
+          }
           _uiState.value = _uiState.value.copy(
             isLoading = false,
-            registrations = result.getOrThrow(),
+            registrations = registrations,
             isError = false,
             errorMessage = null
           )
@@ -80,5 +103,40 @@ class CourseRegistrationsReceivedViewModel(
   // Click handling, could open link (for now a stub)
   fun onReceiptClicked(url: String) {
     println("Receipt clicked: $url")
+  }
+
+  fun mapRegistration(
+    raw: com.aryamahasangh.CourseRegistrationsForActivityQuery.Node
+  ): CourseRegistrationReceivedItem {
+    return CourseRegistrationReceivedItem(
+      id = raw.id.toString(),
+      name = raw.name ?: "",
+      date = convertDates(
+        raw.satrDate?.toLocalDateTime(TimeZone.currentSystemDefault()) ?: error("Missing date"),
+        raw.satrDate?.toLocalDateTime(TimeZone.currentSystemDefault()) ?: error("Missing date")
+      ).first,
+      place = raw.satrPlace ?: "",
+      recommendation = raw.recommendation ?: "",
+      receiptUrl = raw.paymentReceiptUrl
+    )
+  }
+
+  fun mapCourseDropdown(
+    raw: Course
+  ): CourseDropdownItem {
+    val (dateRange, timeRange) = convertDates(
+      raw.startDatetime.toLocalDateTime(TimeZone.currentSystemDefault()),
+      raw.endDatetime.toLocalDateTime(TimeZone.currentSystemDefault())
+    )
+    return CourseDropdownItem(
+      id = raw.id,
+      name = raw.name,
+      shortDescription = raw.shortDescription,
+      formattedDateRange = dateRange,
+      formattedTimeRange = timeRange,
+      place = listOfNotNull(raw.address?.district, raw.address?.state)
+        .filter { it.isNotBlank() }
+        .joinToString(", ")
+    )
   }
 }
