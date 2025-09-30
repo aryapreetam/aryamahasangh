@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -16,6 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationsReceivedViewModel
+import com.aryamahasangh.utils.WithTooltip
+import com.aryamahasangh.utils.formatDateOnly
 
 // Use a simple data class for entries
 data class CourseRegistrationReceivedItem(
@@ -150,6 +154,105 @@ fun CourseDropdown(
 }
 
 @Composable
+fun CourseRegistrationReceivedCard(
+  item: CourseRegistrationReceivedItem,
+  onReceiptClicked: (String) -> Unit,
+  modifier: Modifier = Modifier
+) {
+  val uriHandler = LocalUriHandler.current
+  val formattedDate = try {
+    formatDateOnly(item.satrDate)
+  } catch (_: Exception) {
+    item.satrDate
+  }
+  Card(
+    modifier = modifier
+      .fillMaxWidth()
+      .testTag("registrationCard_${item.id}"),
+  ) {
+    Column(
+      modifier = Modifier.padding(16.dp),
+      verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+      Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+        Text(
+          text = item.name,
+          style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+          modifier = Modifier.weight(1f).testTag("registrationName_${item.id}")
+        )
+        if (!item.receiptUrl.isNullOrBlank()) {
+          WithTooltip(tooltip = "भुगतान रसीद") {
+            IconButton(
+              onClick = {
+                uriHandler.openUri(item.receiptUrl ?: ""); onReceiptClicked(item.receiptUrl ?: "")
+              },
+              modifier = Modifier.size(40.dp).testTag("registrationReceiptButton_${item.id}")
+            ) {
+              Icon(
+                imageVector = Icons.Filled.ReceiptLong,
+                contentDescription = "रसीद देखने हेतु",
+                tint = MaterialTheme.colorScheme.primary
+              )
+            }
+          }
+        }
+      }
+      if (item.satrDate.isNotBlank() || item.satrPlace.isNotBlank()) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+          if (item.satrDate.isNotBlank()) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("registrationDate_${item.id}")) {
+              Icon(
+                imageVector = Icons.Filled.CalendarMonth,
+                contentDescription = "तिथि",
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.secondary
+              )
+              Spacer(modifier = Modifier.width(4.dp))
+              Text(
+                text = formattedDate,
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+              )
+            }
+          }
+          if (item.satrPlace.isNotBlank()) {
+            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.testTag("registrationPlace_${item.id}")) {
+              Icon(
+                imageVector = Icons.Filled.Place,
+                contentDescription = "स्थान",
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.secondary
+              )
+              Spacer(modifier = Modifier.width(4.dp))
+              Text(
+                text = item.satrPlace,
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+              )
+            }
+          }
+        }
+      }
+      if (item.recommendation.isNotBlank()) {
+        HorizontalDivider(modifier = Modifier.padding(top = 4.dp, bottom = 8.dp))
+        Text(
+          text = item.recommendation,
+          style = MaterialTheme.typography.bodyMedium,
+          maxLines = 5,
+          overflow = TextOverflow.Ellipsis,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          modifier = Modifier.testTag("registrationRecommendation_${item.id}")
+        )
+      }
+    }
+  }
+}
+
+@Composable
 fun RegistrationsList(
   uiState: CourseRegistrationsReceivedUiState,
   uriHandler: androidx.compose.ui.platform.UriHandler,
@@ -193,59 +296,10 @@ fun RegistrationsList(
         verticalArrangement = Arrangement.spacedBy(8.dp)
       ) {
         items(uiState.registrations) { registration ->
-          Card(
-            modifier = Modifier.fillMaxWidth().testTag("registrationCard_${registration.id}")
-          ) {
-            Row(
-              modifier = Modifier.padding(16.dp).fillMaxWidth(),
-              verticalAlignment = Alignment.Top
-            ) {
-              Column(Modifier.weight(1f)) {
-                Text(
-                  text = registration.name,
-                  style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                  maxLines = 1,
-                  overflow = TextOverflow.Ellipsis,
-                  modifier = Modifier.testTag("registrationName_${registration.id}")
-                )
-                if (registration.satrDate.isNotBlank() || registration.satrPlace.isNotBlank()) {
-                  Text(
-                    text = "सत्र दिनांक: ${registration.satrDate}${if (registration.satrPlace.isNotBlank()) " (स्थान: ${registration.satrPlace})" else ""}",
-                    style = MaterialTheme.typography.bodySmall,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.testTag("registrationDatePlace_${registration.id}")
-                  )
-                }
-                if (registration.recommendation.isNotBlank()) {
-                  Text(
-                    text = registration.recommendation,
-                    style = MaterialTheme.typography.bodyMedium,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 8.dp)
-                      .testTag("registrationRecommendation_${registration.id}")
-                  )
-                }
-              }
-              if (!registration.receiptUrl.isNullOrBlank()) {
-                IconButton(
-                  onClick = {
-                    uriHandler.openUri(registration.receiptUrl ?: ""); onReceiptClicked(
-                    registration.receiptUrl ?: ""
-                  )
-                  },
-                  modifier = Modifier.testTag("registrationReceiptButton_${registration.id}")
-                ) {
-                  Icon(
-                    imageVector = Icons.Filled.ReceiptLong,
-                    contentDescription = "रसीद देखने हेतु",
-                    tint = MaterialTheme.colorScheme.primary
-                  )
-                }
-              }
-            }
-          }
+          CourseRegistrationReceivedCard(
+            item = registration,
+            onReceiptClicked = onReceiptClicked
+          )
         }
       }
     }

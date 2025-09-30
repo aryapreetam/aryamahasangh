@@ -121,3 +121,30 @@ fun epochToDate(epochMillis: Long): String {
     "${date.monthNumber.toString().padStart(2, '0')}/" +
     date.year
 }
+
+fun LocalDateTime.toHumanReadableDateOnly(): String {
+  val months = listOf(
+    "जनवरी", "फरवरी", "मार्च", "अप्रैल", "मई", "जून",
+    "जुलाई", "अगस्त", "सितंबर", "अक्टूबर", "नवंबर", "दिसंबर"
+  )
+  val dayOfWeek = when (this.dayOfWeek) {
+    kotlinx.datetime.DayOfWeek.MONDAY -> "सोमवार"
+    kotlinx.datetime.DayOfWeek.TUESDAY -> "मंगलवार"
+    kotlinx.datetime.DayOfWeek.WEDNESDAY -> "बुधवार"
+    kotlinx.datetime.DayOfWeek.THURSDAY -> "गुरुवार"
+    kotlinx.datetime.DayOfWeek.FRIDAY -> "शुक्रवार"
+    kotlinx.datetime.DayOfWeek.SATURDAY -> "शनिवार"
+    kotlinx.datetime.DayOfWeek.SUNDAY -> "रविवार"
+    else -> "रविवार"
+  }
+  val month = months[this.monthNumber - 1]
+  val day = this.dayOfMonth
+  val year = this.year
+  return "$dayOfWeek, $month $day, $year"
+}
+
+fun formatDateOnly(dateTime: Any): String {
+  val instant = Instant.parse(dateTime as String)
+  val localDateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
+  return localDateTime.toHumanReadableDateOnly()
+}
