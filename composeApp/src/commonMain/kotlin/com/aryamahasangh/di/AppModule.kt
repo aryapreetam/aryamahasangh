@@ -1,12 +1,16 @@
 package com.aryamahasangh.di
 
+import com.aryamahasangh.features.gurukul.data.GurukulRepository
+import com.aryamahasangh.features.gurukul.data.GurukulRepositoryImpl
+import com.aryamahasangh.features.gurukul.data.ImageUploadRepository
+import com.aryamahasangh.features.gurukul.data.ImageUploadRepositoryImpl
+import com.aryamahasangh.features.gurukul.domain.usecase.RegisterForCourseUseCase
+import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationViewModel
 import io.github.jan.supabase.graphql.graphql
 import com.aryamahasangh.network.supabaseClient
 import com.aryamahasangh.utils.FileUploadUtils
 import org.koin.core.module.Module
 import org.koin.dsl.module
-import com.aryamahasangh.di.useCaseModule
-import com.aryamahasangh.features.gurukul.viewmodel.GurukulCourseRegistrationModule
 
 /**
  * Main application module for Koin dependency injection
@@ -29,6 +33,20 @@ fun getAppModules(): List<Module> {
     viewModelModule,
     repositoryModule,
     useCaseModule,
-    GurukulCourseRegistrationModule,
+    GurukulCourseRegistrationModule
   )
+}
+
+val GurukulCourseRegistrationModule = module {
+  // Use the existing ApolloClient instead of creating a new one
+  single<ImageUploadRepository> { ImageUploadRepositoryImpl() }
+  single<GurukulRepository> { GurukulRepositoryImpl(get()) }
+  single { RegisterForCourseUseCase(get(), get()) }
+  // We use GlobalMessageManager directly as it's a Kotlin object singleton
+  factory { (activityId: String) ->
+    CourseRegistrationViewModel(
+      activityId = activityId,
+      registerForCourseUseCase = get()
+    )
+  }
 }

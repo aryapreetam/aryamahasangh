@@ -394,6 +394,7 @@ fun ValidationDemo() {
     SubmitButton(
       text = "सत्यापन सहित प्रस्तुत करें",
       onSubmit = {
+        println("Submitting...")
         delay(1000)
         validSubmissions++
       },

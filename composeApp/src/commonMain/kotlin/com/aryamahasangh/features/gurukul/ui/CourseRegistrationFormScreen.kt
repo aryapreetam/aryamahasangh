@@ -1,107 +1,129 @@
 package com.aryamahasangh.features.gurukul.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.unit.dp
-import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationFormIntent
-import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationFormUiState
-import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationFormViewModel
-import com.aryamahasangh.ui.components.buttons.*
-import org.koin.compose.koinInject
-import org.koin.core.parameter.parametersOf
+import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationViewModel
+import com.aryamahasangh.ui.components.buttons.SubmitButton
+import com.aryamahasangh.ui.components.buttons.SubmitButtonConfig
+import com.aryamahasangh.components.DatePickerField
+import com.aryamahasangh.components.ImagePickerComponent
+import com.aryamahasangh.components.ImagePickerConfig
+import com.aryamahasangh.components.ImagePickerType
+import com.aryamahasangh.ui.components.buttons.SubmissionError
+import com.aryamahasangh.ui.components.buttons.SubmitCallbacks
+import kotlinx.coroutines.delay
+import kotlinx.datetime.LocalDate
 
 @Composable
 fun CourseRegistrationFormScreen(
   activityId: String,
-  modifier: Modifier = Modifier,
-  onNavigateBack: () -> Unit = {}
+  onNavigateBack: () -> Unit,
+  viewModel: CourseRegistrationViewModel
 ) {
-
-  // ViewModel provided via DI (parameterized)
-  val viewModel: CourseRegistrationFormViewModel = koinInject(parameters = { parametersOf(activityId) })
-  // Use the collectUiState method which properly handles Molecule
-  val uiState = viewModel.collectUiState()
-  // Layout: Adaptive vertical arrangement, Material3
-  Column(modifier = modifier.width(500.dp).padding(16.dp)) {
-    Text(
-      text = "कक्षा प्रवेश पंजीकरण",
-      style = MaterialTheme.typography.headlineSmall
+  val uiState by viewModel.uiState.collectAsState()
+  val openDialog = uiState.showUnsavedExitDialog
+  val submitSuccess = uiState.submitSuccess
+  if (submitSuccess) {
+    // Immediate navigation pattern
+    LaunchedEffect(submitSuccess) {
+      viewModel.resetSubmitState()
+      onNavigateBack()
+    }
+  }
+  if (openDialog) {
+    AlertDialog(
+      onDismissRequest = { viewModel.dismissUnsavedExitDialog() },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            viewModel.confirmUnsavedExit()
+            onNavigateBack()
+          },
+          modifier = Modifier.semantics { testTag = "dialog_confirm_exit" }
+        ) { Text("हाँ, बाहर जाएँ") }
+      },
+      dismissButton = {
+        TextButton(
+          onClick = { viewModel.dismissUnsavedExitDialog() },
+          modifier = Modifier.semantics { testTag = "dialog_dismiss_exit" }
+        ) { Text("रुकें") }
+      },
+      title = { Text("आपके द्वारा भरे गए विवरण सुरक्षित नहीं हुए हैं, क्या आप निश्चित रूप से बाहर निकलना चाहते हैं?") },
+      modifier = Modifier.semantics { testTag = "unsaved_exit_dialog" }
     )
-
-    // Use TextFieldValue with proper cursor placement
+  }
+  Column(
+    modifier = Modifier.padding(24.dp).semantics { testTag = "course_registration_form" },
+    verticalArrangement = Arrangement.spacedBy(16.dp)
+  ) {
     var nameFieldValue by remember { mutableStateOf(TextFieldValue(uiState.name, TextRange(uiState.name.length))) }
-
-    // Update TextFieldValue when the state changes to maintain cursor position
     LaunchedEffect(uiState.name) {
-      // Only update if the text has changed and field doesn't have focus
       if (nameFieldValue.text != uiState.name) {
         nameFieldValue = TextFieldValue(uiState.name, TextRange(uiState.name.length))
       }
     }
-
     OutlinedTextField(
       value = nameFieldValue,
       onValueChange = {
-        nameFieldValue = it  // Update local field state
-        viewModel.sendIntent(CourseRegistrationFormIntent.NameChanged(it.text))
+        nameFieldValue = it
+        viewModel.onFieldChange(name = it.text)
       },
       label = { Text("नाम") },
-      modifier = Modifier.fillMaxWidth().testTag("registrationFormNameField"),
-      isError = uiState.fieldErrors.containsKey(CourseRegistrationFormUiState.Field.NAME),
+      modifier = Modifier.semantics { testTag = "name_field" },
+      isError = uiState.submitErrorMessage != null && nameFieldValue.text.isBlank(),
       supportingText = {
-        uiState.fieldErrors[CourseRegistrationFormUiState.Field.NAME]?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        if (uiState.submitErrorMessage != null && nameFieldValue.text.isBlank()) {
+          Text("कृपया नाम दर्ज करें", color = MaterialTheme.colorScheme.error)
+        }
       },
       singleLine = true,
-      enabled = !uiState.isLoading
+      enabled = !uiState.isSubmitting
     )
-    Spacer(Modifier.height(16.dp))
-
-    // Improved DatePickerField - ensure selection and state update works correctly
     var selectedDate by remember {
       mutableStateOf(
         try {
-          uiState.satrDate.takeIf { it.isNotBlank() }?.let { kotlinx.datetime.LocalDate.parse(it) }
+          uiState.satrDate.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) }
         } catch (e: Exception) {
           null
         }
       )
     }
-
     LaunchedEffect(uiState.satrDate) {
-      // Sync selectedDate when the underlying state changes
       val date = try {
-        uiState.satrDate.takeIf { it.isNotBlank() }?.let { kotlinx.datetime.LocalDate.parse(it) }
+        uiState.satrDate.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) }
       } catch (e: Exception) {
         null
       }
-      if (selectedDate != date) {
-        selectedDate = date
-      }
+      if (selectedDate != date) selectedDate = date
     }
-
-    com.aryamahasangh.components.DatePickerField(
+    DatePickerField(
       value = selectedDate,
       onValueChange = { date ->
         selectedDate = date
-        viewModel.sendIntent(CourseRegistrationFormIntent.SatrDateChanged(date?.toString() ?: ""))
+        viewModel.onFieldChange(satrDate = date?.toString() ?: "")
       },
       label = "सत्र दिनांक",
-      modifier = Modifier.fillMaxWidth().testTag("registrationFormSatrDateField"),
-      isError = uiState.fieldErrors.containsKey(CourseRegistrationFormUiState.Field.DATE),
+      modifier = Modifier.semantics { testTag = "satr_date_field" },
+      isError = uiState.submitErrorMessage != null && selectedDate == null,
       supportingText = {
-        uiState.fieldErrors[CourseRegistrationFormUiState.Field.DATE]?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        if (uiState.submitErrorMessage != null && selectedDate == null) {
+          Text("कृपया सत्र दिनांक चुनें", color = MaterialTheme.colorScheme.error)
+        }
       },
       required = true,
-      enabled = !uiState.isLoading
+      enabled = !uiState.isSubmitting
     )
-    Spacer(Modifier.height(16.dp))
-
-    // Use TextFieldValue with proper cursor placement for place field
     var placeFieldValue by remember {
       mutableStateOf(
         TextFieldValue(
@@ -110,35 +132,28 @@ fun CourseRegistrationFormScreen(
         )
       )
     }
-
-    // Update TextFieldValue when the state changes
     LaunchedEffect(uiState.satrPlace) {
       if (placeFieldValue.text != uiState.satrPlace) {
         placeFieldValue = TextFieldValue(uiState.satrPlace, TextRange(uiState.satrPlace.length))
       }
     }
-
     OutlinedTextField(
       value = placeFieldValue,
       onValueChange = {
-        placeFieldValue = it  // Update local field state
-        viewModel.sendIntent(CourseRegistrationFormIntent.SatrPlaceChanged(it.text))
+        placeFieldValue = it
+        viewModel.onFieldChange(satrPlace = it.text)
       },
       label = { Text("सत्र स्थान") },
-      modifier = Modifier.fillMaxWidth().testTag("registrationFormSatrPlaceField"),
-      isError = uiState.fieldErrors.containsKey(CourseRegistrationFormUiState.Field.PLACE),
+      modifier = Modifier.semantics { testTag = "satr_place_field" },
+      isError = uiState.submitErrorMessage != null && placeFieldValue.text.isBlank(),
       supportingText = {
-        uiState.fieldErrors[CourseRegistrationFormUiState.Field.PLACE]?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        if (uiState.submitErrorMessage != null && placeFieldValue.text.isBlank()) {
+          Text("कृपया सत्र स्थान भरें", color = MaterialTheme.colorScheme.error)
+        }
       },
       singleLine = true,
-      enabled = !uiState.isLoading
+      enabled = !uiState.isSubmitting
     )
-    Spacer(Modifier.height(16.dp))
-    Text(
-      text = "निचे संरक्षक की संस्तुति के साथ उनका का नाम, व्यवसाय, योग्यता भी लिखे"
-    )
-
-    // Use TextFieldValue with proper cursor placement for recommendation field
     var recommendationFieldValue by remember {
       mutableStateOf(
         TextFieldValue(
@@ -147,102 +162,68 @@ fun CourseRegistrationFormScreen(
         )
       )
     }
-
-    // Update TextFieldValue when the state changes
     LaunchedEffect(uiState.recommendation) {
       if (recommendationFieldValue.text != uiState.recommendation) {
         recommendationFieldValue = TextFieldValue(uiState.recommendation, TextRange(uiState.recommendation.length))
       }
     }
-
     OutlinedTextField(
       value = recommendationFieldValue,
       onValueChange = {
-        recommendationFieldValue = it  // Update local field state
-        viewModel.sendIntent(CourseRegistrationFormIntent.RecommendationChanged(it.text))
+        recommendationFieldValue = it
+        viewModel.onFieldChange(recommendation = it.text)
       },
-      label = { Text("संरक्षक की संस्तुति(Recommendation)") },
-      modifier = Modifier.fillMaxWidth().testTag("registrationFormRecommendationField"),
-      isError = uiState.fieldErrors.containsKey(CourseRegistrationFormUiState.Field.RECOMMENDATION),
+      label = { Text("संरक्षक की अनुशंसा") },
+      modifier = Modifier.semantics { testTag = "recommendation_field" },
+      isError = uiState.submitErrorMessage != null && recommendationFieldValue.text.isBlank(),
       supportingText = {
-        uiState.fieldErrors[CourseRegistrationFormUiState.Field.RECOMMENDATION]?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+        if (uiState.submitErrorMessage != null && recommendationFieldValue.text.isBlank()) {
+          Text("कृपया संरक्षक की अनुशंसा भरें", color = MaterialTheme.colorScheme.error)
+        }
       },
       minLines = 3,
       maxLines = 8,
-      enabled = !uiState.isLoading
+      enabled = !uiState.isSubmitting
     )
-    Spacer(Modifier.height(16.dp))
-
-    // ImagePickerComponent 
-    com.aryamahasangh.components.ImagePickerComponent(
+    ImagePickerComponent(
       state = uiState.imagePickerState,
-      onStateChange = { viewModel.sendIntent(CourseRegistrationFormIntent.ImagePickerStateChanged(it)) },
-      modifier = Modifier.testTag("registrationFormImagePicker"),
-      config = com.aryamahasangh.components.ImagePickerConfig(
+      onStateChange = { pickerState -> viewModel.onFieldChange(imagePickerState = pickerState) },
+      modifier = Modifier.semantics { testTag = "receipt_picker" },
+      config = ImagePickerConfig(
         label = "भुगतान रसीद जोड़ें",
-        type = com.aryamahasangh.components.ImagePickerType.IMAGE,
+        type = ImagePickerType.IMAGE,
         allowMultiple = false,
         isMandatory = true,
         minImages = 1,
         maxImages = 1
       ),
-      error = uiState.fieldErrors[CourseRegistrationFormUiState.Field.RECEIPT]
+      error = if (uiState.submitErrorMessage != null && uiState.imagePickerState.newImages.isEmpty()) "कृपया भुगतान रसीद अपलोड करें" else null
     )
     Spacer(Modifier.height(24.dp))
-
-    // SubmitButton with proper validation handling:
-    // 1. Form validation happens via validator function without changing button state
-    // 2. Navigation is handled via effects from ViewModel, not via callbacks
-    // 3. Haptic feedback is provided automatically for validation errors
-
     SubmitButton(
       text = "पंजीकरण प्रस्तुत करें",
       onSubmit = {
-        viewModel.sendIntent(CourseRegistrationFormIntent.Submit)
-      },
-      callbacks = object : SubmitCallbacks {
-        override fun onSuccess() {
-          // Navigate back on success
-          onNavigateBack()
-        }
-
-        override fun onError(error: SubmissionError) {
-          // Submit anyway even if validation fails
-          viewModel.sendIntent(CourseRegistrationFormIntent.Submit)
-        }
+        viewModel.onSubmit()
       },
       config = SubmitButtonConfig(
-        fillMaxWidth = false,
         validator = {
-          null
+          if(!uiState.isValid) SubmissionError.ValidationFailed else null
+//          uiState.submitErrorMessage?.let {
+//            com.aryamahasangh.ui.components.buttons.SubmissionError.Custom(
+//              message = it
+//            )
+//          }
         },
-        texts = SubmitButtonTexts(
-          submittingText = "प्रेषित किया जा रहा है...",
-          successText = "सफल!",
-          errorText = "त्रुटि हुई"
-        )
       ),
-      modifier = Modifier.testTag("registrationFormSubmitButton")
-    )
-  }
-
-  // Unsaved changes dialog
-  if (uiState.showUnsavedDialog) {
-    AlertDialog(
-      onDismissRequest = { viewModel.sendIntent(CourseRegistrationFormIntent.HideUnsavedDialog) },
-      confirmButton = {
-        TextButton(onClick = { viewModel.sendIntent(CourseRegistrationFormIntent.DiscardUnsavedConfirmed) }) {
-          Text("हाँ")
+      modifier = Modifier.semantics { testTag = "submit_button" },
+      callbacks = object : com.aryamahasangh.ui.components.buttons.SubmitCallbacks {
+        override fun onError(error: com.aryamahasangh.ui.components.buttons.SubmissionError) {
+          // No navigation on error—UI shows error state, snackbar handled by ViewModel
         }
-      },
-      dismissButton = {
-        TextButton(onClick = { viewModel.sendIntent(CourseRegistrationFormIntent.HideUnsavedDialog) }) {
-          Text("नहीं")
+        override fun onSuccess() {
+          // Success: navigation handled by LaunchedEffect(submitSuccess)
         }
-      },
-      title = { Text("असुरक्षित परिवर्तन") },
-      text = { Text("आपके द्वारा भरे गए विवरण सुरक्षित नहीं हुए हैं, क्या आप निश्चित रूप से बाहर निकलना चाहते हैं?") },
-      modifier = Modifier.testTag("registrationFormUnsavedDialog")
+      }
     )
   }
 }

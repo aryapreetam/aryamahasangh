@@ -8,6 +8,7 @@ import com.aryamahasangh.features.admin.family.FamilyViewModel
 import com.aryamahasangh.features.admin.member.MembersSelectorViewModel
 import com.aryamahasangh.features.arya_nirman.AryaNirmanViewModel
 import com.aryamahasangh.features.arya_nirman.SatraRegistrationViewModel
+import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationViewModel
 import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationsReceivedViewModel
 import com.aryamahasangh.features.gurukul.viewmodel.UpcomingCoursesViewModel
 import com.aryamahasangh.features.organisations.OrganisationsViewModel

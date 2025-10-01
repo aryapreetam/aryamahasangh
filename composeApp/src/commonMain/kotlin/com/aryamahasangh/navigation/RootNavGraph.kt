@@ -35,6 +35,8 @@ import com.aryamahasangh.features.arya_nirman.SatraRegistrationFormScreen
 import com.aryamahasangh.features.arya_nirman.SatraRegistrationViewModel
 import com.aryamahasangh.features.gurukul.AryaaGurukulHomeScreen
 import com.aryamahasangh.features.gurukul.GurukulCollegeHomeScreen
+import com.aryamahasangh.features.gurukul.ui.CourseRegistrationFormScreen
+import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationViewModel
 import com.aryamahasangh.features.gurukul.viewmodel.UpcomingCoursesEffect
 import com.aryamahasangh.features.gurukul.viewmodel.UpcomingCoursesViewModel
 import com.aryamahasangh.features.organisations.NewOrganisationFormScreen
@@ -734,11 +736,13 @@ fun RootNavGraph(navController: NavHostController) {
 
       composable<Screen.CourseRegistrationForm> {
         val args = it.toRoute<Screen.CourseRegistrationForm>()
-        com.aryamahasangh.features.gurukul.ui.CourseRegistrationFormScreen(
+        val viewModel : CourseRegistrationViewModel = koinInject(parameters = { parametersOf(args.activityId) })
+        CourseRegistrationFormScreen(
           activityId = args.activityId,
           onNavigateBack = {
             navController.popBackStack()
-          }
+          },
+          viewModel = viewModel
         )
       }
     }
@@ -773,11 +777,13 @@ fun RootNavGraph(navController: NavHostController) {
 
       composable<Screen.CourseRegistrationForm> {
         val args = it.toRoute<Screen.CourseRegistrationForm>()
-        com.aryamahasangh.features.gurukul.ui.CourseRegistrationFormScreen(
+        val viewModel : CourseRegistrationViewModel = koinInject(parameters = { parametersOf(args.activityId) })
+        CourseRegistrationFormScreen(
           activityId = args.activityId,
           onNavigateBack = {
             navController.popBackStack()
-          }
+          },
+          viewModel = viewModel
         )
       }
     }

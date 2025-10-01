@@ -1,6 +1,7 @@
 package com.aryamahasangh.features.gurukul.data
 
 import com.apollographql.apollo.ApolloClient
+import com.apollographql.apollo.cache.normalized.apolloStore
 import com.aryamahasangh.CourseRegistrationsForActivityQuery
 import com.aryamahasangh.LoadAllCoursesQuery
 import com.aryamahasangh.RegisterForCourseMutation
@@ -45,6 +46,7 @@ class GurukulRepositoryImpl(
       if (response.hasErrors()) {
         Result.failure(Exception(response.errors?.firstOrNull()?.message ?: "पंजीकरण विफल"))
       } else {
+        apolloClient.apolloStore.clearAll()
         Result.success(Unit)
       }
     } catch (e: Exception) {

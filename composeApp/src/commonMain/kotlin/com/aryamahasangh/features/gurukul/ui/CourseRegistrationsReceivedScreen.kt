@@ -194,8 +194,8 @@ fun CourseRegistrationReceivedCard(
       .testTag("registrationCard_${item.id}"),
   ) {
     Column(
-      modifier = Modifier.padding(16.dp),
-      verticalArrangement = Arrangement.spacedBy(4.dp)
+      modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp),
+      verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
       Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
         Text(

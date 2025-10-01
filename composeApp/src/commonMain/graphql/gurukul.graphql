@@ -1,5 +1,8 @@
 query courseRegistrationsForActivity($activityId: String!){
-  courseRegistrationsCollection(filter: {activityId: {eq: $activityId}}){
+  courseRegistrationsCollection(
+    filter: {activityId: {eq: $activityId}},
+    orderBy: { createdAt: DescNullsLast }
+  ){
     totalCount
     edges{
       node{
