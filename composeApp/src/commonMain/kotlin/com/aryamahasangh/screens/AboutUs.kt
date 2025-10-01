@@ -54,11 +54,6 @@ fun AboutUs(
         verticalArrangement = Arrangement.spacedBy(16.dp)
       ) {
         CircularProgressIndicator()
-        Text(
-          text = "Loading...",
-          style = MaterialTheme.typography.bodyMedium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
       }
     }
   ) {
@@ -110,17 +105,17 @@ private fun QuickLinksSection(
   isAuthenticated: Boolean,
   organisationNames: List<OrganisationName>
 ) {
+  // Section Header
+  Text(
+    text = "उपलब्ध सुविधाएँ",
+    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+    color = MaterialTheme.colorScheme.primary,
+    modifier = Modifier.padding(vertical = 8.dp)
+  )
   Column(
     modifier = Modifier.fillMaxWidth(),
-    verticalArrangement = Arrangement.spacedBy(20.dp)
+    verticalArrangement = Arrangement.spacedBy(16.dp)
   ) {
-    // Section Header
-    Text(
-      text = "उपलब्ध सुविधाएँ",
-      style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-      color = MaterialTheme.colorScheme.primary,
-    )
-
     // गतिविधियां Section
     QuickLinkGroup(
       title = "आर्य गतिविधियां",
@@ -289,8 +284,8 @@ private fun QuickLinkGroup(
     ),
   ) {
     Column(
-      modifier = Modifier.padding(16.dp),
-      verticalArrangement = Arrangement.spacedBy(12.dp)
+      modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp),
+      verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
       // Group Header
       Row(
@@ -367,7 +362,7 @@ private fun QuickLinkCard(
   WithTooltip(tooltip = item.description) {
     Card(
       modifier = Modifier
-        .height(64.dp)
+        .height(48.dp)
         .clickable { onClick() },
       shape = RoundedCornerShape(4.dp),
       colors = CardDefaults.cardColors(
@@ -377,7 +372,7 @@ private fun QuickLinkCard(
       Box(
         modifier = Modifier
           .fillMaxSize()
-          .padding(12.dp),
+          .padding(8.dp),
         contentAlignment = Alignment.Center
       ) {
         Text(

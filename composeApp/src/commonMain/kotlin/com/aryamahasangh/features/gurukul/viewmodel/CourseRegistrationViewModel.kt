@@ -8,18 +8,29 @@ import com.aryamahasangh.components.ImagePickerState
 import com.aryamahasangh.features.gurukul.domain.models.CourseRegistrationFormData
 import com.aryamahasangh.features.gurukul.domain.usecase.RegisterForCourseUseCase
 import com.aryamahasangh.ui.components.buttons.SubmissionError
-import com.aryamahasangh.util.GlobalMessageManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.onSubscription
+import kotlinx.coroutines.flow.scan
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.coroutines.flow.SharingStarted
 
 // UiState for the form
+sealed class UiEffect {
+  data class ShowSnackbar(val message: String) : UiEffect()
+  object None : UiEffect()
+}
+
 data class UiState(
   val name: String = "",
   val satrDate: String = "",
@@ -31,7 +42,8 @@ data class UiState(
   val submitErrorMessage: String? = null,
   val showUnsavedExitDialog: Boolean = false,
   val isDirty: Boolean = false,
-  val validationMessages: List<String> = emptyList()
+  val validationMessages: List<String> = emptyList(),
+  val uiEffect: UiEffect = UiEffect.None
 ){
   val isValid: Boolean
     get() = name.isNotEmpty() &&
@@ -45,11 +57,22 @@ class CourseRegistrationViewModel(
   private val registerForCourseUseCase: RegisterForCourseUseCase,
   private val activityId: String
 ) : androidx.lifecycle.ViewModel() {
-  private val _uiState = MutableStateFlow(UiState())
-  val uiState: StateFlow<UiState> = _uiState
+  private val _state = MutableStateFlow(UiState())
+  // Internal effect flow for one-shot UI events
+  private val _effectFlow = MutableSharedFlow<UiEffect>(extraBufferCapacity = 1)
+
+  // Public only single UiState for screen
+  val uiState: StateFlow<UiState> = combine(
+    _state,
+    _effectFlow
+      .onSubscription { emit(UiEffect.None) }
+      .scan(UiEffect.None as UiEffect) { _, effect -> effect })
+  { currentState, effect ->
+    currentState.copy(uiEffect = effect)
+  }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), _state.value)
 
   fun validate(): String? {
-    val s = _uiState.value
+    val s = _state.value
     val errors = mutableListOf<String>()
     if (s.name.isBlank()) errors += "कृपया नाम दर्ज करें"
     if (s.satrDate.isBlank()) errors += "कृपया सत्र दिनांक चुनें"
@@ -76,75 +99,92 @@ class CourseRegistrationViewModel(
     recommendation: String? = null,
     imagePickerState: ImagePickerState? = null
   ) {
-    val current = _uiState.value
-    val updated = current.copy(
-      name = name ?: current.name,
-      satrDate = satrDate ?: current.satrDate,
-      satrPlace = satrPlace ?: current.satrPlace,
-      recommendation = recommendation ?: current.recommendation,
-      imagePickerState = imagePickerState ?: current.imagePickerState,
-      isDirty = true
-    )
-    _uiState.value = updated.copy(submitErrorMessage = null, validationMessages = emptyList())
+    _state.update { current ->
+      current.copy(
+        name = name ?: current.name,
+        satrDate = satrDate ?: current.satrDate,
+        satrPlace = satrPlace ?: current.satrPlace,
+        recommendation = recommendation ?: current.recommendation,
+        imagePickerState = imagePickerState ?: current.imagePickerState,
+        isDirty = true,
+        submitErrorMessage = null,
+        validationMessages = emptyList(),
+        uiEffect = UiEffect.None
+      )
+    }
   }
 
   suspend fun onSubmit() {
     val validationError = validate()
     if (validationError != null) {
-      _uiState.value = _uiState.value.copy(submitErrorMessage = validationError, isSubmitting = false)
+      _state.update { it.copy(submitErrorMessage = validationError, isSubmitting = false, uiEffect = UiEffect.None) }
       return
     }
-    _uiState.value = _uiState.value.copy(isSubmitting = true, submitErrorMessage = null)
+    _state.update { it.copy(isSubmitting = true, submitErrorMessage = null, uiEffect = UiEffect.None) }
     try {
-      val picker = _uiState.value.imagePickerState
+      val s = _state.value
+      val picker = s.imagePickerState
       val imageBytes = picker.newImages.firstOrNull()?.let { it.readBytes() }
       val imageFilename = picker.newImages.firstOrNull()?.name ?: "receipt.jpg"
       val formData = CourseRegistrationFormData(
         activityId = activityId,
-        name = _uiState.value.name,
-        satrDate = _uiState.value.satrDate,
-        satrPlace = _uiState.value.satrPlace,
-        recommendation = _uiState.value.recommendation,
+        name = s.name,
+        satrDate = s.satrDate,
+        satrPlace = s.satrPlace,
+        recommendation = s.recommendation,
         imageBytes = imageBytes,
         imageFilename = imageFilename
       )
       val result = registerForCourseUseCase.execute(formData)
       if (result.isSuccess) {
-        GlobalMessageManager.showSuccess("पंजीकरण सफलतापूर्वक हुआ")
-        _uiState.value = _uiState.value.copy(
-          isSubmitting = false,
-          submitSuccess = true,
-          submitErrorMessage = null
-        )
+        _effectFlow.tryEmit(UiEffect.ShowSnackbar("पंजीकरण सफलतापूर्वक हुआ"))
+        _state.update {
+          it.copy(
+            isSubmitting = false,
+            submitSuccess = true,
+            submitErrorMessage = null,
+            uiEffect = UiEffect.None
+          )
+        }
       } else {
-        GlobalMessageManager.showError("पंजीकरण विफल हुआ")
-        _uiState.value = _uiState.value.copy(
-          isSubmitting = false,
-          submitSuccess = false,
-          submitErrorMessage = "नेटवर्क त्रुटि या अन्य समस्या हुई"
-        )
+        _effectFlow.tryEmit(UiEffect.ShowSnackbar("पंजीकरण विफल हुआ"))
+        _state.update {
+          it.copy(
+            isSubmitting = false,
+            submitSuccess = false,
+            submitErrorMessage = "नेटवर्क त्रुटि या अन्य समस्या हुई",
+            uiEffect = UiEffect.None
+          )
+        }
       }
     }catch (e: Exception) {
-      GlobalMessageManager.showError("पंजीकरण विफल")
-      _uiState.value = _uiState.value.copy(isSubmitting = false, submitSuccess = false, submitErrorMessage = "पंजीकरण विफल")
+      _effectFlow.tryEmit(UiEffect.ShowSnackbar("पंजीकरण विफल"))
+      _state.update {
+        it.copy(
+          isSubmitting = false,
+          submitSuccess = false,
+          submitErrorMessage = "पंजीकरण विफल",
+          uiEffect = UiEffect.None
+        )
+      }
     }
   }
 
   fun onNavigateBackAttempt() {
-    if (_uiState.value.isDirty && !_uiState.value.submitSuccess) {
-      _uiState.value = _uiState.value.copy(showUnsavedExitDialog = true)
+    _state.update {
+      if (!it.isDirty || it.submitSuccess) it else it.copy(showUnsavedExitDialog = true)
     }
   }
 
   fun confirmUnsavedExit() {
-    _uiState.value = _uiState.value.copy(showUnsavedExitDialog = false)
+    _state.update { it.copy(showUnsavedExitDialog = false) }
   }
 
   fun dismissUnsavedExitDialog() {
-    _uiState.value = _uiState.value.copy(showUnsavedExitDialog = false)
+    _state.update { it.copy(showUnsavedExitDialog = false) }
   }
 
   fun resetSubmitState() {
-    _uiState.value = _uiState.value.copy(submitSuccess = false)
+    _state.update { it.copy(submitSuccess = false, uiEffect = UiEffect.None) }
   }
 }

@@ -1,28 +1,24 @@
 package com.aryamahasangh.features.gurukul.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationViewModel
-import com.aryamahasangh.ui.components.buttons.SubmitButton
-import com.aryamahasangh.ui.components.buttons.SubmitButtonConfig
 import com.aryamahasangh.components.DatePickerField
 import com.aryamahasangh.components.ImagePickerComponent
 import com.aryamahasangh.components.ImagePickerConfig
 import com.aryamahasangh.components.ImagePickerType
+import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationViewModel
 import com.aryamahasangh.ui.components.buttons.SubmissionError
-import com.aryamahasangh.ui.components.buttons.SubmitCallbacks
-import kotlinx.coroutines.delay
+import com.aryamahasangh.ui.components.buttons.SubmitButton
+import com.aryamahasangh.ui.components.buttons.SubmitButtonConfig
+import com.aryamahasangh.util.GlobalMessageManager
 import kotlinx.datetime.LocalDate
 
 @Composable
@@ -63,9 +59,25 @@ fun CourseRegistrationFormScreen(
       modifier = Modifier.semantics { testTag = "unsaved_exit_dialog" }
     )
   }
+  val lastUiEffect = remember { mutableStateOf<com.aryamahasangh.features.gurukul.viewmodel.UiEffect?>(null) }
+  LaunchedEffect(uiState.uiEffect) {
+    if (uiState.uiEffect != com.aryamahasangh.features.gurukul.viewmodel.UiEffect.None && uiState.uiEffect != lastUiEffect.value) {
+      lastUiEffect.value = uiState.uiEffect
+      when (val effect = uiState.uiEffect) {
+        is com.aryamahasangh.features.gurukul.viewmodel.UiEffect.ShowSnackbar -> {
+          GlobalMessageManager.showSuccess(effect.message)
+        }
+
+        com.aryamahasangh.features.gurukul.viewmodel.UiEffect.None -> {}
+      }
+      // Optionally: reset effect so it's consumed only once
+      // Not strictly needed here since effect will typically update on next state transition
+    }
+  }
   Column(
-    modifier = Modifier.padding(24.dp).semantics { testTag = "course_registration_form" },
-    verticalArrangement = Arrangement.spacedBy(16.dp)
+    modifier = Modifier.width(500.dp).padding(16.dp).semantics { testTag = "course_registration_form" },
+    verticalArrangement = Arrangement.spacedBy(8.dp),
+
   ) {
     var nameFieldValue by remember { mutableStateOf(TextFieldValue(uiState.name, TextRange(uiState.name.length))) }
     LaunchedEffect(uiState.name) {
@@ -73,6 +85,10 @@ fun CourseRegistrationFormScreen(
         nameFieldValue = TextFieldValue(uiState.name, TextRange(uiState.name.length))
       }
     }
+    Text(
+      text = "कक्षा प्रवेश पंजीकरण",
+      style = MaterialTheme.typography.headlineSmall
+    )
     OutlinedTextField(
       value = nameFieldValue,
       onValueChange = {
@@ -80,7 +96,7 @@ fun CourseRegistrationFormScreen(
         viewModel.onFieldChange(name = it.text)
       },
       label = { Text("नाम") },
-      modifier = Modifier.semantics { testTag = "name_field" },
+      modifier = Modifier.fillMaxWidth().testTag("registrationFormNameField").semantics { testTag = "name_field" },
       isError = uiState.submitErrorMessage != null && nameFieldValue.text.isBlank(),
       supportingText = {
         if (uiState.submitErrorMessage != null && nameFieldValue.text.isBlank()) {
@@ -114,7 +130,7 @@ fun CourseRegistrationFormScreen(
         viewModel.onFieldChange(satrDate = date?.toString() ?: "")
       },
       label = "सत्र दिनांक",
-      modifier = Modifier.semantics { testTag = "satr_date_field" },
+      modifier = Modifier.fillMaxWidth().testTag("registrationFormSatrDateField").semantics { testTag = "satr_date_field" },
       isError = uiState.submitErrorMessage != null && selectedDate == null,
       supportingText = {
         if (uiState.submitErrorMessage != null && selectedDate == null) {
@@ -144,7 +160,7 @@ fun CourseRegistrationFormScreen(
         viewModel.onFieldChange(satrPlace = it.text)
       },
       label = { Text("सत्र स्थान") },
-      modifier = Modifier.semantics { testTag = "satr_place_field" },
+      modifier = Modifier.fillMaxWidth().testTag("registrationFormSatrPlaceField").semantics { testTag = "satr_place_field" },
       isError = uiState.submitErrorMessage != null && placeFieldValue.text.isBlank(),
       supportingText = {
         if (uiState.submitErrorMessage != null && placeFieldValue.text.isBlank()) {
@@ -167,24 +183,31 @@ fun CourseRegistrationFormScreen(
         recommendationFieldValue = TextFieldValue(uiState.recommendation, TextRange(uiState.recommendation.length))
       }
     }
-    OutlinedTextField(
-      value = recommendationFieldValue,
-      onValueChange = {
-        recommendationFieldValue = it
-        viewModel.onFieldChange(recommendation = it.text)
-      },
-      label = { Text("संरक्षक की अनुशंसा") },
-      modifier = Modifier.semantics { testTag = "recommendation_field" },
-      isError = uiState.submitErrorMessage != null && recommendationFieldValue.text.isBlank(),
-      supportingText = {
-        if (uiState.submitErrorMessage != null && recommendationFieldValue.text.isBlank()) {
-          Text("कृपया संरक्षक की अनुशंसा भरें", color = MaterialTheme.colorScheme.error)
-        }
-      },
-      minLines = 3,
-      maxLines = 8,
-      enabled = !uiState.isSubmitting
-    )
+    Column {
+      Text(
+        text = "निचे संरक्षक की संस्तुति के साथ उनका का नाम, व्यवसाय, योग्यता भी लिखे",
+        style = MaterialTheme.typography.labelMedium
+      )
+      OutlinedTextField(
+        value = recommendationFieldValue,
+        onValueChange = {
+          recommendationFieldValue = it
+          viewModel.onFieldChange(recommendation = it.text)
+        },
+        label = { Text("संरक्षक की संस्तुति") },
+        modifier = Modifier.fillMaxWidth().testTag("registrationFormRecommendationField")
+          .semantics { testTag = "recommendation_field" },
+        isError = uiState.submitErrorMessage != null && recommendationFieldValue.text.isBlank(),
+        supportingText = {
+          if (uiState.submitErrorMessage != null && recommendationFieldValue.text.isBlank()) {
+            Text("कृपया संरक्षक की संस्तुति भरें", color = MaterialTheme.colorScheme.error)
+          }
+        },
+        minLines = 3,
+        maxLines = 8,
+        enabled = !uiState.isSubmitting
+      )
+    }
     ImagePickerComponent(
       state = uiState.imagePickerState,
       onStateChange = { pickerState -> viewModel.onFieldChange(imagePickerState = pickerState) },
