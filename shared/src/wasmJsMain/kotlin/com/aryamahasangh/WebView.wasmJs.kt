@@ -85,18 +85,22 @@ import org.w3c.dom.events.Event
 //  document.body?.appendChild(iframe)
 //}
 
-@OptIn(ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalComposeUiApi::class, ExperimentalWasmJsInterop::class)
 @Composable
 actual fun WebView(url: String, onScriptResult: ((String) -> Unit)?) {
 
   DisposableEffect(Unit) {
     // Setup message listener for iframe communication
     val messageHandler: (Event) -> Unit = { event ->
+
       if (event is MessageEvent) {
-        val iframe = document.getElementById("map-iframe") as? HTMLIFrameElement
-        if (event.source == iframe?.contentWindow) {
-          onScriptResult?.invoke(event.data.toString())
-        }
+        //println("Received message from iframe: ${event.data} ${event.source}")
+        onScriptResult?.invoke(event.data.toString())
+        //val iframe = document.getElementById("map-iframe") as? HTMLIFrameElement
+//        if (event.source == iframe?.contentWindow) {
+//          println("sending message to parent ${event.data.toString()}")
+//          onScriptResult?.invoke(event.data.toString())
+//        }
       }
     }
 
@@ -115,10 +119,10 @@ actual fun WebView(url: String, onScriptResult: ((String) -> Unit)?) {
 
       // Modify the HTML content to include postMessage communication
       // no longer necessary since we are handling that in html string
-      val modifiedHtml = url.replace(
-        "console.log(selectedLocation);",
-        "window.parent.postMessage(JSON.stringify(selectedLocation), '*');"
-      )
+//      val modifiedHtml = url.replace(
+//        "console.log(selectedLocation);",
+//        "window.parent.postMessage(JSON.stringify(selectedLocation), '*');"
+//      )
 
 //      iframe.srcdoc = url
 //      iframe.style.width = "100vw"
@@ -134,7 +138,7 @@ actual fun WebView(url: String, onScriptResult: ((String) -> Unit)?) {
         as HTMLIFrameElement)
         .apply {
           id = "map-iframe"
-          srcdoc = modifiedHtml
+          srcdoc = url
           style.width = "100vw"
           style.height = "100vh"
           style.zIndex = "9999"

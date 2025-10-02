@@ -87,6 +87,7 @@ fun MapLocationPickerDialog(
             WebView(
               url = html,
               onScriptResult = { result ->
+//                println(result)
                 try {
                   val json = Json.parseToJsonElement(result).jsonObject
                   val lat = json["lat"]?.jsonPrimitive?.doubleOrNull
