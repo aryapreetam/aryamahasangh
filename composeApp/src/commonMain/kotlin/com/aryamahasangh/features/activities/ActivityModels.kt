@@ -113,11 +113,13 @@ enum class ActivityStatus {
 
 fun ActivityType.toDisplayName(): String {
   return when (this) {
-    SESSION -> "सत्र"
+    SESSION -> "आर्य प्रशिक्षण सत्र"
+    PROTECTION_SESSION -> "आर्य संरक्षण सत्र"
     CAMP -> "शिविर"
     COURSE -> "कक्षा"
     EVENT -> "कार्यक्रम"
     CAMPAIGN -> "अभियान"
+    BODH_SESSION -> "बोध सत्र"
     UNKNOWN__ -> "कार्यक्रम"
   }
 }

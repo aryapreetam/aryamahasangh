@@ -1004,7 +1004,7 @@ private fun CreateActivityScreenContent(
       modifier =
         Modifier
           .fillMaxSize()
-          .padding(8.dp)
+          .padding(12.dp)
           .verticalScroll(scrollState)
           .let { if (isSmallScreen) it.imePadding() else it } // Add IME padding only on mobile
     ) {
@@ -1051,7 +1051,10 @@ private fun CreateActivityScreenContent(
       Column {
         // ActivityType (Filter Chips)
         Text(text = "प्रकार :", style = MaterialTheme.typography.bodyMedium)
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        FlowRow(
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+          verticalArrangement = Arrangement.spacedBy(0.dp)
+        ) {
           ActivityType.knownEntries.forEach { type ->
             FilterChip(
               selected = (selectedType == type), // Check for equality, not `in`

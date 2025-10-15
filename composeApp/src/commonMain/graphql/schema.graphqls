@@ -546,6 +546,8 @@ type ActivityMemberUpdateResponse {
 enum ActivityType {
   SESSION
 
+  PROTECTION_SESSION
+
   CAMP
 
   COURSE
@@ -553,6 +555,8 @@ enum ActivityType {
   EVENT
 
   CAMPAIGN
+
+  BODH_SESSION
 }
 
 """

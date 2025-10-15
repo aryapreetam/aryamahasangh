@@ -12,13 +12,19 @@ sealed class ActivityFilterOption(val displayName: String) {
 
   /**
    * Shows SESSION type activities that do NOT contain "बोध" in the name
-   * GraphQL: type == SESSION && name does NOT contain "बोध"
+   * GraphQL: type == SESSION
    */
   object AryaTraining : ActivityFilterOption("आर्य प्रशिक्षण सत्र")
 
   /**
+   * Shows SESSION type activities that do NOT contain "बोध" in the name
+   * GraphQL: type == PROTECTION_SESSION
+   */
+  object ProtectorTraining : ActivityFilterOption("आर्य संरक्षण सत्र")
+
+  /**
    * Shows SESSION type activities that contain "बोध" in the name
-   * GraphQL: type == SESSION && name contains "बोध"
+   * GraphQL: type == BODH_SESSION
    */
   object BodhSession : ActivityFilterOption("बोध सत्र")
 
@@ -59,6 +65,7 @@ sealed class ActivityFilterOption(val displayName: String) {
     fun getAllOptions(): List<ActivityFilterOption> = listOf(
       ShowAll,
       AryaTraining,
+      ProtectorTraining,
       BodhSession,
       MaleTraining,
       FemaleTraining,

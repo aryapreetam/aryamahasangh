@@ -85,7 +85,7 @@ val drawerOptions =
       Screen.AryaNirmanSection
     ),
     DrawerOption("आर्य परिवार", Res.drawable.family, Screen.AryaPariwarSection),
-    DrawerOption("आर्य समाज संगठन", Res.drawable.diversity_3, Screen.AryaSamajSection),
+    DrawerOption("आर्य समाज", Res.drawable.diversity_3, Screen.AryaSamajSection),
 //    DrawerOption(
 //      "आर्य क्षात्र शिविर पंजीकरण",
 //      Res.drawable.person,

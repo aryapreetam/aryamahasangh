@@ -1,12 +1,7 @@
 package com.aryamahasangh.features.activities
 
-import com.aryamahasangh.type.ActivitiesWithStatusFilter
-import com.aryamahasangh.type.ActivityTypeFilter
-import com.aryamahasangh.type.ActivityType
-import com.aryamahasangh.type.GenderFilterFilter
-import com.aryamahasangh.type.GenderFilter
-import com.aryamahasangh.type.StringFilter
 import com.apollographql.apollo.api.Optional
+import com.aryamahasangh.type.*
 
 /**
  * Builds a combined GraphQL filter based on selected filter options and search term.
@@ -76,72 +71,41 @@ private fun buildSearchFilter(searchTerm: String?): ActivitiesWithStatusFilter? 
 }
 
 /**
- * Builds activity type filters with smart SESSION combination logic
+ * Builds activity type filters with direct type mapping.
+ * Each filter option maps to exactly one ActivityType.
+ * Multiple selections use OR logic.
  */
 private fun buildActivityTypeFilter(selectedFilters: Set<ActivityFilterOption>): ActivitiesWithStatusFilter? {
-  val sessionFilters = selectedFilters.filterIsInstance<ActivityFilterOption>().filter {
-    it is ActivityFilterOption.AryaTraining || it is ActivityFilterOption.BodhSession
-  }
-
-  val otherFilters = selectedFilters.filterIsInstance<ActivityFilterOption>().filterNot {
-    it is ActivityFilterOption.AryaTraining || it is ActivityFilterOption.BodhSession
-  }
-
   val filterClauses = mutableListOf<ActivitiesWithStatusFilter>()
 
-  // Handle SESSION type filters with smart combination
-  when {
-    // Both SESSION types selected → just SESSION type (no name filter needed)
-    sessionFilters.size >= 2 -> {
-      filterClauses.add(
-        ActivitiesWithStatusFilter(
-          type = Optional.present(ActivityTypeFilter(eq = Optional.present(ActivityType.SESSION)))
-        )
-      )
-    }
-    // Only AryaTraining selected → SESSION type + name does NOT contain "बोध"
-    sessionFilters.contains(ActivityFilterOption.AryaTraining) -> {
-      filterClauses.add(
-        ActivitiesWithStatusFilter(
-          and = Optional.present(
-            listOf(
-              ActivitiesWithStatusFilter(
-                type = Optional.present(ActivityTypeFilter(eq = Optional.present(ActivityType.SESSION)))
-              ),
-              ActivitiesWithStatusFilter(
-                not = Optional.present(
-                  ActivitiesWithStatusFilter(
-                    name = Optional.present(StringFilter(ilike = Optional.present("%बोध%")))
-                  )
-                )
-              )
-            )
-          )
-        )
-      )
-    }
-    // Only BodhSession selected → SESSION type + name contains "बोध"
-    sessionFilters.contains(ActivityFilterOption.BodhSession) -> {
-      filterClauses.add(
-        ActivitiesWithStatusFilter(
-          and = Optional.present(
-            listOf(
-              ActivitiesWithStatusFilter(
-                type = Optional.present(ActivityTypeFilter(eq = Optional.present(ActivityType.SESSION)))
-              ),
-              ActivitiesWithStatusFilter(
-                name = Optional.present(StringFilter(ilike = Optional.present("%बोध%")))
-              )
-            )
-          )
-        )
-      )
-    }
-  }
-
-  // Handle other filter types
-  otherFilters.forEach { filter ->
+  selectedFilters.forEach { filter ->
     when (filter) {
+      // Session type filters - each maps to its own ActivityType
+      is ActivityFilterOption.AryaTraining -> {
+        filterClauses.add(
+          ActivitiesWithStatusFilter(
+            type = Optional.present(ActivityTypeFilter(eq = Optional.present(ActivityType.SESSION)))
+          )
+        )
+      }
+
+      is ActivityFilterOption.ProtectorTraining -> {
+        filterClauses.add(
+          ActivitiesWithStatusFilter(
+            type = Optional.present(ActivityTypeFilter(eq = Optional.present(ActivityType.PROTECTION_SESSION)))
+          )
+        )
+      }
+
+      is ActivityFilterOption.BodhSession -> {
+        filterClauses.add(
+          ActivitiesWithStatusFilter(
+            type = Optional.present(ActivityTypeFilter(eq = Optional.present(ActivityType.BODH_SESSION)))
+          )
+        )
+      }
+
+      // Camp type filters with gender restrictions
       is ActivityFilterOption.MaleTraining -> {
         filterClauses.add(
           ActivitiesWithStatusFilter(
@@ -176,6 +140,7 @@ private fun buildActivityTypeFilter(selectedFilters: Set<ActivityFilterOption>):
         )
       }
 
+      // Other activity type filters
       is ActivityFilterOption.Campaign -> {
         filterClauses.add(
           ActivitiesWithStatusFilter(
@@ -200,14 +165,15 @@ private fun buildActivityTypeFilter(selectedFilters: Set<ActivityFilterOption>):
         )
       }
 
-      else -> { /* ShowAll and unknown types ignored */
-      }
+      // ShowAll is handled at the top level, ignore here
+      is ActivityFilterOption.ShowAll -> { /* Ignored - handled in buildCombinedFilter */ }
     }
   }
 
   return when {
     filterClauses.isEmpty() -> null
     filterClauses.size == 1 -> filterClauses.first()
+    // Multiple filters use OR logic - show activities matching ANY selected filter
     else -> ActivitiesWithStatusFilter(
       or = Optional.present(filterClauses)
     )

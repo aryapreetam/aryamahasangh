@@ -126,6 +126,11 @@ private fun QuickLinksSection(
           "आर्य प्रशिक्षण",
           Screen.Activities("आर्य प्रशिक्षण सत्र")
         ),
+        QuickLinkItem(
+          "आर्य संरक्षण सत्र",
+          "आर्य संरक्षण",
+          Screen.Activities("आर्य संरक्षण सत्र")
+        ),
         QuickLinkItem("बोध सत्र", "धार्मिक ज्ञान वृद्धि हेतु सत्र", Screen.Activities("बोध सत्र")),
         QuickLinkItem("क्षात्र प्रशिक्षण", "क्षात्र प्रशिक्षण", Screen.Activities("क्षात्र प्रशिक्षण")),
         QuickLinkItem(
