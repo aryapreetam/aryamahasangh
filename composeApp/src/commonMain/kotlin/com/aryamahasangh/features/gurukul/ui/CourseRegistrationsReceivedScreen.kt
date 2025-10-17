@@ -235,7 +235,7 @@ fun CourseRegistrationReceivedCard(
               Spacer(modifier = Modifier.width(4.dp))
               Text(
                 text = item.date,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
               )
@@ -252,7 +252,7 @@ fun CourseRegistrationReceivedCard(
               Spacer(modifier = Modifier.width(4.dp))
               Text(
                 text = item.place,
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
               )

@@ -22,7 +22,8 @@ query loadAllCourses($gender: GenderFilter){
     filter: {
       type: {eq: COURSE},
       allowedGender: {eq: $gender}
-    }
+    },
+    orderBy: { startDatetime: DescNullsLast }
   ) {
     edges {
       node {
@@ -72,6 +73,7 @@ query allUpcomingCourses($currentDateTime: Datetime!, $gender: GenderFilter) {
       node {
         id
         name
+        shortDescription
         startDatetime
         endDatetime
         allowedGender

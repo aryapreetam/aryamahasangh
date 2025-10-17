@@ -2,18 +2,24 @@ package com.aryamahasangh.features.gurukul.data
 
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.cache.normalized.apolloStore
+import com.aryamahasangh.AllUpcomingCoursesQuery
 import com.aryamahasangh.CourseRegistrationsForActivityQuery
 import com.aryamahasangh.LoadAllCoursesQuery
 import com.aryamahasangh.RegisterForCourseMutation
 import com.aryamahasangh.features.gurukul.domain.models.Address
 import com.aryamahasangh.features.gurukul.domain.models.Course
 import com.aryamahasangh.type.GenderFilter
+import kotlinx.datetime.Clock
 
 class GurukulRepositoryImpl(
   private val apolloClient: ApolloClient
 ) : GurukulRepository {
   override suspend fun getCourses(gender: GenderFilter): List<Course> {
-    val query = LoadAllCoursesQuery.Builder()
+    // Get current datetime to filter for upcoming courses only
+    val currentDateTime = Clock.System.now()
+
+    val query = AllUpcomingCoursesQuery.Builder()
+      .currentDateTime(currentDateTime)
       .gender(gender)
       .build()
     val response = apolloClient.query(query).execute()
@@ -68,5 +74,34 @@ class GurukulRepositoryImpl(
     } catch (e: Exception) {
       Result.failure(e)
     }
+  }
+
+  override suspend fun getAllCourses(gender: GenderFilter): List<Course> {
+    // Load ALL courses (past, present, future) sorted by start date descending
+    val query = LoadAllCoursesQuery.Builder()
+      .gender(gender)
+      .build()
+    val response = apolloClient.query(query).execute()
+
+    return response.data?.activitiesCollection?.edges?.mapNotNull { edge ->
+      val node = edge.node
+      Course(
+        id = node.id,
+        name = node.name,
+        shortDescription = node.shortDescription,
+        startDatetime = node.startDatetime,
+        endDatetime = node.endDatetime,
+        allowedGender = node.allowedGender?.name ?: "",
+        address = node.address?.let {
+          Address(
+            district = it.district,
+            state = it.state,
+            latitude = it.latitude,
+            longitude = it.longitude
+          )
+        },
+        capacity = node.capacity
+      )
+    }.orEmpty()
   }
 }

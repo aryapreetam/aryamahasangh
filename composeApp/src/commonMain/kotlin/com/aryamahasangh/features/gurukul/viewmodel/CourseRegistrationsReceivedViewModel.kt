@@ -4,7 +4,6 @@ import com.aryamahasangh.features.arya_nirman.convertDates
 import com.aryamahasangh.features.gurukul.data.GurukulRepository
 import com.aryamahasangh.features.gurukul.domain.models.Course
 import com.aryamahasangh.type.GenderFilter
-import com.aryamahasangh.utils.formatShortForBook
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,7 +55,8 @@ class CourseRegistrationsReceivedViewModel(
     CoroutineScope(Dispatchers.Main).launch {
       _uiState.value = _uiState.value.copy(isLoading = true, isError = false)
       try {
-        val courses = gurukulRepository.getCourses(genderFilter)
+        // Use getAllCourses to fetch all courses (past, present, future) sorted by date descending
+        val courses = gurukulRepository.getAllCourses(genderFilter)
         val dropdownItems = courses.map { course ->
           mapCourseDropdown(course)
         }
