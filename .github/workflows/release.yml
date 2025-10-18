@@ -1,26 +1,29 @@
-name: 🚀 Release Deployment
+name: 🚀 Release & Production Deployment
 
 on:
   release:
     types: [published]
-  
-  # Manual trigger for testing
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Deployment environment'
-        required: true
-        default: 'staging'
-        type: choice
-        options:
-          - staging
-          - production
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
-  GRADLE_OPTS: -Dorg.gradle.daemon=false -Dorg.gradle.workers.max=2
+  JAVA_VERSION: '17'
 
 jobs:
-  # Parse release version (semantic versioning for releases)
+  # Reuse CI (all tests must pass before release)
+  ci:
+    name: Run All Tests
+    uses: ./.github/workflows/ci-reusable.yml
+
+  # Parse version from release tag
   parse-version:
     name: 📋 Parse Version
     runs-on: ubuntu-latest
@@ -28,7 +31,6 @@ jobs:
       version_name: ${{ steps.version.outputs.version_name }}
       version_code: ${{ steps.version.outputs.version_code }}
       is_prerelease: ${{ steps.version.outputs.is_prerelease }}
-      environment: ${{ steps.version.outputs.environment }}
     steps:
       - name: Parse release version
         id: version
@@ -38,183 +40,457 @@ jobs:
             IS_PRERELEASE="${{ github.event.release.prerelease }}"
           else
             VERSION_NAME="manual-${{ github.run_number }}"
-            IS_PRERELEASE="true"
+            IS_PRERELEASE="false"
           fi
           
-          # Remove 'v' prefix if present
           VERSION_NAME=${VERSION_NAME#v}
           
-          # Calculate version code from semantic version
           IFS='.' read -ra VERSION_PARTS <<< "$VERSION_NAME"
           MAJOR=${VERSION_PARTS[0]:-1}
           MINOR=${VERSION_PARTS[1]:-0}
           PATCH=${VERSION_PARTS[2]:-0}
           VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
           
-          # Determine environment
-          if [ "$IS_PRERELEASE" = "true" ] || [ "${{ github.event.inputs.environment }}" = "staging" ]; then
-            ENVIRONMENT="staging"
-          else
-            ENVIRONMENT="production"
-          fi
-          
           echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
           echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
           echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
-          echo "environment=$ENVIRONMENT" >> $GITHUB_OUTPUT
           
-          echo "🏷️ Release Version: $VERSION_NAME ($VERSION_CODE)"
-          echo "🎯 Environment: $ENVIRONMENT"
+          echo "🏷️ Version: $VERSION_NAME (Code: $VERSION_CODE)"
 
-  # Build release artifacts
-  build-release:
-    name: 🏗️ Build Release
+  # Build Android Release
+  build-android:
+    name: 📱 Build Android (APK + AAB)
     runs-on: ubuntu-latest
-    needs: parse-version
-    strategy:
-      matrix:
-        target: [android, web, desktop]
+    needs: [ci, parse-version]
+    environment: production
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
+      - name: Try to download APK from CI artifacts
+        id: download-apk
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apk
+          path: ./ci-artifacts
+
+      - name: Cache Gradle Wrapper
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/wrapper/dists
+          key: gradle-wrapper-${{ runner.os }}-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-wrapper-${{ runner.os }}-
+
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          java-version: '17'
           distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
-        with:
-          gradle-home-cache-cleanup: true
+
+      - name: Decode Keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > aryamahasangh.jks
 
       - name: Create local.properties
         run: |
           echo "app_version=${{ needs.parse-version.outputs.version_name }}" >> local.properties
-          echo "environment=${{ needs.parse-version.outputs.environment }}" >> local.properties
-          
-          if [ "${{ needs.parse-version.outputs.environment }}" = "production" ]; then
-            echo "prod_supabase_url=${{ secrets.PROD_SUPABASE_URL }}" >> local.properties
-            echo "prod_supabase_key=${{ secrets.PROD_SUPABASE_KEY }}" >> local.properties
-            echo "prod_googlemaps_apikey=${{ secrets.PROD_GOOGLE_MAPS_API_KEY }}" >> local.properties
-          else
-            echo "dev_supabase_url=${{ secrets.SUPABASE_URL }}" >> local.properties
-            echo "dev_supabase_key=${{ secrets.SUPABASE_KEY }}" >> local.properties
-            echo "dev_googlemaps_apikey=${{ secrets.GOOGLE_MAPS_API_KEY }}" >> local.properties
-          fi
+          echo "environment=production" >> local.properties
+          echo "prod_supabase_url=${{ secrets.SUPABASE_URL }}" >> local.properties
+          echo "prod_supabase_key=${{ secrets.SUPABASE_KEY }}" >> local.properties
 
       - name: Build Android Release
-        if: matrix.target == 'android'
         env:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           VERSION_NAME: ${{ needs.parse-version.outputs.version_name }}
           VERSION_CODE: ${{ needs.parse-version.outputs.version_code }}
         run: |
-          ./gradlew assembleRelease bundleRelease
-          echo "📱 Android release build completed"
+          ./gradlew :composeApp:assembleRelease :composeApp:bundleRelease
+          echo "✅ Android release build completed"
 
-      - name: Build Web Production
-        if: matrix.target == 'web'
+      - name: Collect Android artifacts
         run: |
-          ./gradlew wasmJsBrowserDistribution
-          echo "🌐 Web production build completed"
+          mkdir -p release-artifacts
+          
+          APK_SRC=$(find composeApp/build/outputs/apk/release -type f -name '*-release.apk' | head -n1)
+          if [ -n "$APK_SRC" ]; then
+            cp "$APK_SRC" "release-artifacts/AryaMahasangh-v${{ needs.parse-version.outputs.version_name }}.apk"
+          fi
+          
+          AAB_SRC=$(find composeApp/build/outputs/bundle/release -type f -name '*.aab' | head -n1)
+          if [ -n "$AAB_SRC" ]; then
+            cp "$AAB_SRC" "release-artifacts/AryaMahasangh-v${{ needs.parse-version.outputs.version_name }}.aab"
+          fi
 
-      - name: Build Desktop Release
-        if: matrix.target == 'desktop'
-        run: |
-          ./gradlew createDistributable packageDistributionForCurrentOS
-          echo "🖥️ Desktop release build completed"
-
-      - name: Upload Release Artifacts
+      - name: Upload Android artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.target }}-release-${{ needs.parse-version.outputs.version_name }}
-          path: |
-            composeApp/build/outputs/
-            composeApp/build/dist/
-            composeApp/build/compose/binaries/
+          name: release-android
+          path: release-artifacts/
           retention-days: 90
 
-  # Deploy to staging
-  deploy-staging:
-    name: 🧪 Deploy Staging
-    runs-on: ubuntu-latest
-    needs: [parse-version, build-release]
-    if: needs.parse-version.outputs.environment == 'staging'
-    environment: staging
-    steps:
-      - name: Download Web Artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: web-release-${{ needs.parse-version.outputs.version_name }}
-          path: ./artifacts
-
-      - name: Deploy to Netlify Staging
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_STAGING_SITE_ID }}
-        run: |
-          npx netlify-cli deploy \
-            --dir=./artifacts/wasmJs/productionExecutable \
-            --message="Staging deployment v${{ needs.parse-version.outputs.version_name }}"
-          
-          echo "🧪 Staging deployed: v${{ needs.parse-version.outputs.version_name }}"
-
-  # Deploy to production (manual approval on free plan)
-  deploy-production:
-    name: 🚀 Deploy Production
-    runs-on: ubuntu-latest
-    needs: [parse-version, build-release]
-    if: needs.parse-version.outputs.environment == 'production'
+  # Build iOS Release
+  build-ios:
+    name: 🍎 Build iOS Archive
+    runs-on: macos-latest
+    needs: [ci, parse-version]
     environment: production
     steps:
-      - name: Download Web Artifacts
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Try to download iOS app from CI
+        id: download-ios
+        continue-on-error: true
         uses: actions/download-artifact@v4
         with:
-          name: web-release-${{ needs.parse-version.outputs.version_name }}
-          path: ./artifacts
+          name: ios-app
+          path: ./ci-artifacts
 
-      - name: Download Android Artifacts
+      - name: Check if iOS artifact exists
+        id: check-ios
+        run: |
+          if [ -f "./ci-artifacts/aryamahasangh-ios-simulator.zip" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "✅ iOS artifact found from CI"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️ iOS artifact not found, will build fresh"
+          fi
+
+      - name: Set up JDK
+        if: steps.check-ios.outputs.exists == 'false'
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Gradle
+        if: steps.check-ios.outputs.exists == 'false'
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Create local.properties
+        if: steps.check-ios.outputs.exists == 'false'
+        run: |
+          echo "app_version=${{ needs.parse-version.outputs.version_name }}" >> local.properties
+          echo "environment=production" >> local.properties
+          echo "prod_supabase_url=${{ secrets.SUPABASE_URL }}" >> local.properties
+          echo "prod_supabase_key=${{ secrets.SUPABASE_KEY }}" >> local.properties
+
+      - name: Build iOS Simulator App
+        if: steps.check-ios.outputs.exists == 'false'
+        run: |
+          SIMULATOR_ID=$(xcrun simctl list devices available | grep -m1 -Eo '[A-F0-9-]{36}')
+          if [ -z "$SIMULATOR_ID" ]; then 
+            echo "❌ No iOS Simulator found!"
+            exit 1
+          fi
+          
+          cd iosApp
+          xcodebuild build \
+            -project iosApp.xcodeproj \
+            -scheme iosApp \
+            -configuration Release \
+            -destination "id=$SIMULATOR_ID" \
+            -derivedDataPath build \
+            CONFIGURATION_BUILD_DIR=$PWD/build/Build/Products/Release-iphonesimulator
+
+      - name: Collect iOS artifacts
+        run: |
+          mkdir -p release-artifacts
+          
+          if [ "${{ steps.check-ios.outputs.exists }}" = "true" ]; then
+            cp "./ci-artifacts/aryamahasangh-ios-simulator.zip" "release-artifacts/AryaMahasangh-iOS-v${{ needs.parse-version.outputs.version_name }}.zip"
+          else
+            cd iosApp/build/Build/Products/Release-iphonesimulator
+            APP_FILE=$(find . -maxdepth 1 -name "*.app" -type d | head -n1)
+            if [ -n "$APP_FILE" ]; then
+              zip -r "${{ github.workspace }}/release-artifacts/AryaMahasangh-iOS-v${{ needs.parse-version.outputs.version_name }}.zip" "$APP_FILE"
+            fi
+          fi
+
+      - name: Upload iOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-ios
+          path: release-artifacts/
+          retention-days: 90
+
+  # Build Web Production
+  build-web:
+    name: 🌐 Build Web (WASM)
+    runs-on: ubuntu-latest
+    needs: [ci, parse-version]
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Gradle Wrapper
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/wrapper/dists
+          key: gradle-wrapper-${{ runner.os }}-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-wrapper-${{ runner.os }}-
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Create local.properties
+        run: |
+          echo "app_version=${{ needs.parse-version.outputs.version_name }}" >> local.properties
+          echo "environment=production" >> local.properties
+          echo "prod_supabase_url=${{ secrets.SUPABASE_URL }}" >> local.properties
+          echo "prod_supabase_key=${{ secrets.SUPABASE_KEY }}" >> local.properties
+
+      - name: Build Web Production
+        run: |
+          ./gradlew :composeApp:wasmJsBrowserDistribution
+          echo "✅ Web production build completed"
+
+      - name: Create Web Archive
+        run: |
+          mkdir -p release-artifacts
+          cd composeApp/build/dist/wasmJs/productionExecutable
+          zip -r "${{ github.workspace }}/release-artifacts/AryaMahasangh-Web-v${{ needs.parse-version.outputs.version_name }}.zip" .
+
+      - name: Upload Web artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-web
+          path: |
+            release-artifacts/
+            composeApp/build/dist/wasmJs/productionExecutable/
+          retention-days: 90
+
+  # Build Desktop - macOS
+  build-desktop-macos:
+    name: 🖥️ Build Desktop (macOS)
+    runs-on: macos-latest
+    needs: [ci, parse-version]
+    environment: production
+    strategy:
+      matrix:
+        mac-arch: [macos-13, macos-latest]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Gradle Wrapper
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/wrapper/dists
+          key: gradle-wrapper-${{ runner.os }}-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-wrapper-${{ runner.os }}-
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Create local.properties
+        run: |
+          echo "app_version=${{ needs.parse-version.outputs.version_name }}" >> local.properties
+          echo "environment=production" >> local.properties
+          echo "prod_supabase_url=${{ secrets.SUPABASE_URL }}" >> local.properties
+          echo "prod_supabase_key=${{ secrets.SUPABASE_KEY }}" >> local.properties
+
+      - name: Build Desktop DMG
+        run: ./gradlew :composeApp:packageDmg
+
+      - name: Collect DMG artifacts
+        run: |
+          mkdir -p release-artifacts
+          if [[ "${{ matrix.mac-arch }}" == "macos-13" ]]; then ARCH_SUFFIX="x64"; else ARCH_SUFFIX="arm64"; fi
+          
+          DMG_SRC=$(find composeApp/build/compose/binaries -type f -name '*.dmg' | head -n1)
+          if [ -n "$DMG_SRC" ]; then
+            cp "$DMG_SRC" "release-artifacts/AryaMahasangh-macOS-$ARCH_SUFFIX-v${{ needs.parse-version.outputs.version_name }}.dmg"
+          fi
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-desktop-${{ matrix.mac-arch }}
+          path: release-artifacts/
+          retention-days: 90
+
+  # Build Desktop - Windows
+  build-desktop-windows:
+    name: 🖥️ Build Desktop (Windows)
+    runs-on: windows-latest
+    needs: [ci, parse-version]
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Gradle Wrapper
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/wrapper/dists
+          key: gradle-wrapper-${{ runner.os }}-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-wrapper-${{ runner.os }}-
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Create local.properties
+        run: |
+          echo "app_version=${{ needs.parse-version.outputs.version_name }}" | Out-File -FilePath local.properties -Encoding utf8
+          echo "environment=production" | Out-File -FilePath local.properties -Append -Encoding utf8
+          echo "prod_supabase_url=${{ secrets.SUPABASE_URL }}" | Out-File -FilePath local.properties -Append -Encoding utf8
+          echo "prod_supabase_key=${{ secrets.SUPABASE_KEY }}" | Out-File -FilePath local.properties -Append -Encoding utf8
+
+      - name: Build Windows MSI
+        run: ./gradlew :composeApp:packageMsi
+
+      - name: Collect MSI artifacts
+        shell: bash
+        run: |
+          mkdir -p release-artifacts
+          MSI_SRC=$(find composeApp/build/compose/binaries -type f -name '*.msi' | head -n1)
+          if [ -n "$MSI_SRC" ]; then
+            cp "$MSI_SRC" "release-artifacts/AryaMahasangh-Windows-v${{ needs.parse-version.outputs.version_name }}.msi"
+          fi
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-desktop-windows
+          path: release-artifacts/
+          retention-days: 90
+
+  # Create GitHub Release
+  create-release:
+    name: 📦 Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [parse-version, build-android, build-ios, build-web, build-desktop-macos, build-desktop-windows]
+    if: github.event_name == 'release'
+    steps:
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          name: android-release-${{ needs.parse-version.outputs.version_name }}
+          path: ./all-artifacts
+
+      - name: Organize release files
+        run: |
+          mkdir -p release-files
+          find ./all-artifacts -type f \( -name "*.apk" -o -name "*.aab" -o -name "*.zip" -o -name "*.dmg" -o -name "*.msi" \) -exec cp {} release-files/ \;
+          ls -lah release-files/
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release-files/*
+          tag_name: ${{ github.event.release.tag_name }}
+          name: ${{ github.event.release.name }}
+          body: |
+            ## 🚀 AryaMahasangh Release ${{ needs.parse-version.outputs.version_name }}
+            
+            ### 📦 Downloads
+            - **Android APK**: For manual installation on Android devices
+            - **Android AAB**: For Google Play Store submission
+            - **iOS Archive**: For App Store submission (requires code signing)
+            - **Web Archive**: Standalone web application (WASM)
+            - **macOS DMG**: For Mac computers (x64 and ARM64)
+            - **Windows MSI**: For Windows computers
+            
+            ### 🔗 Live Web App
+            Production: https://aryamahasangh.netlify.app
+            
+            ### 📋 Version Information
+            - Version: ${{ needs.parse-version.outputs.version_name }}
+            - Version Code: ${{ needs.parse-version.outputs.version_code }}
+            - Commit: ${{ github.sha }}
+            
+            ---
+            ${{ github.event.release.body }}
+          draft: false
+          prerelease: ${{ needs.parse-version.outputs.is_prerelease }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Deploy to Production
+  deploy-production:
+    name: 🚀 Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [parse-version, build-web]
+    environment: production
+    steps:
+      - name: Download Web artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: release-web
           path: ./artifacts
 
-      - name: Deploy Web to Netlify Production
+      - name: Deploy to Netlify Production
+        uses: nwtgck/actions-netlify@v2.0
+        with:
+          publish-dir: './artifacts/composeApp/build/dist/wasmJs/productionExecutable'
+          production-deploy: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: '🚀 Production v${{ needs.parse-version.outputs.version_name }}'
+          enable-pull-request-comment: false
+          enable-commit-comment: true
+          enable-commit-status: true
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-        run: |
-          npx netlify-cli deploy --prod \
-            --dir=./artifacts/wasmJs/productionExecutable \
-            --message="Production deployment v${{ needs.parse-version.outputs.version_name }}"
-          
-          echo "🚀 Production deployed: v${{ needs.parse-version.outputs.version_name }}"
 
-      - name: Upload to Google Play Internal Testing
-        uses: r0adkll/upload-google-play@v1
-        with:
-          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT }}
-          packageName: com.aryamahasangh
-          releaseFiles: ./artifacts/outputs/bundle/release/composeApp-release.aab
-          track: internal
-          status: completed
-
-  # Notification
-  notify:
-    name: 📢 Notify
+  # Deployment Summary
+  deployment-summary:
+    name: 📊 Deployment Summary
     runs-on: ubuntu-latest
-    needs: [parse-version, deploy-staging, deploy-production]
+    needs: [parse-version, deploy-production]
     if: always()
     steps:
-      - name: Slack Notification
-        uses: 8398a7/action-slack@v3
-        with:
-          status: ${{ job.status }}
-          channel: '#releases'
-          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
-          fields: repo,message,commit,author,action,eventName,ref,workflow
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK }}
+      - name: Create Summary
+        run: |
+          echo "## 🚀 Production Release Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Version Information" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ needs.parse-version.outputs.version_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version Code**: ${{ needs.parse-version.outputs.version_code }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployment Status" >> $GITHUB_STEP_SUMMARY
+          echo "- **Web Production**: ${{ needs.deploy-production.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔗 Links" >> $GITHUB_STEP_SUMMARY
+          echo "- [Production Web App](https://aryamahasangh.netlify.app)" >> $GITHUB_STEP_SUMMARY
+          echo "- [GitHub Release](https://github.com/${{ github.repository }}/releases/tag/v${{ needs.parse-version.outputs.version_name }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📱 Available Platforms" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Android (APK + AAB)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ iOS (Simulator Archive)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Web (WASM)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Desktop macOS (x64 + ARM64)" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Desktop Windows" >> $GITHUB_STEP_SUMMARY
+

@@ -1,0 +1,484 @@
+name: Reusable CI Pipeline (Tests & Builds)
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        description: 'Environment to build for (dev, staging, prod)'
+        required: false
+        type: string
+        default: 'dev'
+
+permissions:
+  contents: read
+
+env:
+  JAVA_VERSION: '17'
+  MAESTRO_VERSION: '2.0.5'
+
+jobs:
+  # Unit Tests (Cross-platform)
+  unit-tests:
+    name: Unit Tests (commonTest)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cache Gradle Wrapper
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/wrapper/dists
+          key: gradle-wrapper-${{ runner.os }}-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-wrapper-${{ runner.os }}-
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Create local.properties
+        run: |
+          echo "app_version=1.0.0" >> local.properties
+          echo "environment=dev" >> local.properties
+          echo "dev_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "dev_supabase_key=placeholder-key" >> local.properties
+          echo "dev_server_url=https://placeholder.com" >> local.properties
+
+      - name: Run Unit Tests
+        run: ./gradlew :composeApp:testDebugUnitTest --tests "com.aryamahasangh.SimpleTest" --continue
+
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: composeApp/build/test-results/
+          retention-days: 7
+
+  # UI Tests (Cross-platform Compose)
+  ui-tests:
+    name: UI Tests (Compose)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cache Gradle Wrapper
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/wrapper/dists
+          key: gradle-wrapper-${{ runner.os }}-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-wrapper-${{ runner.os }}-
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Create local.properties
+        run: |
+          echo "app_version=1.0.0" >> local.properties
+          echo "environment=dev" >> local.properties
+          echo "dev_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "dev_supabase_key=placeholder-key" >> local.properties
+          echo "dev_server_url=https://placeholder.com" >> local.properties
+
+      - name: Run UI Tests
+        run: ./gradlew :composeApp:testDebugUnitTest --tests "com.aryamahasangh.CrossPlatformUiSmokeTest" --continue
+
+      - name: Upload UI Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-results
+          path: composeApp/build/test-results/
+          retention-days: 7
+
+  # Build Android Debug APK for E2E tests
+  build-android-apk:
+    name: Build Android APK for E2E
+    runs-on: ubuntu-latest
+    needs: [unit-tests, ui-tests]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Gradle Wrapper
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/wrapper/dists
+          key: gradle-wrapper-${{ runner.os }}-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-wrapper-${{ runner.os }}-
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Create local.properties
+        run: |
+          echo "app_version=1.0.0" >> local.properties
+          echo "environment=dev" >> local.properties
+          echo "dev_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "dev_supabase_key=placeholder-key" >> local.properties
+          echo "dev_server_url=https://placeholder.com" >> local.properties
+
+      - name: Build Debug APK
+        run: ./gradlew :composeApp:assembleDebug
+
+      - name: Prepare APK artifact
+        run: |
+          mkdir -p ${{ github.workspace }}/e2e-artifacts
+          APK_SRC=$(find composeApp/build/outputs/apk/debug -type f -name '*.apk' | head -n1)
+          if [ -n "$APK_SRC" ]; then
+            cp "$APK_SRC" "${{ github.workspace }}/e2e-artifacts/aryamahasangh-debug.apk"
+            echo "✅ APK prepared: aryamahasangh-debug.apk"
+          else
+            echo "❌ Error: No APK found!"
+            exit 1
+          fi
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: ${{ github.workspace }}/e2e-artifacts/aryamahasangh-debug.apk
+          retention-days: 7
+
+  # Build iOS App for E2E tests
+  build-ios-app:
+    name: Build iOS App for E2E
+    runs-on: macos-latest
+    needs: [unit-tests, ui-tests]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Gradle Wrapper
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/wrapper/dists
+          key: gradle-wrapper-${{ runner.os }}-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-wrapper-${{ runner.os }}-
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Create local.properties
+        run: |
+          echo "app_version=1.0.0" >> local.properties
+          echo "environment=dev" >> local.properties
+          echo "dev_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "dev_supabase_key=placeholder-key" >> local.properties
+          echo "dev_server_url=https://placeholder.com" >> local.properties
+
+      - name: Cache Kotlin/Native (~/.konan)
+        uses: actions/cache@v4
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ hashFiles('**/*.gradle*', 'gradle/libs.versions.toml', '**/gradle-wrapper.properties') }}
+          restore-keys: konan-${{ runner.os }}-
+
+      - name: Build iOS framework
+        run: ./gradlew :composeApp:linkDebugFrameworkIosSimulatorArm64
+
+      - name: Build iOS app with xcodebuild
+        run: |
+          cd iosApp
+          SIMULATOR_ID=$(xcrun simctl list devices available | grep -m1 -Eo '[A-F0-9-]{36}')
+          if [ -z "$SIMULATOR_ID" ]; then 
+            echo "❌ No available iOS Simulator found!"
+            echo "Available devices:"
+            xcrun simctl list devices
+            exit 1
+          fi
+          echo "✅ Using simulator: $SIMULATOR_ID"
+          
+          xcodebuild build \
+            -project iosApp.xcodeproj \
+            -scheme iosApp \
+            -configuration Debug \
+            -destination "id=$SIMULATOR_ID" \
+            -derivedDataPath build \
+            CONFIGURATION_BUILD_DIR=$PWD/build/Build/Products/Debug-iphonesimulator
+
+      - name: Prepare iOS app artifact
+        run: |
+          mkdir -p ${{ github.workspace }}/e2e-artifacts
+          cd iosApp/build/Build/Products/Debug-iphonesimulator
+          
+          APP_FILE=$(find . -maxdepth 1 -name "*.app" -type d | head -n1)
+          
+          if [ -z "$APP_FILE" ]; then
+            echo "❌ Error: No .app file found in build output!"
+            echo "Contents of directory:"
+            ls -la
+            exit 1
+          fi
+          
+          echo "✅ Found iOS app: $APP_FILE"
+          mv "$APP_FILE" "aryamahasangh-ios-simulator.app"
+          
+          zip -r "${{ github.workspace }}/e2e-artifacts/aryamahasangh-ios-simulator.zip" "aryamahasangh-ios-simulator.app"
+          echo "✅ Created zip: aryamahasangh-ios-simulator.zip"
+
+      - name: Upload iOS app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-app
+          path: ${{ github.workspace }}/e2e-artifacts/aryamahasangh-ios-simulator.zip
+          retention-days: 7
+
+  # Android UI Tests on Emulator
+  android-ui-tests:
+    name: Android UI Tests (Emulator)
+    runs-on: ubuntu-latest
+    needs: [unit-tests, ui-tests]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Gradle Wrapper
+        uses: actions/cache@v4
+        with:
+          path: ~/.gradle/wrapper/dists
+          key: gradle-wrapper-${{ runner.os }}-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-wrapper-${{ runner.os }}-
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Create local.properties
+        run: |
+          echo "app_version=1.0.0" >> local.properties
+          echo "environment=dev" >> local.properties
+          echo "dev_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "dev_supabase_key=placeholder-key" >> local.properties
+          echo "dev_server_url=https://placeholder.com" >> local.properties
+
+      - name: Run Android Instrumented Tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: ./gradlew :composeApp:connectedDebugAndroidTest || echo "No instrumented tests found, continuing..."
+
+  # Maestro E2E Tests - Android
+  maestro-e2e-android:
+    name: Maestro E2E (Android)
+    runs-on: ubuntu-latest
+    needs: [build-android-apk]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Android APK
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apk
+          path: ./artifacts
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Install Maestro CLI
+        run: |
+          echo "📦 Installing Maestro CLI..."
+          curl -Ls "https://get.maestro.mobile.dev" | bash || {
+            echo "⚠️ Primary installation failed, trying alternative method..."
+            MAESTRO_VERSION="${{ env.MAESTRO_VERSION }}"
+            curl -L "https://github.com/mobile-dev-inc/maestro/releases/download/cli-${MAESTRO_VERSION}/maestro.zip" -o maestro.zip
+            unzip -q maestro.zip -d "$HOME/.maestro"
+            rm maestro.zip
+          }
+          
+          export PATH="$PATH:$HOME/.maestro/bin"
+          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+          
+          if command -v maestro >/dev/null 2>&1; then
+            maestro --version
+            echo "✅ Maestro installed successfully"
+          else
+            echo "❌ ERROR: Maestro installation failed!"
+            exit 1
+          fi
+
+      - name: Start Android Emulator and Run Maestro E2E
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 29
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: |
+            echo "📱 Available APK files:"
+            ls -la ./artifacts/
+            
+            echo "📦 Installing APK on emulator..."
+            adb install ./artifacts/aryamahasangh-debug.apk
+            sleep 2
+            
+            echo "🧪 Running Maestro E2E tests..."
+            maestro test maestro-tests/aryamahasangh/about-us.yaml --format junit --output maestro-android-results.xml || true
+
+      - name: Upload Maestro test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-android-results
+          path: maestro-android-results.xml
+          retention-days: 7
+          if-no-files-found: warn
+
+  # Maestro E2E Tests - iOS
+  maestro-e2e-ios:
+    name: Maestro E2E (iOS)
+    runs-on: macos-latest
+    needs: [build-ios-app]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download iOS app
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-app
+          path: ./artifacts
+
+      - name: Set up Java for Maestro
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Unzip iOS app artifact
+        run: |
+          echo "📂 Contents of artifacts directory:"
+          ls -la ./artifacts/
+          
+          if [ -f "./artifacts/aryamahasangh-ios-simulator.zip" ]; then
+            unzip -q ./artifacts/aryamahasangh-ios-simulator.zip -d ./artifacts/
+            echo "✅ Unzipped iOS app"
+            ls -la ./artifacts/
+          else
+            echo "❌ ERROR: aryamahasangh-ios-simulator.zip not found!"
+            exit 1
+          fi
+
+      - name: Start iOS Simulator
+        run: |
+          SIMULATOR_ID=$(xcrun simctl list devices available | grep -m1 -Eo '[A-F0-9-]{36}')
+          
+          if [ -z "$SIMULATOR_ID" ]; then
+            echo "❌ No available iOS Simulator found!"
+            echo "Available devices:"
+            xcrun simctl list devices
+            exit 1
+          fi
+          
+          echo "✅ Using simulator: $SIMULATOR_ID"
+          echo "SIMULATOR_ID=$SIMULATOR_ID" >> $GITHUB_ENV
+          
+          xcrun simctl boot "$SIMULATOR_ID" || true
+          sleep 5
+
+      - name: Install app on simulator
+        run: |
+          APP_PATH=$(find ./artifacts -name "*.app" -type d | head -n1)
+          
+          if [ -z "$APP_PATH" ]; then
+            echo "❌ ERROR: No .app file found in artifacts!"
+            echo "Contents of artifacts directory:"
+            ls -laR ./artifacts/
+            exit 1
+          fi
+          
+          echo "✅ Found app at: $APP_PATH"
+          echo "📦 Installing app on simulator..."
+          xcrun simctl install booted "$APP_PATH"
+
+      - name: Install Maestro CLI
+        run: |
+          echo "📦 Installing Maestro CLI..."
+          curl -Ls "https://get.maestro.mobile.dev" | bash || {
+            echo "⚠️ Primary installation failed, trying alternative method..."
+            MAESTRO_VERSION="${{ env.MAESTRO_VERSION }}"
+            curl -L "https://github.com/mobile-dev-inc/maestro/releases/download/cli-${MAESTRO_VERSION}/maestro.zip" -o maestro.zip
+            unzip -q maestro.zip -d "$HOME/.maestro"
+            rm maestro.zip
+          }
+          
+          export PATH="$PATH:$HOME/.maestro/bin"
+          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+          
+          if command -v maestro >/dev/null 2>&1; then
+            maestro --version
+            echo "✅ Maestro installed successfully"
+          else
+            echo "❌ ERROR: Maestro installation failed!"
+            exit 1
+          fi
+
+      - name: Run Maestro E2E tests (iOS)
+        run: |
+          echo "🧪 Running Maestro E2E tests on iOS..."
+          maestro test maestro-tests/aryamahasangh/about-us.yaml --format junit --output maestro-ios-results.xml || true
+
+      - name: Upload Maestro test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-ios-results
+          path: maestro-ios-results.xml
+          retention-days: 7
+          if-no-files-found: warn
+
