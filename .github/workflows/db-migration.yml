@@ -1,0 +1,263 @@
+name: 🗄️ Database Migration
+
+on:
+  workflow_call:
+    inputs:
+      source_env:
+        description: 'Source environment (e.g., dev)'
+        required: true
+        type: string
+      target_env:
+        description: 'Target environment (e.g., staging or prod)'
+        required: true
+        type: string
+      app_version:
+        description: 'App version being deployed'
+        required: true
+        type: string
+    secrets:
+      SOURCE_SUPABASE_URL:
+        required: true
+      SOURCE_SUPABASE_KEY:
+        required: true
+      SOURCE_SUPABASE_DB_PASSWORD:
+        required: true
+      TARGET_SUPABASE_URL:
+        required: true
+      TARGET_SUPABASE_KEY:
+        required: true
+      TARGET_SUPABASE_DB_PASSWORD:
+        required: true
+      SUPABASE_ACCESS_TOKEN:
+        required: true
+
+jobs:
+  check-schema-diff:
+    name: 🔍 Check Schema Differences
+    runs-on: ubuntu-latest
+    outputs:
+      has_changes: ${{ steps.diff.outputs.has_changes }}
+      migration_needed: ${{ steps.diff.outputs.migration_needed }}
+      has_breaking_changes: ${{ steps.check-breaking.outputs.has_breaking }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Check schema differences
+        id: diff
+        run: |
+          echo "🔍 Comparing schema: ${{ inputs.source_env }} → ${{ inputs.target_env }}"
+          
+          # Extract project refs from URLs
+          SOURCE_REF=$(echo "${{ secrets.SOURCE_SUPABASE_URL }}" | sed 's|https://||' | cut -d'.' -f1)
+          TARGET_REF=$(echo "${{ secrets.TARGET_SUPABASE_URL }}" | sed 's|https://||' | cut -d'.' -f1)
+          
+          # Link to source project
+          supabase link --project-ref $SOURCE_REF
+          
+          # Generate migration from source
+          supabase db diff --linked --schema public,auth,storage > /tmp/pending_migration.sql || true
+          
+          # Check if there are actual changes
+          if [ -s /tmp/pending_migration.sql ] && grep -v "^--" /tmp/pending_migration.sql | grep -q "[^[:space:]]"; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+            echo "migration_needed=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Schema differences detected!"
+            echo "### 📋 Pending Migration" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`sql" >> $GITHUB_STEP_SUMMARY
+            cat /tmp/pending_migration.sql >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            echo "migration_needed=false" >> $GITHUB_OUTPUT
+            echo "✅ No schema differences detected"
+            echo "### ✅ Schema in Sync" >> $GITHUB_STEP_SUMMARY
+            echo "No migration needed - schemas are identical" >> $GITHUB_STEP_SUMMARY
+          fi
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Check for breaking changes
+        id: check-breaking
+        if: steps.diff.outputs.has_changes == 'true'
+        run: |
+          # Check for potentially breaking changes
+          BREAKING=false
+          
+          # Check for DROP COLUMN (breaking)
+          if grep -i "DROP COLUMN" /tmp/pending_migration.sql; then
+            echo "⚠️ WARNING: DROP COLUMN detected - potentially breaking change!"
+            BREAKING=true
+          fi
+          
+          # Check for ALTER COLUMN TYPE (potentially breaking)
+          if grep -i "ALTER COLUMN.*TYPE" /tmp/pending_migration.sql; then
+            echo "⚠️ WARNING: ALTER COLUMN TYPE detected - potentially breaking change!"
+            BREAKING=true
+          fi
+          
+          # Check for DROP TABLE (breaking)
+          if grep -i "DROP TABLE" /tmp/pending_migration.sql; then
+            echo "⚠️ WARNING: DROP TABLE detected - breaking change!"
+            BREAKING=true
+          fi
+          
+          # Check for NOT NULL constraints on existing columns (potentially breaking)
+          if grep -i "ALTER.*NOT NULL" /tmp/pending_migration.sql; then
+            echo "⚠️ WARNING: NOT NULL constraint detected - potentially breaking change!"
+            BREAKING=true
+          fi
+          
+          if [ "$BREAKING" = true ]; then
+            echo "has_breaking=true" >> $GITHUB_OUTPUT
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "### ⚠️ BREAKING CHANGES DETECTED" >> $GITHUB_STEP_SUMMARY
+            echo "This migration contains potentially breaking changes." >> $GITHUB_STEP_SUMMARY
+            echo "Review carefully before proceeding!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "has_breaking=false" >> $GITHUB_OUTPUT
+            echo "### ✅ No Breaking Changes" >> $GITHUB_STEP_SUMMARY
+            echo "Migration appears to be backward-compatible" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload migration file
+        if: steps.diff.outputs.has_changes == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: aryamahasangh-app-migration-${{ inputs.source_env }}-to-${{ inputs.target_env }}-${{ inputs.app_version }}
+          path: /tmp/pending_migration.sql
+          retention-days: 30
+
+  run-migration:
+    name: 🚀 Run Migration
+    runs-on: ubuntu-latest
+    needs: [check-schema-diff]
+    if: needs.check-schema-diff.outputs.migration_needed == 'true'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Download migration file
+        uses: actions/download-artifact@v4
+        with:
+          name: aryamahasangh-app-migration-${{ inputs.source_env }}-to-${{ inputs.target_env }}-${{ inputs.app_version }}
+          path: /tmp
+
+      - name: Backup target database
+        run: |
+          echo "📦 Creating backup of ${{ inputs.target_env }} database..."
+          
+          TARGET_REF=$(echo "${{ secrets.TARGET_SUPABASE_URL }}" | sed 's|https://||' | cut -d'.' -f1)
+          
+          # Link to target project
+          supabase link --project-ref $TARGET_REF
+          
+          # Create backup using pg_dump
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          BACKUP_FILE="/tmp/aryamahasangh-app-db-backup-${{ inputs.target_env }}-${TIMESTAMP}.sql"
+          
+          supabase db dump --data-only > $BACKUP_FILE
+          
+          echo "✅ Backup created: $BACKUP_FILE"
+          echo "backup_file=${BACKUP_FILE}" >> $GITHUB_ENV
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Upload backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: aryamahasangh-app-db-backup-${{ inputs.target_env }}-${{ inputs.app_version }}
+          path: ${{ env.backup_file }}
+          retention-days: 90
+
+      - name: Run migration on target
+        run: |
+          echo "🚀 Applying migration to ${{ inputs.target_env }}..."
+          
+          TARGET_REF=$(echo "${{ secrets.TARGET_SUPABASE_URL }}" | sed 's|https://||' | cut -d'.' -f1)
+          
+          # Link to target project
+          supabase link --project-ref $TARGET_REF
+          
+          # Apply migration
+          supabase db push < /tmp/pending_migration.sql
+          
+          echo "✅ Migration applied successfully!"
+          
+          echo "### 🚀 Migration Applied" >> $GITHUB_STEP_SUMMARY
+          echo "Target: **${{ inputs.target_env }}**" >> $GITHUB_STEP_SUMMARY
+          echo "Version: **${{ inputs.app_version }}**" >> $GITHUB_STEP_SUMMARY
+          echo "Timestamp: $(date)" >> $GITHUB_STEP_SUMMARY
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Verify migration
+        run: |
+          echo "🔍 Verifying migration..."
+          
+          TARGET_REF=$(echo "${{ secrets.TARGET_SUPABASE_URL }}" | sed 's|https://||' | cut -d'.' -f1)
+          
+          # Check if migration was successful by comparing schemas again
+          supabase link --project-ref $TARGET_REF
+          supabase db diff --linked --schema public,auth,storage > /tmp/post_migration_diff.sql || true
+          
+          if [ -s /tmp/post_migration_diff.sql ] && grep -v "^--" /tmp/post_migration_diff.sql | grep -q "[^[:space:]]"; then
+            echo "⚠️ WARNING: Schemas still differ after migration!"
+            echo "### ⚠️ Post-Migration Diff" >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`sql" >> $GITHUB_STEP_SUMMARY
+            cat /tmp/post_migration_diff.sql >> $GITHUB_STEP_SUMMARY
+            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "✅ Migration verified - schemas are now in sync!"
+          fi
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+  migration-summary:
+    name: 📊 Migration Summary
+    runs-on: ubuntu-latest
+    needs: [check-schema-diff, run-migration]
+    if: always()
+    steps:
+      - name: Create summary
+        run: |
+          echo "## 🗄️ Database Migration Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Source:** ${{ inputs.source_env }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Target:** ${{ inputs.target_env }}" >> $GITHUB_STEP_SUMMARY
+          echo "**App Version:** ${{ inputs.app_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Timestamp:** $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.check-schema-diff.outputs.migration_needed }}" = "true" ]; then
+            if [ "${{ needs.check-schema-diff.outputs.has_breaking_changes }}" = "true" ]; then
+              echo "### ⚠️ Breaking Changes Detected" >> $GITHUB_STEP_SUMMARY
+              echo "This migration may cause compatibility issues with old app versions." >> $GITHUB_STEP_SUMMARY
+              echo "Ensure backward compatibility or use blue-green deployment." >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+            
+            if [ "${{ needs.run-migration.result }}" = "success" ]; then
+              echo "### ✅ Migration Successful" >> $GITHUB_STEP_SUMMARY
+              echo "Database schemas are now in sync" >> $GITHUB_STEP_SUMMARY
+              echo "✅ Backup created and uploaded" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "### ❌ Migration Failed" >> $GITHUB_STEP_SUMMARY
+              echo "Please check logs and restore from backup if needed" >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "### ℹ️ No Migration Needed" >> $GITHUB_STEP_SUMMARY
+            echo "Schemas were already in sync" >> $GITHUB_STEP_SUMMARY
+          fi
+

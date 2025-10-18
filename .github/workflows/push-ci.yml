@@ -14,6 +14,7 @@ on:
       - 'build.gradle.kts'
       - '.github/workflows/**'
       - 'maestro-tests/**'
+      - 'supabase/**'  # Trigger on database changes
   pull_request:
     paths:
       - 'composeApp/**'
@@ -23,6 +24,7 @@ on:
       - 'build.gradle.kts'
       - '.github/workflows/**'
       - 'maestro-tests/**'
+      - 'supabase/**'  # Trigger on database changes
 
 permissions:
   contents: read
@@ -148,11 +150,174 @@ jobs:
             composeApp/build/dist/wasmJs/productionExecutable/
           retention-days: 7
 
-  build-deploy-staging:
-    name: Build & Deploy Staging
+  # Database migration for staging (runs in dev environment to get source secrets)
+  migrate-to-staging:
+    name: 🗄️ Migrate DB to Staging
     runs-on: ubuntu-latest
     needs: [ci, parse-version]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    environment: dev  # Access dev secrets as SOURCE
+    outputs:
+      migration_needed: ${{ steps.check-diff.outputs.migration_needed }}
+      has_breaking: ${{ steps.check-diff.outputs.has_breaking }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Get staging secrets from environment
+        id: get-staging-secrets
+        run: |
+          # We'll get these from the staging job that follows
+          echo "Staging secrets will be accessed in staging environment job"
+
+      - name: Check schema differences
+        id: check-diff
+        env:
+          DEV_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN_DEV_STAGING }}
+        run: |
+          echo "🔍 Comparing schema: dev → staging"
+          
+          # Extract project refs
+          DEV_REF=$(echo "$DEV_SUPABASE_URL" | sed 's|https://||' | cut -d'.' -f1)
+          
+          # Link to dev project
+          supabase link --project-ref $DEV_REF
+          
+          # Generate migration from dev
+          supabase db diff --linked --schema public,auth,storage > /tmp/pending_migration.sql || true
+          
+          # Check if there are actual changes
+          if [ -s /tmp/pending_migration.sql ] && grep -v "^--" /tmp/pending_migration.sql | grep -q "[^[:space:]]"; then
+            echo "migration_needed=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Schema differences detected!"
+          else
+            echo "migration_needed=false" >> $GITHUB_OUTPUT
+            echo "✅ No schema differences detected"
+          fi
+          
+          # Check for breaking changes
+          BREAKING=false
+          if grep -qi "DROP COLUMN\|DROP TABLE\|ALTER COLUMN.*TYPE\|ALTER.*NOT NULL" /tmp/pending_migration.sql 2>/dev/null; then
+            BREAKING=true
+            echo "has_breaking=true" >> $GITHUB_OUTPUT
+            echo "⚠️ WARNING: Breaking changes detected!"
+          else
+            echo "has_breaking=false" >> $GITHUB_OUTPUT
+          fi
+          
+          # Upload migration file
+          mkdir -p /tmp/artifacts
+          cp /tmp/pending_migration.sql /tmp/artifacts/ 2>/dev/null || true
+
+      - name: Upload migration SQL
+        if: steps.check-diff.outputs.migration_needed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: aryamahasangh-app-migration-dev-to-staging-${{ needs.parse-version.outputs.version_staging }}
+          path: /tmp/artifacts/pending_migration.sql
+          retention-days: 30
+
+  apply-migration-to-staging:
+    name: 🚀 Apply Migration to Staging
+    runs-on: ubuntu-latest
+    needs: [parse-version, migrate-to-staging]
+    if: needs.migrate-to-staging.outputs.migration_needed == 'true'
+    environment: staging  # Access staging secrets as TARGET
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Download migration file
+        uses: actions/download-artifact@v4
+        with:
+          name: aryamahasangh-app-migration-dev-to-staging-${{ needs.parse-version.outputs.version_staging }}
+          path: /tmp
+
+      - name: Backup staging database
+        env:
+          STAGING_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN_DEV_STAGING }}
+        run: |
+          echo "📦 Creating backup of staging database..."
+          
+          STAGING_REF=$(echo "$STAGING_SUPABASE_URL" | sed 's|https://||' | cut -d'.' -f1)
+          
+          # Link to staging project
+          supabase link --project-ref $STAGING_REF
+          
+          # Create backup
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          BACKUP_FILE="/tmp/aryamahasangh-app-db-backup-staging-${TIMESTAMP}.sql"
+          
+          supabase db dump --data-only > $BACKUP_FILE
+          
+          echo "✅ Backup created"
+          echo "backup_file=${BACKUP_FILE}" >> $GITHUB_ENV
+
+      - name: Upload backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: aryamahasangh-app-db-backup-staging-${{ needs.parse-version.outputs.version_staging }}
+          path: ${{ env.backup_file }}
+          retention-days: 90
+
+      - name: Apply migration to staging
+        env:
+          STAGING_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN_DEV_STAGING }}
+        run: |
+          echo "🚀 Applying migration to staging..."
+          
+          STAGING_REF=$(echo "$STAGING_SUPABASE_URL" | sed 's|https://||' | cut -d'.' -f1)
+          
+          # Link to staging project
+          supabase link --project-ref $STAGING_REF
+          
+          # Apply migration
+          supabase db push < /tmp/pending_migration.sql
+          
+          echo "✅ Migration applied successfully!"
+
+      - name: Verify migration
+        env:
+          STAGING_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN_DEV_STAGING }}
+        run: |
+          echo "🔍 Verifying migration..."
+          
+          STAGING_REF=$(echo "$STAGING_SUPABASE_URL" | sed 's|https://||' | cut -d'.' -f1)
+          
+          # Check if migration was successful
+          supabase link --project-ref $STAGING_REF
+          supabase db diff --linked --schema public,auth,storage > /tmp/post_migration_diff.sql || true
+          
+          if [ -s /tmp/post_migration_diff.sql ] && grep -v "^--" /tmp/post_migration_diff.sql | grep -q "[^[:space:]]"; then
+            echo "⚠️ WARNING: Schemas still differ after migration!"
+            exit 1
+          else
+            echo "✅ Migration verified - schemas are now in sync!"
+          fi
+
+  build-deploy-staging:
+    name: Build & Deploy Staging
+    runs-on: ubuntu-latest
+    needs: [ci, parse-version, migrate-to-staging, apply-migration-to-staging]  # Wait for migration
+    if: |
+      always() && 
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') &&
+      (needs.migrate-to-staging.outputs.migration_needed == 'false' || needs.apply-migration-to-staging.result == 'success')
     environment: staging
     steps:
       - name: Checkout repository
@@ -206,16 +371,15 @@ jobs:
           mkdir -p artifacts
           APK_SRC=$(find composeApp/build/outputs/apk/release -type f -name '*-release.apk' | head -n1)
           if [ -n "$APK_SRC" ]; then
-            cp "$APK_SRC" "artifacts/AryaMahasangh-${{ needs.parse-version.outputs.version_staging }}.apk"
+            cp "$APK_SRC" "artifacts/aryamahasangh-app-android-${{ needs.parse-version.outputs.version_staging }}.apk"
           fi
 
       - name: Upload Staging Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: staging-artifacts-${{ needs.parse-version.outputs.version_staging }}
+          name: aryamahasangh-app-staging-${{ needs.parse-version.outputs.version_staging }}
           path: |
             artifacts/
-            composeApp/build/dist/wasmJs/productionExecutable/
           retention-days: 30
 
   build-report:
