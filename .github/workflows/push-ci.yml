@@ -273,9 +273,8 @@ jobs:
             if echo "$PULL_OUTPUT" | grep -q "Remote migration versions not found"; then
               echo "🔧 Detected remote-only migrations, extracting IDs..."
               
-              # Extract migration IDs from the error message
-              # The error suggests: supabase migration repair --status reverted <ids>
-              MIGRATION_IDS=$(echo "$PULL_OUTPUT" | grep "supabase migration repair" | sed 's/.*--status reverted //')
+              # Extract 14-digit migration IDs robustly from the error message
+              MIGRATION_IDS=$(echo "$PULL_OUTPUT" | grep -Eo '[0-9]{14}' | xargs)
               
               if [ -n "$MIGRATION_IDS" ]; then
                 echo "📝 Found migration IDs to repair: $MIGRATION_IDS"
@@ -284,7 +283,7 @@ jobs:
                 # Run the repair command with the extracted IDs
                 supabase migration repair --status reverted $MIGRATION_IDS || {
                   echo "⚠️ Repair command failed, trying alternative approach..."
-                  # Alternative: Mark all migrations as applied
+                  # Alternative: Mark all local migrations as applied to align state
                   supabase migration repair --status applied || true
                 }
                 
@@ -354,8 +353,31 @@ jobs:
           # Link to staging project
           supabase link --project-ref $STAGING_REF
           
-          # Apply migration using db push (handles existing migrations better)
-          cat /tmp/pending_migration.sql | supabase db push
+          # Pre-apply sanity: ensure local migrations don't block execution (repair if needed)
+          echo "🔎 Pre-check: syncing/repairing migration history if needed..."
+          PRE_PULL_OUTPUT=$(supabase db pull --schema public,auth,storage 2>&1) || PRE_PULL_FAILED=true
+          if [ "$PRE_PULL_FAILED" = "true" ]; then
+            if echo "$PRE_PULL_OUTPUT" | grep -q "Remote migration versions not found"; then
+              IDS=$(echo "$PRE_PULL_OUTPUT" | grep -Eo '[0-9]{14}' | xargs)
+              if [ -n "$IDS" ]; then
+                echo "🔧 Repairing remote-only migrations: $IDS"
+                supabase migration repair --status reverted $IDS || true
+                supabase db pull --schema public,auth,storage || true
+              else
+                echo "⚠️ Could not parse IDs; attempting generic repair"
+                supabase migration repair --status applied || true
+              fi
+            fi
+          fi
+          
+          # Apply the generated SQL directly to staging
+          if [ ! -s /tmp/pending_migration.sql ] || ! grep -v "^--" /tmp/pending_migration.sql | grep -q "[^[:space:]]"; then
+            echo "ℹ️ No-op: pending_migration.sql is empty or comments only"
+            exit 0
+          fi
+          
+          echo "📜 Executing migration SQL on staging..."
+          supabase db execute --file /tmp/pending_migration.sql
           
           echo "✅ Migration applied successfully!"
 
