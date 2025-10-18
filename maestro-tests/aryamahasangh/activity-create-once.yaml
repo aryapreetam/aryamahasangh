@@ -105,7 +105,6 @@ appId: com.aryamahasangh
     direction: DOWN
 - assertVisible: "पंजीकरण"
 - assertVisible: "पंजीकरण चालू"
-
 ## Ensure top app bar shows hamburger (if back is visible, go back first)
 #- runFlow:
 #    when:

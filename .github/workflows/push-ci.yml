@@ -32,6 +32,48 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Parse version from gradle.properties (source of truth)
+  parse-version:
+    name: 📋 Parse Version from gradle.properties
+    runs-on: ubuntu-latest
+    outputs:
+      base_version: ${{ steps.version.outputs.base_version }}
+      version_dev: ${{ steps.version.outputs.version_dev }}
+      version_staging: ${{ steps.version.outputs.version_staging }}
+      version_code: ${{ steps.version.outputs.version_code }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Parse version from gradle.properties
+        id: version
+        run: |
+          # Read version from gradle.properties
+          MAJOR=$(grep '^version.major=' gradle.properties | cut -d'=' -f2)
+          MINOR=$(grep '^version.minor=' gradle.properties | cut -d'=' -f2)
+          PATCH=$(grep '^version.patch=' gradle.properties | cut -d'=' -f2)
+          
+          BASE_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          
+          # Calculate version code (same logic as AppConfig.calculateVersionCode)
+          VERSION_CODE=$((MAJOR * 10000 + MINOR * 100 + PATCH))
+          
+          # Generate environment-specific versions
+          VERSION_DEV="${BASE_VERSION}-dev-${SHORT_SHA}"
+          VERSION_STAGING="${BASE_VERSION}-staging"
+          
+          echo "base_version=${BASE_VERSION}" >> $GITHUB_OUTPUT
+          echo "version_dev=${VERSION_DEV}" >> $GITHUB_OUTPUT
+          echo "version_staging=${VERSION_STAGING}" >> $GITHUB_OUTPUT
+          echo "version_code=${VERSION_CODE}" >> $GITHUB_OUTPUT
+          
+          echo "📦 Generated versions:"
+          echo "  Base: ${BASE_VERSION}"
+          echo "  Dev: ${VERSION_DEV}"
+          echo "  Staging: ${VERSION_STAGING}"
+          echo "  Version Code: ${VERSION_CODE}"
+
   ci:
     name: Run All Tests & Builds
     uses: ./.github/workflows/ci-reusable.yml
@@ -39,8 +81,8 @@ jobs:
   build-deploy-dev:
     name: Build & Deploy Dev
     runs-on: ubuntu-latest
-    needs: [ci]
-    if: github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/develop'
+    needs: [ci, parse-version]
+    if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
     environment: dev
     steps:
       - name: Checkout repository
@@ -57,7 +99,7 @@ jobs:
 
       - name: Create local.properties for Dev
         run: |
-          echo "app_version=1.0.${{ github.run_number }}" >> local.properties
+          echo "app_version=${{ needs.parse-version.outputs.base_version }}" >> local.properties
           echo "environment=dev" >> local.properties
           echo "dev_supabase_url=${{ secrets.SUPABASE_URL }}" >> local.properties
           echo "dev_supabase_key=${{ secrets.SUPABASE_KEY }}" >> local.properties
@@ -78,7 +120,7 @@ jobs:
           publish-dir: './composeApp/build/dist/wasmJs/productionExecutable'
           production-branch: dev
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: '🚀 Dev v1.0.${{ github.run_number }} - ${{ github.sha }}'
+          deploy-message: '🚀 Dev ${{ needs.parse-version.outputs.version_dev }} - ${{ github.sha }}'
           enable-pull-request-comment: false
           enable-commit-comment: true
           enable-commit-status: true
@@ -89,19 +131,27 @@ jobs:
       - name: Build Android APK for Dev
         run: ./gradlew :composeApp:assembleDebug
 
+      - name: Rename APK with version
+        run: |
+          mkdir -p artifacts
+          APK_SRC=$(find composeApp/build/outputs/apk/debug -type f -name '*-debug.apk' | head -n1)
+          if [ -n "$APK_SRC" ]; then
+            cp "$APK_SRC" "artifacts/AryaMahasangh-${{ needs.parse-version.outputs.version_dev }}.apk"
+          fi
+
       - name: Upload Dev Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: dev-artifacts-${{ github.run_number }}
+          name: dev-artifacts-${{ needs.parse-version.outputs.version_dev }}
           path: |
-            composeApp/build/outputs/apk/debug/*.apk
+            artifacts/
             composeApp/build/dist/wasmJs/productionExecutable/
           retention-days: 7
 
   build-deploy-staging:
     name: Build & Deploy Staging
     runs-on: ubuntu-latest
-    needs: [ci]
+    needs: [ci, parse-version]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     environment: staging
     steps:
@@ -119,7 +169,7 @@ jobs:
 
       - name: Create local.properties for Staging
         run: |
-          echo "app_version=1.0.${{ github.run_number }}" >> local.properties
+          echo "app_version=${{ needs.parse-version.outputs.base_version }}" >> local.properties
           echo "environment=staging" >> local.properties
           echo "dev_supabase_url=https://placeholder.supabase.co" >> local.properties
           echo "dev_supabase_key=placeholder-key" >> local.properties
@@ -140,7 +190,7 @@ jobs:
           publish-dir: './composeApp/build/dist/wasmJs/productionExecutable'
           production-branch: main
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: '🚀 Staging v1.0.${{ github.run_number }} - ${{ github.sha }}'
+          deploy-message: '🚀 Staging ${{ needs.parse-version.outputs.version_staging }} - ${{ github.sha }}'
           enable-pull-request-comment: false
           enable-commit-comment: true
           enable-commit-status: true
@@ -151,19 +201,27 @@ jobs:
       - name: Build Android Release APK for Staging
         run: ./gradlew :composeApp:assembleRelease
 
+      - name: Rename APK with version
+        run: |
+          mkdir -p artifacts
+          APK_SRC=$(find composeApp/build/outputs/apk/release -type f -name '*-release.apk' | head -n1)
+          if [ -n "$APK_SRC" ]; then
+            cp "$APK_SRC" "artifacts/AryaMahasangh-${{ needs.parse-version.outputs.version_staging }}.apk"
+          fi
+
       - name: Upload Staging Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: staging-artifacts-${{ github.run_number }}
+          name: staging-artifacts-${{ needs.parse-version.outputs.version_staging }}
           path: |
-            composeApp/build/outputs/apk/release/*.apk
+            artifacts/
             composeApp/build/dist/wasmJs/productionExecutable/
           retention-days: 30
 
   build-report:
     name: 📊 CI Summary
     runs-on: ubuntu-latest
-    needs: [ci]
+    needs: [ci, parse-version]
     if: always()
     steps:
       - name: Create Summary Report
@@ -173,13 +231,16 @@ jobs:
           echo "### Build Information" >> $GITHUB_STEP_SUMMARY
           echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Run Number**: ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Base Version**: ${{ needs.parse-version.outputs.base_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version Code**: ${{ needs.parse-version.outputs.version_code }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Test Results" >> $GITHUB_STEP_SUMMARY
           echo "- **CI Status**: ${{ needs.ci.result }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ github.ref }}" = "refs/heads/dev" ] || [ "${{ github.ref }}" = "refs/heads/develop" ]; then
+          if [ "${{ github.ref }}" != "refs/heads/main" ] && [ "${{ github.ref }}" != "refs/heads/master" ]; then
             echo "### 🚀 Deployed to Dev Environment" >> $GITHUB_STEP_SUMMARY
+            echo "- **Version**: ${{ needs.parse-version.outputs.version_dev }}" >> $GITHUB_STEP_SUMMARY
           elif [ "${{ github.ref }}" = "refs/heads/main" ] || [ "${{ github.ref }}" = "refs/heads/master" ]; then
             echo "### 🚀 Deployed to Staging Environment" >> $GITHUB_STEP_SUMMARY
+            echo "- **Version**: ${{ needs.parse-version.outputs.version_staging }}" >> $GITHUB_STEP_SUMMARY
           fi

@@ -82,4 +82,3 @@ appId: com.aryamahasangh
 # Verify success message
 - assertVisible:
     text: "आपने सफलतापूर्वक पंजीकरण करा लिया है!"
-
