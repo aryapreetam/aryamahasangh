@@ -62,6 +62,12 @@ jobs:
           echo "dev_supabase_url=${{ secrets.SUPABASE_URL }}" >> local.properties
           echo "dev_supabase_key=${{ secrets.SUPABASE_KEY }}" >> local.properties
           echo "dev_server_url=https://dev-api.aryamahasangh.org" >> local.properties
+          echo "staging_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "staging_supabase_key=placeholder-key" >> local.properties
+          echo "staging_server_url=https://placeholder.com" >> local.properties
+          echo "prod_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "prod_supabase_key=placeholder-key" >> local.properties
+          echo "prod_server_url=https://placeholder.com" >> local.properties
 
       - name: Build Web for Dev
         run: ./gradlew :composeApp:wasmJsBrowserDistribution
@@ -115,9 +121,15 @@ jobs:
         run: |
           echo "app_version=1.0.${{ github.run_number }}" >> local.properties
           echo "environment=staging" >> local.properties
+          echo "dev_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "dev_supabase_key=placeholder-key" >> local.properties
+          echo "dev_server_url=https://placeholder.com" >> local.properties
           echo "staging_supabase_url=${{ secrets.SUPABASE_URL }}" >> local.properties
           echo "staging_supabase_key=${{ secrets.SUPABASE_KEY }}" >> local.properties
           echo "staging_server_url=https://staging-api.aryamahasangh.org" >> local.properties
+          echo "prod_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "prod_supabase_key=placeholder-key" >> local.properties
+          echo "prod_server_url=https://placeholder.com" >> local.properties
 
       - name: Build Web for Staging
         run: ./gradlew :composeApp:wasmJsBrowserDistribution
@@ -171,4 +183,3 @@ jobs:
           elif [ "${{ github.ref }}" = "refs/heads/main" ] || [ "${{ github.ref }}" = "refs/heads/master" ]; then
             echo "### 🚀 Deployed to Staging Environment" >> $GITHUB_STEP_SUMMARY
           fi
-

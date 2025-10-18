@@ -50,6 +50,12 @@ jobs:
           echo "dev_supabase_url=https://placeholder.supabase.co" >> local.properties
           echo "dev_supabase_key=placeholder-key" >> local.properties
           echo "dev_server_url=https://placeholder.com" >> local.properties
+          echo "staging_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "staging_supabase_key=placeholder-key" >> local.properties
+          echo "staging_server_url=https://placeholder.com" >> local.properties
+          echo "prod_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "prod_supabase_key=placeholder-key" >> local.properties
+          echo "prod_server_url=https://placeholder.com" >> local.properties
 
       - name: Run Unit Tests
         run: ./gradlew :composeApp:testDebugUnitTest --tests "com.aryamahasangh.SimpleTest" --continue
@@ -95,6 +101,12 @@ jobs:
           echo "dev_supabase_url=https://placeholder.supabase.co" >> local.properties
           echo "dev_supabase_key=placeholder-key" >> local.properties
           echo "dev_server_url=https://placeholder.com" >> local.properties
+          echo "staging_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "staging_supabase_key=placeholder-key" >> local.properties
+          echo "staging_server_url=https://placeholder.com" >> local.properties
+          echo "prod_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "prod_supabase_key=placeholder-key" >> local.properties
+          echo "prod_server_url=https://placeholder.com" >> local.properties
 
       - name: Run UI Tests
         run: ./gradlew :composeApp:testDebugUnitTest --tests "com.aryamahasangh.CrossPlatformUiSmokeTest" --continue
@@ -139,6 +151,12 @@ jobs:
           echo "dev_supabase_url=https://placeholder.supabase.co" >> local.properties
           echo "dev_supabase_key=placeholder-key" >> local.properties
           echo "dev_server_url=https://placeholder.com" >> local.properties
+          echo "staging_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "staging_supabase_key=placeholder-key" >> local.properties
+          echo "staging_server_url=https://placeholder.com" >> local.properties
+          echo "prod_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "prod_supabase_key=placeholder-key" >> local.properties
+          echo "prod_server_url=https://placeholder.com" >> local.properties
 
       - name: Build Debug APK
         run: ./gradlew :composeApp:assembleDebug
@@ -194,6 +212,12 @@ jobs:
           echo "dev_supabase_url=https://placeholder.supabase.co" >> local.properties
           echo "dev_supabase_key=placeholder-key" >> local.properties
           echo "dev_server_url=https://placeholder.com" >> local.properties
+          echo "staging_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "staging_supabase_key=placeholder-key" >> local.properties
+          echo "staging_server_url=https://placeholder.com" >> local.properties
+          echo "prod_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "prod_supabase_key=placeholder-key" >> local.properties
+          echo "prod_server_url=https://placeholder.com" >> local.properties
 
       - name: Cache Kotlin/Native (~/.konan)
         uses: actions/cache@v4
@@ -290,6 +314,12 @@ jobs:
           echo "dev_supabase_url=https://placeholder.supabase.co" >> local.properties
           echo "dev_supabase_key=placeholder-key" >> local.properties
           echo "dev_server_url=https://placeholder.com" >> local.properties
+          echo "staging_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "staging_supabase_key=placeholder-key" >> local.properties
+          echo "staging_server_url=https://placeholder.com" >> local.properties
+          echo "prod_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "prod_supabase_key=placeholder-key" >> local.properties
+          echo "prod_server_url=https://placeholder.com" >> local.properties
 
       - name: Run Android Instrumented Tests
         uses: reactivecircus/android-emulator-runner@v2

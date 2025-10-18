@@ -57,6 +57,43 @@ jobs:
           
           echo "🏷️ Version: $VERSION_NAME (Code: $VERSION_CODE)"
 
+  # Run all tests before production build
+  run-tests:
+    name: 🧪 Run All Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Create local.properties
+        run: |
+          echo "app_version=1.0.0" >> local.properties
+          echo "environment=prod" >> local.properties
+          echo "dev_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "dev_supabase_key=placeholder-key" >> local.properties
+          echo "dev_server_url=https://placeholder.com" >> local.properties
+          echo "staging_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "staging_supabase_key=placeholder-key" >> local.properties
+          echo "staging_server_url=https://placeholder.com" >> local.properties
+          echo "prod_supabase_url=https://placeholder.supabase.co" >> local.properties
+          echo "prod_supabase_key=placeholder-key" >> local.properties
+          echo "prod_server_url=https://placeholder.com" >> local.properties
+
+      - name: Run Unit Tests
+        run: ./gradlew :composeApp:testDebugUnitTest --tests "com.aryamahasangh.SimpleTest" --continue
+
+      - name: Run UI Tests
+        run: ./gradlew :composeApp:testDebugUnitTest --tests "com.aryamahasangh.CrossPlatformUiSmokeTest" --continue
+
   # Build Android Release
   build-android:
     name: 📱 Build Android (APK + AAB)
