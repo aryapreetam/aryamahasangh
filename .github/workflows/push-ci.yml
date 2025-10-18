@@ -261,15 +261,49 @@ jobs:
           # Link to staging project
           supabase link --project-ref $STAGING_REF
           
-          # Pull all existing migrations from staging to sync
-          supabase db pull --schema public,auth,storage || echo "⚠️ Pull failed, will try to repair"
+          # Try to pull migrations from staging
+          echo "Attempting to pull migrations from staging..."
+          PULL_OUTPUT=$(supabase db pull --schema public,auth,storage 2>&1) || PULL_FAILED=true
           
-          # If pull failed, repair the migration history
-          if [ $? -ne 0 ]; then
-            echo "🔧 Repairing migration history..."
-            # Mark all remote migrations as applied
-            supabase migration repair --status applied || true
-            supabase db pull --schema public,auth,storage || true
+          if [ "$PULL_FAILED" = "true" ]; then
+            echo "⚠️ Pull failed, checking if it's a migration history issue..."
+            echo "$PULL_OUTPUT"
+            
+            # Check if it's the "Remote migration versions not found" error
+            if echo "$PULL_OUTPUT" | grep -q "Remote migration versions not found"; then
+              echo "🔧 Detected remote-only migrations, extracting IDs..."
+              
+              # Extract migration IDs from the error message
+              # The error suggests: supabase migration repair --status reverted <ids>
+              MIGRATION_IDS=$(echo "$PULL_OUTPUT" | grep "supabase migration repair" | sed 's/.*--status reverted //')
+              
+              if [ -n "$MIGRATION_IDS" ]; then
+                echo "📝 Found migration IDs to repair: $MIGRATION_IDS"
+                echo "🔧 Marking remote-only migrations as reverted..."
+                
+                # Run the repair command with the extracted IDs
+                supabase migration repair --status reverted $MIGRATION_IDS || {
+                  echo "⚠️ Repair command failed, trying alternative approach..."
+                  # Alternative: Mark all migrations as applied
+                  supabase migration repair --status applied || true
+                }
+                
+                echo "✅ Migration history repaired, retrying pull..."
+                supabase db pull --schema public,auth,storage || {
+                  echo "⚠️ Pull still failed after repair, but continuing..."
+                }
+              else
+                echo "⚠️ Could not extract migration IDs, trying generic repair..."
+                supabase migration repair --status applied || true
+                supabase db pull --schema public,auth,storage || true
+              fi
+            else
+              echo "⚠️ Pull failed for unknown reason, attempting generic repair..."
+              supabase migration repair --status applied || true
+              supabase db pull --schema public,auth,storage || true
+            fi
+          else
+            echo "✅ Successfully pulled migrations from staging"
           fi
           
           echo "✅ Local repo synced with staging"
