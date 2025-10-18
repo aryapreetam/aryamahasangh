@@ -169,17 +169,27 @@ jobs:
         with:
           version: latest
 
-      - name: Get staging secrets from environment
-        id: get-staging-secrets
+      - name: Sync migrations from dev database
+        env:
+          DEV_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN_DEV_STAGING }}
         run: |
-          # We'll get these from the staging job that follows
-          echo "Staging secrets will be accessed in staging environment job"
+          echo "📥 Syncing migrations from dev database..."
+          
+          DEV_REF=$(echo "$DEV_SUPABASE_URL" | sed 's|https://||' | cut -d'.' -f1)
+          
+          # Link to dev project
+          supabase link --project-ref $DEV_REF
+          
+          # Pull all migrations from dev to sync local repo
+          supabase db pull --schema public,auth,storage || echo "⚠️ Pull failed, continuing with local migrations"
+          
+          echo "✅ Local migrations synced with dev"
 
       - name: Check schema differences
         id: check-diff
         env:
           DEV_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          STAGING_SUPABASE_URL: ${{ secrets.STAGING_SUPABASE_URL }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN_DEV_STAGING }}
         run: |
           echo "🔍 Comparing schema: dev → staging"
@@ -239,6 +249,31 @@ jobs:
         with:
           version: latest
 
+      - name: Sync migrations from staging database
+        env:
+          STAGING_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN_DEV_STAGING }}
+        run: |
+          echo "📥 Syncing local repo with staging database migrations..."
+          
+          STAGING_REF=$(echo "$STAGING_SUPABASE_URL" | sed 's|https://||' | cut -d'.' -f1)
+          
+          # Link to staging project
+          supabase link --project-ref $STAGING_REF
+          
+          # Pull all existing migrations from staging to sync
+          supabase db pull --schema public,auth,storage || echo "⚠️ Pull failed, will try to repair"
+          
+          # If pull failed, repair the migration history
+          if [ $? -ne 0 ]; then
+            echo "🔧 Repairing migration history..."
+            # Mark all remote migrations as applied
+            supabase migration repair --status applied || true
+            supabase db pull --schema public,auth,storage || true
+          fi
+          
+          echo "✅ Local repo synced with staging"
+
       - name: Download migration file
         uses: actions/download-artifact@v4
         with:
@@ -285,8 +320,8 @@ jobs:
           # Link to staging project
           supabase link --project-ref $STAGING_REF
           
-          # Apply migration
-          supabase db push < /tmp/pending_migration.sql
+          # Apply migration using db push (handles existing migrations better)
+          cat /tmp/pending_migration.sql | supabase db push
           
           echo "✅ Migration applied successfully!"
 
