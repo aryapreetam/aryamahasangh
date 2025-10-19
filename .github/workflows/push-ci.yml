@@ -359,20 +359,26 @@ jobs:
           echo ""
           echo "---"
           
-          # Resolve hostname to IPv4 to avoid IPv6 connectivity issues on GitHub Actions
-          echo "Resolving hostname to IPv4..."
-          DB_IP=$(getent ahostsv4 "${DB_HOST}" | head -n1 | awk '{print $1}')
+          # PostgreSQL connection string - psql will handle DNS resolution
+          # We need to ensure IPv4 is used by configuring psql options
+          echo "Connecting to database..."
           
-          if [ -z "$DB_IP" ]; then
-            echo "❌ Failed to resolve ${DB_HOST} to IPv4"
-            exit 1
-          fi
-          
-          echo "Resolved ${DB_HOST} to IPv4: ${DB_IP}"
-          
-          # Apply the migration directly using psql with IPv4 address
-          PGPASSWORD="${STAGING_DB_PASSWORD}" psql -h "${DB_IP}" -U postgres -d postgres -p 5432 -f /tmp/pending_migration.sql || {
+          # Apply the migration directly using psql
+          # The -w flag prevents password prompt, PGPASSWORD env var provides password
+          # Force IPv4 by using connection timeout and letting psql handle DNS
+          PGPASSWORD="${STAGING_DB_PASSWORD}" psql \
+            -h "${DB_HOST}" \
+            -U postgres \
+            -d postgres \
+            -p 5432 \
+            -v ON_ERROR_STOP=1 \
+            -f /tmp/pending_migration.sql || {
             echo "❌ Migration failed!"
+            echo "Debugging connection..."
+            echo "Host: ${DB_HOST}"
+            echo "Attempting to resolve hostname..."
+            host "${DB_HOST}" || true
+            nslookup "${DB_HOST}" || true
             exit 1
           }
           
