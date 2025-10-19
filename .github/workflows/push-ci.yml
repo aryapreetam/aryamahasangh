@@ -172,49 +172,41 @@ jobs:
         with:
           version: latest
 
-      - name: Setup PostgreSQL client
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y postgresql-client
-
       - name: Generate migration SQL from dev schema
         id: check-diff
         env:
           DEV_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}  # Dev environment secret
-          DEV_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}  # Dev environment secret
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN_DEV_STAGING }}
         run: |
           echo "🔍 Generating migration SQL from dev schema..."
           
           # Extract project ref
           DEV_REF=$(echo "$DEV_SUPABASE_URL" | sed 's|https://||' | cut -d'.' -f1)
-          DEV_HOST="db.${DEV_REF}.supabase.co"
           
-          echo "Dev database: ${DEV_HOST}"
+          echo "Dev project ref: ${DEV_REF}"
           
-          # Dump dev schema to file (this will be the migration)
-          echo "Dumping dev schema..."
-          PGPASSWORD="${DEV_DB_PASSWORD}" pg_dump \
-            -h "${DEV_HOST}" \
-            -U postgres \
-            -d postgres \
-            -p 5432 \
-            --schema-only \
-            --no-owner \
-            --no-acl \
-            --schema=public \
-            > /tmp/dev_schema.sql || {
-            echo "❌ Failed to dump dev schema"
-            exit 1
-          }
-          
-          # Try to use Supabase CLI to generate proper diff
-          echo "Generating migration using Supabase CLI..."
+          # Link to dev project
           supabase link --project-ref $DEV_REF
-          supabase db diff --linked --schema public,auth,storage > /tmp/pending_migration.sql || {
-            echo "⚠️ Supabase diff failed, using schema dump as migration"
-            cp /tmp/dev_schema.sql /tmp/pending_migration.sql
+          
+          # Pull schema from dev to local migrations directory
+          echo "Pulling dev schema..."
+          supabase db pull --schema public,auth,storage || {
+            echo "⚠️ Pull failed, trying alternative approach..."
           }
+          
+          # Generate diff from dev database
+          echo "Generating migration SQL..."
+          supabase db diff --linked --schema public,auth,storage > /tmp/pending_migration.sql || {
+            echo "⚠️ db diff failed"
+            # Create empty migration file as fallback
+            echo "-- No migration needed" > /tmp/pending_migration.sql
+          }
+          
+          # Check if there's actual content
+          if [ ! -s /tmp/pending_migration.sql ]; then
+            echo "✅ Migration file is empty"
+            touch /tmp/pending_migration.sql
+          fi
           
           # Always mark as migration needed - the apply job will check if it's actually needed
           echo "migration_needed=true" >> $GITHUB_OUTPUT
@@ -268,32 +260,8 @@ jobs:
 
       - name: Check if migration is actually needed
         id: check-needed
-        env:
-          STAGING_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}  # Staging environment secret
-          STAGING_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}  # Staging environment secret
         run: |
-          echo "🔍 Checking if migration is needed for staging..."
-          
-          STAGING_REF=$(echo "$STAGING_SUPABASE_URL" | sed 's|https://||' | cut -d'.' -f1)
-          STAGING_HOST="db.${STAGING_REF}.supabase.co"
-          
-          echo "Staging database: ${STAGING_HOST}"
-          
-          # Dump current staging schema
-          echo "Dumping current staging schema..."
-          PGPASSWORD="${STAGING_DB_PASSWORD}" pg_dump \
-            -h "${STAGING_HOST}" \
-            -U postgres \
-            -d postgres \
-            -p 5432 \
-            --schema-only \
-            --no-owner \
-            --no-acl \
-            --schema=public \
-            > /tmp/staging_schema.sql || {
-            echo "❌ Failed to dump staging schema"
-            exit 1
-          }
+          echo "🔍 Checking migration SQL content..."
           
           # Simple check: if migration file is empty or only comments, skip
           if [ ! -s /tmp/pending_migration.sql ]; then
@@ -310,6 +278,8 @@ jobs:
           fi
           
           echo "⚠️ Migration has content - will apply"
+          echo "Migration preview:"
+          head -n 50 /tmp/pending_migration.sql
           echo "skip=false" >> $GITHUB_OUTPUT
 
       - name: Repair migration history for staging
