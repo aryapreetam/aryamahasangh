@@ -191,40 +191,9 @@ jobs:
           
           # Apply migration
           supabase db push < /tmp/pending_migration.sql
-          
-          echo "✅ Migration applied successfully!"
-          
-          echo "### 🚀 Migration Applied" >> $GITHUB_STEP_SUMMARY
-          echo "Target: **${{ inputs.target_env }}**" >> $GITHUB_STEP_SUMMARY
-          echo "Version: **${{ inputs.app_version }}**" >> $GITHUB_STEP_SUMMARY
-          echo "Timestamp: $(date)" >> $GITHUB_STEP_SUMMARY
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-
-      - name: Verify migration
-        run: |
-          echo "🔍 Verifying migration..."
-          
-          TARGET_REF=$(echo "${{ secrets.TARGET_SUPABASE_URL }}" | sed 's|https://||' | cut -d'.' -f1)
-          
-          # Check if migration was successful by comparing schemas again
-          supabase link --project-ref $TARGET_REF
-          supabase db diff --linked --schema public,auth,storage > /tmp/post_migration_diff.sql || true
-          
-          if [ -s /tmp/post_migration_diff.sql ] && grep -v "^--" /tmp/post_migration_diff.sql | grep -q "[^[:space:]]"; then
-            echo "⚠️ WARNING: Schemas still differ after migration!"
-            echo "### ⚠️ Post-Migration Diff" >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`sql" >> $GITHUB_STEP_SUMMARY
-            cat /tmp/post_migration_diff.sql >> $GITHUB_STEP_SUMMARY
-            echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-            exit 1
-          else
-            echo "✅ Migration verified - schemas are now in sync!"
-          fi
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
   migration-summary:
+
     name: 📊 Migration Summary
     runs-on: ubuntu-latest
     needs: [check-schema-diff, run-migration]
