@@ -66,7 +66,10 @@ query allUpcomingCourses($currentDateTime: Datetime!, $gender: GenderFilter) {
     filter: {
       startDatetime: {gt: $currentDateTime},
       type: {eq: COURSE},
-      allowedGender: {eq: $gender}
+      or: [
+        { allowedGender: {eq: $gender} }
+        { allowedGender: {eq: ANY} }
+      ]
     }
   ) {
     edges {

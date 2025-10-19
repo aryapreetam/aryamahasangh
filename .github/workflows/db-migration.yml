@@ -203,7 +203,6 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
   migration-summary:
-
     name: 📊 Migration Summary
     runs-on: ubuntu-latest
     needs: [check-schema-diff, run-migration]

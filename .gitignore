@@ -25,6 +25,9 @@ composeApp/src/commonMain/kotlin/secrets/Secrets.kt
 # Firebender AI config
 firebender.json
 
+# Migration directories (generated at runtime) - stored in supabase/migrations/
+supabase/migrations/migration_*/
+
 /docs/
 /node_modules/*
 /.junie/*

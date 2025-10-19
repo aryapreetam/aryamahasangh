@@ -153,430 +153,95 @@ jobs:
   #           composeApp/build/dist/wasmJs/productionExecutable/
   #         retention-days: 7
 
-  # Database migration for staging (runs in dev environment to get source secrets)
+  # Database migration for staging
   migrate-to-staging:
-    name: 🗄️ Migrate DB to Staging
+    name: 🗄️ Migrate Dev → Staging
     runs-on: ubuntu-latest
     needs: [parse-version]
-    # REMOVED BRANCH RESTRICTION FOR TESTING - Can run on any branch
-    # if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    environment: dev  # Access dev secrets as SOURCE
-    outputs:
-      migration_needed: ${{ steps.check-diff.outputs.migration_needed }}
-      has_breaking: ${{ steps.check-diff.outputs.has_breaking }}
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    environment: staging  # Access staging secrets as TARGET
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: latest
-
-      - name: Generate migration SQL from dev schema
-        id: check-diff
-        env:
-          DEV_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}  # Dev environment secret
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN_DEV_STAGING }}
-        run: |
-          echo "🔍 Generating migration SQL from dev schema..."
-          
-          # Extract project ref
-          DEV_REF=$(echo "$DEV_SUPABASE_URL" | sed 's|https://||' | cut -d'.' -f1)
-          
-          echo "Dev project ref: ${DEV_REF}"
-          
-          # Link to dev project
-          supabase link --project-ref $DEV_REF
-          
-          # Pull FULL schema from dev database to get ALL objects
-          echo "Pulling complete dev schema..."
-          supabase db dump --data-only > /tmp/dev_full_schema.sql || {
-            echo "⚠️ Full schema dump failed"
-            exit 1
-          }
-          
-          echo "✅ Dev schema captured"
-          
-          # The schema will be applied to staging - just use the dump as migration
-          # Filter out comments and keep only the actual SQL
-          grep -v "^--" /tmp/dev_full_schema.sql | grep -v "^$" > /tmp/pending_migration.sql || {
-            echo "⚠️ Failed to process schema"
-            cp /tmp/dev_full_schema.sql /tmp/pending_migration.sql
-          }
-          
-          # Always mark as migration needed
-          echo "migration_needed=true" >> $GITHUB_OUTPUT
-          echo "has_breaking=false" >> $GITHUB_OUTPUT
-          
-          echo "Generated migration SQL preview (first 100 lines):"
-          head -n 100 /tmp/pending_migration.sql
-          
-          # Check for breaking changes
-          if grep -qi "DROP COLUMN\|DROP TABLE\|ALTER COLUMN.*TYPE\|ALTER.*NOT NULL" /tmp/pending_migration.sql 2>/dev/null; then
-            echo "has_breaking=true" >> $GITHUB_OUTPUT
-            echo "⚠️ WARNING: Breaking changes detected!"
-          fi
-          
-          # Upload migration file
-          mkdir -p /tmp/artifacts
-          cp /tmp/pending_migration.sql /tmp/artifacts/
-
-      - name: Upload migration SQL
-        uses: actions/upload-artifact@v4
-        with:
-          name: aryamahasangh-app-migration-dev-to-staging-${{ needs.parse-version.outputs.version_staging }}
-          path: /tmp/artifacts/pending_migration.sql
-          retention-days: 30
-
-  apply-migration-to-staging:
-    name: 🚀 Apply Migration to Staging
-    runs-on: ubuntu-latest
-    needs: [parse-version, migrate-to-staging]
-    if: needs.migrate-to-staging.outputs.migration_needed == 'true'
-    environment: staging  # Access staging secrets as TARGET - secrets.SUPABASE_URL automatically refers to staging's SUPABASE_URL
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Supabase CLI
-        uses: supabase/setup-cli@v1
-        with:
-          version: latest
-
-      - name: Setup PostgreSQL client
+      - name: Install PostgreSQL client
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client
 
-      - name: Download migration file
-        uses: actions/download-artifact@v4
-        with:
-          name: aryamahasangh-app-migration-dev-to-staging-${{ needs.parse-version.outputs.version_staging }}
-          path: /tmp
-
-      - name: Check if migration is actually needed
-        id: check-needed
+      - name: Create local.properties with both dev and staging secrets
         run: |
-          echo "🔍 Checking migration SQL content..."
+          cat > local.properties << EOF
+          # Dev (Source) - hardcoded (dev environment is not production-sensitive)
+          dev_project_ref=afjtpdeohgdgkrwayayn
+          dev_db_password=VZo7qmtmXAJ4bWS4
+          dev_supabase_url=https://afjtpdeohgdgkrwayayn.supabase.co
           
-          # Simple check: if migration file is empty or only comments, skip
-          if [ ! -s /tmp/pending_migration.sql ]; then
-            echo "✅ Migration file is empty - nothing to apply"
-            echo "skip=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          
-          # Check if there's actual content (not just comments)
-          if ! grep -v "^--" /tmp/pending_migration.sql | grep -q "[^[:space:]]"; then
-            echo "✅ Migration file has only comments - nothing to apply"
-            echo "skip=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          
-          echo "⚠️ Migration has content - will apply"
-          echo "Migration preview:"
-          head -n 50 /tmp/pending_migration.sql
-          echo "skip=false" >> $GITHUB_OUTPUT
+          # Staging (Target) - from environment secrets
+          staging_project_ref=${{ vars.SUPABASE_PROJECT_REF }}
+          staging_db_password=${{ secrets.SUPABASE_DB_PASSWORD }}
+          staging_supabase_url=${{ secrets.SUPABASE_URL }}
+          EOF
 
-      - name: Repair migration history for staging
-        if: steps.check-needed.outputs.skip != 'true'
-        env:
-          STAGING_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}  # Staging environment secret
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN_DEV_STAGING }}
+      - name: Make migration script executable
+        run: chmod +x migrate-direct.sh
+
+      - name: Run migration (non-interactive)
         run: |
-          echo "🔧 Repairing migration history for staging..."
-          
-          STAGING_REF=$(echo "$STAGING_SUPABASE_URL" | sed 's|https://||' | cut -d'.' -f1)
-          
-          # Link to staging project
-          supabase link --project-ref $STAGING_REF
-          
-          # Try to pull migrations to detect mismatches
-          echo "Checking migration history..."
-          PULL_OUTPUT=$(supabase db pull --schema public,auth,storage 2>&1) || PULL_FAILED=true
-          
-          if [ "$PULL_FAILED" = "true" ]; then
-            echo "⚠️ Migration history mismatch detected"
-            echo "$PULL_OUTPUT"
-            
-            # Check if it's the "Remote migration versions not found" error
-            if echo "$PULL_OUTPUT" | grep -q "Remote migration versions not found"; then
-              echo "🔧 Extracting remote migration IDs..."
-              
-              # Extract migration IDs - they appear after "supabase migration repair --status reverted"
-              MIGRATION_IDS=$(echo "$PULL_OUTPUT" | grep -oP '(?<=--status reverted\s)[\d\s]+' | tr '\n' ' ' | xargs)
-              
-              if [ -n "$MIGRATION_IDS" ]; then
-                echo "📝 Found migration IDs: $MIGRATION_IDS"
-                echo "🔧 Marking remote migrations as APPLIED (they already exist on staging)..."
-                
-                # Mark these migrations as APPLIED (not reverted) since they're already on staging
-                supabase migration repair --status applied $MIGRATION_IDS || {
-                  echo "⚠️ Repair failed, but continuing..."
-                }
-                
-                echo "✅ Migration history repaired"
-              else
-                echo "⚠️ Could not extract migration IDs, skipping repair"
-              fi
-            fi
-          else
-            echo "✅ Migration history is in sync"
-          fi
+          echo "🚀 Running migration dev → staging (non-interactive mode)..."
+          ./migrate-direct.sh dev-to-staging --non-interactive
 
-      - name: Backup staging database
-        if: steps.check-needed.outputs.skip != 'true'
-        env:
-          STAGING_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}  # Staging environment secret
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN_DEV_STAGING }}
-        run: |
-          echo "📦 Creating backup of staging database..."
-          
-          STAGING_REF=$(echo "$STAGING_SUPABASE_URL" | sed 's|https://||' | cut -d'.' -f1)
-          
-          # Link to staging project
-          supabase link --project-ref $STAGING_REF
-          
-          # Create backup using remote dump (goes through Supabase API)
-          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-          BACKUP_FILE="/tmp/aryamahasangh-app-db-backup-staging-${TIMESTAMP}.sql"
-          
-          # Use db dump without --linked flag and capture errors
-          supabase db dump --data-only > $BACKUP_FILE 2>&1 || {
-            echo "⚠️ Backup failed, but continuing with migration..."
-            echo "Backup is optional - migration will proceed"
-            touch $BACKUP_FILE  # Create empty file to avoid upload errors
-          }
-          
-          if [ -s $BACKUP_FILE ]; then
-            echo "✅ Backup created successfully"
-          else
-            echo "⚠️ Backup file is empty, skipping upload"
-          fi
-          
-          echo "backup_file=${BACKUP_FILE}" >> $GITHUB_ENV
-          
-          # Check if backup has content for upload step
-          if [ -s $BACKUP_FILE ]; then
-            echo "backup_exists=true" >> $GITHUB_ENV
-          else
-            echo "backup_exists=false" >> $GITHUB_ENV
-          fi
-
-      - name: Upload backup
-        if: steps.check-needed.outputs.skip != 'true' && env.backup_exists == 'true'
+      - name: Upload migration artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: aryamahasangh-app-db-backup-staging-${{ needs.parse-version.outputs.version_staging }}
-          path: ${{ env.backup_file }}
+          name: migration-dev-to-staging-${{ needs.parse-version.outputs.version_staging }}
+          path: supabase/migrations/migration_dev_to_staging_*/
           retention-days: 90
-        continue-on-error: true
+          if-no-files-found: warn
 
-      - name: Apply migration to staging
-        if: steps.check-needed.outputs.skip != 'true'
-        env:
-          STAGING_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}  # Staging environment secret
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN_DEV_STAGING }}
-        run: |
-          echo "🚀 Applying migration to staging..."
-          
-          # Extract project ref
-          STAGING_REF=$(echo "$STAGING_SUPABASE_URL" | sed 's|https://||' | cut -d'.' -f1)
-          
-          echo "Staging project ref: ${STAGING_REF}"
-          
-          echo "Migration SQL to apply (preview - first 100 lines):"
-          head -n 100 /tmp/pending_migration.sql
-          echo ""
-          echo "---"
-          
-          # Link to staging project
-          supabase link --project-ref $STAGING_REF
-          
-          # Create migrations directory
-          mkdir -p supabase/migrations
-          
-          # First, try to pull remote migrations to detect what exists on staging
-          echo "🔧 Detecting remote migration history..."
-          PULL_OUTPUT=$(supabase db pull --schema public,auth,storage 2>&1) || PULL_FAILED=true
-          
-          if [ "$PULL_FAILED" = "true" ]; then
-            echo "⚠️ Pull failed, extracting migration IDs from error..."
-            echo "$PULL_OUTPUT"
-            
-            # Extract migration IDs from the error message
-            # They appear after "supabase migration repair --status reverted"
-            MIGRATION_IDS=$(echo "$PULL_OUTPUT" | grep -A 1 "supabase migration repair --status reverted" | tail -n 1 | xargs)
-            
-            if [ -n "$MIGRATION_IDS" ]; then
-              echo "📝 Found remote migration IDs: $MIGRATION_IDS"
-              echo "🔧 Creating dummy migration files for remote migrations..."
-              
-              # Create dummy migration files for each remote migration
-              for MIG_ID in $MIGRATION_IDS; do
-                DUMMY_FILE="supabase/migrations/${MIG_ID}_remote.sql"
-                echo "-- Remote migration from staging database" > "$DUMMY_FILE"
-                echo "-- Migration ID: ${MIG_ID}" >> "$DUMMY_FILE"
-                echo "-- This file exists to sync local migration history with remote" >> "$DUMMY_FILE"
-                echo "Created: $DUMMY_FILE"
-              done
-              
-              echo "✅ Created $(echo $MIGRATION_IDS | wc -w | xargs) dummy migration files"
-            else
-              echo "⚠️ Could not extract migration IDs"
-            fi
-          else
-            echo "✅ Successfully pulled remote migrations"
-          fi
-          
-          # Now create the new migration with a timestamp newer than all existing ones
-          TIMESTAMP=$(date +%Y%m%d%H%M%S)
-          MIGRATION_FILE="supabase/migrations/${TIMESTAMP}_sync_from_dev.sql"
-          cp /tmp/pending_migration.sql "$MIGRATION_FILE"
-          
-          echo "Created new migration file: $MIGRATION_FILE"
-          
-          # List all migrations to verify
-          echo "📋 Current migration files:"
-          ls -lh supabase/migrations/
-          
-          # Now push all migrations with --include-all flag
-          echo "Pushing migrations to staging..."
-          supabase db push --include-all || {
-            echo "❌ Migration push failed!"
-            echo "The migration SQL is available in the artifact for manual application."
-            echo "Please apply the migration manually or check the error above."
-            exit 1
-          }
-          
-          echo "✅ Migration applied successfully!"
-
-      - name: Verify migration
-        if: steps.check-needed.outputs.skip != 'true'
-        env:
-          STAGING_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}  # Staging environment secret
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN_DEV_STAGING }}
-        run: |
-          echo "🔍 Verifying migration..."
-          
-          STAGING_REF=$(echo "$STAGING_SUPABASE_URL" | sed 's|https://||' | cut -d'.' -f1)
-          
-          # Link to staging project
-          supabase link --project-ref $STAGING_REF
-          
-          # Generate a fresh diff to see if there are still differences
-          supabase db pull --schema public,auth,storage || echo "⚠️ Pull failed, skipping detailed verification"
-          
-          echo "✅ Migration verification complete"
-
-  build-deploy-staging:
-    name: Build & Deploy Staging
+  migrate-to-production:
+    name: 🗄️ Migrate Staging → Production
     runs-on: ubuntu-latest
-    needs: [parse-version, migrate-to-staging, apply-migration-to-staging]
-    if: |
-      always() && 
-      (needs.migrate-to-staging.outputs.migration_needed == 'false' || needs.apply-migration-to-staging.result == 'success')
-    environment: staging
+    needs: [parse-version, migrate-to-staging]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    environment: production  # Requires manual approval + access to prod secrets
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      - name: Decode and setup keystore
-        env:
-          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      - name: Install PostgreSQL client
         run: |
-          echo "🔐 Setting up Android keystore..."
-          echo "$KEYSTORE_BASE64" | base64 --decode > aryamahasangh.jks
-          echo "✅ Keystore file created"
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
 
-      - name: Create local.properties for Staging
+      - name: Create local.properties with staging and prod secrets
         run: |
-          echo "app_version=${{ needs.parse-version.outputs.base_version }}" >> local.properties
-          echo "environment=staging" >> local.properties
-          echo "dev_supabase_url=https://placeholder.supabase.co" >> local.properties
-          echo "dev_supabase_key=placeholder-key" >> local.properties
-          echo "dev_server_url=https://placeholder.com" >> local.properties
-          echo "staging_supabase_url=${{ secrets.SUPABASE_URL }}" >> local.properties
-          echo "staging_supabase_key=${{ secrets.SUPABASE_KEY }}" >> local.properties
-          echo "staging_server_url=https://staging-api.aryamahasangh.org" >> local.properties
-          echo "prod_supabase_url=https://placeholder.supabase.co" >> local.properties
-          echo "prod_supabase_key=placeholder-key" >> local.properties
-          echo "prod_server_url=https://placeholder.com" >> local.properties
+          cat > local.properties << EOF
+          # Staging (Source) - hardcoded (staging is not production-sensitive)
+          staging_project_ref=ftnwwiwmljcwzpsawdmf
+          staging_db_password=QwUaIJHBEh3nfsxy
+          staging_supabase_url=https://ftnwwiwmljcwzpsawdmf.supabase.co
+          
+          # Production (Target) - from environment secrets
+          prod_project_ref=${{ vars.SUPABASE_PROJECT_REF }}
+          prod_db_password=${{ secrets.SUPABASE_DB_PASSWORD }}
+          prod_supabase_url=${{ secrets.SUPABASE_URL }}
+          EOF
 
-      - name: Build Web for Staging
-        run: ./gradlew :composeApp:wasmJsBrowserDistribution
+      - name: Make migration script executable
+        run: chmod +x migrate-direct.sh
 
-      - name: Deploy to Netlify Staging
-        uses: nwtgck/actions-netlify@v2.0
-        with:
-          publish-dir: './composeApp/build/dist/wasmJs/productionExecutable'
-          production-deploy: true
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: '🚀 Staging ${{ needs.parse-version.outputs.version_staging }} - ${{ github.sha }}'
-          enable-pull-request-comment: false
-          enable-commit-comment: true
-          enable-commit-status: true
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-
-      - name: Build Android Release APK for Staging
-        env:
-          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew :composeApp:assembleRelease
-
-      - name: Rename APK with version
+      - name: Run migration to production (non-interactive)
         run: |
-          mkdir -p artifacts
-          APK_SRC=$(find composeApp/build/outputs/apk/release -type f -name '*-release.apk' | head -n1)
-          if [ -n "$APK_SRC" ]; then
-            cp "$APK_SRC" "artifacts/aryamahasangh-app-android-${{ needs.parse-version.outputs.version_staging }}.apk"
-          fi
+          echo "🚀 Running migration staging → production (non-interactive mode)..."
+          ./migrate-direct.sh staging-to-prod --non-interactive
 
-      - name: Upload Staging Artifacts
+      - name: Upload migration artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: aryamahasangh-app-staging-${{ needs.parse-version.outputs.version_staging }}
-          path: |
-            artifacts/
-          retention-days: 30
-
-  # COMMENTED OUT FOR TESTING - Only running migration flow
-  # build-report:
-  #   name: 📊 CI Summary
-  #   runs-on: ubuntu-latest
-  #   needs: [ci, parse-version]
-  #   if: always()
-  #   steps:
-  #     - name: Create Summary Report
-  #       run: |
-  #         echo "## 🚀 CI Pipeline Summary" >> $GITHUB_STEP_SUMMARY
-  #         echo "" >> $GITHUB_STEP_SUMMARY
-  #         echo "### Build Information" >> $GITHUB_STEP_SUMMARY
-  #         echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-  #         echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-  #         echo "- **Base Version**: ${{ needs.parse-version.outputs.base_version }}" >> $GITHUB_STEP_SUMMARY
-  #         echo "- **Version Code**: ${{ needs.parse-version.outputs.version_code }}" >> $GITHUB_STEP_SUMMARY
-  #         echo "" >> $GITHUB_STEP_SUMMARY
-  #         echo "### Test Results" >> $GITHUB_STEP_SUMMARY
-  #         echo "- **CI Status**: ${{ needs.ci.result }}" >> $GITHUB_STEP_SUMMARY
-  #         echo "" >> $GITHUB_STEP_SUMMARY
-  #         if [ "${{ github.ref }}" != "refs/heads/main" ] && [ "${{ github.ref }}" != "refs/heads/master" ]; then
-  #           echo "### 🚀 Deployed to Dev Environment" >> $GITHUB_STEP_SUMMARY
-  #           echo "- **Version**: ${{ needs.parse-version.outputs.version_dev }}" >> $GITHUB_STEP_SUMMARY
-  #         elif [ "${{ github.ref }}" = "refs/heads/main" ] || [ "${{ github.ref }}" = "refs/heads/master" ]; then
-  #           echo "### 🚀 Deployed to Staging Environment" >> $GITHUB_STEP_SUMMARY
-  #           echo "- **Version**: ${{ needs.parse-version.outputs.version_staging }}" >> $GITHUB_STEP_SUMMARY
-  #         fi
+          name: migration-staging-to-prod-${{ needs.parse-version.outputs.version_staging }}
+          path: supabase/migrations/migration_staging_to_prod_*/
+          retention-days: 90
+          if-no-files-found: warn
