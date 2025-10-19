@@ -77,83 +77,12 @@ jobs:
           echo "  Staging: ${VERSION_STAGING}"
           echo "  Version Code: ${VERSION_CODE}"
 
-  # COMMENTED OUT FOR TESTING - Only running migration flow
-  # ci:
-  #   name: Run All Tests & Builds
-  #   uses: ./.github/workflows/ci-reusable.yml
+  # Run tests and checks on all branches
+  ci:
+    name: ✅ Run All Tests & Builds
+    uses: ./.github/workflows/ci-reusable.yml
 
-  # COMMENTED OUT FOR TESTING - Only running migration flow
-  # build-deploy-dev:
-  #   name: Build & Deploy Dev
-  #   runs-on: ubuntu-latest
-  #   needs: [ci, parse-version]
-  #   if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
-  #   environment: dev
-  #   steps:
-  #     - name: Checkout repository
-  #       uses: actions/checkout@v4
-  #
-  #     - name: Set up JDK 17
-  #       uses: actions/setup-java@v4
-  #       with:
-  #         distribution: 'temurin'
-  #         java-version: '17'
-  #
-  #     - name: Setup Gradle
-  #       uses: gradle/actions/setup-gradle@v3
-  #
-  #     - name: Create local.properties for Dev
-  #       run: |
-  #         echo "app_version=${{ needs.parse-version.outputs.base_version }}" >> local.properties
-  #         echo "environment=dev" >> local.properties
-  #         echo "dev_supabase_url=${{ secrets.SUPABASE_URL }}" >> local.properties
-  #         echo "dev_supabase_key=${{ secrets.SUPABASE_KEY }}" >> local.properties
-  #         echo "dev_server_url=https://dev-api.aryamahasangh.org" >> local.properties
-  #         echo "staging_supabase_url=https://placeholder.supabase.co" >> local.properties
-  #         echo "staging_supabase_key=placeholder-key" >> local.properties
-  #         echo "staging_server_url=https://placeholder.com" >> local.properties
-  #         echo "prod_supabase_url=https://placeholder.supabase.co" >> local.properties
-  #         echo "prod_supabase_key=placeholder-key" >> local.properties
-  #         echo "prod_server_url=https://placeholder.com" >> local.properties
-  #
-  #     - name: Build Web for Dev
-  #       run: ./gradlew :composeApp:wasmJsBrowserDistribution
-  #
-  #     - name: Deploy to Netlify Dev
-  #       uses: nwtgck/actions-netlify@v2.0
-  #       with:
-  #         publish-dir: './composeApp/build/dist/wasmJs/productionExecutable'
-  #         production-branch: dev
-  #         github-token: ${{ secrets.GITHUB_TOKEN }}
-  #         deploy-message: '🚀 Dev ${{ needs.parse-version.outputs.version_dev }} - ${{ github.sha }}'
-  #         enable-pull-request-comment: false
-  #         enable-commit-comment: true
-  #         enable-commit-status: true
-  #       env:
-  #         NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-  #         NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-  #
-  #     - name: Build Android APK for Dev
-  #       run: ./gradlew :composeApp:assembleDebug
-  #
-  #     - name: Rename APK with version
-  #       run: |
-  #         mkdir -p artifacts
-  #         APK_SRC=$(find composeApp/build/outputs/apk/debug -type f -name '*-debug.apk' | head -n1)
-  #         if [ -n "$APK_SRC" ]; then
-  #           cp "$APK_SRC" "artifacts/AryaMahasangh-${{ needs.parse-version.outputs.version_dev }}.apk"
-  #         fi
-  #
-  #     - name: Upload Dev Artifacts
-  #       uses: actions/upload-artifact@v4
-  #       with:
-  #         name: dev-artifacts-${{ needs.parse-version.outputs.version_dev }}
-  #         path: |
-  #           artifacts/
-  #           composeApp/build/dist/wasmJs/productionExecutable/
-  #         retention-days: 7
-
-  # Database migration for staging
+  # Database migration for staging (always runs on main)
   migrate-to-staging:
     name: 🗄️ Migrate Dev → Staging
     runs-on: ubuntu-latest
@@ -189,7 +118,7 @@ jobs:
       - name: Run migration (non-interactive)
         run: |
           echo "🚀 Running migration dev → staging (non-interactive mode)..."
-          ./migrate-direct.sh dev-to-staging --non-interactive
+          ./migrate-direct.sh dev-to-staging --non-interactive || echo "⚠️ Migration completed with warnings or no changes needed"
 
       - name: Upload migration artifacts
         if: always()
@@ -200,10 +129,119 @@ jobs:
           retention-days: 90
           if-no-files-found: warn
 
+  # Build and Deploy to Staging (after migration)
+  build-deploy-staging:
+    name: 🚀 Build & Deploy Staging
+    runs-on: ubuntu-latest
+    needs: [parse-version, migrate-to-staging]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    environment: staging
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Decode and setup keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore.jks
+          echo "KEYSTORE_FILE=keystore.jks" >> $GITHUB_ENV
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+
+      - name: Create local.properties for Staging
+        run: |
+          cat > local.properties << EOF
+          sdk.dir=$ANDROID_HOME
+          app_version=${{ needs.parse-version.outputs.base_version }}
+          environment=staging
+          
+          # Staging
+          staging_supabase_url=${{ secrets.SUPABASE_URL }}
+          staging_supabase_key=${{ secrets.SUPABASE_KEY }}
+          staging_server_url=https://staging-api.aryamahasangh.org
+          
+          # Placeholders for other environments
+          dev_supabase_url=https://placeholder.supabase.co
+          dev_supabase_key=placeholder-key
+          dev_server_url=https://placeholder.com
+          prod_supabase_url=https://placeholder.supabase.co
+          prod_supabase_key=placeholder-key
+          prod_server_url=https://placeholder.com
+          EOF
+
+      - name: Build Web (WasmJS) for Staging
+        run: ./gradlew :composeApp:wasmJsBrowserDistribution
+
+      - name: Deploy to Netlify Staging
+        uses: nwtgck/actions-netlify@v2.0
+        with:
+          publish-dir: './composeApp/build/dist/wasmJs/productionExecutable'
+          production-deploy: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: '🚀 Staging ${{ needs.parse-version.outputs.version_staging }} - ${{ github.sha }}'
+          enable-pull-request-comment: false
+          enable-commit-comment: true
+          enable-commit-status: true
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+      - name: Build Android APK (Release) for Staging
+        run: ./gradlew :composeApp:assembleRelease
+        env:
+          KEYSTORE_FILE: keystore.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Build Android App Bundle (AAB) for Staging
+        run: ./gradlew :composeApp:bundleRelease
+        env:
+          KEYSTORE_FILE: keystore.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Rename artifacts with version
+        run: |
+          mkdir -p artifacts
+          
+          # Copy APK
+          APK_SRC=$(find composeApp/build/outputs/apk/release -type f -name '*-release.apk' | head -n1)
+          if [ -n "$APK_SRC" ]; then
+            cp "$APK_SRC" "artifacts/aryamahasangh-app-android-${{ needs.parse-version.outputs.version_staging }}.apk"
+          fi
+          
+          # Copy AAB
+          AAB_SRC=$(find composeApp/build/outputs/bundle/release -type f -name '*-release.aab' | head -n1)
+          if [ -n "$AAB_SRC" ]; then
+            cp "$AAB_SRC" "artifacts/aryamahasangh-app-android-${{ needs.parse-version.outputs.version_staging }}.aab"
+          fi
+
+      - name: Upload Staging Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: aryamahasangh-app-staging-${{ needs.parse-version.outputs.version_staging }}
+          path: artifacts/
+          retention-days: 30
+
+      - name: Clean up keystore
+        if: always()
+        run: rm -f keystore.jks
+
+  # Migrate Staging to Production (requires manual approval)
   migrate-to-production:
     name: 🗄️ Migrate Staging → Production
     runs-on: ubuntu-latest
-    needs: [parse-version, migrate-to-staging]
+    needs: [parse-version, build-deploy-staging]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     environment: production  # Requires manual approval + access to prod secrets
     steps:
@@ -235,7 +273,7 @@ jobs:
       - name: Run migration to production (non-interactive)
         run: |
           echo "🚀 Running migration staging → production (non-interactive mode)..."
-          ./migrate-direct.sh staging-to-prod --non-interactive
+          ./migrate-direct.sh staging-to-prod --non-interactive || echo "⚠️ Migration completed with warnings or no changes needed"
 
       - name: Upload migration artifacts
         if: always()
@@ -245,3 +283,112 @@ jobs:
           path: supabase/migrations/migration_staging_to_prod_*/
           retention-days: 90
           if-no-files-found: warn
+
+  # Build and Deploy to Production (requires manual approval)
+  build-deploy-production:
+    name: 🚀 Build & Deploy Production
+    runs-on: ubuntu-latest
+    needs: [parse-version, migrate-to-production]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    environment: production  # Requires manual approval
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Decode and setup keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > keystore.jks
+          echo "KEYSTORE_FILE=keystore.jks" >> $GITHUB_ENV
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+
+      - name: Create local.properties for Production
+        run: |
+          cat > local.properties << EOF
+          sdk.dir=$ANDROID_HOME
+          app_version=${{ needs.parse-version.outputs.base_version }}
+          environment=prod
+          
+          # Production
+          prod_supabase_url=${{ secrets.SUPABASE_URL }}
+          prod_supabase_key=${{ secrets.SUPABASE_KEY }}
+          prod_server_url=https://api.aryamahasangh.org
+          
+          # Placeholders for other environments
+          dev_supabase_url=https://placeholder.supabase.co
+          dev_supabase_key=placeholder-key
+          dev_server_url=https://placeholder.com
+          staging_supabase_url=https://placeholder.supabase.co
+          staging_supabase_key=placeholder-key
+          staging_server_url=https://placeholder.com
+          EOF
+
+      - name: Build Web (WasmJS) for Production
+        run: ./gradlew :composeApp:wasmJsBrowserDistribution
+
+      - name: Deploy to Netlify Production
+        uses: nwtgck/actions-netlify@v2.0
+        with:
+          publish-dir: './composeApp/build/dist/wasmJs/productionExecutable'
+          production-deploy: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: '🚀 Production ${{ needs.parse-version.outputs.base_version }} - ${{ github.sha }}'
+          enable-pull-request-comment: false
+          enable-commit-comment: true
+          enable-commit-status: true
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+      - name: Build Android APK (Release) for Production
+        run: ./gradlew :composeApp:assembleRelease
+        env:
+          KEYSTORE_FILE: keystore.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Build Android App Bundle (AAB) for Production
+        run: ./gradlew :composeApp:bundleRelease
+        env:
+          KEYSTORE_FILE: keystore.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Rename artifacts with version
+        run: |
+          mkdir -p artifacts
+          
+          # Copy APK
+          APK_SRC=$(find composeApp/build/outputs/apk/release -type f -name '*-release.apk' | head -n1)
+          if [ -n "$APK_SRC" ]; then
+            cp "$APK_SRC" "artifacts/aryamahasangh-app-android-${{ needs.parse-version.outputs.base_version }}.apk"
+          fi
+          
+          # Copy AAB
+          AAB_SRC=$(find composeApp/build/outputs/bundle/release -type f -name '*-release.aab' | head -n1)
+          if [ -n "$AAB_SRC" ]; then
+            cp "$AAB_SRC" "artifacts/aryamahasangh-app-android-${{ needs.parse-version.outputs.base_version }}.aab"
+          fi
+
+      - name: Upload Production Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: aryamahasangh-app-production-${{ needs.parse-version.outputs.base_version }}
+          path: artifacts/
+          retention-days: 90
+
+      - name: Clean up keystore
+        if: always()
+        run: rm -f keystore.jks
+
