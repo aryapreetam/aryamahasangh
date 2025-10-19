@@ -345,7 +345,6 @@ jobs:
           # Extract project ref and construct connection string
           STAGING_REF=$(echo "$STAGING_SUPABASE_URL" | sed 's|https://||' | cut -d'.' -f1)
           DB_HOST="db.${STAGING_REF}.supabase.co"
-          DB_CONNECTION="postgresql://postgres:${STAGING_DB_PASSWORD}@${DB_HOST}:5432/postgres"
           
           echo "Connecting to: ${DB_HOST}"
           
@@ -360,8 +359,19 @@ jobs:
           echo ""
           echo "---"
           
-          # Apply the migration directly using psql
-          PGPASSWORD="${STAGING_DB_PASSWORD}" psql -h "${DB_HOST}" -U postgres -d postgres -f /tmp/pending_migration.sql || {
+          # Resolve hostname to IPv4 to avoid IPv6 connectivity issues on GitHub Actions
+          echo "Resolving hostname to IPv4..."
+          DB_IP=$(getent ahostsv4 "${DB_HOST}" | head -n1 | awk '{print $1}')
+          
+          if [ -z "$DB_IP" ]; then
+            echo "❌ Failed to resolve ${DB_HOST} to IPv4"
+            exit 1
+          fi
+          
+          echo "Resolved ${DB_HOST} to IPv4: ${DB_IP}"
+          
+          # Apply the migration directly using psql with IPv4 address
+          PGPASSWORD="${STAGING_DB_PASSWORD}" psql -h "${DB_IP}" -U postgres -d postgres -p 5432 -f /tmp/pending_migration.sql || {
             echo "❌ Migration failed!"
             exit 1
           }
