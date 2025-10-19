@@ -60,8 +60,8 @@ jobs:
           # Link to source project
           supabase link --project-ref $SOURCE_REF
           
-          # Generate migration from source
-          supabase db diff --linked --schema public,auth,storage > /tmp/pending_migration.sql || true
+          # Generate migration from source (removed --linked flag)
+          supabase db diff --schema public,auth,storage > /tmp/pending_migration.sql || true
           
           # Check if there are actual changes
           if [ -s /tmp/pending_migration.sql ] && grep -v "^--" /tmp/pending_migration.sql | grep -q "[^[:space:]]"; then
@@ -189,8 +189,18 @@ jobs:
           # Link to target project
           supabase link --project-ref $TARGET_REF
           
-          # Apply migration
-          supabase db push < /tmp/pending_migration.sql
+          # Create migration file from downloaded SQL
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          MIGRATION_NAME="migration_${TIMESTAMP}_${{ inputs.source_env }}_to_${{ inputs.target_env }}"
+          
+          # Copy migration to migrations directory
+          mkdir -p supabase/migrations
+          cp /tmp/pending_migration.sql "supabase/migrations/${TIMESTAMP}_${MIGRATION_NAME}.sql"
+          
+          # Push migration to target database
+          supabase db push --include-all
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
   migration-summary:
 
@@ -229,4 +239,3 @@ jobs:
             echo "### ℹ️ No Migration Needed" >> $GITHUB_STEP_SUMMARY
             echo "Schemas were already in sync" >> $GITHUB_STEP_SUMMARY
           fi
-

@@ -5,6 +5,11 @@
 # App version (semantic versioning) - Update this for releases
 app_version=1.0.6
 
+# Supabase Project References (for migration scripts)
+supabase.project.ref.dev=
+supabase.project.ref.staging=
+supabase.project.ref.prod=
+
 # Development Configuration (use underscores for valid Kotlin identifiers)
 dev_supabase_url=
 dev_supabase_key=
