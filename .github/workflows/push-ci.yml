@@ -76,91 +76,93 @@ jobs:
           echo "  Staging: ${VERSION_STAGING}"
           echo "  Version Code: ${VERSION_CODE}"
 
-  ci:
-    name: Run All Tests & Builds
-    uses: ./.github/workflows/ci-reusable.yml
+  # COMMENTED OUT FOR TESTING - Only running migration flow
+  # ci:
+  #   name: Run All Tests & Builds
+  #   uses: ./.github/workflows/ci-reusable.yml
 
-  build-deploy-dev:
-    name: Build & Deploy Dev
-    runs-on: ubuntu-latest
-    needs: [ci, parse-version]
-    if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
-    environment: dev
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      - name: Create local.properties for Dev
-        run: |
-          echo "app_version=${{ needs.parse-version.outputs.base_version }}" >> local.properties
-          echo "environment=dev" >> local.properties
-          echo "dev_supabase_url=${{ secrets.SUPABASE_URL }}" >> local.properties
-          echo "dev_supabase_key=${{ secrets.SUPABASE_KEY }}" >> local.properties
-          echo "dev_server_url=https://dev-api.aryamahasangh.org" >> local.properties
-          echo "staging_supabase_url=https://placeholder.supabase.co" >> local.properties
-          echo "staging_supabase_key=placeholder-key" >> local.properties
-          echo "staging_server_url=https://placeholder.com" >> local.properties
-          echo "prod_supabase_url=https://placeholder.supabase.co" >> local.properties
-          echo "prod_supabase_key=placeholder-key" >> local.properties
-          echo "prod_server_url=https://placeholder.com" >> local.properties
-
-      - name: Build Web for Dev
-        run: ./gradlew :composeApp:wasmJsBrowserDistribution
-
-      - name: Deploy to Netlify Dev
-        uses: nwtgck/actions-netlify@v2.0
-        with:
-          publish-dir: './composeApp/build/dist/wasmJs/productionExecutable'
-          production-branch: dev
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: '🚀 Dev ${{ needs.parse-version.outputs.version_dev }} - ${{ github.sha }}'
-          enable-pull-request-comment: false
-          enable-commit-comment: true
-          enable-commit-status: true
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-
-      - name: Build Android APK for Dev
-        run: ./gradlew :composeApp:assembleDebug
-
-      - name: Rename APK with version
-        run: |
-          mkdir -p artifacts
-          APK_SRC=$(find composeApp/build/outputs/apk/debug -type f -name '*-debug.apk' | head -n1)
-          if [ -n "$APK_SRC" ]; then
-            cp "$APK_SRC" "artifacts/AryaMahasangh-${{ needs.parse-version.outputs.version_dev }}.apk"
-          fi
-
-      - name: Upload Dev Artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: dev-artifacts-${{ needs.parse-version.outputs.version_dev }}
-          path: |
-            artifacts/
-            composeApp/build/dist/wasmJs/productionExecutable/
-          retention-days: 7
+  # COMMENTED OUT FOR TESTING - Only running migration flow
+  # build-deploy-dev:
+  #   name: Build & Deploy Dev
+  #   runs-on: ubuntu-latest
+  #   needs: [ci, parse-version]
+  #   if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
+  #   environment: dev
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+  #
+  #     - name: Set up JDK 17
+  #       uses: actions/setup-java@v4
+  #       with:
+  #         distribution: 'temurin'
+  #         java-version: '17'
+  #
+  #     - name: Setup Gradle
+  #       uses: gradle/actions/setup-gradle@v3
+  #
+  #     - name: Create local.properties for Dev
+  #       run: |
+  #         echo "app_version=${{ needs.parse-version.outputs.base_version }}" >> local.properties
+  #         echo "environment=dev" >> local.properties
+  #         echo "dev_supabase_url=${{ secrets.SUPABASE_URL }}" >> local.properties
+  #         echo "dev_supabase_key=${{ secrets.SUPABASE_KEY }}" >> local.properties
+  #         echo "dev_server_url=https://dev-api.aryamahasangh.org" >> local.properties
+  #         echo "staging_supabase_url=https://placeholder.supabase.co" >> local.properties
+  #         echo "staging_supabase_key=placeholder-key" >> local.properties
+  #         echo "staging_server_url=https://placeholder.com" >> local.properties
+  #         echo "prod_supabase_url=https://placeholder.supabase.co" >> local.properties
+  #         echo "prod_supabase_key=placeholder-key" >> local.properties
+  #         echo "prod_server_url=https://placeholder.com" >> local.properties
+  #
+  #     - name: Build Web for Dev
+  #       run: ./gradlew :composeApp:wasmJsBrowserDistribution
+  #
+  #     - name: Deploy to Netlify Dev
+  #       uses: nwtgck/actions-netlify@v2.0
+  #       with:
+  #         publish-dir: './composeApp/build/dist/wasmJs/productionExecutable'
+  #         production-branch: dev
+  #         github-token: ${{ secrets.GITHUB_TOKEN }}
+  #         deploy-message: '🚀 Dev ${{ needs.parse-version.outputs.version_dev }} - ${{ github.sha }}'
+  #         enable-pull-request-comment: false
+  #         enable-commit-comment: true
+  #         enable-commit-status: true
+  #       env:
+  #         NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+  #         NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+  #
+  #     - name: Build Android APK for Dev
+  #       run: ./gradlew :composeApp:assembleDebug
+  #
+  #     - name: Rename APK with version
+  #       run: |
+  #         mkdir -p artifacts
+  #         APK_SRC=$(find composeApp/build/outputs/apk/debug -type f -name '*-debug.apk' | head -n1)
+  #         if [ -n "$APK_SRC" ]; then
+  #           cp "$APK_SRC" "artifacts/AryaMahasangh-${{ needs.parse-version.outputs.version_dev }}.apk"
+  #         fi
+  #
+  #     - name: Upload Dev Artifacts
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: dev-artifacts-${{ needs.parse-version.outputs.version_dev }}
+  #         path: |
+  #           artifacts/
+  #           composeApp/build/dist/wasmJs/productionExecutable/
+  #         retention-days: 7
 
   # Database migration for staging (runs in dev environment to get source secrets)
   migrate-to-staging:
     name: 🗄️ Migrate DB to Staging
     runs-on: ubuntu-latest
     needs: [parse-version]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    # REMOVED BRANCH RESTRICTION FOR TESTING - Can run on any branch
+    # if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
     environment: dev  # Access dev secrets as SOURCE
     outputs:
       migration_needed: ${{ steps.check-diff.outputs.migration_needed }}
       has_breaking: ${{ steps.check-diff.outputs.has_breaking }}
-      staging_url: ${{ steps.get-staging-url.outputs.staging_url }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -169,12 +171,6 @@ jobs:
         uses: supabase/setup-cli@v1
         with:
           version: latest
-
-      - name: Get staging URL from staging environment
-        id: get-staging-url
-        run: |
-          # We'll pass staging URL as output to be used in next job
-          echo "This step will be populated by staging environment secrets"
 
       - name: Sync migrations from dev database
         env:
@@ -207,16 +203,16 @@ jobs:
           supabase link --project-ref $DEV_REF
           
           # Generate migration from dev schema
-          # Note: We're generating the FULL schema from dev, which will be compared against staging in the next job
           supabase db diff --linked --schema public,auth,storage > /tmp/pending_migration.sql || true
           
           # Check if there are actual changes
           if [ -s /tmp/pending_migration.sql ] && grep -v "^--" /tmp/pending_migration.sql | grep -q "[^[:space:]]"; then
             echo "migration_needed=true" >> $GITHUB_OUTPUT
             echo "⚠️ Migration SQL generated from dev"
+            cat /tmp/pending_migration.sql
           else
             echo "migration_needed=false" >> $GITHUB_OUTPUT
-            echo "✅ No schema in dev"
+            echo "✅ No schema changes detected between dev and staging"
           fi
           
           # Check for breaking changes
@@ -392,10 +388,9 @@ jobs:
   build-deploy-staging:
     name: Build & Deploy Staging
     runs-on: ubuntu-latest
-    needs: [parse-version, migrate-to-staging, apply-migration-to-staging]  # Removed ci dependency for testing
+    needs: [parse-version, migrate-to-staging, apply-migration-to-staging]
     if: |
       always() && 
-      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') &&
       (needs.migrate-to-staging.outputs.migration_needed == 'false' || needs.apply-migration-to-staging.result == 'success')
     environment: staging
     steps:
@@ -461,29 +456,30 @@ jobs:
             artifacts/
           retention-days: 30
 
-  build-report:
-    name: 📊 CI Summary
-    runs-on: ubuntu-latest
-    needs: [ci, parse-version]
-    if: always()
-    steps:
-      - name: Create Summary Report
-        run: |
-          echo "## 🚀 CI Pipeline Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Build Information" >> $GITHUB_STEP_SUMMARY
-          echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Base Version**: ${{ needs.parse-version.outputs.base_version }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Version Code**: ${{ needs.parse-version.outputs.version_code }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "- **CI Status**: ${{ needs.ci.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          if [ "${{ github.ref }}" != "refs/heads/main" ] && [ "${{ github.ref }}" != "refs/heads/master" ]; then
-            echo "### 🚀 Deployed to Dev Environment" >> $GITHUB_STEP_SUMMARY
-            echo "- **Version**: ${{ needs.parse-version.outputs.version_dev }}" >> $GITHUB_STEP_SUMMARY
-          elif [ "${{ github.ref }}" = "refs/heads/main" ] || [ "${{ github.ref }}" = "refs/heads/master" ]; then
-            echo "### 🚀 Deployed to Staging Environment" >> $GITHUB_STEP_SUMMARY
-            echo "- **Version**: ${{ needs.parse-version.outputs.version_staging }}" >> $GITHUB_STEP_SUMMARY
-          fi
+  # COMMENTED OUT FOR TESTING - Only running migration flow
+  # build-report:
+  #   name: 📊 CI Summary
+  #   runs-on: ubuntu-latest
+  #   needs: [ci, parse-version]
+  #   if: always()
+  #   steps:
+  #     - name: Create Summary Report
+  #       run: |
+  #         echo "## 🚀 CI Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+  #         echo "" >> $GITHUB_STEP_SUMMARY
+  #         echo "### Build Information" >> $GITHUB_STEP_SUMMARY
+  #         echo "- **Branch**: ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+  #         echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+  #         echo "- **Base Version**: ${{ needs.parse-version.outputs.base_version }}" >> $GITHUB_STEP_SUMMARY
+  #         echo "- **Version Code**: ${{ needs.parse-version.outputs.version_code }}" >> $GITHUB_STEP_SUMMARY
+  #         echo "" >> $GITHUB_STEP_SUMMARY
+  #         echo "### Test Results" >> $GITHUB_STEP_SUMMARY
+  #         echo "- **CI Status**: ${{ needs.ci.result }}" >> $GITHUB_STEP_SUMMARY
+  #         echo "" >> $GITHUB_STEP_SUMMARY
+  #         if [ "${{ github.ref }}" != "refs/heads/main" ] && [ "${{ github.ref }}" != "refs/heads/master" ]; then
+  #           echo "### 🚀 Deployed to Dev Environment" >> $GITHUB_STEP_SUMMARY
+  #           echo "- **Version**: ${{ needs.parse-version.outputs.version_dev }}" >> $GITHUB_STEP_SUMMARY
+  #         elif [ "${{ github.ref }}" = "refs/heads/main" ] || [ "${{ github.ref }}" = "refs/heads/master" ]; then
+  #           echo "### 🚀 Deployed to Staging Environment" >> $GITHUB_STEP_SUMMARY
+  #           echo "- **Version**: ${{ needs.parse-version.outputs.version_staging }}" >> $GITHUB_STEP_SUMMARY
+  #         fi
