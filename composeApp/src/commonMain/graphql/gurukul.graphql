@@ -21,7 +21,10 @@ query loadAllCourses($gender: GenderFilter){
   activitiesCollection(
     filter: {
       type: {eq: COURSE},
-      allowedGender: {eq: $gender}
+      or: [
+        { allowedGender: {eq: $gender} }
+        { allowedGender: {eq: ANY} }
+      ]
     },
     orderBy: { startDatetime: DescNullsLast }
   ) {
