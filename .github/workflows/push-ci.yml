@@ -394,37 +394,54 @@ jobs:
           # Link to staging project
           supabase link --project-ref $STAGING_REF
           
-          # Create a timestamped migration file in the migrations directory
+          # Create migrations directory
+          mkdir -p supabase/migrations
+          
+          # First, try to pull remote migrations to detect what exists on staging
+          echo "🔧 Detecting remote migration history..."
+          PULL_OUTPUT=$(supabase db pull --schema public,auth,storage 2>&1) || PULL_FAILED=true
+          
+          if [ "$PULL_FAILED" = "true" ]; then
+            echo "⚠️ Pull failed, extracting migration IDs from error..."
+            echo "$PULL_OUTPUT"
+            
+            # Extract migration IDs from the error message
+            # They appear after "supabase migration repair --status reverted"
+            MIGRATION_IDS=$(echo "$PULL_OUTPUT" | grep -A 1 "supabase migration repair --status reverted" | tail -n 1 | xargs)
+            
+            if [ -n "$MIGRATION_IDS" ]; then
+              echo "📝 Found remote migration IDs: $MIGRATION_IDS"
+              echo "🔧 Creating dummy migration files for remote migrations..."
+              
+              # Create dummy migration files for each remote migration
+              for MIG_ID in $MIGRATION_IDS; do
+                DUMMY_FILE="supabase/migrations/${MIG_ID}_remote.sql"
+                echo "-- Remote migration from staging database" > "$DUMMY_FILE"
+                echo "-- Migration ID: ${MIG_ID}" >> "$DUMMY_FILE"
+                echo "-- This file exists to sync local migration history with remote" >> "$DUMMY_FILE"
+                echo "Created: $DUMMY_FILE"
+              done
+              
+              echo "✅ Created $(echo $MIGRATION_IDS | wc -w | xargs) dummy migration files"
+            else
+              echo "⚠️ Could not extract migration IDs"
+            fi
+          else
+            echo "✅ Successfully pulled remote migrations"
+          fi
+          
+          # Now create the new migration with a timestamp newer than all existing ones
           TIMESTAMP=$(date +%Y%m%d%H%M%S)
           MIGRATION_FILE="supabase/migrations/${TIMESTAMP}_sync_from_dev.sql"
-          mkdir -p supabase/migrations
           cp /tmp/pending_migration.sql "$MIGRATION_FILE"
           
-          echo "Created migration file: $MIGRATION_FILE"
+          echo "Created new migration file: $MIGRATION_FILE"
           
-          # First, clean the migrations directory and pull fresh from remote
-          echo "🔧 Syncing local migration history with remote..."
+          # List all migrations to verify
+          echo "📋 Current migration files:"
+          ls -lh supabase/migrations/
           
-          # Backup the new migration file
-          cp "$MIGRATION_FILE" /tmp/new_migration.sql
-          
-          # Clear local migrations
-          rm -rf supabase/migrations/*.sql
-          
-          # Pull all remote migrations
-          echo "Pulling remote migration history..."
-          supabase db pull --schema public,auth,storage 2>&1 || {
-            echo "⚠️ Pull failed, but continuing..."
-          }
-          
-          # Restore the new migration file with a newer timestamp
-          NEW_TIMESTAMP=$(date +%Y%m%d%H%M%S)
-          NEW_MIGRATION_FILE="supabase/migrations/${NEW_TIMESTAMP}_sync_from_dev.sql"
-          cp /tmp/new_migration.sql "$NEW_MIGRATION_FILE"
-          
-          echo "Restored new migration as: $NEW_MIGRATION_FILE"
-          
-          # Now push with --include-all to handle any ordering issues
+          # Now push all migrations with --include-all flag
           echo "Pushing migrations to staging..."
           supabase db push --include-all || {
             echo "❌ Migration push failed!"
