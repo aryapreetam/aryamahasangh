@@ -188,32 +188,28 @@ jobs:
           # Link to dev project
           supabase link --project-ref $DEV_REF
           
-          # Pull schema from dev to local migrations directory
-          echo "Pulling dev schema..."
-          supabase db pull --schema public,auth,storage || {
-            echo "⚠️ Pull failed, trying alternative approach..."
+          # Pull FULL schema from dev database to get ALL objects
+          echo "Pulling complete dev schema..."
+          supabase db dump --linked > /tmp/dev_full_schema.sql || {
+            echo "⚠️ Full schema dump failed"
+            exit 1
           }
           
-          # Generate diff from dev database
-          echo "Generating migration SQL..."
-          supabase db diff --linked --schema public,auth,storage > /tmp/pending_migration.sql || {
-            echo "⚠️ db diff failed"
-            # Create empty migration file as fallback
-            echo "-- No migration needed" > /tmp/pending_migration.sql
+          echo "✅ Dev schema captured"
+          
+          # The schema will be applied to staging - just use the dump as migration
+          # Filter out comments and keep only the actual SQL
+          grep -v "^--" /tmp/dev_full_schema.sql | grep -v "^$" > /tmp/pending_migration.sql || {
+            echo "⚠️ Failed to process schema"
+            cp /tmp/dev_full_schema.sql /tmp/pending_migration.sql
           }
           
-          # Check if there's actual content
-          if [ ! -s /tmp/pending_migration.sql ]; then
-            echo "✅ Migration file is empty"
-            touch /tmp/pending_migration.sql
-          fi
-          
-          # Always mark as migration needed - the apply job will check if it's actually needed
+          # Always mark as migration needed
           echo "migration_needed=true" >> $GITHUB_OUTPUT
           echo "has_breaking=false" >> $GITHUB_OUTPUT
           
-          echo "Generated migration SQL:"
-          cat /tmp/pending_migration.sql
+          echo "Generated migration SQL preview (first 100 lines):"
+          head -n 100 /tmp/pending_migration.sql
           
           # Check for breaking changes
           if grep -qi "DROP COLUMN\|DROP TABLE\|ALTER COLUMN.*TYPE\|ALTER.*NOT NULL" /tmp/pending_migration.sql 2>/dev/null; then
@@ -503,6 +499,14 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Decode and setup keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+        run: |
+          echo "🔐 Setting up Android keystore..."
+          echo "$KEYSTORE_BASE64" | base64 --decode > aryamahasangh.jks
+          echo "✅ Keystore file created"
+
       - name: Create local.properties for Staging
         run: |
           echo "app_version=${{ needs.parse-version.outputs.base_version }}" >> local.properties
@@ -524,7 +528,7 @@ jobs:
         uses: nwtgck/actions-netlify@v2.0
         with:
           publish-dir: './composeApp/build/dist/wasmJs/productionExecutable'
-          production-branch: main
+          production-deploy: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
           deploy-message: '🚀 Staging ${{ needs.parse-version.outputs.version_staging }} - ${{ github.sha }}'
           enable-pull-request-comment: false
@@ -535,6 +539,10 @@ jobs:
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
 
       - name: Build Android Release APK for Staging
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: ./gradlew :composeApp:assembleRelease
 
       - name: Rename APK with version
