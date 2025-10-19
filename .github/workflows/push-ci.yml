@@ -367,33 +367,32 @@ jobs:
         run: |
           echo "🚀 Applying migration to staging..."
           
-          # Extract project ref and construct connection string
+          # Extract project ref
           STAGING_REF=$(echo "$STAGING_SUPABASE_URL" | sed 's|https://||' | cut -d'.' -f1)
-          DB_HOST="db.${STAGING_REF}.supabase.co"
           
-          echo "Connecting to: ${DB_HOST}"
+          echo "Staging project ref: ${STAGING_REF}"
           
           echo "Migration SQL to apply:"
           cat /tmp/pending_migration.sql
           echo ""
           echo "---"
           
-          echo "Connecting to database..."
+          # Link to staging project
+          supabase link --project-ref $STAGING_REF
           
-          # Apply the migration directly using psql
-          PGPASSWORD="${STAGING_DB_PASSWORD}" psql \
-            -h "${DB_HOST}" \
-            -U postgres \
-            -d postgres \
-            -p 5432 \
-            -v ON_ERROR_STOP=1 \
-            -f /tmp/pending_migration.sql || {
-            echo "❌ Migration failed!"
-            echo "Debugging connection..."
-            echo "Host: ${DB_HOST}"
-            echo "Attempting to resolve hostname..."
-            host "${DB_HOST}" || true
-            nslookup "${DB_HOST}" || true
+          # Create a timestamped migration file in the migrations directory
+          TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          MIGRATION_FILE="supabase/migrations/${TIMESTAMP}_sync_from_dev.sql"
+          mkdir -p supabase/migrations
+          cp /tmp/pending_migration.sql "$MIGRATION_FILE"
+          
+          echo "Created migration file: $MIGRATION_FILE"
+          
+          # Push migrations to staging using Supabase CLI
+          # This command applies all pending migrations that don't exist on the remote
+          echo "Pushing migrations to staging..."
+          supabase db push --linked || {
+            echo "❌ Migration push failed!"
             exit 1
           }
           
