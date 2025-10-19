@@ -6,16 +6,16 @@ on:
       - '**'
     tags-ignore:
       - 'v*'
-    paths:
-      - 'composeApp/**'
-      - 'gradle/**'
-      - 'gradle.properties'
-      - 'settings.gradle.kts'
-      - 'build.gradle.kts'
-      - '.github/workflows/**'
-      - 'maestro-tests/**'
-      - 'supabase/**'  # Trigger on database changes
-      - 'scripts/**'
+#    paths:
+#      - 'composeApp/**'
+#      - 'gradle/**'
+#      - 'gradle.properties'
+#      - 'settings.gradle.kts'
+#      - 'build.gradle.kts'
+#      - '.github/workflows/**'
+#      - 'maestro-tests/**'
+#      - 'supabase/**'  # Trigger on database changes
+#      - 'scripts/**'
   pull_request:
     paths:
       - 'composeApp/**'
@@ -391,4 +391,3 @@ jobs:
       - name: Clean up keystore
         if: always()
         run: rm -f keystore.jks
-
