@@ -15,6 +15,7 @@ on:
       - '.github/workflows/**'
       - 'maestro-tests/**'
       - 'supabase/**'  # Trigger on database changes
+      - 'scripts/**'
   pull_request:
     paths:
       - 'composeApp/**'
