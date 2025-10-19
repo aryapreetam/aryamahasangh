@@ -402,7 +402,29 @@ jobs:
           
           echo "Created migration file: $MIGRATION_FILE"
           
-          # Push migrations to staging using Supabase CLI with --include-all for out-of-order migrations
+          # First, clean the migrations directory and pull fresh from remote
+          echo "🔧 Syncing local migration history with remote..."
+          
+          # Backup the new migration file
+          cp "$MIGRATION_FILE" /tmp/new_migration.sql
+          
+          # Clear local migrations
+          rm -rf supabase/migrations/*.sql
+          
+          # Pull all remote migrations
+          echo "Pulling remote migration history..."
+          supabase db pull --schema public,auth,storage 2>&1 || {
+            echo "⚠️ Pull failed, but continuing..."
+          }
+          
+          # Restore the new migration file with a newer timestamp
+          NEW_TIMESTAMP=$(date +%Y%m%d%H%M%S)
+          NEW_MIGRATION_FILE="supabase/migrations/${NEW_TIMESTAMP}_sync_from_dev.sql"
+          cp /tmp/new_migration.sql "$NEW_MIGRATION_FILE"
+          
+          echo "Restored new migration as: $NEW_MIGRATION_FILE"
+          
+          # Now push with --include-all to handle any ordering issues
           echo "Pushing migrations to staging..."
           supabase db push --include-all || {
             echo "❌ Migration push failed!"
