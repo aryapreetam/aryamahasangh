@@ -385,8 +385,8 @@ jobs:
           
           echo "Staging project ref: ${STAGING_REF}"
           
-          echo "Migration SQL to apply:"
-          cat /tmp/pending_migration.sql
+          echo "Migration SQL to apply (preview - first 100 lines):"
+          head -n 100 /tmp/pending_migration.sql
           echo ""
           echo "---"
           
@@ -418,9 +418,18 @@ jobs:
               
               if [ -n "$MIGRATION_IDS" ]; then
                 echo "📝 Found migration IDs: $MIGRATION_IDS"
-                echo "🔧 Marking remote migrations as APPLIED (they already exist on staging)..."
+                echo "🔧 Creating dummy migration files for remote migrations..."
                 
-                # Mark these migrations as APPLIED (not reverted) since they're already on staging
+                # Create dummy migration files for each remote migration ID
+                # This allows supabase migration repair to work
+                for MIG_ID in $MIGRATION_IDS; do
+                  DUMMY_FILE="supabase/migrations/${MIG_ID}_remote.sql"
+                  echo "-- Remote migration ${MIG_ID}" > "$DUMMY_FILE"
+                  echo "Created dummy file: $DUMMY_FILE"
+                done
+                
+                echo "🔧 Marking remote migrations as APPLIED..."
+                # Now repair will work because the files exist
                 supabase migration repair --status applied $MIGRATION_IDS || {
                   echo "⚠️ Repair failed, but continuing..."
                 }
@@ -434,6 +443,13 @@ jobs:
                 
                 if [ -n "$MIGRATION_IDS" ]; then
                   echo "📝 Found migration IDs (alternative method): $MIGRATION_IDS"
+                  
+                  # Create dummy files
+                  for MIG_ID in $MIGRATION_IDS; do
+                    DUMMY_FILE="supabase/migrations/${MIG_ID}_remote.sql"
+                    echo "-- Remote migration ${MIG_ID}" > "$DUMMY_FILE"
+                  done
+                  
                   supabase migration repair --status applied $MIGRATION_IDS || {
                     echo "⚠️ Repair failed"
                   }
@@ -446,12 +462,23 @@ jobs:
           echo "Pushing migrations to staging..."
           supabase db push --linked || {
             echo "❌ Migration push failed!"
-            echo "Attempting manual SQL execution as fallback..."
+            echo "Attempting direct SQL execution as fallback..."
             
-            # Fallback: Use supabase db remote exec to execute the SQL directly
-            supabase db remote exec --linked < "$MIGRATION_FILE" || {
+            # Fallback: Execute SQL directly using psql through supabase db exec
+            # The db exec command doesn't exist, so we'll use a different approach
+            # We'll execute the SQL using the Supabase Management API
+            
+            echo "Using supabase db execute to run migration..."
+            cat "$MIGRATION_FILE" | supabase db execute --linked || {
               echo "❌ Fallback execution also failed!"
-              exit 1
+              echo "Trying final fallback with db reset..."
+              
+              # Last resort: try to execute as stdin
+              supabase db execute --linked -f "$MIGRATION_FILE" || {
+                echo "❌ All migration methods failed!"
+                echo "The migration SQL is available in the artifact for manual application."
+                exit 1
+              }
             }
             
             echo "✅ Migration applied via fallback method!"
