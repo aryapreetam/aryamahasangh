@@ -191,7 +191,7 @@ jobs:
           
           # Pull FULL schema from dev database to get ALL objects
           echo "Pulling complete dev schema..."
-          supabase db dump --linked > /tmp/dev_full_schema.sql || {
+          supabase db dump --data-only > /tmp/dev_full_schema.sql || {
             echo "⚠️ Full schema dump failed"
             exit 1
           }
@@ -342,8 +342,8 @@ jobs:
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
           BACKUP_FILE="/tmp/aryamahasangh-app-db-backup-staging-${TIMESTAMP}.sql"
           
-          # Use db dump with --linked flag and capture errors
-          supabase db dump --linked --data-only > $BACKUP_FILE 2>&1 || {
+          # Use db dump without --linked flag and capture errors
+          supabase db dump --data-only > $BACKUP_FILE 2>&1 || {
             echo "⚠️ Backup failed, but continuing with migration..."
             echo "Backup is optional - migration will proceed"
             touch $BACKUP_FILE  # Create empty file to avoid upload errors
@@ -402,88 +402,13 @@ jobs:
           
           echo "Created migration file: $MIGRATION_FILE"
           
-          # Check if there are migration history mismatches and repair them
-          echo "Checking migration history before push..."
-          CHECK_OUTPUT=$(supabase db push --linked --dry-run 2>&1) || CHECK_FAILED=true
-          
-          if [ "$CHECK_FAILED" = "true" ]; then
-            echo "⚠️ Migration history check detected issues"
-            echo "$CHECK_OUTPUT"
-            
-            # Check if it's the "Remote migration versions not found" error
-            if echo "$CHECK_OUTPUT" | grep -q "Remote migration versions not found"; then
-              echo "🔧 Extracting remote migration IDs..."
-              
-              # Extract migration IDs from the error message
-              MIGRATION_IDS=$(echo "$CHECK_OUTPUT" | grep -oP '(?<=supabase migration repair --status reverted\s)[\d\s]+' | tr '\n' ' ' | xargs)
-              
-              if [ -n "$MIGRATION_IDS" ]; then
-                echo "📝 Found migration IDs: $MIGRATION_IDS"
-                echo "🔧 Creating dummy migration files for remote migrations..."
-                
-                # Create dummy migration files for each remote migration ID
-                # This allows supabase migration repair to work
-                for MIG_ID in $MIGRATION_IDS; do
-                  DUMMY_FILE="supabase/migrations/${MIG_ID}_remote.sql"
-                  echo "-- Remote migration ${MIG_ID}" > "$DUMMY_FILE"
-                  echo "Created dummy file: $DUMMY_FILE"
-                done
-                
-                echo "🔧 Marking remote migrations as APPLIED..."
-                # Now repair will work because the files exist
-                supabase migration repair --status applied $MIGRATION_IDS || {
-                  echo "⚠️ Repair failed, but continuing..."
-                }
-                
-                echo "✅ Migration history repaired"
-              else
-                echo "⚠️ Could not extract migration IDs, trying alternative extraction..."
-                
-                # Alternative extraction method - directly from the line with migration IDs
-                MIGRATION_IDS=$(echo "$CHECK_OUTPUT" | grep "supabase migration repair" | sed 's/.*--status reverted //' | tr '\n' ' ')
-                
-                if [ -n "$MIGRATION_IDS" ]; then
-                  echo "📝 Found migration IDs (alternative method): $MIGRATION_IDS"
-                  
-                  # Create dummy files
-                  for MIG_ID in $MIGRATION_IDS; do
-                    DUMMY_FILE="supabase/migrations/${MIG_ID}_remote.sql"
-                    echo "-- Remote migration ${MIG_ID}" > "$DUMMY_FILE"
-                  done
-                  
-                  supabase migration repair --status applied $MIGRATION_IDS || {
-                    echo "⚠️ Repair failed"
-                  }
-                fi
-              fi
-            fi
-          fi
-          
-          # Push migrations to staging using Supabase CLI
+          # Push migrations to staging using Supabase CLI with --include-all for out-of-order migrations
           echo "Pushing migrations to staging..."
-          supabase db push --linked || {
+          supabase db push --include-all || {
             echo "❌ Migration push failed!"
-            echo "Attempting direct SQL execution as fallback..."
-            
-            # Fallback: Execute SQL directly using psql through supabase db exec
-            # The db exec command doesn't exist, so we'll use a different approach
-            # We'll execute the SQL using the Supabase Management API
-            
-            echo "Using supabase db execute to run migration..."
-            cat "$MIGRATION_FILE" | supabase db execute --linked || {
-              echo "❌ Fallback execution also failed!"
-              echo "Trying final fallback with db reset..."
-              
-              # Last resort: try to execute as stdin
-              supabase db execute --linked -f "$MIGRATION_FILE" || {
-                echo "❌ All migration methods failed!"
-                echo "The migration SQL is available in the artifact for manual application."
-                exit 1
-              }
-            }
-            
-            echo "✅ Migration applied via fallback method!"
-            exit 0
+            echo "The migration SQL is available in the artifact for manual application."
+            echo "Please apply the migration manually or check the error above."
+            exit 1
           }
           
           echo "✅ Migration applied successfully!"
