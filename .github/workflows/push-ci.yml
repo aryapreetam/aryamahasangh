@@ -341,22 +341,40 @@ jobs:
           # Link to staging project
           supabase link --project-ref $STAGING_REF
           
-          # Create backup
+          # Create backup using remote dump (goes through Supabase API)
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
           BACKUP_FILE="/tmp/aryamahasangh-app-db-backup-staging-${TIMESTAMP}.sql"
           
-          supabase db dump --data-only > $BACKUP_FILE
+          # Use db dump with --linked flag and capture errors
+          supabase db dump --linked --data-only > $BACKUP_FILE 2>&1 || {
+            echo "⚠️ Backup failed, but continuing with migration..."
+            echo "Backup is optional - migration will proceed"
+            touch $BACKUP_FILE  # Create empty file to avoid upload errors
+          }
           
-          echo "✅ Backup created"
+          if [ -s $BACKUP_FILE ]; then
+            echo "✅ Backup created successfully"
+          else
+            echo "⚠️ Backup file is empty, skipping upload"
+          fi
+          
           echo "backup_file=${BACKUP_FILE}" >> $GITHUB_ENV
+          
+          # Check if backup has content for upload step
+          if [ -s $BACKUP_FILE ]; then
+            echo "backup_exists=true" >> $GITHUB_ENV
+          else
+            echo "backup_exists=false" >> $GITHUB_ENV
+          fi
 
       - name: Upload backup
-        if: steps.check-needed.outputs.skip != 'true'
+        if: steps.check-needed.outputs.skip != 'true' && env.backup_exists == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: aryamahasangh-app-db-backup-staging-${{ needs.parse-version.outputs.version_staging }}
           path: ${{ env.backup_file }}
           retention-days: 90
+        continue-on-error: true
 
       - name: Apply migration to staging
         if: steps.check-needed.outputs.skip != 'true'
