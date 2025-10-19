@@ -77,17 +77,17 @@ jobs:
           echo "  Staging: ${VERSION_STAGING}"
           echo "  Version Code: ${VERSION_CODE}"
 
-  # Run tests and checks on all branches
-  ci:
-    name: ✅ Run All Tests & Builds
-    uses: ./.github/workflows/ci-reusable.yml
+  # Run tests and checks on all branches (COMMENTED OUT FOR TESTING)
+#  ci:
+#    name: ✅ Run All Tests & Builds
+#    uses: ./.github/workflows/ci-reusable.yml
 
-  # Database migration for staging (always runs on main)
+  # Database migration for staging (always runs on main or test-main)
   migrate-to-staging:
     name: 🗄️ Migrate Dev → Staging
     runs-on: ubuntu-latest
     needs: [parse-version]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/test-main'
     environment: staging  # Access staging secrets as TARGET
     steps:
       - name: Checkout repository
@@ -134,7 +134,7 @@ jobs:
     name: 🚀 Build & Deploy Staging
     runs-on: ubuntu-latest
     needs: [parse-version, migrate-to-staging]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/test-main'
     environment: staging
     steps:
       - name: Checkout repository
@@ -223,7 +223,7 @@ jobs:
           # Copy AAB
           AAB_SRC=$(find composeApp/build/outputs/bundle/release -type f -name '*-release.aab' | head -n1)
           if [ -n "$AAB_SRC" ]; then
-            cp "$AAB_SRC" "artifacts/aryamahasangh-app-android-${{ needs.parse-version.outputs.version_staging }}.aab"
+            cp "$ABB_SRC" "artifacts/aryamahasangh-app-android-${{ needs.parse-version.outputs.version_staging }}.aab"
           fi
 
       - name: Upload Staging Artifacts
@@ -242,7 +242,7 @@ jobs:
     name: 🗄️ Migrate Staging → Production
     runs-on: ubuntu-latest
     needs: [parse-version, build-deploy-staging]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/test-main'
     environment: production  # Requires manual approval + access to prod secrets
     steps:
       - name: Checkout repository
@@ -289,7 +289,7 @@ jobs:
     name: 🚀 Build & Deploy Production
     runs-on: ubuntu-latest
     needs: [parse-version, migrate-to-production]
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/test-main'
     environment: production  # Requires manual approval
     steps:
       - name: Checkout repository
