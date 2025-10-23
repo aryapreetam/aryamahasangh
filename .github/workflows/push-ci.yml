@@ -92,13 +92,16 @@ jobs:
     outputs:
       project_ref: ${{ steps.export.outputs.project_ref }}
       supabase_url: ${{ steps.export.outputs.supabase_url }}
+      db_password: ${{ steps.export.outputs.db_password }}
     steps:
-      - name: Export dev credentials (non-sensitive only)
+      - name: Export dev credentials
         id: export
         run: |
-          # Only export non-sensitive data as outputs
+          # Export credentials from dev environment
+          # Note: db_password will be masked in logs but can be passed to other jobs
           echo "project_ref=${{ vars.SUPABASE_PROJECT_REF }}" >> $GITHUB_OUTPUT
           echo "supabase_url=${{ secrets.SUPABASE_URL }}" >> $GITHUB_OUTPUT
+          echo "db_password=${{ secrets.SUPABASE_DB_PASSWORD }}" >> $GITHUB_OUTPUT
 
   # Get staging credentials (runs in staging environment for staging→prod migration)
   get-staging-credentials:
@@ -110,13 +113,16 @@ jobs:
     outputs:
       project_ref: ${{ steps.export.outputs.project_ref }}
       supabase_url: ${{ steps.export.outputs.supabase_url }}
+      db_password: ${{ steps.export.outputs.db_password }}
     steps:
-      - name: Export staging credentials (non-sensitive only)
+      - name: Export staging credentials
         id: export
         run: |
-          # Only export non-sensitive data as outputs
+          # Export credentials from staging environment
+          # Note: db_password will be masked in logs but can be passed to other jobs
           echo "project_ref=${{ vars.SUPABASE_PROJECT_REF }}" >> $GITHUB_OUTPUT
           echo "supabase_url=${{ secrets.SUPABASE_URL }}" >> $GITHUB_OUTPUT
+          echo "db_password=${{ secrets.SUPABASE_DB_PASSWORD }}" >> $GITHUB_OUTPUT
 
   # Database migration for staging (always runs on main or test-main)
   migrate-to-staging:
@@ -139,8 +145,9 @@ jobs:
       - name: Create local.properties with both dev and staging secrets
         run: |
           cat > local.properties << EOF
-          # Dev (Source) - from dev environment (non-sensitive data from job outputs)
+          # Dev (Source) - from dev environment via job outputs
           dev_project_ref=${{ needs.get-dev-credentials.outputs.project_ref }}
+          dev_db_password=${{ needs.get-dev-credentials.outputs.db_password }}
           dev_supabase_url=${{ needs.get-dev-credentials.outputs.supabase_url }}
           
           # Staging (Target) - from staging environment secrets
@@ -335,8 +342,9 @@ jobs:
       - name: Create local.properties with staging and prod secrets
         run: |
           cat > local.properties << EOF
-          # Staging (Source) - from staging environment (non-sensitive data from job outputs)
+          # Staging (Source) - from staging environment via job outputs
           staging_project_ref=${{ needs.get-staging-credentials.outputs.project_ref }}
+          staging_db_password=${{ needs.get-staging-credentials.outputs.db_password }}
           staging_supabase_url=${{ needs.get-staging-credentials.outputs.supabase_url }}
           
           # Production (Target) - from production environment secrets

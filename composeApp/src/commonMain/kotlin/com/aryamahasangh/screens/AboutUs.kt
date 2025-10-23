@@ -197,7 +197,7 @@ private fun QuickLinksSection(
       items = listOf(
         QuickLinkItem("सत्र पंजीकरण", "कार्यक्रमों में भाग लेने हेतु", Screen.AryaNirmanHome),
         QuickLinkItem("आर्य परिवार", "पारिवारिक पंजीकरण", Screen.AryaPariwarHome),
-        QuickLinkItem("आर्य समाज संगठन", "स्थानीय समाज", Screen.AryaSamajHome),
+        QuickLinkItem("आर्य समाज", "स्थानीय समाज", Screen.AryaSamajHome),
 //        QuickLinkItem("क्षात्र शिविर पंजीकरण", "प्रशिक्षण शिविर", Screen.KshatraTrainingHome),
 //        QuickLinkItem("छात्रा शिविर पंजीकरण", "महिला प्रशिक्षण", Screen.ChatraTrainingHome)
       ),

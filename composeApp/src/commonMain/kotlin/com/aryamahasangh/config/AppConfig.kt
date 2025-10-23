@@ -42,18 +42,8 @@ object AppConfig {
       else -> Secrets.dev_supabase_key
     }
 
-  val serverUrl: String
-    get() = when (environment) {
-      "prod" -> Secrets.prod_server_url.ifEmpty { supabaseUrl }
-      "staging" -> Secrets.staging_server_url.ifEmpty { supabaseUrl }
-      else -> Secrets.dev_server_url
-    }
-
-  val graphqlUrl: String
-    get() = "$serverUrl/graphql"
-
-  val subscriptionsUrl: String
-    get() = serverUrl.replace("http://", "ws://").replace("https://", "wss://") + "/subscriptions"
+//  val subscriptionsUrl: String
+//    get() = serverUrl.replace("http://", "ws://").replace("https://", "wss://") + "/subscriptions"
 
   const val STORAGE_BUCKET = "documents"
 
@@ -62,8 +52,5 @@ object AppConfig {
     Version: $versionName ($versionCode)
     Environment: $environment
     Supabase URL: ${supabaseUrl.take(20)}...
-    Server URL: $serverUrl
-    GraphQL URL: $graphqlUrl
-    Subscriptions URL: $subscriptionsUrl
     """.trimIndent()
 }

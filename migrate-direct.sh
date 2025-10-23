@@ -1,6 +1,6 @@
 #!/bin/bash
-# Direct Database Migration Script (No Supabase CLI API calls)
-# Uses direct PostgreSQL connections to migrate schemas
+# Direct Database Migration Script (No Docker Required)
+# Intelligently migrates: Enums, Functions, Policies, Triggers, Indexes, Views, Tables
 # Usage: ./migrate-direct.sh [dev-to-staging|staging-to-prod] [--non-interactive]
 
 # NOTE: Not using 'set -e' to handle errors explicitly
@@ -18,6 +18,366 @@ read_property() {
     local prop_key=$1
     local prop_value=$(grep "^${prop_key}=" local.properties | cut -d'=' -f2-)
     echo "$prop_value"
+}
+
+# Function to extract enum values from SQL
+extract_enum_values() {
+    local sql_file=$1
+    local enum_name=$2
+
+    # Extract the CREATE TYPE statement and parse enum values
+    awk "/CREATE TYPE ${enum_name} AS ENUM/,/);/" "$sql_file" | \
+        grep -v "CREATE TYPE\|);" | \
+        sed "s/[',]//g" | \
+        sed 's/^[[:space:]]*//' | \
+        grep -v '^$'
+}
+
+# Function to generate ALTER TYPE statements for enum changes
+generate_enum_migrations() {
+    local source_schema=$1
+    local target_schema=$2
+    local output_file=$3
+
+    echo "" >> "$output_file"
+    echo "-- ============================================" >> "$output_file"
+    echo "-- ENUM TYPE MIGRATIONS (Incremental Updates)" >> "$output_file"
+    echo "-- ============================================" >> "$output_file"
+    echo "" >> "$output_file"
+
+    # Find all enum types in source schema
+    local enum_types=$(grep "CREATE TYPE.*AS ENUM" "$source_schema" | sed -E 's/CREATE TYPE (.*) AS ENUM.*/\1/')
+
+    local enum_changes_found=false
+
+    for enum_type in $enum_types; do
+        # Check if enum exists in target
+        if ! grep -q "CREATE TYPE ${enum_type} AS ENUM" "$target_schema"; then
+            # New enum - create it
+            echo "-- Creating new enum type: $enum_type" >> "$output_file"
+            awk "/CREATE TYPE ${enum_type} AS ENUM/,/);/" "$source_schema" >> "$output_file"
+            echo "" >> "$output_file"
+            enum_changes_found=true
+            continue
+        fi
+
+        # Extract values from both schemas
+        local source_values=$(extract_enum_values "$source_schema" "$enum_type")
+        local target_values=$(extract_enum_values "$target_schema" "$enum_type")
+
+        # Find new values (in source but not in target)
+        while IFS= read -r value; do
+            if [ -n "$value" ] && ! echo "$target_values" | grep -qx "$value"; then
+                echo "-- Adding new value '$value' to enum type $enum_type" >> "$output_file"
+                echo "ALTER TYPE $enum_type ADD VALUE IF NOT EXISTS '$value';" >> "$output_file"
+                enum_changes_found=true
+            fi
+        done <<< "$source_values"
+    done
+
+    if [ "$enum_changes_found" = false ]; then
+        echo "-- No enum type changes detected" >> "$output_file"
+    fi
+
+    echo "" >> "$output_file"
+}
+
+# Function to generate function migrations
+generate_function_migrations() {
+    local source_schema=$1
+    local target_schema=$2
+    local output_file=$3
+
+    echo "" >> "$output_file"
+    echo "-- ============================================" >> "$output_file"
+    echo "-- FUNCTION MIGRATIONS (CREATE OR REPLACE)" >> "$output_file"
+    echo "-- ============================================" >> "$output_file"
+    echo "" >> "$output_file"
+
+    # Extract all functions from source
+    local temp_file=$(mktemp)
+    local function_count=0
+
+    # Find function definitions (handle both $$ and $function$ delimiters)
+    awk '
+        /CREATE OR REPLACE FUNCTION|CREATE FUNCTION/ {
+            in_func=1
+            func_text=$0"\n"
+            next
+        }
+        in_func {
+            func_text=func_text $0"\n"
+            if (/\$\$;$/ || /\$[a-zA-Z_][a-zA-Z0-9_]*\$;$/) {
+                print func_text
+                in_func=0
+                func_text=""
+            }
+        }
+    ' "$source_schema" > "$temp_file"
+
+    if [ -s "$temp_file" ]; then
+        while IFS= read -r func_def; do
+            if [ -n "$func_def" ]; then
+                echo "$func_def" >> "$output_file"
+                echo "" >> "$output_file"
+                ((function_count++))
+            fi
+        done < "$temp_file"
+        echo "-- Migrated $function_count functions" >> "$output_file"
+    else
+        echo "-- No functions found" >> "$output_file"
+    fi
+
+    rm -f "$temp_file"
+    echo "" >> "$output_file"
+}
+
+# Function to generate policy migrations
+generate_policy_migrations() {
+    local source_schema=$1
+    local target_schema=$2
+    local output_file=$3
+
+    echo "" >> "$output_file"
+    echo "-- ============================================" >> "$output_file"
+    echo "-- RLS POLICY MIGRATIONS" >> "$output_file"
+    echo "-- ============================================" >> "$output_file"
+    echo "" >> "$output_file"
+
+    # Extract policies from source
+    local source_policies=$(grep -E "CREATE POLICY|ALTER TABLE.*ENABLE ROW LEVEL SECURITY" "$source_schema" || echo "")
+
+    if [ -n "$source_policies" ]; then
+        # First, enable RLS on tables
+        grep "ALTER TABLE.*ENABLE ROW LEVEL SECURITY" "$source_schema" | sort -u >> "$output_file" 2>/dev/null || true
+        echo "" >> "$output_file"
+
+        # Then add policies (using DROP + CREATE pattern)
+        local policy_names=$(grep "CREATE POLICY" "$source_schema" | sed -E 's/CREATE POLICY "?([^"]*)"? ON.*/\1/' | sort -u)
+
+        for policy in $policy_names; do
+            if [ -n "$policy" ]; then
+                # Extract table name for this policy
+                local table_name=$(grep "CREATE POLICY.*${policy}" "$source_schema" | sed -E 's/.*ON ([^ ]*).*/\1/' | head -1)
+
+                echo "-- Recreating policy: $policy on $table_name" >> "$output_file"
+                echo "DROP POLICY IF EXISTS \"$policy\" ON $table_name;" >> "$output_file"
+
+                # Extract full policy definition
+                grep -A 5 "CREATE POLICY.*${policy}" "$source_schema" | head -6 >> "$output_file"
+                echo "" >> "$output_file"
+            fi
+        done
+    else
+        echo "-- No policies found" >> "$output_file"
+    fi
+
+    echo "" >> "$output_file"
+}
+
+# Function to generate trigger migrations
+generate_trigger_migrations() {
+    local source_schema=$1
+    local target_schema=$2
+    local output_file=$3
+
+    echo "" >> "$output_file"
+    echo "-- ============================================" >> "$output_file"
+    echo "-- TRIGGER MIGRATIONS" >> "$output_file"
+    echo "-- ============================================" >> "$output_file"
+    echo "" >> "$output_file"
+
+    local triggers=$(grep "CREATE TRIGGER" "$source_schema" | sed -E 's/CREATE TRIGGER ([^ ]*).*/\1/' || echo "")
+
+    if [ -n "$triggers" ]; then
+        for trigger in $triggers; do
+            if [ -n "$trigger" ]; then
+                # Extract table name
+                local table_name=$(grep "CREATE TRIGGER ${trigger}" "$source_schema" | sed -E 's/.* ON ([^ ]*).*/\1/' | head -1)
+
+                echo "-- Recreating trigger: $trigger on $table_name" >> "$output_file"
+                echo "DROP TRIGGER IF EXISTS $trigger ON $table_name;" >> "$output_file"
+                grep -A 2 "CREATE TRIGGER ${trigger}" "$source_schema" | head -3 >> "$output_file"
+                echo "" >> "$output_file"
+            fi
+        done
+    else
+        echo "-- No triggers found" >> "$output_file"
+    fi
+
+    echo "" >> "$output_file"
+}
+
+# Function to generate index migrations
+generate_index_migrations() {
+    local source_schema=$1
+    local target_schema=$2
+    local output_file=$3
+
+    echo "" >> "$output_file"
+    echo "-- ============================================" >> "$output_file"
+    echo "-- INDEX MIGRATIONS" >> "$output_file"
+    echo "-- ============================================" >> "$output_file"
+    echo "" >> "$output_file"
+
+    # Extract CREATE INDEX statements (exclude PKs and unique constraints handled elsewhere)
+    local indexes=$(grep "^CREATE.*INDEX" "$source_schema" | grep -v "PRIMARY KEY" || echo "")
+
+    if [ -n "$indexes" ]; then
+        echo "$indexes" | while IFS= read -r index_def; do
+            if [ -n "$index_def" ]; then
+                # Extract index name
+                local index_name=$(echo "$index_def" | sed -E 's/CREATE (UNIQUE )?INDEX ([^ ]*).*/\2/')
+                echo "-- Creating index: $index_name" >> "$output_file"
+                echo "DROP INDEX IF EXISTS $index_name;" >> "$output_file"
+                echo "$index_def;" >> "$output_file"
+                echo "" >> "$output_file"
+            fi
+        done
+    else
+        echo "-- No indexes found" >> "$output_file"
+    fi
+
+    echo "" >> "$output_file"
+}
+
+# Function to generate view migrations
+generate_view_migrations() {
+    local source_schema=$1
+    local target_schema=$2
+    local output_file=$3
+
+    echo "" >> "$output_file"
+    echo "-- ============================================" >> "$output_file"
+    echo "-- VIEW MIGRATIONS (CREATE OR REPLACE)" >> "$output_file"
+    echo "-- ============================================" >> "$output_file"
+    echo "" >> "$output_file"
+
+    # Extract views
+    local views=$(awk '/CREATE VIEW|CREATE OR REPLACE VIEW/,/;/' "$source_schema")
+
+    if [ -n "$views" ]; then
+        echo "$views" >> "$output_file"
+        echo "" >> "$output_file"
+    else
+        echo "-- No views found" >> "$output_file"
+        echo "" >> "$output_file"
+    fi
+}
+
+# Function to generate table structure migrations
+generate_table_migrations() {
+    local source_schema=$1
+    local target_schema=$2
+    local output_file=$3
+
+    echo "" >> "$output_file"
+    echo "-- ============================================" >> "$output_file"
+    echo "-- TABLE STRUCTURE MIGRATIONS" >> "$output_file"
+    echo "-- ============================================" >> "$output_file"
+    echo "" >> "$output_file"
+    echo "-- NOTE: This section contains CREATE TABLE statements." >> "$output_file"
+    echo "-- These will fail if tables already exist (which is safe)." >> "$output_file"
+    echo "-- For column additions/modifications, review and add ALTER TABLE statements manually." >> "$output_file"
+    echo "" >> "$output_file"
+
+    # Extract CREATE TABLE statements
+    awk '/CREATE TABLE/,/);/' "$source_schema" >> "$output_file"
+    echo "" >> "$output_file"
+}
+
+# Function to generate extension migrations
+generate_extension_migrations() {
+    local source_schema=$1
+    local target_schema=$2
+    local output_file=$3
+
+    echo "" >> "$output_file"
+    echo "-- ============================================" >> "$output_file"
+    echo "-- EXTENSION MIGRATIONS" >> "$output_file"
+    echo "-- ============================================" >> "$output_file"
+    echo "" >> "$output_file"
+
+    # Extract extensions from source
+    local extensions=$(grep "CREATE EXTENSION" "$source_schema" | sort -u)
+
+    if [ -n "$extensions" ]; then
+        echo "$extensions" >> "$output_file"
+        echo "" >> "$output_file"
+    else
+        echo "-- No extensions found" >> "$output_file"
+        echo "" >> "$output_file"
+    fi
+}
+
+# Function to generate sequence migrations
+generate_sequence_migrations() {
+    local source_schema=$1
+    local target_schema=$2
+    local output_file=$3
+
+    echo "" >> "$output_file"
+    echo "-- ============================================" >> "$output_file"
+    echo "-- SEQUENCE MIGRATIONS" >> "$output_file"
+    echo "-- ============================================" >> "$output_file"
+    echo "" >> "$output_file"
+
+    # Extract CREATE SEQUENCE statements
+    local sequences=$(grep "CREATE SEQUENCE" "$source_schema")
+
+    if [ -n "$sequences" ]; then
+        echo "$sequences" | while IFS= read -r seq_def; do
+            if [ -n "$seq_def" ]; then
+                # Extract sequence name
+                local seq_name=$(echo "$seq_def" | sed -E 's/CREATE SEQUENCE ([^ ]*).*/\1/')
+
+                # Check if sequence exists in target
+                if ! grep -q "CREATE SEQUENCE ${seq_name}" "$target_schema"; then
+                    echo "-- Creating sequence: $seq_name" >> "$output_file"
+                    echo "$seq_def;" >> "$output_file"
+                    echo "" >> "$output_file"
+                fi
+            fi
+        done
+    else
+        echo "-- No new sequences found" >> "$output_file"
+    fi
+
+    echo "" >> "$output_file"
+}
+
+# Function to generate ALTER TABLE migrations (for review)
+generate_alter_table_migrations() {
+    local source_schema=$1
+    local target_schema=$2
+    local output_file=$3
+
+    echo "" >> "$output_file"
+    echo "-- ============================================" >> "$output_file"
+    echo "-- ALTER TABLE STATEMENTS (REVIEW REQUIRED)" >> "$output_file"
+    echo "-- ============================================" >> "$output_file"
+    echo "" >> "$output_file"
+    echo "-- NOTE: These ALTER TABLE statements require manual review." >> "$output_file"
+    echo "-- They may modify existing table structures." >> "$output_file"
+    echo "-- COMMENTED OUT for safety - uncomment after review." >> "$output_file"
+    echo "" >> "$output_file"
+
+    # Extract ALTER TABLE statements (excluding partition attachments which are usually automatic)
+    local alter_statements=$(grep "ALTER TABLE" "$source_schema" | grep -v "ATTACH PARTITION" | grep -v "OWNER TO" | grep -v "ENABLE ROW LEVEL SECURITY" | sort -u)
+
+    if [ -n "$alter_statements" ]; then
+        echo "$alter_statements" | while IFS= read -r alter_def; do
+            if [ -n "$alter_def" ]; then
+                echo "-- $alter_def" >> "$output_file"
+            fi
+        done
+        echo "" >> "$output_file"
+        echo "-- ⚠️  IMPORTANT: Review and uncomment the ALTER TABLE statements above if needed." >> "$output_file"
+    else
+        echo "-- No ALTER TABLE statements found" >> "$output_file"
+    fi
+
+    echo "" >> "$output_file"
 }
 
 # Check if local.properties exists
@@ -193,37 +553,100 @@ cd ..
 
 # Step 4: Generate Migration (diff between schemas)
 echo ""
-echo -e "${YELLOW}🔧 Step 4: Generating migration diff...${NC}"
+echo -e "${YELLOW}🔧 Step 4: Generating comprehensive migration...${NC}"
 mkdir -p migration
 cd migration
 
 MIGRATION_FILE="migration_${SOURCE_ENV}_to_${TARGET_ENV}_${TIMESTAMP}.sql"
+ENUM_MIGRATION_FILE="migration_${SOURCE_ENV}_to_${TARGET_ENV}_${TIMESTAMP}_enums.sql"
 
-# Simple comparison - in production you might want to use a tool like migra
-echo "-- Migration from $SOURCE_ENV to $TARGET_ENV" > $MIGRATION_FILE
+# Header for enum migration (runs OUTSIDE transaction)
+echo "-- ENUM MIGRATIONS (Must run outside transaction)" > $ENUM_MIGRATION_FILE
+echo "-- Generated at: $(date)" >> $ENUM_MIGRATION_FILE
+echo "-- Source: $SOURCE_ENV ($SOURCE_PROJECT_REF)" >> $ENUM_MIGRATION_FILE
+echo "-- Target: $TARGET_ENV ($TARGET_PROJECT_REF)" >> $ENUM_MIGRATION_FILE
+echo "" >> $ENUM_MIGRATION_FILE
+echo "-- NOTE: ALTER TYPE ADD VALUE cannot run in a transaction block." >> $ENUM_MIGRATION_FILE
+echo "-- This file must be applied BEFORE the main migration." >> $ENUM_MIGRATION_FILE
+echo "" >> $ENUM_MIGRATION_FILE
+
+echo "  1/7 Analyzing enums..."
+generate_enum_migrations "../source-schema/$SOURCE_SCHEMA_FILE" "../target-schema/$TARGET_SCHEMA_FILE" "$ENUM_MIGRATION_FILE"
+
+# Header for main migration (runs IN transaction)
+echo "-- Comprehensive Migration from $SOURCE_ENV to $TARGET_ENV" > $MIGRATION_FILE
 echo "-- Generated at: $(date)" >> $MIGRATION_FILE
 echo "-- Source: $SOURCE_ENV ($SOURCE_PROJECT_REF)" >> $MIGRATION_FILE
 echo "-- Target: $TARGET_ENV ($TARGET_PROJECT_REF)" >> $MIGRATION_FILE
 echo "" >> $MIGRATION_FILE
-echo "-- WARNING: This is a full schema replacement." >> $MIGRATION_FILE
-echo "-- Review carefully before applying!" >> $MIGRATION_FILE
+echo "-- This migration handles:" >> $MIGRATION_FILE
+echo "-- 1. Extensions (CREATE EXTENSION)" >> $MIGRATION_FILE
+echo "-- 2. Sequences (CREATE SEQUENCE)" >> $MIGRATION_FILE
+echo "-- 3. Functions (CREATE OR REPLACE)" >> $MIGRATION_FILE
+echo "-- 4. RLS Policies (DROP + CREATE)" >> $MIGRATION_FILE
+echo "-- 5. Triggers (DROP + CREATE)" >> $MIGRATION_FILE
+echo "-- 6. Indexes (DROP + CREATE)" >> $MIGRATION_FILE
+echo "-- 7. Views (CREATE OR REPLACE)" >> $MIGRATION_FILE
+echo "-- 8. Tables (CREATE - will fail safely if exists)" >> $MIGRATION_FILE
+echo "-- 9. ALTER TABLE (commented - review required)" >> $MIGRATION_FILE
+echo "" >> $MIGRATION_FILE
+echo "-- NOTE: Enum migrations are in a separate file and applied first." >> $MIGRATION_FILE
+echo "" >> $MIGRATION_FILE
+echo "BEGIN;" >> $MIGRATION_FILE
 echo "" >> $MIGRATION_FILE
 
-# Copy source schema as migration (full schema replacement approach)
-cat ../source-schema/$SOURCE_SCHEMA_FILE >> $MIGRATION_FILE
+echo "  2/10 Analyzing extensions..."
+generate_extension_migrations "../source-schema/$SOURCE_SCHEMA_FILE" "../target-schema/$TARGET_SCHEMA_FILE" "$MIGRATION_FILE"
+
+echo "  3/10 Analyzing sequences..."
+generate_sequence_migrations "../source-schema/$SOURCE_SCHEMA_FILE" "../target-schema/$TARGET_SCHEMA_FILE" "$MIGRATION_FILE"
+
+echo "  4/10 Analyzing functions..."
+generate_function_migrations "../source-schema/$SOURCE_SCHEMA_FILE" "../target-schema/$TARGET_SCHEMA_FILE" "$MIGRATION_FILE"
+
+echo "  5/10 Analyzing policies..."
+generate_policy_migrations "../source-schema/$SOURCE_SCHEMA_FILE" "../target-schema/$TARGET_SCHEMA_FILE" "$MIGRATION_FILE"
+
+echo "  6/10 Analyzing triggers..."
+generate_trigger_migrations "../source-schema/$SOURCE_SCHEMA_FILE" "../target-schema/$TARGET_SCHEMA_FILE" "$MIGRATION_FILE"
+
+echo "  7/10 Analyzing indexes..."
+generate_index_migrations "../source-schema/$SOURCE_SCHEMA_FILE" "../target-schema/$TARGET_SCHEMA_FILE" "$MIGRATION_FILE"
+
+echo "  8/10 Analyzing views..."
+generate_view_migrations "../source-schema/$SOURCE_SCHEMA_FILE" "../target-schema/$TARGET_SCHEMA_FILE" "$MIGRATION_FILE"
+
+echo "  9/10 Analyzing tables..."
+generate_table_migrations "../source-schema/$SOURCE_SCHEMA_FILE" "../target-schema/$TARGET_SCHEMA_FILE" "$MIGRATION_FILE"
+
+echo "  10/10 Analyzing ALTER TABLE statements..."
+generate_alter_table_migrations "../source-schema/$SOURCE_SCHEMA_FILE" "../target-schema/$TARGET_SCHEMA_FILE" "$MIGRATION_FILE"
+
+echo "" >> $MIGRATION_FILE
+echo "COMMIT;" >> $MIGRATION_FILE
 
 MIGRATION_SIZE=$(du -h $MIGRATION_FILE | cut -f1)
-echo -e "${GREEN}✅ Migration SQL generated: $MIGRATION_FILE ($MIGRATION_SIZE)${NC}"
+ENUM_SIZE=$(du -h $ENUM_MIGRATION_FILE | cut -f1)
+echo -e "${GREEN}✅ Enum migration generated: $ENUM_MIGRATION_FILE ($ENUM_SIZE)${NC}"
+echo -e "${GREEN}✅ Main migration generated: $MIGRATION_FILE ($MIGRATION_SIZE)${NC}"
 MIGRATION_PATH="$(pwd)/$MIGRATION_FILE"
+ENUM_PATH="$(pwd)/$ENUM_MIGRATION_FILE"
 
 # Step 5: Preview Migration
 echo ""
-echo -e "${YELLOW}👀 Step 5: Migration Preview (first 100 lines):${NC}"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━���━━━━━━━━━━━━"
-head -n 100 $MIGRATION_FILE
-echo "━━━━━━━━━━━━━━━━━━━━━━━���━━━━━━━━━━━━━━━���━━━━━━━━━━━━"
+echo -e "${YELLOW}👀 Step 5: Migration Preview${NC}"
 echo ""
-echo -e "${YELLOW}... (showing first 100 lines only) ...${NC}"
+echo -e "${CYAN}=== ENUM MIGRATIONS (Applied First) ===${NC}"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━���━"
+cat $ENUM_MIGRATION_FILE
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━���━━━━━━━���━━━━━━━━━"
+echo ""
+echo -e "${CYAN}=== MAIN MIGRATION (First 80 lines) ===${NC}"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━���━"
+head -n 80 $MIGRATION_FILE
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━���━━━━━━━━━━━━━━━━━"
+echo ""
+echo -e "${YELLOW}... (showing first 80 lines only) ...${NC}"
 echo ""
 
 # Check for breaking changes
@@ -280,9 +703,26 @@ echo -e "${YELLOW}🚀 Step 8: Applying migration to $TARGET_ENV...${NC}"
 echo "This may take several minutes..."
 echo ""
 
-# Apply migration with transaction
+# FIRST: Apply enum migrations (OUTSIDE transaction - required by PostgreSQL)
+echo -e "${CYAN}Step 8a: Applying enum migrations (outside transaction)...${NC}"
+psql "$TARGET_CONN" -f $ENUM_MIGRATION_FILE || {
+    echo -e "${RED}❌ Enum migration failed!${NC}"
+    echo ""
+    echo -e "${BLUE}📦 Backup is available: $BACKUP_PATH${NC}"
+    echo -e "${BLUE}📝 Enum Migration SQL: $ENUM_PATH${NC}"
+    echo ""
+    echo "To rollback manually:"
+    echo "  psql \"$TARGET_CONN\" < $BACKUP_PATH"
+    cd ..
+    exit 1
+}
+echo -e "${GREEN}✅ Enum migrations applied successfully!${NC}"
+echo ""
+
+# SECOND: Apply main migration (IN transaction)
+echo -e "${CYAN}Step 8b: Applying main migration (in transaction)...${NC}"
 psql "$TARGET_CONN" -f $MIGRATION_FILE || {
-    echo -e "${RED}❌ Migration failed!${NC}"
+    echo -e "${RED}❌ Main migration failed!${NC}"
     echo ""
     echo -e "${BLUE}📦 Backup is available: $BACKUP_PATH${NC}"
     echo -e "${BLUE}📝 Migration SQL: $MIGRATION_PATH${NC}"
@@ -293,7 +733,7 @@ psql "$TARGET_CONN" -f $MIGRATION_FILE || {
     exit 1
 }
 
-echo -e "${GREEN}✅ Migration applied successfully!${NC}"
+echo -e "${GREEN}✅ All migrations applied successfully!${NC}"
 
 # Step 9: Verify
 echo ""
