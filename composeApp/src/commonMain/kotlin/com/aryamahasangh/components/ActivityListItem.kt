@@ -250,8 +250,8 @@ fun EventIcon(
 ) {
   when (state) {
     ActivityStatus.PAST -> PastIcon(modifier.size(size))
-    ActivityStatus.ONGOING -> OngoingIcon1(modifier.size(size))
-    ActivityStatus.UPCOMING -> if(activityType == ActivityType.SESSION || activityType == ActivityType.COURSE) OngoingIcon(modifier.size(size)) else FutureIcon(modifier.size(size))
+    ActivityStatus.ONGOING -> OngoingIcon(modifier.size(size))
+    ActivityStatus.UPCOMING -> if(activityType == ActivityType.SESSION || activityType == ActivityType.COURSE) OngoingIcon1(modifier.size(size)) else FutureIcon(modifier.size(size))
   }
 }
 

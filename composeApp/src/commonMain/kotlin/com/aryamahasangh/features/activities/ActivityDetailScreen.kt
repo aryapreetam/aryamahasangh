@@ -32,6 +32,7 @@ import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.components.activityTypeData
 import com.aryamahasangh.isWeb
 import com.aryamahasangh.navigation.LocalSnackbarHostState
+import com.aryamahasangh.type.ActivityType
 import com.aryamahasangh.utils.format
 import com.aryamahasangh.utils.openDirections
 import com.aryamahasangh.utils.toHumanReadable
@@ -499,7 +500,7 @@ fun ActivityDisplay(
     }
 
     // Registration Button for upcoming activities
-    if (activity.isUpcoming()) {
+    if (activity.isUpcoming() && activity.type in listOf(ActivityType.SESSION, ActivityType.COURSE, ActivityType.BODH_SESSION)) {
       Spacer(modifier = Modifier.height(16.dp))
       val registrationCount = registeredUsers.size
       val hasCapacityLimit = activity.capacity > 0
@@ -606,7 +607,9 @@ fun ActivityDisplay(
           }
 
           1 -> {
-            RegisteredUsers(registeredUsers, activity.capacity)
+            if(setOf(ActivityType.SESSION, ActivityType.COURSE, ActivityType.BODH_SESSION).contains(activity.type)){
+              RegisteredUsers(registeredUsers, activity.capacity)
+            }
           }
         }
       } else {
@@ -626,7 +629,9 @@ fun ActivityDisplay(
         onNavigateToCreateOverview = onNavigateToCreateOverview
       )
     } else if (isLoggedIn) {
-      RegisteredUsers(registeredUsers, activity.capacity)
+      if(setOf(ActivityType.SESSION, ActivityType.COURSE, ActivityType.BODH_SESSION).contains(activity.type)) {
+        RegisteredUsers(registeredUsers, activity.capacity)
+      }
     }
   }
 }
