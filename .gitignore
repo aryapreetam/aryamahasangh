@@ -25,6 +25,9 @@ composeApp/src/commonMain/kotlin/secrets/Secrets.kt
 # Firebender AI config
 firebender.json
 
+# Nhost local project configuration (environment-specific)
+.nhost/
+
 # Migration directories (generated at runtime) - stored in supabase/migrations/
 supabase/migrations/migration_*/
 
