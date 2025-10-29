@@ -373,3 +373,5 @@ Before submitting any code, verify:
 
 **Think like a Staff/Principal Engineer. Build for scale, maintainability, and long-term evolution.**
 
+** Do not create any documents unless explicitly asked
+

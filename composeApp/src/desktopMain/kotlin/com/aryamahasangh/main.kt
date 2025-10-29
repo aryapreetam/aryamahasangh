@@ -9,16 +9,14 @@ import androidx.compose.ui.window.rememberWindowState
 
 fun main() =
   application {
-    // No longer need ConfigInitializer - secrets are loaded automatically via KMP-Secrets-Plugin
-
     Window(
       onCloseRequest = ::exitApplication,
       alwaysOnTop = true,
       state =
         rememberWindowState(
           width = 380.dp,
-          height = 1200.dp,
-          position = WindowPosition.Aligned(Alignment.TopEnd)
+          height = 1000.dp,
+          position = WindowPosition.Aligned(Alignment.BottomEnd)
         ),
       title = "Arya Mahasangh"
     ) {

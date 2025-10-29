@@ -1,0 +1,6 @@
+/build/
+/.gradle/
+/.kotlin/
+
+
+build/generated/kmp-secrets/commonMain/kotlin/secrets/Secrets.kt

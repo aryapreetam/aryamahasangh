@@ -35,21 +35,17 @@ object NetworkUtils {
     val className = exception::class.simpleName?.lowercase() ?: ""
     val message = exception.message?.lowercase() ?: ""
 
-    // Apollo/GraphQL specific exceptions
-    if (className.contains("apollo")) return true
-
-    // Standard network exceptions
+    // Standard network exceptions only (be conservative to avoid false positives)
     if (className.contains("unknownhostexception") ||
       className.contains("socketexception") ||
       className.contains("connectexception") ||
       className.contains("networkunreachableexception") ||
-      className.contains("sockettimeoutexception") ||
-      className.contains("ioexception")
+      className.contains("sockettimeoutexception")
     ) {
       return true
     }
 
-    // Check the message for network-related terms
+    // Check the message for clear network-related terms
     return isNetworkError(message)
   }
 

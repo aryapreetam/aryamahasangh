@@ -4,25 +4,26 @@ import com.aryamahasangh.features.activities.ActivityRepository
 import com.aryamahasangh.features.activities.ActivityRepositoryImpl
 import com.aryamahasangh.features.admin.AdminRepository
 import com.aryamahasangh.features.admin.AdminRepositoryImpl
-import com.aryamahasangh.features.admin.family.FamilyRepository
-import com.aryamahasangh.features.admin.family.FamilyRepositoryImpl
-import com.aryamahasangh.features.admin.aryasamaj.AryaSamajSelectorRepository
-import com.aryamahasangh.features.admin.aryasamaj.data.AryaSamajSelectorRepositoryImpl
 import com.aryamahasangh.features.admin.aryasamaj.AryaSamajRepository
 import com.aryamahasangh.features.admin.aryasamaj.AryaSamajRepositoryImpl
+import com.aryamahasangh.features.admin.aryasamaj.AryaSamajSelectorRepository
+import com.aryamahasangh.features.admin.aryasamaj.data.AryaSamajSelectorRepositoryImpl
+import com.aryamahasangh.features.admin.family.FamilyRepository
+import com.aryamahasangh.features.admin.family.FamilyRepositoryImpl
 import com.aryamahasangh.features.admin.member.MembersSelectorRepository
 import com.aryamahasangh.features.admin.member.data.MembersSelectorRepositoryImpl
 import com.aryamahasangh.features.arya_nirman.AryaNirmanRepository
 import com.aryamahasangh.features.arya_nirman.AryaNirmanRepositoryImpl
+import com.aryamahasangh.features.gurukul.data.GurukulRepository
+import com.aryamahasangh.features.gurukul.data.GurukulRepositoryImpl
 import com.aryamahasangh.features.organisations.OrganisationsRepository
 import com.aryamahasangh.features.organisations.OrganisationsRepositoryImpl
 import com.aryamahasangh.features.public_arya_samaj.AryaSamajHomeRepository
 import com.aryamahasangh.features.public_arya_samaj.AryaSamajHomeRepositoryImpl
 import com.aryamahasangh.repository.*
-import com.aryamahasangh.features.gurukul.data.GurukulRepository
-import com.aryamahasangh.features.gurukul.data.GurukulRepositoryImpl
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
+import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 /**
@@ -36,8 +37,8 @@ val repositoryModule =
     // Provide LearningRepository
     singleOf(::LearningRepositoryImpl) { bind<LearningRepository>() }
 
-    // Provide AboutUsRepository
-    singleOf(::AboutUsRepositoryImpl) { bind<AboutUsRepository>() }
+    // Provide AboutUsRepository with NHost ApolloClient
+    single<AboutUsRepository> { AboutUsRepositoryImpl(get(qualifier = named("nhost"))) }
 
     // Provide OrganisationsRepository
     singleOf(::OrganisationsRepositoryImpl) { bind<OrganisationsRepository>() }

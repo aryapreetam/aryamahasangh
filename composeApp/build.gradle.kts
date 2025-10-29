@@ -1,5 +1,7 @@
-@file:OptIn(org.jetbrains.compose.ExperimentalComposeLibrary::class)
+@file:OptIn(ExperimentalComposeLibrary::class, ApolloExperimental::class)
 
+import com.apollographql.apollo.annotations.ApolloExperimental
+import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
@@ -167,13 +169,13 @@ kotlin {
       implementation(libs.androidx.lifecycle.runtime.compose)
       implementation(projects.shared)
       implementation(projects.uiComponents)
+      implementation(projects.nhostClient)
       implementation(compose.animation)
       implementation(libs.coil.compose)
       implementation(libs.coil.network.ktor3)
       implementation(libs.navigation.compose)
       implementation(libs.kotlinx.serialization.json)
       implementation(libs.material.adaptive)
-      // runtimeOnly("org.jetbrains.compose.material:material:1.9.0-alpha01")
       // Koin for Dependency Injection
       implementation(libs.koin.core)
       implementation(libs.koin.compose)
@@ -292,7 +294,7 @@ android {
     }
   }
   signingConfigs {
-    create("release") {
+    register("release") {
       storeFile = file("../aryamahasangh.jks")
       storePassword = System.getenv("KEYSTORE_PASSWORD")
       keyAlias = "keystore"
@@ -374,6 +376,8 @@ apollo {
     // If you're using adapters, you can also set this
     generateKotlinModels.set(true)
     generateInputBuilders.set(true)
+    generateDataBuilders.set(true)
+    generateFragmentImplementations.set(true)
 
     // Make IDEA aware of codegen and will run it during your Gradle Sync, default: false
     // generateSourcesDuringGradleSync.set(true)

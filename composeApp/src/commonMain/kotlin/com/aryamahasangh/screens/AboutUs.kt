@@ -58,7 +58,7 @@ fun AboutUs(
     }
   ) {
     LazyColumn(
-      modifier = Modifier.padding(8.dp),
+      modifier = Modifier.padding(12.dp),
       verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
       // Organization Header Section

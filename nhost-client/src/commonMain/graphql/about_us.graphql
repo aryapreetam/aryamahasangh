@@ -1,0 +1,15 @@
+query OrganisationNames {
+  organisation{
+    id
+    name
+  }
+}
+
+query OrganisationByName($name: String!) {
+  organisation(where: {name: {_eq: $name}}) {
+    id
+    name
+    description
+    logo
+  }
+}

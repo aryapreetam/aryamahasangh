@@ -1,18 +1,13 @@
 package com.aryamahasangh.repository
 
 import com.apollographql.apollo.ApolloClient
-import com.apollographql.apollo.api.Optional
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import com.aryamahasangh.OrganisationQuery
-import com.aryamahasangh.OrganisationNamesQuery
-import com.aryamahasangh.features.activities.Member
 import com.aryamahasangh.features.organisations.OrganisationDetail
-import com.aryamahasangh.features.organisations.OrganisationalMember
-import com.aryamahasangh.type.OrganisationFilter
-import com.aryamahasangh.type.StringFilter
+import com.aryamahasangh.nhost.OrganisationByNameQuery
+import com.aryamahasangh.nhost.OrganisationNamesQuery
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.util.safeCall
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 /**
  * Data class representing organization name and id
@@ -48,47 +43,20 @@ class AboutUsRepositoryImpl(private val apolloClient: ApolloClient) : AboutUsRep
       val result =
         safeCall {
           val response =
-            apolloClient.query(
-              OrganisationQuery(
-                filter =
-                  Optional.present(
-                    OrganisationFilter(name = Optional.present(StringFilter(eq = Optional.present(name))))
-                  )
-              )
-            ).execute()
+            apolloClient.query(OrganisationByNameQuery(name)).execute()
 
           if (response.hasErrors()) {
             val errorMessage = response.errors?.firstOrNull()?.message ?: "Unknown error occurred"
             throw Exception(errorMessage)
           }
-
-          response.data?.organisationCollection?.edges?.map {
-            OrganisationDetail(
-              id = it.node.id,
-              name = it.node.name!!,
-              description = it.node.description!!,
-              logo = it.node.logo,
-              members =
-                it.node.organisationalMemberCollection?.edges?.map {
-                  val (id, post, priority, _member) = it.node
-                  val member = _member!!
-                  OrganisationalMember(
-                    id = id,
-                    post = post!!,
-                    priority = priority!!,
-                    member =
-                      Member(
-                        id = member.id,
-                        name = member.name!!,
-                        profileImage = member.profileImage ?: "",
-                        phoneNumber = member.phoneNumber ?: ""
-                      )
-                  )
-                } ?: emptyList()
-            )
-          }?.firstOrNull() ?: throw Exception("Organisation not found")
+          val org = response.data?.organisation?.first()!!
+          OrganisationDetail(
+            id = org.id,
+            name = org.name,
+            description = org.description,
+            logo = org.logo
+          )
         }
-
       emit(result)
     }
 
@@ -104,11 +72,10 @@ class AboutUsRepositoryImpl(private val apolloClient: ApolloClient) : AboutUsRep
             val errorMessage = response.errors?.firstOrNull()?.message ?: "Unknown error occurred"
             throw Exception(errorMessage)
           }
-
-          response.data?.organisationCollection?.edges?.map { edge ->
+          response.data?.organisation?.map { edge ->
             OrganisationName(
-              id = edge.node.id,
-              name = edge.node.name
+              id = edge.id,
+              name = edge.name
             )
           } ?: emptyList()
         }

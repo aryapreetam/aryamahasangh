@@ -48,5 +48,6 @@ include(":shared")
 include(":ui-components")
 include(":ui-components-gallery")
 include(":img-compress-cmp")
+include(":nhost-client")
 
 //includeBuild("/Users/preetam/projects/nhost-kt")

@@ -17,7 +17,7 @@ composeRememberSetting = "1.0.3"
 junit = "4.13.2"
 ktlint = "12.3.0"
 
-kotlin = "2.2.20"
+kotlin = "2.2.21"
 
 # kotlin = "2.1.0-firework.32" # custom version for experimental hot reload support
 compose-hot-reload = "1.0.0-rc02"
@@ -30,14 +30,14 @@ koin = "4.1.0"
 
 # Do not not modify this, OR it will break android build
 logback = "1.2.11"
-navigationCompose = "2.9.0-beta02"
-adaptive = "1.1.0"
+navigationCompose = "2.9.1"
+adaptive = "1.1.2"
 uiToolingPreviewDesktop = "1.8.0"
 uiToolingPreviewAndroid = "1.8.2"
 runner = "1.6.2"
 core = "1.5.0"
 
-apollo = "4.1.1"
+apollo = "5.0.0-alpha.2"
 apolloAdapters = "0.0.6"
 androidYoutubePlayerCore = "12.1.1"
 androidx-activityCompose = "1.10.1"
@@ -77,6 +77,8 @@ ktor-client-okhttp = { module = "io.ktor:ktor-client-okhttp", version.ref = "kto
 ktor-client-darwin = { module = "io.ktor:ktor-client-darwin", version.ref = "ktor" }
 ktor-client-java = { module = "io.ktor:ktor-client-java", version.ref = "ktor" }
 ktor-client-wasm = { module = "io.ktor:ktor-client-js-wasm-js", version.ref = "ktor" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 logback = { module = "ch.qos.logback:logback-classic", version.ref = "logback" }
 ktor-server-core = { module = "io.ktor:ktor-server-core-jvm", version.ref = "ktor" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty-jvm", version.ref = "ktor" }
@@ -118,7 +120,7 @@ supabase-coil = { module = "io.github.jan-tennert.supabase:coil3-integration", v
 apollo-adapters-core = { module = "com.apollographql.adapters:apollo-adapters-core", version = "0.0.6" }
 apollo-adapters-kotlinx-datetime = { module = "com.apollographql.adapters:apollo-adapters-kotlinx-datetime", version = "0.0.6" }
 apollo-normalized-cache = { module = "com.apollographql.apollo:apollo-normalized-cache", version.ref = "apollo"}
-
+apollo-runtime = { module = "com.apollographql.apollo:apollo-runtime", version.ref = "apollo"}
 
 # filekit latest
 filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "filekit" }

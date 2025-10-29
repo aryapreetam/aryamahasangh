@@ -2,13 +2,10 @@ package com.aryamahasangh.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CloudOff
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.SignalWifiOff
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -407,7 +404,7 @@ private fun getErrorInfo(error: AppError?): ErrorInfo {
         suggestions =
           listOf(
             "🔄 कृपया पुनः प्रयास करें",
-            "📞 यदि यह जारी रहे तो सहायता से संपर्क करें"
+            "📞 सहायता के लिए संपर्क करें"
           ),
         icon = Icons.Default.Info
       )

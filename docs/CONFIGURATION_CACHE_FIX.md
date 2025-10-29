@@ -1,85 +1,97 @@
-# Configuration Cache Fix for Android Builds
+# Configuration Cache Fix for fixGeneratedSecrets Task
 
 ## Problem
-When running Android builds, you encountered configuration cache errors:
+
+When enabling `org.gradle.configuration-cache=true` in `gradle.properties`, the build failed with the following error:
 
 ```
 Configuration cache problems found in this build.
-
-2 problems were found storing the configuration cache.
-- Task `:composeApp:checkSecrets` of type `org.gradle.api.DefaultTask`: cannot serialize object of type 'org.gradle.api.internal.project.DefaultProject', a subtype of 'org.gradle.api.Project', as these are not supported with the configuration cache.
-- Task `:composeApp:setupSecrets` of type `org.gradle.api.tasks.Exec`: cannot serialize object of type 'org.gradle.api.internal.project.DefaultProject', a subtype of 'org.gradle.api.Project', as these are not supported with the configuration cache.
+3 problems were found storing the configuration cache.
+- Task `:nhost-client:fixGeneratedSecrets` of type `org.gradle.api.DefaultTask`: 
+  cannot serialize object of type 'org.gradle.api.internal.project.DefaultProject', 
+  a subtype of 'org.gradle.api.Project', as these are not supported with the configuration cache.
+- Task `:nhost-client:fixGeneratedSecrets` of type `org.gradle.api.DefaultTask`: 
+  invocation of 'Task.project' at execution time is unsupported with the configuration cache.
 ```
 
 ## Root Cause
-The Gradle tasks were capturing references to the `project` object through calls like:
-- `rootProject.file("secrets.properties")`
-- `rootProject.projectDir`
 
-These references are not serializable with Gradle's configuration cache, which is designed to improve build performance.
+The `fixGeneratedSecrets` task was accessing the `project` object and `layout` API at **execution time** (inside the `doLast` block), which violates configuration cache requirements. The configuration cache cannot serialize `Project` instances.
 
-## Solution Applied
-Modified the tasks in `composeApp/build.gradle.kts` to be configuration cache compatible:
-
-### Before (Problematic):
+### Original Code (Problematic)
 ```kotlin
-tasks.register<Exec>("setupSecrets") {
-    // ...
-    workingDir = rootProject.projectDir
-    onlyIf {
-        rootProject.file("secrets.properties").exists()
+tasks.register("fixGeneratedSecrets") {
+  doLast {
+    // ❌ Accessing layout at execution time
+    val secretsFile = layout.buildDirectory
+      .dir("generated/kmp-secrets/commonMain/kotlin/secrets/Secrets.kt")
+      .get()
+      .asFile
+
+    if (secretsFile.exists()) {
+      // ❌ Accessing project.name at execution time
+      println("[${project.name}] Fixing dollar signs...")
+      // ...
     }
-    // ...
+  }
 }
 ```
 
-### After (Fixed):
+## Solution
+
+The fix captures all required values at **configuration time** (outside the `doLast` block) and uses Gradle's Provider API for lazy evaluation:
+
+### Fixed Code
 ```kotlin
-tasks.register<Exec>("setupSecrets") {
-    // Configuration cache compatible - capture values at configuration time
-    val rootDir = rootProject.projectDir
-    val secretsFile = File(rootDir, "secrets.properties")
-    val isWindows = System.getProperty("os.name").lowercase().contains("windows")
-    
-    workingDir = rootDir
-    onlyIf {
-        secretsFile.exists()
+tasks.register("fixGeneratedSecrets") {
+  // ✅ Capture values at configuration time
+  val projectName = project.name
+  val secretsFileProvider = layout.buildDirectory
+    .dir("generated/kmp-secrets/commonMain/kotlin/secrets/Secrets.kt")
+    .map { it.asFile }
+
+  doLast {
+    // ✅ Resolve Provider at execution time
+    val secretsFile = secretsFileProvider.get()
+
+    if (secretsFile.exists()) {
+      // ✅ Use captured projectName
+      println("[$projectName] Fixing dollar signs...")
+      // ...
     }
-    // ...
+  }
 }
 ```
 
 ## Key Changes
-1. **Captured values at configuration time**: Instead of accessing `rootProject` during task execution, we capture the needed values (`rootProject.projectDir`) at configuration time.
 
-2. **Used File constructor**: Replaced `rootProject.file()` calls with `File()` constructor to avoid capturing project references.
-
-3. **Stored OS detection**: Captured the Windows detection result at configuration time rather than during execution.
+1. **Captured `project.name` at configuration time**: Stored the project name in a local variable before the `doLast` block
+2. **Used Provider API for file paths**: Changed from `.get().asFile` to `.map { it.asFile }` to create a Provider that's resolved at execution time
+3. **Resolved Provider in `doLast`**: Called `.get()` on the Provider inside the execution block
 
 ## Benefits
-- ✅ **Configuration cache compatible**: Tasks can now be serialized properly
-- ✅ **Faster builds**: Configuration cache can be used for improved build performance
-- ✅ **Same functionality**: All secrets automation features work exactly the same
-- ✅ **Cross-platform**: Still works on Windows, macOS, and Linux
 
-## Testing
-After applying this fix:
-1. Clean your build: `./gradlew clean`
-2. Run Android build: `./gradlew assembleDebug`
-3. Verify no configuration cache warnings appear
-4. Confirm secrets are still loaded properly
+- ✅ **Configuration Cache Compatible**: No more serialization errors
+- ✅ **Faster Builds**: Configuration cache can be reused across builds
+- ✅ **Same Functionality**: The task behavior remains unchanged
+- ✅ **Multi-Module Support**: Works correctly for both `nhost-client` and `composeApp` modules
 
-## Next Steps
-To apply this fix to your repository:
-1. The changes have been committed to the feature branch
-2. Push the changes: `git push`
-3. The existing pull request will be updated automatically
-4. Test the Android build to confirm the fix works
+## Verification
 
-## Technical Details
-This fix follows Gradle's best practices for configuration cache compatibility:
-- Avoid capturing `Project` instances in task actions
-- Capture required values at configuration time
-- Use value types instead of Gradle API objects where possible
+The fix was tested with:
+```bash
+./gradlew :nhost-client:generateSecretsMetadataCommonMain --configuration-cache
+./gradlew :composeApp:generateSecretsMetadataCommonMain --configuration-cache
+```
 
-For more information, see: https://docs.gradle.org/current/userguide/configuration_cache.html#config_cache:requirements:disallowed_types
+Both builds succeeded with:
+- ✅ "Configuration cache entry stored" on first run
+- ✅ "Configuration cache entry reused" on subsequent runs
+- ✅ No configuration cache warnings or errors
+
+## References
+
+- [Gradle Configuration Cache Requirements](https://docs.gradle.org/current/userguide/configuration_cache_requirements.html)
+- [Gradle Provider API](https://docs.gradle.org/current/userguide/lazy_configuration.html)
+- [Configuration Cache: Disallowed Types](https://docs.gradle.org/current/userguide/configuration_cache_requirements.html#config_cache:requirements:disallowed_types)
+

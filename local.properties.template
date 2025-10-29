@@ -35,6 +35,15 @@ prod_keystore_password=
 prod_key_alias=
 prod_key_password=
 
+# Nhost Configuration (for GraphQL client)
+# Get admin secret from Nhost Dashboard: https://app.nhost.io/
+nhost_dev_graphql_url=https://hwdbpplmrdjdhcsmdleh.graphql.ap-south-1.nhost.run/v1
+nhost_dev_admin_secret=
+nhost_staging_graphql_url=https://hwdbpplmrdjdhcsmdleh.graphql.ap-south-1.nhost.run/v1
+nhost_staging_admin_secret=
+nhost_prod_graphql_url=https://hwdbpplmrdjdhcsmdleh.graphql.ap-south-1.nhost.run/v1
+nhost_prod_admin_secret=
+
 # Current environment (dev or prod)
 environment=dev
 
