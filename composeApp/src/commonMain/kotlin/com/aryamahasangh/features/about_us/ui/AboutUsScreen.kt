@@ -1,4 +1,4 @@
-package com.aryamahasangh.screens
+package com.aryamahasangh.features.about_us.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -25,12 +25,10 @@ import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.mahasangh_logo_without_background
 import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.components.LoadingErrorState
+import com.aryamahasangh.features.about_us.domain.repository.OrganisationName
 import com.aryamahasangh.navigation.Screen
-import com.aryamahasangh.repository.OrganisationName
 import com.aryamahasangh.utils.WithTooltip
-import com.aryamahasangh.viewmodel.AboutUsViewModel
 import org.jetbrains.compose.resources.painterResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 @Composable
 fun AboutUs(
@@ -61,7 +59,6 @@ fun AboutUs(
       modifier = Modifier.padding(12.dp),
       verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-      // Organization Header Section
       item {
         Column(
           modifier = Modifier.fillMaxWidth().clickable {
@@ -87,7 +84,6 @@ fun AboutUs(
         }
       }
 
-      // Quick Links Section
       item {
         QuickLinksSection(
           navigateToScreen = navigateToScreen,
@@ -404,11 +400,3 @@ private data class QuickLinkSubSection(
   val title: String,
   val items: List<QuickLinkItem>
 )
-
-@Preview
-@Composable
-fun AboutUsIntro() {
-  // This is just a preview, so we don't need a real ViewModel
-  // In a real app, we would inject the ViewModel
-  // AboutUs(showDetailedAboutUs = {}, viewModel = AboutUsViewModel())
-}

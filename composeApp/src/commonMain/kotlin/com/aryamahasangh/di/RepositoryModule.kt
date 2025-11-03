@@ -1,5 +1,7 @@
 package com.aryamahasangh.di
 
+import com.aryamahasangh.features.about_us.data.AboutUsRepositoryImpl
+import com.aryamahasangh.features.about_us.domain.repository.AboutUsRepository
 import com.aryamahasangh.features.activities.ActivityRepository
 import com.aryamahasangh.features.activities.ActivityRepositoryImpl
 import com.aryamahasangh.features.admin.AdminRepository

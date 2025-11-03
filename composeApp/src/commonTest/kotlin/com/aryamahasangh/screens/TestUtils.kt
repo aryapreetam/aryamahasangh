@@ -3,6 +3,7 @@ package com.aryamahasangh.screens
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.remember
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.runComposeUiTest
@@ -15,24 +16,29 @@ import org.koin.dsl.module
  * This ensures tests don't fail due to missing dependencies.
  */
 @Composable
-fun TestWrapper(content: @Composable () -> Unit) {
+fun TestWrapper(
+  vararg koinModules: org.koin.core.module.Module = arrayOf(),
+  content: @Composable () -> Unit
+) {
   // Create instances of all required dependencies
   val snackbarHostState = SnackbarHostState()
 
-  // Wrap in KoinApplication for test isolation
-  KoinApplication(application = {
-    modules(
-      module {
-        // Add any test-specific dependencies here
+  // Provide a simple LifecycleOwner so components relying on LocalLifecycleOwner (NavController, etc.) work in tests
+  val lifecycleOwner = remember {
+    object : androidx.lifecycle.LifecycleOwner {
+      override val lifecycle: androidx.lifecycle.Lifecycle = androidx.lifecycle.LifecycleRegistry(this).apply {
+        handleLifecycleEvent(androidx.lifecycle.Lifecycle.Event.ON_RESUME)
       }
-    )
-  }) {
-    // Provide all CompositionLocals that might be needed
-    CompositionLocalProvider(
-      LocalSnackbarHostState provides snackbarHostState
-    ) {
-      content()
     }
+  }
+
+  // Provide CompositionLocals first so anything inside composables can read them
+  // Tests should start/stop Koin globally when they need DI; avoid starting Koin inside TestWrapper
+  CompositionLocalProvider(
+    LocalSnackbarHostState provides snackbarHostState,
+    androidx.lifecycle.compose.LocalLifecycleOwner provides lifecycleOwner
+  ) {
+    content()
   }
 }
 

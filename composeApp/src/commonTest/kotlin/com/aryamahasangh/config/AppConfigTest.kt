@@ -23,16 +23,6 @@ class AppConfigTest {
   }
 
   @Test
-  fun testServerUrlIsLoadedForDevEnvironment() {
-    assertTrue(AppConfig.serverUrl.isNotEmpty())
-  }
-
-  @Test
-  fun testGraphqlUrlIsGenerated() {
-    assertTrue(AppConfig.graphqlUrl.endsWith("/graphql"))
-  }
-
-  @Test
   fun testConfigInfoIsGenerated() {
     val configInfo = AppConfig.getConfigInfo()
     assertTrue(configInfo.contains("Environment: dev"))

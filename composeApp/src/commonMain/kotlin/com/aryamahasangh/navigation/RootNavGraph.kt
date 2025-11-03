@@ -46,7 +46,6 @@ import com.aryamahasangh.features.organisations.OrgsScreen
 import com.aryamahasangh.features.public_arya_samaj.AryaSamajHomeViewModel
 import com.aryamahasangh.screens.*
 import com.aryamahasangh.type.GenderFilter
-import com.aryamahasangh.viewmodel.AboutUsViewModel
 import com.aryamahasangh.viewmodel.BookOrderViewModel
 import com.aryamahasangh.viewmodel.JoinUsViewModel
 import com.aryamahasangh.viewmodel.LearningViewModel
@@ -60,8 +59,8 @@ fun RootNavGraph(navController: NavHostController) {
   NavHost(navController = navController, startDestination = Screen.AboutSection) {
     navigation<Screen.AboutSection>(startDestination = Screen.AboutUs) {
       composable<Screen.AboutUs> {
-        val viewModel = koinInject<AboutUsViewModel>()
-        AboutUs(
+        val viewModel = koinInject<com.aryamahasangh.features.about_us.ui.AboutUsViewModel>()
+        com.aryamahasangh.features.about_us.ui.AboutUs(
           showDetailedAboutUs = { organisationId ->
             navController.navigate(Screen.AboutUsDetails(organisationId))
           },
