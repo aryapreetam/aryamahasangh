@@ -45,9 +45,10 @@ import org.koin.compose.koinInject
 fun ActivityDetailScreen(
   id: String,
   onNavigateToEdit: (String) -> Unit = {},
+  onNavigateToCourseRegistration: (String, Int) -> Unit = { _, _ -> },
   onNavigateToRegistration: (String, Int) -> Unit = { _, _ -> },
   onNavigateToCreateOverview: (String, String?, List<String>) -> Unit = { _, _, _ -> },
-  viewModel: ActivitiesViewModel = koinInject()
+  viewModel: ActivitiesViewModel = koinInject(),
 ) {
   // Remove incorrect section tracking - this screen is part of Activities section
   // ActivitiesPageState.enterActivitiesSection()
@@ -130,7 +131,8 @@ fun ActivityDetailScreen(
       registeredUsers = registeredUsers,
       isLoggedIn = isLoggedIn,
       onNavigateToRegistration = onNavigateToRegistration,
-      onNavigateToCreateOverview = onNavigateToCreateOverview
+      onNavigateToCreateOverview = onNavigateToCreateOverview,
+      onNavigateToCourseRegistration = onNavigateToCourseRegistration
     )
 
     // Edit button in top-right corner
@@ -308,7 +310,8 @@ fun ActivityDisplay(
   registeredUsers: List<UserProfile> = emptyList(),
   isLoggedIn: Boolean,
   onNavigateToRegistration: (String, Int) -> Unit = { _, _ -> },
-  onNavigateToCreateOverview: (String, String?, List<String>) -> Unit = { _, _, _ -> }
+  onNavigateToCreateOverview: (String, String?, List<String>) -> Unit = { _, _, _ -> },
+  onNavigateToCourseRegistration: (String, Int) -> Unit = { _, _ -> },
 ) {
   println(activity)
 
@@ -329,14 +332,31 @@ fun ActivityDisplay(
         modifier = Modifier.padding(top = 1.dp)
       )
       Spacer(modifier = Modifier.width(8.dp))
-      Text(
-        modifier =
-          Modifier.background(
-            MaterialTheme.colorScheme.outlineVariant
-          ).padding(vertical = 4.dp, horizontal = 16.dp),
-        text = "${activityTypeData[activity.type]}",
-        style = MaterialTheme.typography.bodyLarge
-      )
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+        Text(
+          modifier =
+            Modifier.background(
+              MaterialTheme.colorScheme.outlineVariant
+            ).padding(vertical = 4.dp, horizontal = 16.dp),
+          text = "${activityTypeData[activity.type]}",
+          style = MaterialTheme.typography.bodyLarge
+        )
+        Text(
+          text = "(${
+            when(activity.allowedGender) {
+              "MALE" -> "पुरुष"
+              "FEMALE" -> "महिला"
+              "ANY" -> ""
+              else -> ""
+            }
+          })",
+          style = MaterialTheme.typography.labelMedium,
+        )
+      }
+
     }
 
     // Description
@@ -515,7 +535,13 @@ fun ActivityDisplay(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
       ) {
         Button(
-          onClick = { onNavigateToRegistration(activity.id, activity.capacity) },
+          onClick = {
+            if(activity.isOfTypeCourse()) {
+              onNavigateToCourseRegistration(activity.id, activity.capacity)
+            }else{
+              onNavigateToRegistration(activity.id, activity.capacity)
+            }
+          },
           enabled = !isFull
         ) {
           Text(

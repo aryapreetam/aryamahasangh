@@ -470,6 +470,10 @@ fun RootNavGraph(navController: NavHostController) {
             // Navigate to edit screen
             navController.navigate(Screen.EditActivity(activityId))
           },
+          onNavigateToCourseRegistration = { activityId, capacity ->
+            // Navigate to registration form
+            navController.navigate(Screen.CourseRegistrationForm(activityId))
+          },
           onNavigateToRegistration = { activityId, capacity ->
             // Navigate to registration form
             navController.navigate(Screen.AryaNirmanRegistrationForm(activityId, capacity))

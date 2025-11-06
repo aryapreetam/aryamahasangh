@@ -310,6 +310,7 @@ fragment ActivityWithStatus on ActivitiesWithStatus {
   type
   district
   state
+  allowedGender
 }
 
 fragment OrganisationalActivityWithStatusShort on ActivitiesWithStatus {

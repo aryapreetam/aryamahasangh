@@ -32,6 +32,7 @@ import com.aryamahasangh.features.activities.toLocalDateTime
 import com.aryamahasangh.features.arya_nirman.convertDates
 import com.aryamahasangh.fragment.ActivityWithStatus
 import com.aryamahasangh.type.ActivityType
+import com.aryamahasangh.type.GenderFilter
 import com.aryamahasangh.utils.WithTooltip
 import com.aryamahasangh.utils.formatShort
 import org.jetbrains.compose.resources.painterResource
@@ -90,6 +91,18 @@ fun ActivityListItem(
                 text = "${activityTypeData[activity.type]}",
                 style = MaterialTheme.typography.bodyLarge
               )
+              if(activity.type == ActivityType.COURSE || activity.type == ActivityType.SESSION) {
+                Text(
+                  text = when(activity.allowedGender) {
+                    GenderFilter.MALE -> "(पुरुष)"
+                    GenderFilter.FEMALE -> "(महिला)"
+                    GenderFilter.ANY -> "(संयुक्त)"
+                    else -> ""
+                  },
+                  style = MaterialTheme.typography.labelMedium,
+                  color = MaterialTheme.colorScheme.secondary
+                )
+              }
             }
           }
           if (isLoggedIn) {
@@ -206,9 +219,23 @@ fun ActivityListItem(
             if(activityStatus == ActivityStatus.UPCOMING) "पंजीकरण चालू" else activityStatus.toDisplayName()
           else activityStatus.toDisplayName()
 
-          WithTooltip(tooltip) {
-            // Activity status indicator
-            StatusChip(status = activityStatus, activityType = activity.type!!)
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+          ) {
+            if(activity.type == ActivityType.SESSION || activity.type == ActivityType.COURSE){
+              if(activityStatus == ActivityStatus.UPCOMING){
+                Text(
+                  text = "(पंजीकरण चालू)",
+                  style = MaterialTheme.typography.labelSmall,
+                  color = Color(0xFF4CAF50)
+                )
+              }
+            }
+            WithTooltip(tooltip) {
+              // Activity status indicator
+              StatusChip(status = activityStatus, activityType = activity.type!!)
+            }
           }
         }
       }

@@ -150,6 +150,14 @@ data class OrganisationalActivity(
   companion object
 }
 
+fun OrganisationalActivity.isEligibleForRegistration(): Boolean {
+  return type in listOf(ActivityType.SESSION, ActivityType.COURSE, ActivityType.BODH_SESSION)
+}
+
+fun OrganisationalActivity.isOfTypeCourse() : Boolean {
+  return type == COURSE
+}
+
 fun OrganisationalActivity.getStatus(): ActivityStatus {
   val currentTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
   return when {
