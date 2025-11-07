@@ -25,7 +25,6 @@ import com.aryamahasangh.features.public_arya_samaj.AryaSamajHomeRepositoryImpl
 import com.aryamahasangh.repository.*
 import org.koin.core.module.dsl.bind
 import org.koin.core.module.dsl.singleOf
-import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 /**
@@ -40,8 +39,8 @@ val repositoryModule =
     singleOf(::LearningRepositoryImpl) { bind<LearningRepository>() }
 
     // Provide AboutUsRepository with NHost ApolloClient
-    single<AboutUsRepository> { AboutUsRepositoryImpl(get(qualifier = named("nhost"))) }
-
+    //single<AboutUsRepository> { AboutUsRepositoryImpl(get(qualifier = named("nhost"))) }
+    single<AboutUsRepository> { AboutUsRepositoryImpl(get()) }
     // Provide OrganisationsRepository
     singleOf(::OrganisationsRepositoryImpl) { bind<OrganisationsRepository>() }
 

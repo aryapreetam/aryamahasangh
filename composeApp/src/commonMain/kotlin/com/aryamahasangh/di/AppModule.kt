@@ -6,12 +6,10 @@ import com.aryamahasangh.features.gurukul.data.ImageUploadRepository
 import com.aryamahasangh.features.gurukul.data.ImageUploadRepositoryImpl
 import com.aryamahasangh.features.gurukul.domain.usecase.RegisterForCourseUseCase
 import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationViewModel
-import com.aryamahasangh.network.nhostApolloClient
 import com.aryamahasangh.network.supabaseClient
 import com.aryamahasangh.utils.FileUploadUtils
 import io.github.jan.supabase.graphql.graphql
 import org.koin.core.module.Module
-import org.koin.core.qualifier.named
 import org.koin.dsl.module
 
 /**
@@ -23,7 +21,7 @@ val appModule =
     single { supabaseClient.graphql.apolloClient }
 
     // Provide NHost Apollo Client as a qualified dependency
-    single(named("nhost")) { nhostApolloClient }
+    //single(named("nhost")) { nhostApolloClient }
 
     // Provide FileUploadUtils
     single { FileUploadUtils }

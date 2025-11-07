@@ -46,7 +46,6 @@ tasks.configureEach {
   }
 }
 
-
 kotlin {
   jvmToolchain(17)
 
