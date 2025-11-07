@@ -345,18 +345,15 @@ fun ActivityDisplay(
           style = MaterialTheme.typography.bodyLarge
         )
         Text(
-          text = "(${
-            when(activity.allowedGender) {
-              "MALE" -> "पुरुष"
-              "FEMALE" -> "महिला"
-              "ANY" -> ""
-              else -> ""
-            }
-          })",
+          text = when(activity.allowedGender) {
+            "MALE" -> "(पुरुष)"
+            "FEMALE" -> "(महिला)"
+            "ANY" -> ""
+            else -> ""
+          },
           style = MaterialTheme.typography.labelMedium,
         )
       }
-
     }
 
     // Description

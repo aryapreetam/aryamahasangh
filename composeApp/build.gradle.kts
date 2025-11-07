@@ -8,7 +8,6 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSetTree
 import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
-import org.jetbrains.kotlin.gradle.tasks.AbstractKotlinCompileTool
 import java.util.*
 
 plugins {
@@ -20,7 +19,7 @@ plugins {
   alias(libs.plugins.kotlinx.serialization)
   alias(libs.plugins.apollo)
   alias(libs.plugins.ktlint)
-  alias(libs.plugins.kmp.secrets.plugin)
+//  alias(libs.plugins.kmp.secrets.plugin)
 }
 
 // Load secrets from local.properties for build-time operations
@@ -58,13 +57,13 @@ val environment = project.findProperty("env")?.toString() ?: localProps.getPrope
 // Apply the test reporting configuration
 apply(from = "$rootDir/composeApp/testreporting.gradle.kts")
 
-secretsConfig {
-  outputDir = layout.buildDirectory
-    .dir("generated/kmp-secrets/commonMain/kotlin")
-    .get()
-    .asFile
-    .absolutePath
-}
+//secretsConfig {
+//  outputDir = layout.buildDirectory
+//    .dir("generated/kmp-secrets/commonMain/kotlin")
+//    .get()
+//    .asFile
+//    .absolutePath
+//}
 
 // NOTE: Do not add name-based matching here (e.g., tasks.matching { it.name.startsWith("compileKotlin") })
 // because it is hard to keep precise and can trigger IDE generic inference warnings.
@@ -147,13 +146,14 @@ kotlin {
 
   sourceSets {
     val commonMain by getting {
-      kotlin.srcDir(
-        layout.buildDirectory
-          .dir("generated/kmp-secrets/commonMain/kotlin")
-          .get()
-          .asFile
-          .absolutePath
-      )
+      // Commented out: do not include generated secrets in composeApp to avoid duplicate class with :nhost-client
+//      kotlin.srcDir(
+//        layout.buildDirectory
+//          .dir("generated/kmp-secrets/commonMain/kotlin")
+//          .get()
+//          .asFile
+//          .absolutePath
+//      )
     }
     val desktopMain by getting
     val desktopTest by getting
@@ -284,6 +284,48 @@ android {
     buildConfig = true
   }
 
+  // --- Resilient release signing configuration -------------------------------------
+  // CI / secure local builds should export:
+  //   KEYSTORE_PATH, KEYSTORE_PASSWORD, KEY_PASSWORD, KEY_ALIAS
+  // As a fallback (local only) we read local.properties keys:
+  //   release_keystore_path, release_store_password, release_key_password, release_key_alias
+  // FINAL fallback (development only) uses an insecure default "password" so that
+  // developers can produce a locally testable bundle. A WARNING is printed in that case.
+  val resolvedKeystorePath = System.getenv("KEYSTORE_PATH")
+    ?: localProps.getProperty("release_keystore_path")
+    ?: "../aryamahasangh.jks" // existing expected path
+  val resolvedStorePassword = System.getenv("KEYSTORE_PASSWORD")
+    ?: localProps.getProperty("release_store_password")
+    ?: "password"
+  val resolvedKeyPassword = System.getenv("KEY_PASSWORD")
+    ?: localProps.getProperty("release_key_password")
+    ?: resolvedStorePassword
+  val resolvedKeyAlias = System.getenv("KEY_ALIAS")
+    ?: localProps.getProperty("release_key_alias")
+    ?: "keystore"
+
+  val resolvedKeystoreFile = file(resolvedKeystorePath)
+  if (!resolvedKeystoreFile.exists()) {
+    println("[composeApp] WARNING: Release keystore not found at $resolvedKeystorePath. If this is a CI/prod build, provide a real keystore via KEYSTORE_PATH & secrets. A placeholder may be generated locally for testing only.")
+  }
+  if (resolvedStorePassword == "password") {
+    println("[composeApp] WARNING: Using default placeholder keystore password. DO NOT use this for production Play uploads.")
+  }
+
+  signingConfigs {
+    register("release") {
+      if (resolvedKeystoreFile.exists()) {
+        storeFile = resolvedKeystoreFile
+        storePassword = resolvedStorePassword
+        keyAlias = resolvedKeyAlias
+        keyPassword = resolvedKeyPassword
+      } else {
+        // Leave storeFile unset; build will fail at signing step if not replaced.
+        println("[composeApp] WARNING: Signing config created without keystore file; supply one to sign the bundle.")
+      }
+    }
+  }
+
   packaging {
     resources {
       excludes +=
@@ -291,14 +333,6 @@ android {
           "META-INF/INDEX.LIST",
           "META-INF/io.netty.versions.properties"
         )
-    }
-  }
-  signingConfigs {
-    register("release") {
-      storeFile = file("../aryamahasangh.jks")
-      storePassword = System.getenv("KEYSTORE_PASSWORD")
-      keyAlias = "keystore"
-      keyPassword = System.getenv("KEY_PASSWORD")
     }
   }
 
@@ -355,9 +389,10 @@ compose.desktop {
 //   "compileKotlinWasmJs uses output of generateSecrets... without declared dependency".
 // This single, type-safe wiring targets the common superclass for all Kotlin compile tasks
 // so any future backend is covered automatically.
-tasks.withType(AbstractKotlinCompileTool::class.java).configureEach {
-  dependsOn(tasks.matching { it.name.startsWith("generateSecrets") && !it.name.contains("Test") })
-}
+// Commented out to fully disable any coupling to secrets generation in composeApp
+//tasks.withType(AbstractKotlinCompileTool::class.java).configureEach {
+//  dependsOn(tasks.matching { it.name.startsWith("generateSecrets") && !it.name.contains("Test") })
+//}
 // by default composeApp:allTests only works for wasm & ios
 tasks.register("allKmpTests") {
   dependsOn(

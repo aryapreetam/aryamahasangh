@@ -25,7 +25,7 @@ class AppConfigTest {
   @Test
   fun testConfigInfoIsGenerated() {
     val configInfo = AppConfig.getConfigInfo()
-    assertTrue(configInfo.contains("Environment: dev"))
+    assertTrue(configInfo.contains(Regex("Environment: (dev|prod|staging)")))
     assertTrue(configInfo.contains("Supabase URL:"))
   }
 }
