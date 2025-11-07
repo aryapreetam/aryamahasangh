@@ -24,7 +24,8 @@ composeApp/src/commonMain/kotlin/secrets/Secrets.kt
 
 # Firebender AI config
 firebender.json
-
+/.github/copilot-instructions.md
+.github/copilot-instructions.md
 # Nhost local project configuration (environment-specific)
 .nhost/
 

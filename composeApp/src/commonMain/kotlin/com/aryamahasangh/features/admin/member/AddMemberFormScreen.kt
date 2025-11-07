@@ -20,7 +20,8 @@ import com.aryamahasangh.navigation.LocalSnackbarHostState
 import com.aryamahasangh.network.bucket
 import com.aryamahasangh.ui.components.buttons.*
 import com.aryamahasangh.util.ImageCompressionService
-import io.github.vinceglb.filekit.core.PlatformFile
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.readBytes
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate

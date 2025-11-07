@@ -42,9 +42,9 @@ import com.aryamahasangh.navigation.LocalSnackbarHostState
 import com.aryamahasangh.network.bucket
 import com.aryamahasangh.screens.EditImageButton
 import com.aryamahasangh.util.ImageCompressionService
-import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
-import io.github.vinceglb.filekit.core.PickerMode
-import io.github.vinceglb.filekit.core.PickerType
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.dialogs.FileKitMode
+import io.github.vinceglb.filekit.dialogs.FileKitType
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -178,8 +178,8 @@ fun OrganisationDetail(
                 val snackbarHostState = LocalSnackbarHostState.current
                 val launcher =
                   rememberFilePickerLauncher(
-                    type = PickerType.File(extensions = listOf("png", "jpg", "jpeg", "webp")),
-                    mode = PickerMode.Single,
+                    type = FileKitType.File(extensions = listOf("png", "jpg", "jpeg", "webp")),
+                    mode = FileKitMode.Single,
                     title = "Select logo"
                   ) { file ->
                     if (file != null) {

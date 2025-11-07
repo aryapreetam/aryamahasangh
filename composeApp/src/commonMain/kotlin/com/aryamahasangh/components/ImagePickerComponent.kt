@@ -24,10 +24,12 @@ import com.aryamahasangh.imgcompress.CompressionConfig
 import com.aryamahasangh.imgcompress.ImageCompressor
 import com.aryamahasangh.imgcompress.ImageData
 import com.aryamahasangh.imgcompress.ResizeOptions
-import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
-import io.github.vinceglb.filekit.core.PickerMode
-import io.github.vinceglb.filekit.core.PickerType
-import io.github.vinceglb.filekit.core.PlatformFile
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.dialogs.FileKitMode
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.name
+import io.github.vinceglb.filekit.readBytes
 import kotlinx.coroutines.launch
 
 /**
@@ -52,7 +54,7 @@ data class ImagePickerConfig(
   val minImages: Int = 1,
   val showPreview: Boolean = true,
   val previewSize: Int = 100,
-  val allowCamera: Boolean = false, // Future camera support
+  val allowCamera: Boolean = true, // Enable camera by default on mobile platforms
   val enableBackgroundCompression: Boolean = true,
   val compressionTargetKb: Int = 100, // Default 100KB
   val profilePhotoTargetKb: Int = 40, // Profile photos 40KB  
@@ -87,7 +89,8 @@ data class ImagePickerState(
   val newImages: List<PlatformFile> = emptyList(),
   val compressedImageData: Map<PlatformFile, ByteArray> = emptyMap(),
   val existingImageUrls: List<String> = emptyList(),
-  val deletedImageUrls: Set<String> = emptySet()
+  val deletedImageUrls: Set<String> = emptySet(),
+  val capturedFiles: Set<PlatformFile> = emptySet() // Track camera-captured files for cleanup
 ) {
   val totalImages: Int
     get() = newImages.size + existingImageUrls.filter { it !in deletedImageUrls }.size
@@ -98,10 +101,17 @@ data class ImagePickerState(
   fun getCompressedBytes(file: PlatformFile): ByteArray? = compressedImageData[file]
   fun hasCompressedData(file: PlatformFile): Boolean = compressedImageData.containsKey(file)
 
+  fun isCapturedFile(file: PlatformFile): Boolean = file in capturedFiles
+
   fun withCleanup(): ImagePickerState {
     val validCompressedData = compressedImageData.filterKeys { it in newImages }
-    return if (validCompressedData.size != compressedImageData.size) {
-      copy(compressedImageData = validCompressedData)
+    val validCapturedFiles = capturedFiles.filter { it in newImages }.toSet()
+    return if (validCompressedData.size != compressedImageData.size ||
+               validCapturedFiles.size != capturedFiles.size) {
+      copy(
+        compressedImageData = validCompressedData,
+        capturedFiles = validCapturedFiles
+      )
     } else {
       this
     }
@@ -130,7 +140,7 @@ data class ImagePickerState(
  * @param validateFields Whether to validate fields
  * @param onValidationResult Callback for validation result
  */
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ImagePickerComponent(
   state: ImagePickerState,
@@ -143,15 +153,15 @@ fun ImagePickerComponent(
 ) {
   val pickerMode =
     if (config.effectiveAllowMultiple) {
-      PickerMode.Multiple()
+      FileKitMode.Multiple()
     } else {
-      PickerMode.Single
+      FileKitMode.Single
     }
 
   val pickerType =
     when (config.type) {
-      ImagePickerType.IMAGE, ImagePickerType.PROFILE_PHOTO -> PickerType.Image
-      ImagePickerType.IMAGE_AND_DOCUMENT -> PickerType.ImageAndVideo // Using this as a proxy for all files
+      ImagePickerType.IMAGE, ImagePickerType.PROFILE_PHOTO -> FileKitType.Image
+      ImagePickerType.IMAGE_AND_DOCUMENT -> FileKitType.ImageAndVideo // Using this as a proxy for all files
     }
 
   // Compression state
@@ -159,7 +169,87 @@ fun ImagePickerComponent(
   var compressionProgress by remember { mutableStateOf<Int?>(null) }
   var compressionError by remember { mutableStateOf<String?>(null) }
 
+  // Camera/Gallery source selector state (Android/iOS only)
+  var showSourceSelector by remember { mutableStateOf(false) }
+
   val coroutineScope = rememberCoroutineScope()
+
+  // Helper function to handle file processing (shared by gallery and camera)
+  val processFiles: (List<PlatformFile>, Boolean) -> Unit = { filesToAdd, isCaptured ->
+    // Filter by supported formats
+    val validFiles =
+      filesToAdd.filter { file ->
+        val extension = file.name.substringAfterLast('.', "").lowercase()
+        extension in config.effectiveSupportedFormats
+      }
+
+    // Ensure we don't exceed max images
+    val currentTotal = state.totalImages
+    val availableSlots = config.effectiveMaxImages - currentTotal
+    val filesToKeep = validFiles.take(availableSlots)
+
+    if (config.enableBackgroundCompression && filesToKeep.isNotEmpty()) {
+      compressingFiles = filesToKeep
+      compressionError = null
+
+      coroutineScope.launch {
+        try {
+          compressionProgress = 0
+          val compressionResults = mutableMapOf<PlatformFile, ByteArray>()
+
+          val processedFiles = filesToKeep.mapIndexed { idx, file ->
+            if (file.name.substringAfterLast('.').lowercase() in listOf("jpg", "jpeg", "png", "webp")) {
+              try {
+                val originalBytes = file.readBytes()
+                val mimeType = determineMimeType(file.name)
+
+                val compressed = ImageCompressor.compress(
+                  input = ImageData(originalBytes, mimeType),
+                  config = CompressionConfig.ByTargetSize(config.effectiveCompressionTarget),
+                  resize = ResizeOptions(maxLongEdgePx = 2560)
+                )
+
+                compressionResults[file] = compressed.bytes
+                compressionProgress = ((idx + 1) * 100) / filesToKeep.size
+                file
+              } catch (e: Exception) {
+                file
+              }
+            } else {
+              file
+            }
+          }
+
+          compressingFiles = emptyList()
+          compressionProgress = null
+
+          val newCapturedFiles = if (isCaptured) processedFiles.toSet() else emptySet()
+
+          onStateChange(
+            state.copy(
+              newImages = (state.newImages + processedFiles).distinct(),
+              compressedImageData = state.compressedImageData + compressionResults,
+              capturedFiles = state.capturedFiles + newCapturedFiles
+            ).withCleanup()
+          )
+        } catch (e: Exception) {
+          compressingFiles = emptyList()
+          compressionProgress = null
+          compressionError = "संपीड़न में त्रुटि: ${e.message ?: "अज्ञात"}"
+        }
+      }
+    } else {
+      // No compression required
+      val newCapturedFiles = if (isCaptured) filesToKeep.toSet() else emptySet()
+
+      onStateChange(
+        state.copy(
+          newImages = (state.newImages + filesToKeep).distinct(),
+          capturedFiles = state.capturedFiles + newCapturedFiles
+        ).withCleanup()
+      )
+    }
+  }
 
   val imagePickerLauncher =
     rememberFilePickerLauncher(
@@ -174,76 +264,134 @@ fun ImagePickerComponent(
             is PlatformFile -> listOf(files)
             else -> emptyList()
           }
-
-        // Filter by supported formats
-        val validFiles =
-          filesToAdd.filter { file ->
-            val extension = file.name.substringAfterLast('.', "").lowercase()
-            extension in config.effectiveSupportedFormats
-          }
-
-        // Ensure we don't exceed max images
-        val currentTotal = state.totalImages
-        val availableSlots = config.effectiveMaxImages - currentTotal
-        val filesToKeep = validFiles.take(availableSlots)
-
-        if (config.enableBackgroundCompression && filesToKeep.isNotEmpty()) {
-          compressingFiles = filesToKeep
-          compressionError = null
-
-          coroutineScope.launch {
-            try {
-              compressionProgress = 0
-              val compressionResults = mutableMapOf<PlatformFile, ByteArray>()
-              
-              val processedFiles = filesToKeep.mapIndexed { idx, file ->
-                if (file.name.substringAfterLast('.').lowercase() in listOf("jpg", "jpeg", "png", "webp")) {
-                  try {
-                    val originalBytes = file.readBytes()
-                    val mimeType = determineMimeType(file.name)
-
-                    val compressed = ImageCompressor.compress(
-                      input = ImageData(originalBytes, mimeType),
-                      config = CompressionConfig.ByTargetSize(config.effectiveCompressionTarget),
-                      resize = ResizeOptions(maxLongEdgePx = 2560)
-                    )
-
-                    compressionResults[file] = compressed.bytes
-                    compressionProgress = ((idx + 1) * 100) / filesToKeep.size
-                    file
-                  } catch (e: Exception) {
-                    file
-                  }
-                } else {
-                  file
-                }
-              }
-              
-              compressingFiles = emptyList()
-              compressionProgress = null
-
-              onStateChange(
-                state.copy(
-                  newImages = (state.newImages + processedFiles).distinct(),
-                  compressedImageData = state.compressedImageData + compressionResults
-                ).withCleanup()
-              )
-            } catch (e: Exception) {
-              compressingFiles = emptyList()
-              compressionProgress = null
-              compressionError = "संपीड़न में त्रुटि: ${e.message ?: "अज्ञात"}"
-            }
-          }
-        } else {
-          // No compression required
-          onStateChange(
-            state.copy(
-              newImages = (state.newImages + filesToKeep).distinct()
-            ).withCleanup()
-          )
-        }
+        processFiles(filesToAdd, false)
       }
     }
+
+  // Camera permission state
+  var showPermissionSettingsDialog by remember { mutableStateOf(false) }
+
+  // Camera picker launcher (Android/iOS only, no-op on Desktop/Web)
+  val cameraPickerLauncher = rememberPlatformCameraLauncher { result ->
+    when (result) {
+      is CameraPermissionResult.Success -> {
+        processFiles(listOf(result.file), true)
+      }
+      is CameraPermissionResult.Denied -> {
+        // User denied permission - show error, they can try again
+        compressionError = "कैमरा अनुमति अस्वीकृत। पुनः प्रयास करें।"
+      }
+      is CameraPermissionResult.PermanentlyDenied -> {
+        // Permission permanently denied - show dialog to go to Settings
+        showPermissionSettingsDialog = true
+      }
+      is CameraPermissionResult.Cancelled -> {
+        // User cancelled camera - no action needed
+      }
+    }
+  }
+
+  // Platform-aware launch logic
+  val onAddImageClick: () -> Unit = {
+    if (isCameraSupported() && config.allowCamera) {
+      showSourceSelector = true // Show modal on mobile platforms when camera is enabled
+    } else {
+      imagePickerLauncher.launch() // Direct gallery picker when camera disabled or not supported
+    }
+  }
+
+  // Cleanup captured temp files on component dispose
+  DisposableEffect(Unit) {
+    onDispose {
+      state.newImages
+        .filter { state.isCapturedFile(it) }
+        .forEach { file ->
+          try {
+            // Note: PlatformFile doesn't have delete(), cleanup handled by system cache
+            // This is here for documentation - FileKit uses cache directory
+          } catch (e: Exception) {
+            // Silent cleanup failure - cache will be cleared by system
+          }
+        }
+    }
+  }
+
+  // Modal bottom sheet for source selection (Android/iOS only)
+  if (showSourceSelector) {
+    ModalBottomSheet(
+      onDismissRequest = { showSourceSelector = false }
+    ) {
+      Column(
+        modifier = Modifier
+          .fillMaxWidth()
+          .padding(vertical = 8.dp)
+      ) {
+        // Camera option
+        ListItem(
+          headlineContent = { Text("कैमरा से लें") },
+          leadingContent = {
+            Icon(
+              Icons.Default.PhotoCamera,
+              contentDescription = "कैमरा",
+              tint = MaterialTheme.colorScheme.primary
+            )
+          },
+          modifier = Modifier.clickable {
+            showSourceSelector = false
+            cameraPickerLauncher.launch()
+          }
+        )
+
+        HorizontalDivider()
+
+        // Gallery option
+        ListItem(
+          headlineContent = { Text("गैलरी से चुनें") },
+          leadingContent = {
+            Icon(
+              Icons.Default.PhotoLibrary,
+              contentDescription = "गैलरी",
+              tint = MaterialTheme.colorScheme.primary
+            )
+          },
+          modifier = Modifier.clickable {
+            showSourceSelector = false
+            imagePickerLauncher.launch()
+          }
+        )
+
+        Spacer(Modifier.height(16.dp))
+      }
+    }
+  }
+
+  // Permission Settings Dialog (when permanently denied)
+  if (showPermissionSettingsDialog) {
+    AlertDialog(
+      onDismissRequest = { showPermissionSettingsDialog = false },
+      title = { Text("कैमरा अनुमति आवश्यक") },
+      text = {
+        Text("कैमरा का उपयोग करने के लिए अनुमति आवश्यक है। कृपया सेटिंग्स में जाकर कैमरा अनुमति प्रदान करें।")
+      },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            showPermissionSettingsDialog = false
+            cameraPickerLauncher.openSettings()
+          }
+        ) {
+          Text("सेटिंग्स खोलें")
+        }
+      },
+      dismissButton = {
+        TextButton(
+          onClick = { showPermissionSettingsDialog = false }
+        ) {
+          Text("रद्द करें")
+        }
+      }
+    )
+  }
 
   /////////////////////////////
   /// SELF VALIDATION LOGIC ///
@@ -340,7 +488,7 @@ fun ImagePickerComponent(
         onStateChange = onStateChange,
         config = config,
         error = effectiveError,
-        onPickerLaunch = { imagePickerLauncher.launch() }
+        onPickerLaunch = onAddImageClick
       )
     } else {
       // Regular image/document picker layout
@@ -349,7 +497,7 @@ fun ImagePickerComponent(
         onStateChange = onStateChange,
         config = config,
         error = effectiveError,
-        onPickerLaunch = { imagePickerLauncher.launch() }
+        onPickerLaunch = onAddImageClick
       )
     }
   }
@@ -544,8 +692,9 @@ private fun RegularPickerContent(
         onClick = onPickerLaunch,
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)
       ) {
+        // if (config.allowCamera) Icons.Default.PhotoCamera else Icons.Default.Add
         Icon(
-          if (config.allowCamera) Icons.Default.PhotoCamera else Icons.Default.Add,
+           Icons.Default.Add,
           contentDescription = "जोड़ें",
           modifier = Modifier.size(ButtonDefaults.IconSize)
         )

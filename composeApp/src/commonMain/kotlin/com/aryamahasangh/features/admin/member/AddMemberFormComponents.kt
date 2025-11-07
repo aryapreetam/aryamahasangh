@@ -26,7 +26,8 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.aryamahasangh.components.*
 import com.aryamahasangh.features.activities.Member
-import io.github.vinceglb.filekit.core.PlatformFile
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.readBytes
 import kotlinx.datetime.LocalDate
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -471,31 +472,7 @@ private fun AddMemberProfilePhotoItem(
   var bytes by remember(file) { mutableStateOf<ByteArray?>(null) }
 
   LaunchedEffect(file) {
-    bytes =
-      if (file.supportsStreams()) {
-        val size = file.getSize()
-        if (size != null && size > 0L) {
-          val buffer = ByteArray(size.toInt())
-          val tmpBuffer = ByteArray(1000)
-          var totalBytesRead = 0
-          file.getStream().use {
-            while (it.hasBytesAvailable()) {
-              val numRead = it.readInto(tmpBuffer, 1000)
-              tmpBuffer.copyInto(
-                buffer,
-                destinationOffset = totalBytesRead,
-                endIndex = numRead
-              )
-              totalBytesRead += numRead
-            }
-          }
-          buffer
-        } else {
-          file.readBytes()
-        }
-      } else {
-        file.readBytes()
-      }
+    bytes = file.readBytes()
   }
 
   Box(modifier = modifier) {

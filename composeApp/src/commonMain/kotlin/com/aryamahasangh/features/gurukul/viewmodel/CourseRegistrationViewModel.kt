@@ -1,29 +1,16 @@
 package com.aryamahasangh.features.gurukul.viewmodel
 
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewModelScope
 import com.aryamahasangh.components.ImagePickerState
 import com.aryamahasangh.features.gurukul.domain.models.CourseRegistrationFormData
 import com.aryamahasangh.features.gurukul.domain.usecase.RegisterForCourseUseCase
-import com.aryamahasangh.ui.components.buttons.SubmissionError
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.onSubscription
-import kotlinx.coroutines.flow.scan
-import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.launch
-import kotlinx.datetime.LocalDate
+import io.github.vinceglb.filekit.name
+import io.github.vinceglb.filekit.readBytes
+import kotlinx.coroutines.flow.*
 import kotlinx.datetime.Clock
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import kotlinx.coroutines.flow.SharingStarted
 
 // UiState for the form
 sealed class UiEffect {

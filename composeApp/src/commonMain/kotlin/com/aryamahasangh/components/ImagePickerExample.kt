@@ -4,7 +4,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,10 +23,12 @@ import com.aryamahasangh.util.GlobalMessageManager
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.utils.FileUploadUtils
 import com.aryamahasangh.utils.logger
-import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
-import io.github.vinceglb.filekit.core.PickerMode
-import io.github.vinceglb.filekit.core.PickerType
-import io.github.vinceglb.filekit.core.PlatformFile
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.dialogs.FileKitMode
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.name
+import io.github.vinceglb.filekit.readBytes
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -415,8 +416,8 @@ private fun ImageCompressorExample(
 
   val pickLauncher =
     rememberFilePickerLauncher(
-      type = PickerType.Image,
-      mode = PickerMode.Single,
+      type = FileKitType.Image,
+      mode = FileKitMode.Single,
       title = "चित्र चुनें"
     ) { files ->
       val file = when (files) {

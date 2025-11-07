@@ -2,7 +2,9 @@ package com.aryamahasangh.utils
 
 import com.aryamahasangh.network.bucket
 import com.aryamahasangh.util.Result
-import io.github.vinceglb.filekit.core.PlatformFile
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.name
+import io.github.vinceglb.filekit.readBytes
 import kotlinx.datetime.Clock
 
 object FileUploadUtils {

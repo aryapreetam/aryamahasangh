@@ -33,10 +33,11 @@ import aryamahasangh.composeapp.generated.resources.error_profile_image
 import com.aryamahasangh.components.PhotoItem
 import com.aryamahasangh.utils.epochToDate
 import com.aryamahasangh.viewmodel.AdmissionsViewModel
-import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
-import io.github.vinceglb.filekit.core.PickerMode
-import io.github.vinceglb.filekit.core.PickerType
-import io.github.vinceglb.filekit.core.PlatformFile
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.dialogs.FileKitMode
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
+import io.github.vinceglb.filekit.name
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
@@ -396,8 +397,8 @@ fun ButtonForFilePicker(
 ) {
   val launcher =
     rememberFilePickerLauncher(
-      type = PickerType.File(extensions = listOf("png", "jpg", "jpeg", "webp", "pdf", "docx")),
-      mode = PickerMode.Multiple(),
+      type = FileKitType.File(extensions = listOf("png", "jpg", "jpeg", "webp", "pdf", "docx")),
+      mode = FileKitMode.Multiple(),
       title = "Select documents"
     ) { files ->
       println(files)
@@ -421,8 +422,8 @@ fun StudentPhotoSection(
   Column(horizontalAlignment = Alignment.Start) {
     val launcher =
       rememberFilePickerLauncher(
-        type = PickerType.Image,
-        mode = PickerMode.Single,
+        type = FileKitType.Image,
+        mode = FileKitMode.Single,
         title = "Select photo"
       ) { file ->
         onPhotoSelected(file)
@@ -496,8 +497,8 @@ fun SignatureSection(
       Column {
         val launcher =
           rememberFilePickerLauncher(
-            type = PickerType.Image,
-            mode = PickerMode.Single,
+            type = FileKitType.Image,
+            mode = FileKitMode.Single,
             title = "Select photo"
           ) { file ->
             onSignatureSelected(file)

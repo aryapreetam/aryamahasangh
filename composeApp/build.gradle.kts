@@ -186,11 +186,10 @@ kotlin {
 
       implementation(libs.compose.remember.setting)
 
-      // filekit
-      // Enables FileKit without Compose dependencies
-      implementation(libs.filekit.core)
-      // Enables FileKit with Composable utilities
-      implementation(libs.filekit.compose)
+      // filekit v0.12.0 with camera support
+      implementation(libs.filekit.dialogs)
+      implementation(libs.filekit.dialogs.compose)
+      implementation(libs.filekit.coil)
 
       // supabase
       implementation(project.dependencies.platform(libs.supabase.bom)) // 
@@ -231,6 +230,9 @@ kotlin {
       implementation(libs.compose.ui.tooling.preview)
       implementation(libs.ktor.client.android)
       implementation(libs.koin.androidx.compose)
+
+      // Accompanist for runtime permissions
+      implementation(libs.accompanist.permissions)
     }
 
     androidInstrumentedTest.dependencies {

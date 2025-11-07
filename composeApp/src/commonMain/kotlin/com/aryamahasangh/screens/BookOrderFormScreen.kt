@@ -17,12 +17,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.qr_code
-import io.github.vinceglb.filekit.compose.rememberFilePickerLauncher
-import io.github.vinceglb.filekit.core.PickerMode
-import io.github.vinceglb.filekit.core.PickerType
-import io.github.vinceglb.filekit.core.PlatformFile
 import com.aryamahasangh.components.PhotoItem
 import com.aryamahasangh.viewmodel.BookOrderViewModel
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.dialogs.FileKitMode
+import io.github.vinceglb.filekit.dialogs.FileKitType
+import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -469,9 +469,9 @@ fun ReceiptUploadSection(
   Column(horizontalAlignment = Alignment.Start) {
     val launcher =
       rememberFilePickerLauncher(
-        type = PickerType.Image,
-        mode = PickerMode.Single,
-        title = "रसीद जोड़ें"
+        type = FileKitType.Image,
+        mode = FileKitMode.Single,
+        title = "रसीद जोड़ें"
       ) { file ->
         onPhotoSelected(file)
       }

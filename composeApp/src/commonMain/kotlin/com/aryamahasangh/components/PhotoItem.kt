@@ -13,7 +13,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import io.github.vinceglb.filekit.core.PlatformFile
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.name
+import io.github.vinceglb.filekit.readBytes
 
 @Composable
 fun PhotoItem(
@@ -24,31 +26,7 @@ fun PhotoItem(
   var showName by remember { mutableStateOf(false) }
 
   LaunchedEffect(file) {
-    bytes =
-      if (file.supportsStreams()) {
-        val size = file.getSize()
-        if (size != null && size > 0L) {
-          val buffer = ByteArray(size.toInt())
-          val tmpBuffer = ByteArray(1000)
-          var totalBytesRead = 0
-          file.getStream().use {
-            while (it.hasBytesAvailable()) {
-              val numRead = it.readInto(tmpBuffer, 1000)
-              tmpBuffer.copyInto(
-                buffer,
-                destinationOffset = totalBytesRead,
-                endIndex = numRead
-              )
-              totalBytesRead += numRead
-            }
-          }
-          buffer
-        } else {
-          file.readBytes()
-        }
-      } else {
-        file.readBytes()
-      }
+    bytes = file.readBytes()
   }
 
   Surface(

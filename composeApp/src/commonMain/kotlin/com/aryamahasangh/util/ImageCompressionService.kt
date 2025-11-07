@@ -1,10 +1,12 @@
 package com.aryamahasangh.util
 
-import com.aryamahasangh.imgcompress.CompressionConfig
 import com.aryamahasangh.imgcompress.ImageCompressor
 import com.aryamahasangh.imgcompress.ImageData
+import com.aryamahasangh.imgcompress.CompressionConfig
 import com.aryamahasangh.imgcompress.ResizeOptions
-import io.github.vinceglb.filekit.core.PlatformFile
+import io.github.vinceglb.filekit.PlatformFile
+import io.github.vinceglb.filekit.name
+import io.github.vinceglb.filekit.readBytes
 
 /**
  * Simple service for compressing images with configurable targets
