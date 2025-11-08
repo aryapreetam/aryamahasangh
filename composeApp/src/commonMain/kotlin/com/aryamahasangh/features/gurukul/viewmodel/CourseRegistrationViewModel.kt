@@ -23,7 +23,8 @@ data class UiState(
   val satrDate: String = "",
   val satrPlace: String = "",
   val recommendation: String = "",
-  val imagePickerState: ImagePickerState = ImagePickerState(),
+  val imagePickerState: ImagePickerState = ImagePickerState(), // Receipt image
+  val photoPickerState: ImagePickerState = ImagePickerState(), // User photo
   val isSubmitting: Boolean = false,
   val submitSuccess: Boolean = false,
   val submitErrorMessage: String? = null,
@@ -37,7 +38,8 @@ data class UiState(
       satrDate.isNotEmpty() &&
       satrPlace.isNotEmpty() &&
       recommendation.isNotEmpty() &&
-      imagePickerState.hasImages
+      imagePickerState.hasImages &&
+      photoPickerState.hasImages
 }
 
 class CourseRegistrationViewModel(
@@ -71,6 +73,7 @@ class CourseRegistrationViewModel(
       errors += "अमान्य दिनांक"
     }
     if (s.satrPlace.isBlank()) errors += "कृपया सत्र स्थान भरें"
+    if (s.photoPickerState.newImages.isEmpty()) errors += "कृपया फोटो अपलोड करें"
     if (s.imagePickerState.newImages.isEmpty()) errors += "कृपया भुगतान रसीद अपलोड करें"
     if (errors.isNotEmpty()) {
       // Only first validation error shown for submit button
@@ -84,7 +87,8 @@ class CourseRegistrationViewModel(
     satrDate: String? = null,
     satrPlace: String? = null,
     recommendation: String? = null,
-    imagePickerState: ImagePickerState? = null
+    imagePickerState: ImagePickerState? = null,
+    photoPickerState: ImagePickerState? = null
   ) {
     _state.update { current ->
       current.copy(
@@ -93,6 +97,7 @@ class CourseRegistrationViewModel(
         satrPlace = satrPlace ?: current.satrPlace,
         recommendation = recommendation ?: current.recommendation,
         imagePickerState = imagePickerState ?: current.imagePickerState,
+        photoPickerState = photoPickerState ?: current.photoPickerState,
         isDirty = true,
         submitErrorMessage = null,
         validationMessages = emptyList(),
@@ -110,9 +115,17 @@ class CourseRegistrationViewModel(
     _state.update { it.copy(isSubmitting = true, submitErrorMessage = null, uiEffect = UiEffect.None) }
     try {
       val s = _state.value
+
+      // Receipt image
       val picker = s.imagePickerState
       val imageBytes = picker.newImages.firstOrNull()?.let { it.readBytes() }
       val imageFilename = picker.newImages.firstOrNull()?.name ?: "receipt.jpg"
+
+      // User photo
+      val photoPicker = s.photoPickerState
+      val photoBytes = photoPicker.newImages.firstOrNull()?.let { it.readBytes() }
+      val photoFilename = photoPicker.newImages.firstOrNull()?.name ?: "photo.jpg"
+
       val formData = CourseRegistrationFormData(
         activityId = activityId,
         name = s.name,
@@ -120,7 +133,9 @@ class CourseRegistrationViewModel(
         satrPlace = s.satrPlace,
         recommendation = s.recommendation,
         imageBytes = imageBytes,
-        imageFilename = imageFilename
+        imageFilename = imageFilename,
+        photoBytes = photoBytes,
+        photoFilename = photoFilename
       )
       val result = registerForCourseUseCase.execute(formData)
       if (result.isSuccess) {

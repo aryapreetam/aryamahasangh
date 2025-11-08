@@ -519,7 +519,7 @@ private fun ProfilePhotoPickerContent(
     Box(
       modifier =
         Modifier
-          .size(150.dp)
+          .size(config.previewSize.dp)
           .clickable {
             if (state.totalImages == 0) {
               onPickerLaunch()
@@ -535,7 +535,7 @@ private fun ProfilePhotoPickerContent(
             contentDescription = "Profile Photo",
             modifier =
               Modifier
-                .size(150.dp)
+                .size(config.previewSize.dp)
                 .clip(RoundedCornerShape(12.dp)),
             contentScale = ContentScale.Crop
           )
@@ -556,7 +556,7 @@ private fun ProfilePhotoPickerContent(
               contentDescription = "Profile Photo",
               modifier =
                 Modifier
-                  .size(150.dp)
+                  .size(config.previewSize.dp)
                   .clip(RoundedCornerShape(12.dp)),
               contentScale = ContentScale.Crop
             )
@@ -569,7 +569,7 @@ private fun ProfilePhotoPickerContent(
             contentDescription = "Profile Photo Placeholder",
             modifier =
               Modifier
-                .size(150.dp)
+                .size(config.previewSize.dp)
                 .clip(RoundedCornerShape(12.dp)),
             contentScale = ContentScale.Crop,
             placeholder =
@@ -587,7 +587,7 @@ private fun ProfilePhotoPickerContent(
           Box(
             modifier =
               Modifier
-                .size(150.dp)
+                .size(config.previewSize.dp)
                 .clip(RoundedCornerShape(12.dp))
                 .background(Color.Black.copy(alpha = 0.3f)),
             contentAlignment = Alignment.Center

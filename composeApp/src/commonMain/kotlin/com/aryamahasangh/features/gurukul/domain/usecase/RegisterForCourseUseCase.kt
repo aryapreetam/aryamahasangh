@@ -12,7 +12,7 @@ class RegisterForCourseUseCase(
   private val imageUploadRepository: ImageUploadRepository
 ) {
   suspend fun execute(formData: CourseRegistrationFormData): Result<Unit> {
-    // Step 1: Upload image to Supabase
+    // Step 1: Upload receipt image to Supabase
     val imageResult = imageUploadRepository.uploadReceipt(
       formData.imageBytes ?: return Result.failure(Exception("No image provided")),
       formData.imageFilename ?: "receipt.jpg"
@@ -22,7 +22,17 @@ class RegisterForCourseUseCase(
     }
     val receiptUrl = imageResult.getOrNull() ?: return Result.failure(Exception("रसीद अपलोड विफल"))
 
-    // Step 2: Build insert input
+    // Step 2: Upload user photo to Supabase
+    val photoResult = imageUploadRepository.uploadReceipt(
+      formData.photoBytes ?: return Result.failure(Exception("No photo provided")),
+      formData.photoFilename ?: "photo.jpg"
+    )
+    if (photoResult.isFailure) {
+      return Result.failure(Exception("फोटो अपलोड विफल: ${photoResult.exceptionOrNull()?.message ?: "अज्ञात"}"))
+    }
+    val photoUrl = photoResult.getOrNull() ?: return Result.failure(Exception("फोटो अपलोड विफल"))
+
+    // Step 3: Build insert input
     val satrDateInstant = try {
       // Convert LocalDate string to Instant for database storage
       val localDate = LocalDate.parse(formData.satrDate)
@@ -38,8 +48,9 @@ class RegisterForCourseUseCase(
       .satrPlace(formData.satrPlace)
       .recommendation(formData.recommendation)
       .paymentReceiptUrl(receiptUrl)
+      .photoUrl(photoUrl)
       .build()
-    // Step 3: Build mutation
+    // Step 4: Build mutation
     val mutation = RegisterForCourseMutation(input)
     val mutationResult = courseRegistrationRepository.registerForCourse(mutation)
     if (mutationResult.isFailure) {

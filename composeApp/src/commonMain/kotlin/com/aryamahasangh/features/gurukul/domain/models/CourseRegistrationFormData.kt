@@ -7,7 +7,9 @@ data class CourseRegistrationFormData(
   val satrDate: String,
   val satrPlace: String,
   val recommendation: String,
-  val imageBytes: ByteArray?, // null until image picked
-  val imageFilename: String?
+  val imageBytes: ByteArray?, // Receipt image
+  val imageFilename: String?,
+  val photoBytes: ByteArray?, // User photo
+  val photoFilename: String?
 )
 // ... existing code ...

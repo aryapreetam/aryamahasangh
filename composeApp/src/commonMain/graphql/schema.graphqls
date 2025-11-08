@@ -1817,6 +1817,11 @@ type BookOrdersUpdateResponse {
 }
 
 """
+A value that is true or false
+"""
+scalar Boolean
+
+"""
 Boolean expression comparing fields on type "Boolean"
 """
 input BooleanFilter {
@@ -1861,6 +1866,8 @@ type CourseRegistrations implements Node {
   activityId: String
 
   paymentReceiptUrl: String
+
+  photoUrl: String
 
   activity: Activities
 }
@@ -1911,6 +1918,8 @@ input CourseRegistrationsFilter {
 
   paymentReceiptUrl: StringFilter
 
+  photoUrl: StringFilter
+
   nodeId: IDFilter
 
   """
@@ -1943,6 +1952,8 @@ input CourseRegistrationsInsertInput {
   activityId: String
 
   paymentReceiptUrl: String
+
+  photoUrl: String
 }
 
 type CourseRegistrationsInsertResponse {
@@ -1973,6 +1984,8 @@ input CourseRegistrationsOrderBy {
   activityId: OrderByDirection
 
   paymentReceiptUrl: OrderByDirection
+
+  photoUrl: OrderByDirection
 }
 
 input CourseRegistrationsUpdateInput {
@@ -1989,6 +2002,8 @@ input CourseRegistrationsUpdateInput {
   activityId: String
 
   paymentReceiptUrl: String
+
+  photoUrl: String
 }
 
 type CourseRegistrationsUpdateResponse {
@@ -2462,6 +2477,11 @@ enum FilterIs {
 }
 
 """
+A scalar floating point value up to 32 bits
+"""
+scalar Float
+
+"""
 Boolean expression comparing fields on type "Float"
 """
 input FloatFilter {
@@ -2519,11 +2539,21 @@ input GenderFilterFilter {
 }
 
 """
+A globally unique identifier for a given record
+"""
+scalar ID
+
+"""
 Boolean expression comparing fields on type "ID"
 """
 input IDFilter {
   eq: ID
 }
+
+"""
+A scalar integer up to 32 bits
+"""
+scalar Int
 
 """
 Boolean expression comparing fields on type "Int"
@@ -4745,6 +4775,11 @@ type StorageCleanupQueueUpdateResponse {
   """
   records: [StorageCleanupQueue!]!
 }
+
+"""
+A string
+"""
+scalar String
 
 """
 Boolean expression comparing fields on type "String"

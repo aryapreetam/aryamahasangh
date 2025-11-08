@@ -12,6 +12,7 @@ query courseRegistrationsForActivity($activityId: String!){
         satrPlace
         recommendation
         paymentReceiptUrl
+        photoUrl
       }
     }
   }

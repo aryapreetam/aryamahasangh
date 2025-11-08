@@ -18,7 +18,8 @@ data class CourseRegistrationReceivedItem(
   val date: String,
   val place: String,
   val recommendation: String,
-  val receiptUrl: String?
+  val receiptUrl: String?,
+  val photoUrl: String?
 )
 
 data class CourseDropdownItem(
@@ -117,7 +118,8 @@ class CourseRegistrationsReceivedViewModel(
       ).first,
       place = raw.satrPlace ?: "",
       recommendation = raw.recommendation ?: "",
-      receiptUrl = raw.paymentReceiptUrl
+      receiptUrl = raw.paymentReceiptUrl,
+      photoUrl = raw.photoUrl
     )
   }
 

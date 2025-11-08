@@ -104,6 +104,27 @@ fun CourseRegistrationFormScreen(
       text = "कक्षा प्रवेश पंजीकरण",
       style = MaterialTheme.typography.headlineSmall
     )
+    Spacer(Modifier.height(16.dp))
+    // Photo Upload Section
+    ImagePickerComponent(
+      state = uiState.photoPickerState,
+      onStateChange = { newState ->
+        viewModel.onFieldChange(photoPickerState = newState)
+      },
+      config = ImagePickerConfig(
+        label = "फोटो अपलोड करें",
+        type = ImagePickerType.PROFILE_PHOTO,
+        allowMultiple = false,
+        maxImages = 1,
+        isMandatory = true,
+        showPreview = true,
+        previewSize = 180, // Slightly bigger preview (default is 150dp for PROFILE_PHOTO)
+        enableBackgroundCompression = true,
+        compressionTargetKb = 40,
+        showCompressionProgress = true
+      )
+    )
+
     OutlinedTextField(
       value = nameFieldValue,
       onValueChange = {
@@ -200,7 +221,7 @@ fun CourseRegistrationFormScreen(
     }
     Column {
       Text(
-        text = "निचे संरक्षक की संस्तुति के साथ उनका का नाम, व्यवसाय, योग्यता भी लिखे",
+        text = "निचे संस्तुति के साथ संस्तुति देने वाले का नाम, व्यवसाय, योग्यता भी लिखे",
         style = MaterialTheme.typography.labelMedium
       )
       OutlinedTextField(
@@ -209,13 +230,13 @@ fun CourseRegistrationFormScreen(
           recommendationFieldValue = it
           viewModel.onFieldChange(recommendation = it.text)
         },
-        label = { Text("संरक्षक की संस्तुति") },
+        label = { Text("संस्तुति") },
         modifier = Modifier.width(500.dp).testTag("registrationFormRecommendationField")
           .semantics { testTag = "recommendation_field" },
         isError = uiState.submitErrorMessage != null && recommendationFieldValue.text.isBlank(),
         supportingText = {
           if (uiState.submitErrorMessage != null && recommendationFieldValue.text.isBlank()) {
-            Text("कृपया संरक्षक की संस्तुति भरें", color = MaterialTheme.colorScheme.error)
+            Text("कृपया संस्तुति भरें", color = MaterialTheme.colorScheme.error)
           }
         },
         minLines = 3,
