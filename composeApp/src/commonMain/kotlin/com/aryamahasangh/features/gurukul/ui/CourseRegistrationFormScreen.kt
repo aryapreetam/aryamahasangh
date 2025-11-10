@@ -221,7 +221,7 @@ fun CourseRegistrationFormScreen(
     }
     Column {
       Text(
-        text = "निचे संस्तुति के साथ संस्तुति देने वाले का नाम, व्यवसाय, योग्यता भी लिखे",
+        text = "संस्तुति देने वाले का नाम, पद भी लिखें",
         style = MaterialTheme.typography.labelMedium
       )
       OutlinedTextField(
