@@ -2,17 +2,29 @@ package com.aryamahasangh.features.gurukul.ui
 
 // Added import for IntrinsicSize to allow Row to size itself to tallest child,
 // enabling the vertical divider to fill available height
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
@@ -27,14 +39,16 @@ import com.aryamahasangh.components.DatePickerField
 import com.aryamahasangh.components.ImagePickerComponent
 import com.aryamahasangh.components.ImagePickerConfig
 import com.aryamahasangh.components.ImagePickerType
+import com.aryamahasangh.features.gurukul.viewmodel.ButtonState
 import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationViewModel
-import com.aryamahasangh.ui.components.buttons.SubmissionError
-import com.aryamahasangh.ui.components.buttons.SubmitButton
-import com.aryamahasangh.ui.components.buttons.SubmitButtonConfig
+import com.aryamahasangh.features.gurukul.viewmodel.UiEffect
 import com.aryamahasangh.util.GlobalMessageManager
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
+
 
 @Composable
 fun CourseRegistrationFormScreen(
@@ -44,11 +58,9 @@ fun CourseRegistrationFormScreen(
 ) {
   val uiState by viewModel.uiState.collectAsState()
   val openDialog = uiState.showUnsavedExitDialog
-  val submitSuccess = uiState.submitSuccess
-  if (submitSuccess) {
-    // Immediate navigation pattern
-    LaunchedEffect(submitSuccess) {
-      viewModel.resetSubmitState()
+  val shouldNavigateBack = uiState.buttonState is ButtonState.Success
+  if (shouldNavigateBack) {
+    LaunchedEffect("success-nav") {
       onNavigateBack()
     }
   }
@@ -74,19 +86,18 @@ fun CourseRegistrationFormScreen(
       modifier = Modifier.semantics { testTag = "unsaved_exit_dialog" }
     )
   }
-  val lastUiEffect = remember { mutableStateOf<com.aryamahasangh.features.gurukul.viewmodel.UiEffect?>(null) }
-  LaunchedEffect(uiState.uiEffect) {
-    if (uiState.uiEffect != com.aryamahasangh.features.gurukul.viewmodel.UiEffect.None && uiState.uiEffect != lastUiEffect.value) {
-      lastUiEffect.value = uiState.uiEffect
-      when (val effect = uiState.uiEffect) {
-        is com.aryamahasangh.features.gurukul.viewmodel.UiEffect.ShowSnackbar -> {
-          GlobalMessageManager.showSuccess(effect.message)
-        }
+  // ONE collector for effects — permanent for composition lifetime
+  LaunchedEffect(Unit) {
+    viewModel.effect.collect { effect ->
+      when (effect) {
+        is UiEffect.ShowSnackbar ->
+          if (effect.isError)
+            GlobalMessageManager.showError(effect.message)
+          else
+            GlobalMessageManager.showSuccess(effect.message)
 
-        com.aryamahasangh.features.gurukul.viewmodel.UiEffect.None -> {}
+        UiEffect.None -> Unit
       }
-      // Optionally: reset effect so it's consumed only once
-      // Not strictly needed here since effect will typically update on next state transition
     }
   }
 
@@ -221,7 +232,7 @@ fun CourseRegistrationFormScreen(
     }
     Column {
       Text(
-        text = "संस्तुति देने वाले का नाम, पद भी लिखें",
+        text = "आर्या परिषद् की अध्यक्षा की संस्तुति(Recommendation)",
         style = MaterialTheme.typography.labelMedium
       )
       OutlinedTextField(
@@ -236,7 +247,7 @@ fun CourseRegistrationFormScreen(
         isError = uiState.submitErrorMessage != null && recommendationFieldValue.text.isBlank(),
         supportingText = {
           if (uiState.submitErrorMessage != null && recommendationFieldValue.text.isBlank()) {
-            Text("कृपया संस्तुति भरें", color = MaterialTheme.colorScheme.error)
+            Text("कृपया संस्तुति(Recommendation) भरें", color = MaterialTheme.colorScheme.error)
           }
         },
         minLines = 3,
@@ -261,30 +272,213 @@ fun CourseRegistrationFormScreen(
     )
     Spacer(Modifier.height(24.dp))
     SubmitButton(
-      text = "पंजीकरण प्रस्तुत करें",
-      onSubmit = {
-        viewModel.onSubmit()
-      },
-      config = SubmitButtonConfig(
-        validator = {
-          if(!uiState.isValid) SubmissionError.ValidationFailed else null
-//          uiState.submitErrorMessage?.let {
-//            com.aryamahasangh.ui.components.buttons.SubmissionError.Custom(
-//              message = it
-//            )
-//          }
-        },
-      ),
-      modifier = Modifier.semantics { testTag = "submit_button" },
-      callbacks = object : com.aryamahasangh.ui.components.buttons.SubmitCallbacks {
-        override fun onError(error: com.aryamahasangh.ui.components.buttons.SubmissionError) {
-          // No navigation on error—UI shows error state, snackbar handled by ViewModel
+      state = uiState.buttonState,
+      onSubmit = { viewModel.onSubmit() },
+      isValid = uiState.isValid,
+      modifier = Modifier.semantics { testTag = "submit_button" }
+    )
+//    SubmitButton(
+//      text = "पंजीकरण प्रस्तुत करें",
+//      onSubmit = {
+//        viewModel.onSubmit()
+//      },
+//      config = SubmitButtonConfig(
+//        validator = {
+//          if(!uiState.isValid) SubmissionError.ValidationFailed else null
+////          uiState.submitErrorMessage?.let {
+////            com.aryamahasangh.ui.components.buttons.SubmissionError.Custom(
+////              message = it
+////            )
+////          }
+//        },
+//      ),
+//      modifier = Modifier.semantics { testTag = "submit_button" },
+//      callbacks = object : com.aryamahasangh.ui.components.buttons.SubmitCallbacks {
+//        override fun onError(error: com.aryamahasangh.ui.components.buttons.SubmissionError) {
+//          // No navigation on error—UI shows error state, snackbar handled by ViewModel
+//        }
+//        override fun onSuccess() {
+//          // Success: navigation handled by LaunchedEffect(submitSuccess)
+//        }
+//      }
+//    )
+  }
+}
+
+data class SubmitButtonStrings(
+  val idle: String = "पंजीकरण प्रस्तुत करें",
+  val loading: String = "प्रेषित किया जा रहा है…",
+  val success: String = "सफल!",
+  val errorPrefix: String = "त्रुटि:"
+)
+
+@Composable
+fun SubmitButton(
+  state: ButtonState,
+  strings: SubmitButtonStrings = SubmitButtonStrings(),
+  isValid: Boolean,
+  validationMessage: String = "कृपया सभी आवश्यक फील्ड भरें",
+  onSubmit: () -> Unit,
+  modifier: Modifier = Modifier
+) {
+  val haptic = LocalHapticFeedback.current
+  val shake = remember { Animatable(0f) }
+  val scope = rememberCoroutineScope()
+
+  // Local UI-only validation block
+  var showValidationFeedback by remember { mutableStateOf(false) }
+
+  // --- RUN SHAKE ---
+  suspend fun runShake() {
+    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+    val pattern = listOf(12f, -10f, 8f, -6f, 4f, -2f, 0f)
+    for (v in pattern) shake.animateTo(v, tween(50))
+  }
+
+  // Backend error triggers shake
+  LaunchedEffect(state) {
+    if (state is ButtonState.Error) runShake()
+  }
+
+  // Button Colors (unchanged)
+  val backgroundColor = when (state) {
+    ButtonState.Idle -> MaterialTheme.colorScheme.primary
+    ButtonState.Loading -> MaterialTheme.colorScheme.primary.copy(alpha = 0.90f)
+    ButtonState.Success -> Color(0xFF059669)
+    is ButtonState.Error -> Color(0xFFDC2626)
+  }
+
+  val contentColor = when (state) {
+    ButtonState.Idle, ButtonState.Loading -> MaterialTheme.colorScheme.onPrimary
+    ButtonState.Success -> Color.White
+    is ButtonState.Error -> Color.White
+  }
+
+  Column(
+    horizontalAlignment = Alignment.CenterHorizontally,
+    verticalArrangement = Arrangement.spacedBy(8.dp)
+  ) {
+
+    // ===== BUTTON =====
+    Button(
+      onClick = {
+        if (state is ButtonState.Loading) return@Button
+
+        // VALIDATION FAILED → SHAKE + SHOW ERROR CARD
+        if (!isValid) {
+          scope.launch { runShake() }
+          showValidationFeedback = true
+
+          // auto-hide
+          scope.launch {
+            delay(2000)
+            showValidationFeedback = false
+          }
+
+          return@Button
         }
-        override fun onSuccess() {
-          // Success: navigation handled by LaunchedEffect(submitSuccess)
+
+        // VALIDATION PASSED → SUBMIT
+        onSubmit()
+      },
+      enabled = true,
+      modifier = modifier
+        .height(56.dp)
+        .graphicsLayer { translationX = shake.value },
+      colors = ButtonDefaults.buttonColors(
+        containerColor = backgroundColor,
+        contentColor = contentColor
+      ),
+      contentPadding = PaddingValues(0.dp)
+    ) {
+
+      // SAME INTERNAL CONTENT AS BEFORE
+      Box(
+        modifier = Modifier
+          .widthIn(min = 160.dp)
+          .padding(horizontal = 28.dp),
+        contentAlignment = Alignment.Center
+      ) {
+        AnimatedContent(
+          targetState = state,
+          transitionSpec = {
+            fadeIn(tween(250)) togetherWith fadeOut(tween(250))
+          },
+          label = "SubmitButtonAnimation"
+        ) { s ->
+
+          when (s) {
+
+            ButtonState.Idle -> {
+              Text(strings.idle, style = MaterialTheme.typography.labelLarge)
+            }
+
+            ButtonState.Loading -> {
+              Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                CircularProgressIndicator(
+                  modifier = Modifier.size(18.dp),
+                  strokeWidth = 2.dp,
+                  color = contentColor
+                )
+                Text(strings.loading, style = MaterialTheme.typography.labelLarge)
+              }
+            }
+
+            ButtonState.Success -> {
+              Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                Icon(Icons.Default.Check, null, tint = contentColor, modifier = Modifier.size(20.dp))
+                Text(strings.success, style = MaterialTheme.typography.labelLarge)
+              }
+            }
+
+            is ButtonState.Error -> {
+              Row(
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+              ) {
+                Icon(Icons.Default.Refresh, null, tint = contentColor, modifier = Modifier.size(18.dp))
+                Text(
+                  strings.errorPrefix + " " + s.message.take(20) + "…",
+                  style = MaterialTheme.typography.labelLarge
+                )
+              }
+            }
+          }
         }
       }
-    )
+    }
+
+    // ===== VALIDATION ERROR CARD BELOW BUTTON =====
+    Box(
+      modifier = Modifier.height(48.dp), // Reserved space to prevent jumping
+      contentAlignment = Alignment.Center
+    ) {
+      // only use androidx.compose.animation.AnimatedVisibility here(not androidx.compose.foundation.layout.ColumnScope.AnimatedVisibility)
+      androidx.compose.animation.AnimatedVisibility(
+        visible = showValidationFeedback,
+        enter = fadeIn(tween(150)),
+        exit = fadeOut(tween(150))
+      ) {
+        Card(
+          colors = CardDefaults.cardColors(
+            containerColor = Color(0xFFFFE4E4)
+          )
+        ) {
+          Text(
+            text = validationMessage,
+            color = Color(0xFFAA0000),
+            style = MaterialTheme.typography.bodySmall,
+            modifier = Modifier.padding(12.dp)
+          )
+        }
+      }
+    }
   }
 }
 

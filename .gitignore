@@ -37,3 +37,4 @@ supabase/migrations/migration_*/
 /.junie/*
 /composeApp/release/
 /aryamahasangh.jks
+/temp_migration/
