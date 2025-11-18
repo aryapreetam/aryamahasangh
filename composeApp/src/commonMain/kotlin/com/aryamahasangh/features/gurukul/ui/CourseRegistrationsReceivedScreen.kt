@@ -14,6 +14,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
@@ -192,6 +193,9 @@ fun CourseRegistrationReceivedCard(
   modifier: Modifier = Modifier
 ) {
   val uriHandler = LocalUriHandler.current
+  val hasSessionInfo = item.date.isNotBlank() || item.place.isNotBlank()
+  val hasPersonalInfo = item.hasPersonalSection()
+
   Card(
     shape = RoundedCornerShape(4.dp),
     modifier = modifier
@@ -199,234 +203,86 @@ fun CourseRegistrationReceivedCard(
       .testTag("registrationCard_${item.id}"),
   ) {
     Column(
-      modifier = Modifier.padding(12.dp),
+      modifier = Modifier.fillMaxWidth().padding(16.dp),
       verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-      // Top row: Photo on left, Registration info on right
       Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.Top
       ) {
-        // Photo on left (96x96)
-        Box(
-          modifier = Modifier.size(96.dp),
-          contentAlignment = Alignment.Center
-        ) {
-          if (!item.photoUrl.isNullOrBlank()) {
-            AsyncImage(
-              model = item.photoUrl,
-              contentDescription = "फोटो",
-              modifier = Modifier
-                .size(96.dp)
-                .clip(RoundedCornerShape(8.dp)),
-              contentScale = ContentScale.Crop
-            )
-          } else {
-            // Placeholder when no photo
-            Box(
-              modifier = Modifier
-                .size(96.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-              contentAlignment = Alignment.Center
-            ) {
-              Icon(
-                imageVector = Icons.Filled.Person,
-                contentDescription = "फोटो उपलब्ध नहीं",
-                modifier = Modifier.size(48.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
-              )
-            }
-          }
-        }
+        // Photo on the left
+        PhotoThumbnail(
+          photoUrl = item.photoUrl,
+          modifier = Modifier.size(96.dp).testTag("registrationPhoto_${item.id}")
+        )
 
-        // Registration info on right
+        // Right side: Column with Name at top, then Row with Phone/DOB + Receipt
         Column(
           modifier = Modifier.weight(1f),
           verticalArrangement = Arrangement.spacedBy(6.dp)
         ) {
-          // Name and receipt button
+          // Name spans full width
+          Text(
+            text = item.name,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth().testTag("registrationName_${item.id}")
+          )
+
+          // Row containing: Phone/DOB column + Receipt button
           Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalAlignment = Alignment.CenterVertically
           ) {
-            Text(
-              text = item.name,
-              style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-              maxLines = 1,
-              overflow = TextOverflow.Ellipsis,
-              modifier = Modifier.weight(1f).testTag("registrationName_${item.id}")
-            )
+            // Phone and DOB in a column
+            Column(
+              modifier = Modifier.weight(1f),
+              verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+              if (item.phoneNumber.isNotBlank()) {
+                DetailEntry(
+                  icon = Icons.Filled.Call,
+                  label = "फोन",
+                  value = item.phoneNumber,
+                  modifier = Modifier.testTag("registrationPhone_${item.id}"),
+                  onClick = {
+                    val sanitized = item.phoneNumber.filter { it.isDigit() || it == '+' }
+                    val telUri = if (sanitized.startsWith("+")) "tel:$sanitized" else "tel:+$sanitized"
+                    uriHandler.openUri(telUri)
+                  }
+                )
+              }
+
+              if (item.dob.isNotBlank()) {
+                DetailEntry(
+                  icon = Icons.Filled.CalendarMonth,
+                  label = "जन्मतिथि",
+                  value = item.dob,
+                  modifier = Modifier.testTag("registrationDob_${item.id}")
+                )
+              }
+            }
+
+            // Receipt button on the right with vertical divider
             if (!item.receiptUrl.isNullOrBlank()) {
+              VerticalDivider(modifier = Modifier.height(48.dp))
               WithTooltip(tooltip = "भुगतान रसीद") {
                 IconButton(
                   onClick = {
                     uriHandler.openUri(item.receiptUrl ?: "")
                     onReceiptClicked(item.receiptUrl ?: "")
                   },
-                  modifier = Modifier.size(32.dp).testTag("registrationReceiptButton_${item.id}")
+                  modifier = Modifier.size(36.dp).testTag("registrationReceiptButton_${item.id}")
                 ) {
                   Icon(
                     imageVector = Icons.Filled.ReceiptLong,
                     contentDescription = "रसीद देखने हेतु",
                     tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(22.dp)
                   )
-                }
-              }
-            }
-          }
-          Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Card(
-              border = CardDefaults.outlinedCardBorder(),
-              shape = RoundedCornerShape(4.dp),
-              colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-              modifier = Modifier.fillMaxWidth()
-            ) {
-              if(item.dob.isEmpty()) return@Card
-              Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(text = "व्यक्तिगत विवरण", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
-                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
-                Spacer(modifier = Modifier.height(4.dp))
-                @OptIn(ExperimentalLayoutApi::class)
-                FlowRow(
-                  modifier = Modifier.fillMaxWidth(),
-                  horizontalArrangement = Arrangement.spacedBy(12.dp),
-                  verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                  if (item.phoneNumber.isNotBlank()) {
-                    Column(
-                      verticalArrangement = Arrangement.spacedBy(2.dp),
-                      modifier = Modifier
-                        .testTag("registrationPhone_${item.id}")
-                        .clickable {
-                          val sanitized = item.phoneNumber.filter { it.isDigit() || it == '+' }
-                          val telUri = if (sanitized.startsWith("+")) "tel:$sanitized" else "tel:+$sanitized"
-                          uriHandler.openUri(telUri)
-                        }
-                    ) {
-                      Text(text = "फोन", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                      Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.Call, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.secondary)
-                        Text(text = item.phoneNumber, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                      }
-                    }
-                  }
-
-                  if (item.dob.isNotBlank()) {
-                    Column(
-                      verticalArrangement = Arrangement.spacedBy(2.dp),
-                      modifier = Modifier
-                        .testTag("registrationDob_${item.id}")
-                    ) {
-                      Text(text = "जन्मतिथि", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                      Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.CalendarMonth, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.secondary)
-                        Text(text = item.dob, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                      }
-                    }
-                  }
-
-                  if (item.qualification.isNotBlank()) {
-                    Column(
-                      verticalArrangement = Arrangement.spacedBy(2.dp),
-                      modifier = Modifier
-                        .testTag("registrationQualification_${item.id}")
-                    ) {
-                      Text(text = "योग्यता", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                      Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.School, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.secondary)
-                        Text(text = item.qualification, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                      }
-                    }
-                  }
-
-                  if (item.guardianName.isNotBlank()) {
-                    Column(
-                      verticalArrangement = Arrangement.spacedBy(2.dp),
-                      modifier = Modifier
-                        .testTag("registrationGuardian_${item.id}")
-                    ) {
-                      Text(text = "अभिभावक", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                      Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Filled.Person, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.secondary)
-                        Text(text = item.guardianName, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                      }
-                    }
-                  }
-
-                  if (item.address.isNotBlank()) {
-                    Row(
-                      verticalAlignment = Alignment.CenterVertically,
-                      horizontalArrangement = Arrangement.spacedBy(6.dp),
-                      modifier = Modifier
-                        .testTag("registrationAddress_${item.id}")
-                    ) {
-                      Icon(Icons.Filled.Place, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.secondary)
-                      Text(text = item.address, style = MaterialTheme.typography.bodyMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
-                    }
-                  }
-                }
-              }
-            }
-
-            if (item.date.isNotBlank() || item.place.isNotBlank()) {
-              Card(
-                border = CardDefaults.outlinedCardBorder(),
-                shape = RoundedCornerShape(4.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                modifier = Modifier.fillMaxWidth()
-              ) {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                  Text(text = "सत्र विवरण", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface)
-                  HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
-                  Spacer(modifier = Modifier.height(4.dp))
-                  FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                  ) {
-                    if (item.date.isNotBlank()) {
-                      Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.testTag("registrationDate_${item.id}")
-                      ) {
-                        Icon(
-                          imageVector = Icons.Filled.CalendarMonth,
-                          contentDescription = null,
-                          modifier = Modifier.size(16.dp),
-                          tint = MaterialTheme.colorScheme.secondary
-                        )
-                        Text(
-                          text = item.date,
-                          style = MaterialTheme.typography.bodyMedium,
-                          maxLines = 1,
-                          overflow = TextOverflow.Ellipsis
-                        )
-                      }
-                    }
-                    if (item.place.isNotBlank()) {
-                      Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier.testTag("registrationPlace_${item.id}")
-                      ) {
-                        Icon(
-                          imageVector = Icons.Filled.Place,
-                          contentDescription = null,
-                          modifier = Modifier.size(16.dp),
-                          tint = MaterialTheme.colorScheme.secondary
-                        )
-                        Text(
-                          text = item.place,
-                          style = MaterialTheme.typography.bodyMedium,
-                          maxLines = 1,
-                          overflow = TextOverflow.Ellipsis
-                        )
-                      }
-                    }
-                  }
                 }
               }
             }
@@ -434,13 +290,67 @@ fun CourseRegistrationReceivedCard(
         }
       }
 
-      // Recommendation below (full width)
+      // Remaining personal details (qualification, guardian, address)
+      if (hasPersonalInfo) {
+        val hasRemainingDetails = item.qualification.isNotBlank() ||
+                                  item.guardianName.isNotBlank() ||
+                                  item.address.isNotBlank()
+        if (hasRemainingDetails) {
+          FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+          ) {
+            if (item.qualification.isNotBlank()) {
+              DetailEntry(
+                icon = Icons.Filled.School,
+                label = "योग्यता",
+                value = item.qualification,
+                modifier = Modifier.testTag("registrationQualification_${item.id}")
+              )
+            }
+
+            if (item.guardianName.isNotBlank()) {
+              DetailEntry(
+                icon = Icons.Filled.Person,
+                label = "अभिभावक",
+                value = item.guardianName,
+                modifier = Modifier.testTag("registrationGuardian_${item.id}")
+              )
+            }
+
+            if (item.address.isNotBlank()) {
+              DetailEntry(
+                icon = Icons.Filled.Place,
+                label = "पता",
+                value = item.address,
+                modifier = Modifier.testTag("registrationAddress_${item.id}"),
+                maxLines = 2
+              )
+            }
+          }
+        }
+      }
+
+      // Session information section
+      if (hasSessionInfo) {
+        HorizontalDivider()
+        SessionDetailsSection(
+          item = item,
+          modifier = Modifier.fillMaxWidth()
+        )
+      }
+
+      // Recommendation section
       if (item.recommendation.isNotBlank()) {
         HorizontalDivider()
-        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Column(
+          modifier = Modifier.fillMaxWidth(),
+          verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
           Text(
-            text = "संस्तुति:",
-            style = MaterialTheme.typography.labelSmall,
+            text = "संस्तुति",
+            style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
           )
           Text(
@@ -448,13 +358,150 @@ fun CourseRegistrationReceivedCard(
             style = MaterialTheme.typography.bodyMedium,
             maxLines = 5,
             overflow = TextOverflow.Ellipsis,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.testTag("registrationRecommendation_${item.id}")
           )
         }
       }
     }
   }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun SessionDetailsSection(
+  item: CourseRegistrationReceivedItem,
+  modifier: Modifier = Modifier
+) {
+  Column(
+    modifier = modifier,
+    verticalArrangement = Arrangement.spacedBy(6.dp)
+  ) {
+    Text(
+      text = "सत्र विवरण",
+      style = MaterialTheme.typography.labelMedium,
+      color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+    FlowRow(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.spacedBy(16.dp),
+      verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+      if (item.date.isNotBlank()) {
+        Row(
+          horizontalArrangement = Arrangement.spacedBy(6.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          modifier = Modifier.testTag("registrationDate_${item.id}")
+        ) {
+          Icon(
+            imageVector = Icons.Filled.CalendarMonth,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp),
+            tint = MaterialTheme.colorScheme.secondary
+          )
+          Text(
+            text = item.date,
+            style = MaterialTheme.typography.bodyMedium
+          )
+        }
+      }
+      if (item.place.isNotBlank()) {
+        Row(
+          horizontalArrangement = Arrangement.spacedBy(6.dp),
+          verticalAlignment = Alignment.CenterVertically,
+          modifier = Modifier.testTag("registrationPlace_${item.id}")
+        ) {
+          Icon(
+            imageVector = Icons.Filled.Place,
+            contentDescription = null,
+            modifier = Modifier.size(16.dp),
+            tint = MaterialTheme.colorScheme.secondary
+          )
+          Text(
+            text = item.place,
+            style = MaterialTheme.typography.bodyMedium
+          )
+        }
+      }
+    }
+  }
+}
+
+
+@Composable
+private fun DetailEntry(
+  icon: ImageVector,
+  label: String,
+  value: String,
+  modifier: Modifier = Modifier,
+  maxLines: Int = 1,
+  onClick: (() -> Unit)? = null
+) {
+  val clickableModifier = onClick?.let { Modifier.clickable { it() } } ?: Modifier
+  Column(
+    verticalArrangement = Arrangement.spacedBy(4.dp),
+    modifier = modifier.then(clickableModifier)
+  ) {
+    Row(
+      horizontalArrangement = Arrangement.spacedBy(6.dp),
+      verticalAlignment = Alignment.CenterVertically
+    ) {
+      Icon(
+        imageVector = icon,
+        contentDescription = null,
+        modifier = Modifier.size(14.dp),
+        tint = MaterialTheme.colorScheme.secondary
+      )
+      Text(
+        text = label,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(top = 2.dp)
+      )
+    }
+    Text(
+      text = value,
+      style = MaterialTheme.typography.bodyMedium,
+      maxLines = maxLines,
+      overflow = TextOverflow.Ellipsis
+    )
+  }
+}
+
+@Composable
+private fun PhotoThumbnail(
+  photoUrl: String?,
+  modifier: Modifier = Modifier
+) {
+  val clippedModifier = modifier.clip(RoundedCornerShape(8.dp))
+  if (!photoUrl.isNullOrBlank()) {
+    AsyncImage(
+      model = photoUrl,
+      contentDescription = "फोटो",
+      modifier = clippedModifier,
+      contentScale = ContentScale.Crop
+    )
+  } else {
+    Box(
+      modifier = clippedModifier.background(MaterialTheme.colorScheme.surfaceVariant),
+      contentAlignment = Alignment.Center
+    ) {
+      Icon(
+        imageVector = Icons.Filled.Person,
+        contentDescription = "फोटो उपलब्ध नहीं",
+        modifier = Modifier.size(40.dp),
+        tint = MaterialTheme.colorScheme.onSurfaceVariant
+      )
+    }
+  }
+}
+
+private fun CourseRegistrationReceivedItem.hasPersonalSection(): Boolean {
+  return !photoUrl.isNullOrBlank() ||
+    phoneNumber.isNotBlank() ||
+    dob.isNotBlank() ||
+    qualification.isNotBlank() ||
+    guardianName.isNotBlank() ||
+    address.isNotBlank()
 }
 
 @Composable
