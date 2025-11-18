@@ -121,6 +121,7 @@ fun DatePickerField(
   onValueChange: (LocalDate?) -> Unit,
   label: String,
   type: DatePickerType = DatePickerType.DATE_OF_BIRTH,
+  excludeToday: Boolean = false,
   modifier: Modifier = Modifier,
   isError: Boolean = false,
   supportingText: @Composable (() -> Unit)? = null,
@@ -184,9 +185,9 @@ fun DatePickerField(
           .toLocalDateTime(TimeZone.currentSystemDefault()).date
 
       when (type) {
-        DatePickerType.DATE_OF_BIRTH -> dateToCheck <= currentDate // Cannot select future dates
-        DatePickerType.FUTURE_EVENT -> dateToCheck >= currentDate // Cannot select past dates
-        DatePickerType.PAST_EVENT -> dateToCheck <= currentDate // Cannot select future dates
+        DatePickerType.DATE_OF_BIRTH -> if (excludeToday) dateToCheck < currentDate else dateToCheck <= currentDate
+        DatePickerType.FUTURE_EVENT -> dateToCheck >= currentDate
+        DatePickerType.PAST_EVENT -> if (excludeToday) dateToCheck < currentDate else dateToCheck <= currentDate
       }
     }
 

@@ -1857,7 +1857,7 @@ type CourseRegistrations implements Node {
 
   name: String
 
-  satrDate: Datetime
+  satrDate: Date
 
   satrPlace: String
 
@@ -1868,6 +1868,16 @@ type CourseRegistrations implements Node {
   paymentReceiptUrl: String
 
   photoUrl: String
+
+  guardianName: String
+
+  address: String
+
+  dob: Date
+
+  qualification: String
+
+  phoneNumber: String
 
   activity: Activities
 }
@@ -1908,7 +1918,7 @@ input CourseRegistrationsFilter {
 
   name: StringFilter
 
-  satrDate: DatetimeFilter
+  satrDate: DateFilter
 
   satrPlace: StringFilter
 
@@ -1919,6 +1929,16 @@ input CourseRegistrationsFilter {
   paymentReceiptUrl: StringFilter
 
   photoUrl: StringFilter
+
+  guardianName: StringFilter
+
+  address: StringFilter
+
+  dob: DateFilter
+
+  qualification: StringFilter
+
+  phoneNumber: StringFilter
 
   nodeId: IDFilter
 
@@ -1943,7 +1963,7 @@ input CourseRegistrationsInsertInput {
 
   name: String
 
-  satrDate: Datetime
+  satrDate: Date
 
   satrPlace: String
 
@@ -1954,6 +1974,16 @@ input CourseRegistrationsInsertInput {
   paymentReceiptUrl: String
 
   photoUrl: String
+
+  guardianName: String
+
+  address: String
+
+  dob: Date
+
+  qualification: String
+
+  phoneNumber: String
 }
 
 type CourseRegistrationsInsertResponse {
@@ -1986,6 +2016,16 @@ input CourseRegistrationsOrderBy {
   paymentReceiptUrl: OrderByDirection
 
   photoUrl: OrderByDirection
+
+  guardianName: OrderByDirection
+
+  address: OrderByDirection
+
+  dob: OrderByDirection
+
+  qualification: OrderByDirection
+
+  phoneNumber: OrderByDirection
 }
 
 input CourseRegistrationsUpdateInput {
@@ -1993,7 +2033,7 @@ input CourseRegistrationsUpdateInput {
 
   name: String
 
-  satrDate: Datetime
+  satrDate: Date
 
   satrPlace: String
 
@@ -2004,6 +2044,16 @@ input CourseRegistrationsUpdateInput {
   paymentReceiptUrl: String
 
   photoUrl: String
+
+  guardianName: String
+
+  address: String
+
+  dob: Date
+
+  qualification: String
+
+  phoneNumber: String
 }
 
 type CourseRegistrationsUpdateResponse {

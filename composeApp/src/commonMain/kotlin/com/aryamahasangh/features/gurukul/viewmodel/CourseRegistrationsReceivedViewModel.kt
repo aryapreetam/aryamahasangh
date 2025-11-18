@@ -112,10 +112,7 @@ class CourseRegistrationsReceivedViewModel(
     return CourseRegistrationReceivedItem(
       id = raw.id.toString(),
       name = raw.name ?: "",
-      date = convertDates(
-        raw.satrDate?.toLocalDateTime(TimeZone.currentSystemDefault()) ?: error("Missing date"),
-        raw.satrDate?.toLocalDateTime(TimeZone.currentSystemDefault()) ?: error("Missing date")
-      ).first,
+      date = raw.satrDate.toString(),
       place = raw.satrPlace ?: "",
       recommendation = raw.recommendation ?: "",
       receiptUrl = raw.paymentReceiptUrl,

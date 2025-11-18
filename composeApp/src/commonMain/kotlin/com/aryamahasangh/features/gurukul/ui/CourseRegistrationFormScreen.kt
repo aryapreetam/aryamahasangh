@@ -12,6 +12,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -30,6 +31,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -45,7 +47,6 @@ import com.aryamahasangh.features.gurukul.viewmodel.UiEffect
 import com.aryamahasangh.util.GlobalMessageManager
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.datetime.LocalDate
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.ui.tooling.preview.Preview
 
@@ -123,7 +124,7 @@ fun CourseRegistrationFormScreen(
         viewModel.onFieldChange(photoPickerState = newState)
       },
       config = ImagePickerConfig(
-        label = "फोटो अपलोड करें",
+        label = "फोटो अपलोड करें\n(Passport Size)",
         type = ImagePickerType.PROFILE_PHOTO,
         allowMultiple = false,
         maxImages = 1,
@@ -153,38 +154,127 @@ fun CourseRegistrationFormScreen(
       singleLine = true,
       enabled = !uiState.isSubmitting
     )
-    var selectedDate by remember {
-      mutableStateOf(
-        try {
-          uiState.satrDate.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) }
-        } catch (e: Exception) {
-          null
-        }
+    var phoneFieldValue by remember { mutableStateOf(TextFieldValue(uiState.phoneNumber, TextRange(uiState.phoneNumber.length))) }
+    LaunchedEffect(uiState.phoneNumber) {
+      if (phoneFieldValue.text != uiState.phoneNumber) {
+        phoneFieldValue = TextFieldValue(uiState.phoneNumber, TextRange(uiState.phoneNumber.length))
+      }
+    }
+    Row(
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+      DatePickerField(
+        value = uiState.dob,
+        onValueChange = { date ->
+          viewModel.onFieldChange(dob = date)
+        },
+        label = "जन्मतिथि",
+        type = com.aryamahasangh.components.DatePickerType.DATE_OF_BIRTH,
+        excludeToday = true,
+        modifier = Modifier.width(160.dp).testTag("registrationFormDobField").semantics { testTag = "dob_field" },
+        isError = uiState.submitErrorMessage != null && uiState.dob == null,
+        supportingText = {
+          if (uiState.submitErrorMessage != null && uiState.dob == null) {
+            Text("कृपया जन्म तिथि चुनें", color = MaterialTheme.colorScheme.error)
+          }
+        },
+        required = true,
+        enabled = !uiState.isSubmitting
+      )
+
+      OutlinedTextField(
+        value = phoneFieldValue,
+        onValueChange = { tfv ->
+          val filtered = tfv.text.filter { it.isDigit() }.take(15)
+          phoneFieldValue = TextFieldValue(filtered, TextRange(filtered.length))
+          viewModel.onFieldChange(phoneNumber = filtered)
+        },
+        label = { Text("फ़ोन नंबर") },
+        modifier = Modifier.width(300.dp).testTag("registrationFormPhoneField").semantics { testTag = "phone_field" },
+        isError = uiState.submitErrorMessage != null && phoneFieldValue.text.isBlank(),
+        supportingText = {
+          if (uiState.submitErrorMessage != null && phoneFieldValue.text.isBlank()) {
+            Text("कृपया फोन नंबर दर्ज करें", color = MaterialTheme.colorScheme.error)
+          }
+        },
+        singleLine = true,
+        enabled = !uiState.isSubmitting,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
       )
     }
-    LaunchedEffect(uiState.satrDate) {
-      val date = try {
-        uiState.satrDate.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) }
-      } catch (e: Exception) {
-        null
+
+    var qualificationFieldValue by remember { mutableStateOf(TextFieldValue(uiState.qualification, TextRange(uiState.qualification.length))) }
+    LaunchedEffect(uiState.qualification) {
+      if (qualificationFieldValue.text != uiState.qualification) {
+        qualificationFieldValue = TextFieldValue(uiState.qualification, TextRange(uiState.qualification.length))
       }
-      if (selectedDate != date) selectedDate = date
     }
-    DatePickerField(
-      value = selectedDate,
-      onValueChange = { date ->
-        selectedDate = date
-        viewModel.onFieldChange(satrDate = date?.toString() ?: "")
+    OutlinedTextField(
+      value = qualificationFieldValue,
+      onValueChange = {
+        qualificationFieldValue = it
+        viewModel.onFieldChange(qualification = it.text)
       },
-      label = "सत्र दिनांक",
-      modifier = Modifier.width(500.dp).testTag("registrationFormSatrDateField").semantics { testTag = "satr_date_field" },
-      isError = uiState.submitErrorMessage != null && selectedDate == null,
+      label = { Text("योग्यता") },
+      modifier = Modifier.width(500.dp).testTag("registrationFormQualificationField").semantics { testTag = "qualification_field" },
+      isError = uiState.submitErrorMessage != null && qualificationFieldValue.text.isBlank(),
       supportingText = {
-        if (uiState.submitErrorMessage != null && selectedDate == null) {
-          Text("कृपया सत्र दिनांक चुनें", color = MaterialTheme.colorScheme.error)
+        if (uiState.submitErrorMessage != null && qualificationFieldValue.text.isBlank()) {
+          Text("कृपया योग्यता दर्ज करें", color = MaterialTheme.colorScheme.error)
         }
       },
-      required = true,
+      singleLine = true,
+      enabled = !uiState.isSubmitting
+    )
+
+
+    var guardianNameFieldValue by remember { mutableStateOf(TextFieldValue(uiState.guardianName, TextRange(uiState.guardianName.length))) }
+    LaunchedEffect(uiState.guardianName) {
+      if (guardianNameFieldValue.text != uiState.guardianName) {
+        guardianNameFieldValue = TextFieldValue(uiState.guardianName, TextRange(uiState.guardianName.length))
+      }
+    }
+    OutlinedTextField(
+      value = guardianNameFieldValue,
+      onValueChange = {
+        guardianNameFieldValue = it
+        viewModel.onFieldChange(guardianName = it.text)
+      },
+      label = { Text("पिता/पति का नाम") },
+      modifier = Modifier.width(500.dp).testTag("registrationFormGuardianNameField").semantics { testTag = "guardian_name_field" },
+      isError = uiState.submitErrorMessage != null && guardianNameFieldValue.text.isBlank(),
+      supportingText = {
+        if (uiState.submitErrorMessage != null && guardianNameFieldValue.text.isBlank()) {
+          Text("कृपया अभिभावक का नाम दर्ज करें", color = MaterialTheme.colorScheme.error)
+        }
+      },
+      singleLine = true,
+      enabled = !uiState.isSubmitting
+    )
+
+    var addressFieldValue by remember { mutableStateOf(TextFieldValue(uiState.address, TextRange(uiState.address.length))) }
+    LaunchedEffect(uiState.address) {
+      if (addressFieldValue.text != uiState.address) {
+        addressFieldValue = TextFieldValue(uiState.address, TextRange(uiState.address.length))
+      }
+    }
+    OutlinedTextField(
+      value = addressFieldValue,
+      onValueChange = {
+        addressFieldValue = it
+        viewModel.onFieldChange(address = it.text)
+      },
+      label = { Text("पता") },
+      modifier = Modifier.width(500.dp).testTag("registrationFormAddressField").semantics { testTag = "address_field" },
+      isError = uiState.submitErrorMessage != null && addressFieldValue.text.isBlank(),
+      supportingText = {
+        if (uiState.submitErrorMessage != null && addressFieldValue.text.isBlank()) {
+          Text("कृपया पता दर्ज करें", color = MaterialTheme.colorScheme.error)
+        }
+      },
+      minLines = 3,
+      maxLines = 5,
       enabled = !uiState.isSubmitting
     )
     var placeFieldValue by remember {
@@ -200,23 +290,46 @@ fun CourseRegistrationFormScreen(
         placeFieldValue = TextFieldValue(uiState.satrPlace, TextRange(uiState.satrPlace.length))
       }
     }
-    OutlinedTextField(
-      value = placeFieldValue,
-      onValueChange = {
-        placeFieldValue = it
-        viewModel.onFieldChange(satrPlace = it.text)
-      },
-      label = { Text("सत्र स्थान") },
-      modifier = Modifier.width(500.dp).testTag("registrationFormSatrPlaceField").semantics { testTag = "satr_place_field" },
-      isError = uiState.submitErrorMessage != null && placeFieldValue.text.isBlank(),
-      supportingText = {
-        if (uiState.submitErrorMessage != null && placeFieldValue.text.isBlank()) {
-          Text("कृपया सत्र स्थान भरें", color = MaterialTheme.colorScheme.error)
-        }
-      },
-      singleLine = true,
-      enabled = !uiState.isSubmitting
-    )
+    Row(
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+      DatePickerField(
+        value = uiState.satrDate,
+        onValueChange = { date ->
+          viewModel.onFieldChange(satrDate = date)
+        },
+        label = "सत्र दिनांक",
+        modifier = Modifier.width(160.dp).testTag("registrationFormSatrDateField").semantics { testTag = "satr_date_field" },
+        isError = uiState.submitErrorMessage != null && uiState.satrDate == null,
+        supportingText = {
+          if (uiState.submitErrorMessage != null && uiState.satrDate == null) {
+            Text("कृपया सत्र दिनांक चुनें", color = MaterialTheme.colorScheme.error)
+          }
+        },
+        required = true,
+        enabled = !uiState.isSubmitting
+      )
+
+      OutlinedTextField(
+        value = placeFieldValue,
+        onValueChange = {
+          placeFieldValue = it
+          viewModel.onFieldChange(satrPlace = it.text)
+        },
+        label = { Text("सत्र स्थान") },
+        modifier = Modifier.width(300.dp).testTag("registrationFormSatrPlaceField").semantics { testTag = "satr_place_field" },
+        isError = uiState.submitErrorMessage != null && placeFieldValue.text.isBlank(),
+        supportingText = {
+          if (uiState.submitErrorMessage != null && placeFieldValue.text.isBlank()) {
+            Text("कृपया सत्र स्थान भरें", color = MaterialTheme.colorScheme.error)
+          }
+        },
+        singleLine = true,
+        enabled = !uiState.isSubmitting
+      )
+    }
+
     var recommendationFieldValue by remember {
       mutableStateOf(
         TextFieldValue(
@@ -232,7 +345,7 @@ fun CourseRegistrationFormScreen(
     }
     Column {
       Text(
-        text = "आर्या परिषद् की अध्यक्षा की संस्तुति(Recommendation)",
+        text = "आर्या परिषद् के अध्यक्षा(जनपद/प्रांत) की संस्तुति(Recommendation)",
         style = MaterialTheme.typography.labelMedium
       )
       OutlinedTextField(
@@ -309,7 +422,7 @@ data class SubmitButtonStrings(
   val idle: String = "पंजीकरण प्रस्तुत करें",
   val loading: String = "प्रेषित किया जा रहा है…",
   val success: String = "सफल!",
-  val errorPrefix: String = "त्रुटि:"
+  val errorPrefix: String = "विफल"
 )
 
 @Composable
@@ -444,7 +557,8 @@ fun SubmitButton(
               ) {
                 Icon(Icons.Default.Refresh, null, tint = contentColor, modifier = Modifier.size(18.dp))
                 Text(
-                  strings.errorPrefix + " " + s.message.take(20) + "…",
+                  // TODO: think about adding -> + " " + s.message.take(20) + "…"
+                  strings.errorPrefix ,
                   style = MaterialTheme.typography.labelLarge
                 )
               }
