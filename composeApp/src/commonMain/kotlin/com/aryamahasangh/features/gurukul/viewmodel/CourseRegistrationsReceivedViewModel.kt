@@ -1,5 +1,6 @@
 package com.aryamahasangh.features.gurukul.viewmodel
 
+import androidx.lifecycle.ViewModel
 import com.aryamahasangh.features.arya_nirman.convertDates
 import com.aryamahasangh.features.gurukul.data.GurukulRepository
 import com.aryamahasangh.features.gurukul.domain.models.Course
@@ -19,7 +20,12 @@ data class CourseRegistrationReceivedItem(
   val place: String,
   val recommendation: String,
   val receiptUrl: String?,
-  val photoUrl: String?
+  val photoUrl: String?,
+  val dob: String,
+  val phoneNumber: String,
+  val qualification: String,
+  val guardianName: String,
+  val address: String
 )
 
 data class CourseDropdownItem(
@@ -44,7 +50,7 @@ data class CourseRegistrationsReceivedUiState(
 class CourseRegistrationsReceivedViewModel(
   private val gurukulRepository: GurukulRepository,
   private val genderFilter: GenderFilter
-) {
+): ViewModel() {
   private val _uiState = MutableStateFlow(CourseRegistrationsReceivedUiState(isLoading = true))
   val uiState: StateFlow<CourseRegistrationsReceivedUiState> = _uiState
 
@@ -116,7 +122,12 @@ class CourseRegistrationsReceivedViewModel(
       place = raw.satrPlace ?: "",
       recommendation = raw.recommendation ?: "",
       receiptUrl = raw.paymentReceiptUrl,
-      photoUrl = raw.photoUrl
+      photoUrl = raw.photoUrl,
+      dob = raw.dob?.toString() ?: "",
+      phoneNumber = raw.phoneNumber ?: "",
+      qualification = raw.qualification ?: "",
+      guardianName = raw.guardianName ?: "",
+      address = raw.address ?: ""
     )
   }
 
