@@ -17,3 +17,8 @@ class RegistrationSubmissionException(
   message: String,
   cause: Throwable? = null
 ) : RegistrationException(message, cause)
+
+class DuplicatePhoneNumberException(
+  message: String = "DUPLICATE_PHONE_NUMBER"
+) : RegistrationException(message)
+

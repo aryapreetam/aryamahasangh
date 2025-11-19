@@ -3,6 +3,7 @@ package com.aryamahasangh.features.gurukul.data
 import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.cache.normalized.apolloStore
 import com.aryamahasangh.AllUpcomingCoursesQuery
+import com.aryamahasangh.CheckIfPhoneNumberExistsInCourseRegistrationsQuery
 import com.aryamahasangh.CourseRegistrationsForActivityQuery
 import com.aryamahasangh.LoadAllCoursesQuery
 import com.aryamahasangh.RegisterForCourseMutation
@@ -57,6 +58,23 @@ class GurukulRepositoryImpl(
       }
     } catch (e: Exception) {
       Result.failure(Exception("पंजीकरण विफल: ${e.message}"))
+    }
+  }
+
+  override suspend fun checkPhoneNumberExists(phoneNumber: String, activityId: String): Result<Boolean> {
+    return try {
+      val response = apolloClient.query(
+        CheckIfPhoneNumberExistsInCourseRegistrationsQuery(phoneNumber, activityId)
+      ).execute()
+
+      if (response.hasErrors()) {
+        Result.failure(Exception(response.errors?.firstOrNull()?.message ?: "फोन नंबर जांच विफल"))
+      } else {
+        val totalCount = response.data?.courseRegistrationsCollection?.totalCount ?: 0
+        Result.success(totalCount > 0)
+      }
+    } catch (e: Exception) {
+      Result.failure(Exception("फोन नंबर जांच विफल: ${e.message}"))
     }
   }
 

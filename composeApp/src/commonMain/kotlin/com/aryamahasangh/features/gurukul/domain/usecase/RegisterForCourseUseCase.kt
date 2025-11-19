@@ -3,6 +3,7 @@ package com.aryamahasangh.features.gurukul.domain.usecase
 import com.aryamahasangh.RegisterForCourseMutation
 import com.aryamahasangh.features.gurukul.data.GurukulRepository
 import com.aryamahasangh.features.gurukul.data.ImageUploadRepository
+import com.aryamahasangh.features.gurukul.domain.exception.DuplicatePhoneNumberException
 import com.aryamahasangh.features.gurukul.domain.exception.InvalidInputException
 import com.aryamahasangh.features.gurukul.domain.exception.RegistrationSubmissionException
 import com.aryamahasangh.features.gurukul.domain.exception.UploadFailedException
@@ -15,6 +16,17 @@ class RegisterForCourseUseCase(
   private val imageRepository: ImageUploadRepository
 ) {
   suspend operator fun invoke(form: CourseRegistrationFormData) {
+    // --- Check for duplicate phone number for this specific activity FIRST ---
+    val phoneExists = try {
+      courseRepository.checkPhoneNumberExists(form.phoneNumber, form.activityId).getOrThrow()
+    } catch (e: Exception) {
+      throw RegistrationSubmissionException("PHONE_CHECK_FAILED", e)
+    }
+
+    if (phoneExists) {
+      throw DuplicatePhoneNumberException()
+    }
+
     // --- Upload receipt ---
     val receiptUrl = try {
       imageRepository.uploadReceipt(

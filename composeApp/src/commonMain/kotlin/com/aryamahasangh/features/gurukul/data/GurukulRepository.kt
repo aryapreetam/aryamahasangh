@@ -24,5 +24,11 @@ interface GurukulRepository {
 
   suspend fun registerForCourse(mutation: RegisterForCourseMutation): Result<Unit>
 
+  /**
+   * Check if a phone number already exists in course registrations for a specific activity.
+   * Returns true if the phone number is already registered for this activity, false otherwise.
+   */
+  suspend fun checkPhoneNumberExists(phoneNumber: String, activityId: String): Result<Boolean>
+
   suspend fun getCourseRegistrationsForActivity(activityId: String): Result<List<CourseRegistrationsForActivityQuery.Node>>
 }

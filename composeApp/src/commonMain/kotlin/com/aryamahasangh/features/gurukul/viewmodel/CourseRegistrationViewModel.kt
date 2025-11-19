@@ -206,6 +206,13 @@ class CourseRegistrationViewModel(
       } catch (e: RegistrationException) {
         _buttonState.value = ButtonState.Error("")
         when (e) {
+          is DuplicatePhoneNumberException -> {
+            _effect.emit(UiEffect.ShowSnackbar(
+              "आप पहले ही इस कक्षा के लिए पंजीकृत हैं। अधिक जानकारी हेतु व्यवस्थापक से संपर्क करें।",
+              true
+            ))
+          }
+
           is InvalidInputException -> {
             val msg = when (e.message) {
               "INVALID_DATE" -> "अमान्य सत्र दिनांक"

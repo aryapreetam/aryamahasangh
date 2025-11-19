@@ -70,6 +70,17 @@ mutation registerForCourse($input: CourseRegistrationsInsertInput!){
   }
 }
 
+query checkIfPhoneNumberExistsInCourseRegistrations($phoneNumber: String!, $activityId: String!){
+  courseRegistrationsCollection(
+    filter: {
+      phoneNumber: {eq: $phoneNumber},
+      activityId: {eq: $activityId}
+    }
+  ){
+    totalCount
+  }
+}
+
 query allUpcomingCourses($currentDateTime: Datetime!, $gender: GenderFilter) {
   activitiesCollection(
     filter: {

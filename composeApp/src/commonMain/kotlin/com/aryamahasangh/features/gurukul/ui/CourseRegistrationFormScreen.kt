@@ -186,11 +186,11 @@ fun CourseRegistrationFormScreen(
       OutlinedTextField(
         value = phoneFieldValue,
         onValueChange = { tfv ->
-          val filtered = tfv.text.filter { it.isDigit() }.take(15)
+          val filtered = tfv.text.filter { it.isDigit() }.take(10)
           phoneFieldValue = TextFieldValue(filtered, TextRange(filtered.length))
           viewModel.onFieldChange(phoneNumber = filtered)
         },
-        label = { Text("फ़ोन नंबर") },
+        label = { Text("मोबाइल नंबर") },
         modifier = Modifier.width(300.dp).testTag("registrationFormPhoneField").semantics { testTag = "phone_field" },
         isError = uiState.submitErrorMessage != null && phoneFieldValue.text.isBlank(),
         supportingText = {
