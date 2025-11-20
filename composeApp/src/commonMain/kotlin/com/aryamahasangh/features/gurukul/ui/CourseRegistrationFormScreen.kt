@@ -290,44 +290,54 @@ fun CourseRegistrationFormScreen(
         placeFieldValue = TextFieldValue(uiState.satrPlace, TextRange(uiState.satrPlace.length))
       }
     }
-    Row(
-      verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-      DatePickerField(
-        value = uiState.satrDate,
-        onValueChange = { date ->
-          viewModel.onFieldChange(satrDate = date)
-        },
-        label = "सत्र दिनांक",
-        modifier = Modifier.width(160.dp).testTag("registrationFormSatrDateField").semantics { testTag = "satr_date_field" },
-        isError = uiState.submitErrorMessage != null && uiState.satrDate == null,
-        supportingText = {
-          if (uiState.submitErrorMessage != null && uiState.satrDate == null) {
-            Text("कृपया सत्र दिनांक चुनें", color = MaterialTheme.colorScheme.error)
-          }
-        },
-        required = true,
-        enabled = !uiState.isSubmitting
-      )
+    //
 
-      OutlinedTextField(
-        value = placeFieldValue,
-        onValueChange = {
-          placeFieldValue = it
-          viewModel.onFieldChange(satrPlace = it.text)
-        },
-        label = { Text("सत्र स्थान") },
-        modifier = Modifier.width(300.dp).testTag("registrationFormSatrPlaceField").semantics { testTag = "satr_place_field" },
-        isError = uiState.submitErrorMessage != null && placeFieldValue.text.isBlank(),
-        supportingText = {
-          if (uiState.submitErrorMessage != null && placeFieldValue.text.isBlank()) {
-            Text("कृपया सत्र स्थान भरें", color = MaterialTheme.colorScheme.error)
-          }
-        },
-        singleLine = true,
-        enabled = !uiState.isSubmitting
+    Column {
+      Text(
+        text = "दो दिवसीय(आर्या प्रशिक्षण) सत्र कब और कहाँ किया?",
+        style = MaterialTheme.typography.labelMedium
       )
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+      ) {
+        DatePickerField(
+          value = uiState.satrDate,
+          onValueChange = { date ->
+            viewModel.onFieldChange(satrDate = date)
+          },
+          label = "सत्र दिनांक",
+          modifier = Modifier.width(160.dp).testTag("registrationFormSatrDateField")
+            .semantics { testTag = "satr_date_field" },
+          isError = uiState.submitErrorMessage != null && uiState.satrDate == null,
+          supportingText = {
+            if (uiState.submitErrorMessage != null && uiState.satrDate == null) {
+              Text("कृपया सत्र दिनांक चुनें", color = MaterialTheme.colorScheme.error)
+            }
+          },
+          required = true,
+          enabled = !uiState.isSubmitting
+        )
+
+        OutlinedTextField(
+          value = placeFieldValue,
+          onValueChange = {
+            placeFieldValue = it
+            viewModel.onFieldChange(satrPlace = it.text)
+          },
+          label = { Text("सत्र स्थान") },
+          modifier = Modifier.width(300.dp).testTag("registrationFormSatrPlaceField")
+            .semantics { testTag = "satr_place_field" },
+          isError = uiState.submitErrorMessage != null && placeFieldValue.text.isBlank(),
+          supportingText = {
+            if (uiState.submitErrorMessage != null && placeFieldValue.text.isBlank()) {
+              Text("कृपया सत्र स्थान भरें", color = MaterialTheme.colorScheme.error)
+            }
+          },
+          singleLine = true,
+          enabled = !uiState.isSubmitting
+        )
+      }
     }
 
     var recommendationFieldValue by remember {

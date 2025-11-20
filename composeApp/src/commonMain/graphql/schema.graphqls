@@ -34,19 +34,24 @@ type Activities implements Node {
 
   address: Address
 
-  courseRegistrationsCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: CourseRegistrationsFilter, "Sort order to apply to the collection" orderBy: [CourseRegistrationsOrderBy!]): CourseRegistrationsConnection
-
   activityMemberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: ActivityMemberFilter, "Sort order to apply to the collection" orderBy: [ActivityMemberOrderBy!]): ActivityMemberConnection
 
   organisationalActivityCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: OrganisationalActivityFilter, "Sort order to apply to the collection" orderBy: [OrganisationalActivityOrderBy!]): OrganisationalActivityConnection
 
   satrRegistrationCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: SatrRegistrationFilter, "Sort order to apply to the collection" orderBy: [SatrRegistrationOrderBy!]): SatrRegistrationConnection
+
+  courseRegistrationsCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: CourseRegistrationsFilter, "Sort order to apply to the collection" orderBy: [CourseRegistrationsOrderBy!]): CourseRegistrationsConnection
 }
 
 type ActivitiesConnection {
   edges: [ActivitiesEdge!]!
 
   pageInfo: PageInfo!
+
+  """
+  The total number of records matching the `filter` criteria
+  """
+  totalCount: Int!
 }
 
 type ActivitiesDeleteResponse {
@@ -428,6 +433,8 @@ type ActivityMember implements Node {
   activity: Activities
 
   member: Member
+
+  member: Member
 }
 
 type ActivityMemberConnection {
@@ -546,8 +553,6 @@ type ActivityMemberUpdateResponse {
 enum ActivityType {
   SESSION
 
-  PROTECTION_SESSION
-
   CAMP
 
   COURSE
@@ -555,6 +560,8 @@ enum ActivityType {
   EVENT
 
   CAMPAIGN
+
+  PROTECTION_SESSION
 
   BODH_SESSION
 }
@@ -596,15 +603,15 @@ type Address implements Node {
 
   vidhansabha: String
 
+  activitiesCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: ActivitiesFilter, "Sort order to apply to the collection" orderBy: [ActivitiesOrderBy!]): ActivitiesConnection
+
   aryaSamajCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: AryaSamajFilter, "Sort order to apply to the collection" orderBy: [AryaSamajOrderBy!]): AryaSamajConnection
+
+  familyCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: FamilyFilter, "Sort order to apply to the collection" orderBy: [FamilyOrderBy!]): FamilyConnection
 
   memberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: MemberFilter, "Sort order to apply to the collection" orderBy: [MemberOrderBy!]): MemberConnection
 
   memberWithTempAddressCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: MemberFilter, "Sort order to apply to the collection" orderBy: [MemberOrderBy!]): MemberConnection
-
-  familyCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: FamilyFilter, "Sort order to apply to the collection" orderBy: [FamilyOrderBy!]): FamilyConnection
-
-  activitiesCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: ActivitiesFilter, "Sort order to apply to the collection" orderBy: [ActivitiesOrderBy!]): ActivitiesConnection
 }
 
 type AddressConnection {
@@ -1182,9 +1189,9 @@ type AryaSamaj implements Node {
 
   samajMemberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: SamajMemberFilter, "Sort order to apply to the collection" orderBy: [SamajMemberOrderBy!]): SamajMemberConnection
 
-  memberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: MemberFilter, "Sort order to apply to the collection" orderBy: [MemberOrderBy!]): MemberConnection
-
   familyCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: FamilyFilter, "Sort order to apply to the collection" orderBy: [FamilyOrderBy!]): FamilyConnection
+
+  memberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: MemberFilter, "Sort order to apply to the collection" orderBy: [MemberOrderBy!]): MemberConnection
 }
 
 type AryaSamajConnection {
@@ -2175,9 +2182,9 @@ type Family implements Node {
 
   updatedAt: Datetime
 
-  address: Address
-
   aryaSamaj: AryaSamaj
+
+  address: Address
 
   familyMemberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: FamilyMemberFilter, "Sort order to apply to the collection" orderBy: [FamilyMemberOrderBy!]): FamilyMemberConnection
 }
@@ -2669,6 +2676,11 @@ type LearningConnection {
   edges: [LearningEdge!]!
 
   pageInfo: PageInfo!
+
+  """
+  The total number of records matching the `filter` criteria
+  """
+  totalCount: Int!
 }
 
 type LearningDeleteResponse {
@@ -2826,15 +2838,13 @@ type Member implements Node {
 
   updatedAt: Datetime!
 
-  address: Address
+  aryaSamaj: AryaSamaj
 
-  tempAddress: Address
+  address: Address
 
   referrer: Member
 
-  aryaSamaj: AryaSamaj
-
-  activityMemberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: ActivityMemberFilter, "Sort order to apply to the collection" orderBy: [ActivityMemberOrderBy!]): ActivityMemberConnection
+  tempAddress: Address
 
   organisationalMemberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: OrganisationalMemberFilter, "Sort order to apply to the collection" orderBy: [OrganisationalMemberOrderBy!]): OrganisationalMemberConnection
 
@@ -2842,7 +2852,11 @@ type Member implements Node {
 
   familyMember: FamilyMember
 
+  activityMemberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: ActivityMemberFilter, "Sort order to apply to the collection" orderBy: [ActivityMemberOrderBy!]): ActivityMemberConnection
+
   referredMembers("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: MemberFilter, "Sort order to apply to the collection" orderBy: [MemberOrderBy!]): MemberConnection
+
+  activityMemberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: ActivityMemberFilter, "Sort order to apply to the collection" orderBy: [ActivityMemberOrderBy!]): ActivityMemberConnection
 }
 
 type MemberConnection {
@@ -3451,6 +3465,10 @@ type Mutation {
 
   deleteMember(pMemberId: String!): JSON
 
+  extractFileUrlsFromRecord(tableName: String!, recordData: JSON!): [String]
+
+  findRemovedUrls(oldUrls: [String]!, newUrls: [String]!): [String]
+
   httpResetCurlopt: Boolean
 
   httpSetCurlopt(curlopt: String!, value: String!): Boolean
@@ -3779,12 +3797,19 @@ type Organisation implements Node {
   organisationalActivityCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: OrganisationalActivityFilter, "Sort order to apply to the collection" orderBy: [OrganisationalActivityOrderBy!]): OrganisationalActivityConnection
 
   organisationalMemberCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: OrganisationalMemberFilter, "Sort order to apply to the collection" orderBy: [OrganisationalMemberOrderBy!]): OrganisationalMemberConnection
+
+  organisationalActivityCollection("Query the first `n` records in the collection" first: Int, "Query the last `n` records in the collection" last: Int, "Query values in the collection before the provided cursor" before: Cursor, "Query values in the collection after the provided cursor" after: Cursor, "Skip n values from the after cursor. Alternative to cursor pagination. Backward pagination not supported." offset: Int, "Filters to apply to the results set when querying from the collection" filter: OrganisationalActivityFilter, "Sort order to apply to the collection" orderBy: [OrganisationalActivityOrderBy!]): OrganisationalActivityConnection
 }
 
 type OrganisationConnection {
   edges: [OrganisationEdge!]!
 
   pageInfo: PageInfo!
+
+  """
+  The total number of records matching the `filter` criteria
+  """
+  totalCount: Int!
 }
 
 type OrganisationDeleteResponse {
@@ -3907,6 +3932,8 @@ type OrganisationalActivity implements Node {
   organisationId: String!
 
   activity: Activities
+
+  organisation: Organisation
 
   organisation: Organisation
 }
@@ -4033,6 +4060,11 @@ type OrganisationalMemberConnection {
   edges: [OrganisationalMemberEdge!]!
 
   pageInfo: PageInfo!
+
+  """
+  The total number of records matching the `filter` criteria
+  """
+  totalCount: Int!
 }
 
 type OrganisationalMemberDeleteResponse {
@@ -4304,9 +4336,9 @@ type SamajMember implements Node {
 
   priority: Int
 
-  member: Member
-
   aryaSamaj: AryaSamaj
+
+  member: Member
 }
 
 type SamajMemberConnection {
