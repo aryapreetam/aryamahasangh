@@ -190,6 +190,7 @@ kotlin {
       implementation(libs.filekit.dialogs)
       implementation(libs.filekit.dialogs.compose)
       implementation(libs.filekit.coil)
+      implementation(libs.filekit.core)
 
       // supabase
       implementation(project.dependencies.platform(libs.supabase.bom)) // 

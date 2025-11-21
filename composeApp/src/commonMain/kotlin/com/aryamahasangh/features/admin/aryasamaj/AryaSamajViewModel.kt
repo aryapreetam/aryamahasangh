@@ -283,23 +283,16 @@ class AryaSamajViewModel(
             val imageBytes = if (formData.imagePickerState.hasCompressedData(file)) {
               formData.imagePickerState.getCompressedBytes(file)!!
             } else {
-              // Fallback compression for files not compressed during selection
-              ImageCompressionService.compressSync(
+              com.aryamahasangh.util.ImageCompressionService.compressSync(
                 file = file,
-                targetKb = 100, // 100KB for AryaSamaj images
-                maxLongEdge = 2560
+                targetKb = 10,
+                maxLongEdge = 1024
               )
             }
-
-            val uploadResponse =
-              // bucket.upload(
-              //   path = "arya_samaj_$randomNum.webp",
-              //   data = imageBytes
-              // )
-              FileUploadUtils.uploadBytes(
-                path = "arya_samaj_$randomNum.webp",
-                data = imageBytes
-              )
+            val uploadResponse = FileUploadUtils.uploadBytes(
+              path = "arya_samaj_$randomNum.webp",
+              data = imageBytes
+            )
             val publicUrl = when (uploadResponse) {
               is Result.Success -> uploadResponse.data
               is Result.Error -> throw Exception(uploadResponse.message)

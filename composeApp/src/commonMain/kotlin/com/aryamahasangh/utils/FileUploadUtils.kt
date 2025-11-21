@@ -6,38 +6,21 @@ import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.readBytes
 import kotlinx.datetime.Clock
-import com.aryamahasangh.isIos
-import com.aryamahasangh.auth.SessionManager
 
 object FileUploadUtils {
   /**
    * Low-level helper: upload raw bytes to a specific storage path.
-   * On iOS, prefer resumable (tus) to avoid Darwin transport errors; fallback once to regular upload.
    * Returns public URL on success, Result.Error on failure.
    */
-  private suspend fun preRefreshSession() {
-    try {
-      SessionManager.isUserAuthenticated() // triggers refresh if needed
-    } catch (_: Exception) {
-      // ignore; upload might still be public
-    }
-  }
-
   suspend fun uploadBytes(
     path: String,
     data: ByteArray
   ): Result<String> {
     return try {
-      preRefreshSession()
-      println("[Upload] path=$path size=${data.size} platform=${if (isIos()) "iOS" else "Other"}")
-      // NOTE: Resumable TUS API differs across supabase-kt versions. Using stable upload() for now.
-      // If needed, switch to bucket.resumable.createOrContinueUpload(path).upload(...) once verified.
       bucket.upload(path = path, data = data)
       val publicUrl = bucket.publicUrl(path)
-      println("[Upload] success url=$publicUrl")
       Result.Success(publicUrl)
     } catch (e: Exception) {
-      println("[Upload] error: ${e.message}")
       Result.Error(e.message ?: "फ़ाइल अपलोड करने में त्रुटि")
     }
   }

@@ -37,8 +37,10 @@ import com.aryamahasangh.network.bucket
 import com.aryamahasangh.type.ActivityType
 import com.aryamahasangh.ui.components.buttons.*
 import com.aryamahasangh.util.GlobalMessageManager
+import com.aryamahasangh.util.ImageCompressionService
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.utils.FileUploadUtils
+import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.name
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
@@ -163,15 +165,16 @@ fun MultiSelectDropdown(
   var expanded by remember { mutableStateOf(false) }
 
   Column(modifier = modifier) {
-    // Selected chips (use snapshot list to avoid concurrent modification during iteration)
-    val selectedSnapshot = remember(selectedOptions) { selectedOptions.toList() }
-    FlowRow(
-      modifier = Modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.spacedBy(4.dp),
-      verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-      selectedSnapshot.forEach { option ->
-        key(option.id) { // assume Organisation has stable id
+    // NOTE: Removed remembered snapshot & key() usage to prevent crash (removeLast on empty list) due to layout mutation.
+    // We derive a simple immutable list each recomposition. Also guard FlowRow when empty.
+    val selectedSnapshot = selectedOptions.toList()
+    if (selectedSnapshot.isNotEmpty()) {
+      FlowRow(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+      ) {
+        for (option in selectedSnapshot) {
           InputChip(
             selected = true,
             onClick = { onSelectionChanged(selectedOptions - option) },
@@ -193,6 +196,7 @@ fun MultiSelectDropdown(
           )
         }
       }
+      Spacer(Modifier.height(4.dp))
     }
 
     ExposedDropdownMenuBox(
@@ -219,8 +223,7 @@ fun MultiSelectDropdown(
             onClick = {
               val newSet = if (option in selectedOptions) selectedOptions - option else selectedOptions + option
               onSelectionChanged(newSet)
-              // keep menu open for multi-select; remove next line to close on select
-              // expanded = false
+              // Keep menu open for multi-select.
             },
             trailingIcon = if (option in selectedOptions) {
               { Icon(Icons.Default.Check, contentDescription = "Selected", modifier = Modifier.size(20.dp)) }
@@ -421,6 +424,14 @@ private fun CreateActivityScreenContent(
   // --- Effects ---
   LaunchedEffect(organisationsAndMembersState) {
     organisations = organisationsAndMembersState.organisations
+    // Prune any previously selected organisations that no longer exist
+    if (associatedOrganisations.isNotEmpty()) {
+      val pruned = associatedOrganisations.filter { sel -> organisations.any { it.id == sel.id } }.toSet()
+      if (pruned.size != associatedOrganisations.size) {
+        associatedOrganisations = pruned
+        associatedOrganisationsError = pruned.isEmpty()
+      }
+    }
   }
   LaunchedEffect(Unit) { viewModel.loadOrganisationsAndMembers() }
   LaunchedEffect(editingActivityId) {
@@ -514,24 +525,106 @@ private fun CreateActivityScreenContent(
 
   suspend fun processMediaFiles(): List<String> {
     val attached = mutableListOf<String>()
+    // Include existing (non-deleted) URLs first
     attached += imagePickerState.getActiveImageUrls()
-    if (imagePickerState.deletedImageUrls.isNotEmpty()) {
-      try { bucket.delete(imagePickerState.deletedImageUrls.map { it.substringAfterLast('/') }) } catch (_: Exception) { GlobalMessageManager.showError("चित्र हटाने में त्रुटि") }
+    val newImages = imagePickerState.newImages.toList()
+    if (newImages.isEmpty()) {
+      // Handle deletions only
+      if (imagePickerState.deletedImageUrls.isNotEmpty()) {
+        try { bucket.delete(imagePickerState.deletedImageUrls.map { it.substringAfterLast('/') }) } catch (_: Exception) {}
+      }
+      return attached.distinct()
     }
-    try {
-      imagePickerState.newImages.forEach { file ->
-        val ext = file.name.substringAfterLast('.', "").lowercase()
-        require(ext in listOf("jpg","jpeg","png","webp")) { "केवल चित्र" }
-        val bytes = imagePickerState.getCompressedBytes(file) ?: com.aryamahasangh.util.ImageCompressionService.compressSync(file, targetKb = 100, maxLongEdge = 1024)
-        if (bytes.size > 512*1024) error("चित्र बहुत बड़ा है")
-        when (val resp = FileUploadUtils.uploadBytes(path = "activity_${System.now().epochSeconds}.webp", data = bytes)) {
-          is Result.Success -> attached += resp.data
-          is Result.Error -> error(resp.message)
-          else -> { /* ignore other states */ }
+
+    var failure: String? = null
+
+    suspend fun attemptUpload(
+      file: PlatformFile,
+      baseIndex: Int,
+      targetKbSequence: List<Int>
+    ): Boolean {
+      val ext = file.name.substringAfterLast('.', "").lowercase()
+      if (ext !in listOf("jpg", "jpeg", "png", "webp")) {
+        failure = "असमर्थित चित्र प्रकार"
+        return false
+      }
+      // Progressive compression attempts
+      var compressed: ByteArray = ByteArray(0)
+      for ((i, target) in targetKbSequence.withIndex()) {
+        compressed = ImageCompressionService.compressGeneral(file, targetKb = target, maxLongEdge = 1024)
+        if (compressed.isEmpty()) continue
+        if (compressed.size <= (target * 1024) || i == targetKbSequence.lastIndex) break
+      }
+      if (compressed.isEmpty()) {
+        failure = "चित्र संसाधित नहीं हुआ"
+        return false
+      }
+      // Hard cap guard – re-compress harsher if still above 140KB
+      if (compressed.size > 140 * 1024) {
+        compressed = ImageCompressionService.compressGeneral(file, targetKb = 80, maxLongEdge = 1024)
+      }
+      if (compressed.size > 160 * 1024) {
+        failure = "चित्र बहुत बड़ा है"
+        return false
+      }
+
+      val timestamp = System.now().epochSeconds
+      val randomSuffix = (1000..9999).random()
+      val path = "activity_${timestamp}_${randomSuffix}_${baseIndex}.webp"
+
+      // Upload with one retry on Darwin EMSGSIZE
+      var attempt = 0
+      var lastError: String? = null
+      while (attempt < 2) {
+        when (val uploadResult = FileUploadUtils.uploadBytes(path, compressed)) {
+          is Result.Success -> {
+            attached += uploadResult.data
+            return true
+          }
+          is Result.Error -> {
+            val msg = uploadResult.message ?: "त्रुटि"
+            // Detect Darwin EMSGSIZE scenario heuristically
+            if (msg.contains("Message too long", ignoreCase = true) && attempt == 0) {
+              // Re-compress smaller and retry once
+              compressed = ImageCompressionService.compressGeneral(file, targetKb = 60, maxLongEdge = 1024)
+              attempt++
+              continue
+            } else {
+              lastError = msg
+              failure = "चित्र अपलोड विफल: $msg"
+              return false
+            }
+          }
+          else -> {
+            lastError = "अज्ञात अपलोड त्रुटि"
+            failure = lastError
+            return false
+          }
         }
       }
-    } catch (_: Exception) { error("चित्र अपलोड त्रुटि") }
-    return attached
+      if (lastError != null) failure = lastError
+      return false
+    }
+
+    newImages.forEachIndexed { index, file ->
+      if (failure != null) return@forEachIndexed
+      try {
+        // Try sequence: start at 100KB, then 90, 80, 70 for refinement
+        val ok = attemptUpload(file, index, listOf(100, 90, 80, 70))
+        if (!ok && failure == null) failure = "चित्र अपलोड विफल"
+      } catch (e: Exception) {
+        val msg = e.message ?: "चित्र संसाधन त्रुटि"
+        failure = msg
+      }
+    }
+
+    if (failure != null) throw IllegalStateException(failure)
+
+    // Perform deletions after successful new uploads
+    if (imagePickerState.deletedImageUrls.isNotEmpty()) {
+      try { bucket.delete(imagePickerState.deletedImageUrls.map { it.substringAfterLast('/') }) } catch (_: Exception) {}
+    }
+    return attached.distinct()
   }
 
   // Back handling
@@ -569,7 +662,18 @@ private fun CreateActivityScreenContent(
       // Description
       OutlinedTextField(description, { if (it.length <= 1000) { description = it; descriptionError = false } }, label = { Text("विस्तृत विवरण") }, modifier = Modifier.width(500.dp), minLines = 3, maxLines = 30, isError = descriptionError, supportingText = { if (descriptionError) Text("Description is required") })
       // Organisations
-      MultiSelectDropdown(Modifier.width(500.dp), label = "संबधित संस्थाएं", options = organisations, selectedOptions = associatedOrganisations, onSelectionChanged = { associatedOrganisations = it; associatedOrganisationsError = it.isEmpty() }, isError = associatedOrganisationsError, supportingText = { if (associatedOrganisationsError) Text("Associated Organisation is required") })
+      MultiSelectDropdown(
+        Modifier.width(500.dp),
+        label = "संबधित संस्थाएं",
+        options = organisations,
+        selectedOptions = associatedOrganisations,
+        onSelectionChanged = { set ->
+          associatedOrganisations = set
+          associatedOrganisationsError = set.isEmpty()
+        },
+        isError = associatedOrganisationsError,
+        supportingText = { if (associatedOrganisationsError) Text("Associated Organisation is required") }
+      )
       // Address toggle
       if (selectedType == ActivityType.CAMPAIGN) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
         Checkbox(includeAddress, { includeAddress = it }, modifier = Modifier.testTag("AddAddressCheckbox")); Text("स्थान जोड़ें", modifier = Modifier.testTag("AddAddressCheckboxLabel")) }
@@ -589,14 +693,14 @@ private fun CreateActivityScreenContent(
           Text("प्रारंभ:")
           Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             CustomTextField(startDateText, "दिनांक", Modifier.width(180.dp), readOnly = true, onClick = { openStartDateDialog.value = true }, isError = startDateError, supportingText = { if (startDateError) Text(if (startDateTimeErrorMessage.isEmpty()) "Start date is required" else startDateTimeErrorMessage) })
-            CustomTextField(startTimeText, "समय", Modifier.width(180.dp), readOnly = true, onClick = { openStartTimeDialog.value = true }, isError = startTimeError, supportingText = { if (startTimeError) Text(if (startDateTimeErrorMessage.isEmpty()) "Start time is required" else startDateTimeErrorMessage) })
+            CustomTextField(startTimeText, "समय", Modifier.width(180.dp), readOnly = true, onClick = { openStartTimeDialog.value = true }, isError = startTimeError, supportingText = { if (startTimeError) Text(if (startTimeError) "Start time is required" else startDateTimeErrorMessage) })
           }
         }
         Column {
           Text("समाप्ति:")
           Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             CustomTextField(endDateText, "दिनांक", Modifier.width(180.dp), readOnly = true, onClick = { openEndDateDialog.value = true }, isError = endDateError, supportingText = { if (endDateError) Text(if (endDateTimeErrorMessage.isEmpty()) "End date is required" else endDateTimeErrorMessage) })
-            CustomTextField(endTimeText, "समय", Modifier.width(180.dp), readOnly = true, onClick = { openEndTimeDialog.value = true }, isError = endTimeError, supportingText = { if (endTimeError) Text(if (endDateTimeErrorMessage.isEmpty()) "End time is required" else endDateTimeErrorMessage) })
+            CustomTextField(endTimeText, "समय", Modifier.width(180.dp), readOnly = true, onClick = { openEndTimeDialog.value = true }, isError = endTimeError, supportingText = { if (endTimeError) Text(if (endTimeError) "End time is required" else endDateTimeErrorMessage) })
           }
         }
       }
@@ -616,29 +720,33 @@ private fun CreateActivityScreenContent(
       SubmitButtonOld(
         text = if (editingActivityId != null) "अद्यतन करें" else "गतिविधि बनाएं",
         onSubmit = {
-          val media = processMediaFiles()
-          val data = ActivityInputData(
-            name = name,
-            shortDescription = shortDescription,
-            longDescription = description,
-            type = selectedType!!,
-            addressId = if (!includeAddress && selectedType == ActivityType.CAMPAIGN) null else editingActivity?.addressId,
-            address = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.address else "",
-            state = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.state else "",
-            district = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.district else "",
-            associatedOrganisations = associatedOrganisations.toList(),
-            startDatetime = startDate!!.atTime(startTime!!),
-            endDatetime = endDate!!.atTime(endTime!!),
-            mediaFiles = media,
-            contactPeople = membersState.members.map { (m, rp) -> ActivityMember(m.id, rp.first, m, rp.second) },
-            additionalInstructions = additionalInstructions,
-            capacity = eventCapacity.toIntOrNull() ?: 0,
-            allowedGender = when (genderAllowed) { Gender.ANY -> GenderAllowed.ANY; Gender.MALE -> GenderAllowed.MALE; Gender.FEMALE -> GenderAllowed.FEMALE; null -> GenderAllowed.ANY },
-            latitude = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.location?.latitude else null,
-            longitude = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.location?.longitude else null
-          )
-          if (editingActivityId != null) viewModel.updateActivitySmart(editingActivityId, data) else viewModel.createActivity(data)
-          ActivitiesPageState.markForRefresh()
+          try {
+            val media = processMediaFiles()
+            val data = ActivityInputData(
+              name = name,
+              shortDescription = shortDescription,
+              longDescription = description,
+              type = selectedType!!,
+              addressId = if (!includeAddress && selectedType == ActivityType.CAMPAIGN) null else editingActivity?.addressId,
+              address = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.address else "",
+              state = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.state else "",
+              district = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.district else "",
+              associatedOrganisations = associatedOrganisations.toList(),
+              startDatetime = startDate!!.atTime(startTime!!),
+              endDatetime = endDate!!.atTime(endTime!!),
+              mediaFiles = media,
+              contactPeople = membersState.members.map { (m, rp) -> ActivityMember(m.id, rp.first, m, rp.second) },
+              additionalInstructions = additionalInstructions,
+              capacity = eventCapacity.toIntOrNull() ?: 0,
+              allowedGender = when (genderAllowed) { Gender.ANY -> GenderAllowed.ANY; Gender.MALE -> GenderAllowed.MALE; Gender.FEMALE -> GenderAllowed.FEMALE; null -> GenderAllowed.ANY },
+              latitude = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.location?.latitude else null,
+              longitude = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.location?.longitude else null
+            )
+            if (editingActivityId != null) viewModel.updateActivitySmart(editingActivityId, data) else viewModel.createActivity(data)
+            ActivitiesPageState.markForRefresh()
+          } catch (e: Exception) {
+            GlobalMessageManager.showError(e.message ?: "चित्र अपलोड विफल")
+          }
         },
         config = SubmitButtonConfig(fillMaxWidth = false, validator = { if (!validateForm()) SubmissionError.ValidationFailed else null }, texts = SubmitButtonTexts(submittingText = if (editingActivityId != null) "अद्यतन हो रही है..." else "बनाई जा रही है...", successText = if (editingActivityId != null) "अद्यतन सफल!" else "सफल!")),
         callbacks = object : SubmitCallbacks {
@@ -647,7 +755,7 @@ private fun CreateActivityScreenContent(
         }
       )
       LaunchedEffect(formSubmissionState.isSuccess) { if (formSubmissionState.isSuccess) { val id = editingActivityId ?: createdActivityId ?: return@LaunchedEffect; onActivitySaved(id) } }
-      if (showUnsavedChangesDialog) AlertDialog(onDismissRequest = { showUnsavedChangesDialog = false }, title = { Text("असंचयिक परिवर्तन") }, text = { Text("आपके परिवर्तन संचयित नहीं है। क्या आप इसे त्यागना चाहते हैं?") }, confirmButton = { TextButton(onClick = { showUnsavedChangesDialog = false; onCancel() }) { Text("जी हाँ") } }, dismissButton = { TextButton(onClick = { showUnsavedChangesDialog = false }) { Text("नहीं") } })
+      if (showUnsavedChangesDialog) AlertDialog(onDismissRequest = { showUnsavedChangesDialog = false }, title = { Text("असंचयिक परिवर्तन") }, text = { Text("आपके परिवर्तन संचयित नहीं किए गए हैं। क्या आप इसे त्यागना चाहते हैं?") }, confirmButton = { TextButton(onClick = { showUnsavedChangesDialog = false; onCancel() }) { Text("जी हाँ") } }, dismissButton = { TextButton(onClick = { showUnsavedChangesDialog = false }) { Text("नहीं") } })
       if (openStartDateDialog.value) CustomDatePickerDialog(onDateSelected = { d -> startDate = d; startDateText = TextFieldValue(formatDate(d)); startDateError = false; openStartDateDialog.value = false }, onDismissRequest = { openStartDateDialog.value = false })
       if (openEndDateDialog.value) CustomDatePickerDialog(onDateSelected = { d -> endDate = d; endDateText = TextFieldValue(formatDate(d)); endDateError = false; openEndDateDialog.value = false }, onDismissRequest = { openEndDateDialog.value = false })
       if (openStartTimeDialog.value) TimePickerDialog(onTimeSelected = { t -> startTime = t; startTimeText = TextFieldValue(formatTime(t)); startTimeError = false; openStartTimeDialog.value = false }, onDismissRequest = { openStartTimeDialog.value = false })

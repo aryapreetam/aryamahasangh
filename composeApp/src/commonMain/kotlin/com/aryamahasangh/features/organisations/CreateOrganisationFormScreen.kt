@@ -144,19 +144,12 @@ fun NewOrganisationFormScreen(
             val imageBytes = if (formData.logo.hasCompressedData(file)) {
               formData.logo.getCompressedBytes(file)!!
             } else {
-              // Fallback compression for files not compressed during selection
-              ImageCompressionService.compressSync(
-                file = file,
-                targetKb = 50, // 50KB for organization logos
-                maxLongEdge = 512
+              ImageCompressionService.compressThumbnail(
+                file = file
               )
             }
 
             val uploadResponse =
-              // bucket.upload(
-              //   path = "org_logo_${Clock.System.now().epochSeconds}.webp",
-              //   data = imageBytes
-              // )
               FileUploadUtils.uploadBytes(
                 path = "org_logo_${Clock.System.now().epochSeconds}.webp",
                 data = imageBytes

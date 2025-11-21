@@ -12,7 +12,6 @@ fun AndroidBackHandler(
   navController: NavHostController
 ) {
   val currentRoute = currentDestination?.substringAfterLast(".")
-
   // Only use BackHandler if we're NOT on AboutUs (to allow app exit on AboutUs)
   if (currentRoute != "AboutUs") {
     BackHandler {

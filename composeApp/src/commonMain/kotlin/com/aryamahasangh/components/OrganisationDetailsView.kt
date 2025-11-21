@@ -197,10 +197,8 @@ fun OrganisationDetail(
                             }
 
                           // Compress image to 50KB for organization logo
-                          val compressedBytes = ImageCompressionService.compressSync(
-                            file = file,
-                            targetKb = 50,
-                            maxLongEdge = 1920
+                          val compressedBytes = ImageCompressionService.compressThumbnail(
+                            file = file
                           )
 
                           val uploadResponse =
@@ -231,7 +229,6 @@ fun OrganisationDetail(
                             message = "❌ Failed to upload logo: ${e.message}",
                             actionLabel = "Close"
                           )
-                          println("error uploading files: $e")
                         }
                       }
                     }

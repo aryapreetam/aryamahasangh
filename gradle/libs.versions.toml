@@ -127,6 +127,7 @@ apollo-runtime = { module = "com.apollographql.apollo:apollo-runtime", version.r
 filekit-dialogs = { module = "io.github.vinceglb:filekit-dialogs", version.ref = "filekit" }
 filekit-dialogs-compose = { module = "io.github.vinceglb:filekit-dialogs-compose", version.ref = "filekit" }
 filekit-coil = { module = "io.github.vinceglb:filekit-coil", version.ref = "filekit" }
+filekit-core = { module = "io.github.vinceglb:filekit-core", version.ref = "filekit" }
 
 # Accompanist (for permissions on Android)
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanist" }

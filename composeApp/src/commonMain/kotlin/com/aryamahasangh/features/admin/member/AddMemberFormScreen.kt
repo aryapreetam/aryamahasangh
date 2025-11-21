@@ -308,7 +308,9 @@ fun AddMemberFormScreen(
             val imageBytes = if (imagePickerState.hasCompressedData(selectedProfileImage!!)) {
               imagePickerState.getCompressedBytes(selectedProfileImage!!)!!
             } else {
-              selectedProfileImage!!.readBytes()
+              com.aryamahasangh.util.ImageCompressionService.compressThumbnail(
+                file = selectedProfileImage!!
+              )
             }
 
             val uploadResponse = FileUploadUtils.uploadBytes(
