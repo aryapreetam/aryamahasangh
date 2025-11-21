@@ -11,9 +11,10 @@ import com.aryamahasangh.features.activities.Member
 import com.aryamahasangh.features.admin.PaginationResult
 import com.aryamahasangh.features.admin.PaginationState
 import com.aryamahasangh.fragment.AryaSamajWithAddress
-import com.aryamahasangh.network.bucket
 import com.aryamahasangh.util.GlobalMessageManager
 import com.aryamahasangh.util.ImageCompressionService
+import com.aryamahasangh.utils.FileUploadUtils
+import com.aryamahasangh.util.Result
 import com.aryamahasangh.viewmodel.ErrorState
 import com.aryamahasangh.viewmodel.handleResult
 import kotlinx.coroutines.Job
@@ -291,11 +292,19 @@ class AryaSamajViewModel(
             }
 
             val uploadResponse =
-              bucket.upload(
+              // bucket.upload(
+              //   path = "arya_samaj_$randomNum.webp",
+              //   data = imageBytes
+              // )
+              FileUploadUtils.uploadBytes(
                 path = "arya_samaj_$randomNum.webp",
                 data = imageBytes
               )
-            val publicUrl = bucket.publicUrl(uploadResponse.path)
+            val publicUrl = when (uploadResponse) {
+              is Result.Success -> uploadResponse.data
+              is Result.Error -> throw Exception(uploadResponse.message)
+              else -> throw Exception("अज्ञात त्रुटि")
+            }
             uploadedImageUrls.add(publicUrl)
           } catch (e: Exception) {
             throw Exception("चित्र अपलोड करने में त्रुटि: ${e.message}")

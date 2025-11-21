@@ -320,7 +320,7 @@ fun CreateAryaParivarFormScreen(
     Spacer(modifier = Modifier.height(16.dp))
 
     // Submit Button
-    SubmitButton(
+    SubmitButtonOld(
       text = if (isEditMode) "परिवार अद्यतन करें" else "परिवार बनाएं",
       onSubmit = {
         // Execute family creation/update

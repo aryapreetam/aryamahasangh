@@ -371,7 +371,7 @@ private fun PerfectButtonContent(
  * - Gallery-testable states
  */
 @Composable
-fun SubmitButton(
+fun SubmitButtonOld(
   text: String,
   onSubmit: suspend () -> Unit,
   modifier: Modifier = Modifier,
@@ -664,7 +664,7 @@ fun SubmitButtonGallery(
       Column(modifier = Modifier.padding(16.dp)) {
         Text("Custom Configuration Demo", style = MaterialTheme.typography.titleMedium)
         Spacer(modifier = Modifier.height(8.dp))
-        SubmitButton(
+        SubmitButtonOld(
           text = "Custom Button",
           onSubmit = {
             delay(2000)

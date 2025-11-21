@@ -400,31 +400,6 @@ fun CourseRegistrationFormScreen(
       isValid = uiState.isValid,
       modifier = Modifier.semantics { testTag = "submit_button" }
     )
-//    SubmitButton(
-//      text = "पंजीकरण प्रस्तुत करें",
-//      onSubmit = {
-//        viewModel.onSubmit()
-//      },
-//      config = SubmitButtonConfig(
-//        validator = {
-//          if(!uiState.isValid) SubmissionError.ValidationFailed else null
-////          uiState.submitErrorMessage?.let {
-////            com.aryamahasangh.ui.components.buttons.SubmissionError.Custom(
-////              message = it
-////            )
-////          }
-//        },
-//      ),
-//      modifier = Modifier.semantics { testTag = "submit_button" },
-//      callbacks = object : com.aryamahasangh.ui.components.buttons.SubmitCallbacks {
-//        override fun onError(error: com.aryamahasangh.ui.components.buttons.SubmissionError) {
-//          // No navigation on error—UI shows error state, snackbar handled by ViewModel
-//        }
-//        override fun onSuccess() {
-//          // Success: navigation handled by LaunchedEffect(submitSuccess)
-//        }
-//      }
-//    )
   }
 }
 

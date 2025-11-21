@@ -6,8 +6,42 @@ import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.readBytes
 import kotlinx.datetime.Clock
+import com.aryamahasangh.isIos
+import com.aryamahasangh.auth.SessionManager
 
 object FileUploadUtils {
+  /**
+   * Low-level helper: upload raw bytes to a specific storage path.
+   * On iOS, prefer resumable (tus) to avoid Darwin transport errors; fallback once to regular upload.
+   * Returns public URL on success, Result.Error on failure.
+   */
+  private suspend fun preRefreshSession() {
+    try {
+      SessionManager.isUserAuthenticated() // triggers refresh if needed
+    } catch (_: Exception) {
+      // ignore; upload might still be public
+    }
+  }
+
+  suspend fun uploadBytes(
+    path: String,
+    data: ByteArray
+  ): Result<String> {
+    return try {
+      preRefreshSession()
+      println("[Upload] path=$path size=${data.size} platform=${if (isIos()) "iOS" else "Other"}")
+      // NOTE: Resumable TUS API differs across supabase-kt versions. Using stable upload() for now.
+      // If needed, switch to bucket.resumable.createOrContinueUpload(path).upload(...) once verified.
+      bucket.upload(path = path, data = data)
+      val publicUrl = bucket.publicUrl(path)
+      println("[Upload] success url=$publicUrl")
+      Result.Success(publicUrl)
+    } catch (e: Exception) {
+      println("[Upload] error: ${e.message}")
+      Result.Error(e.message ?: "फ़ाइल अपलोड करने में त्रुटि")
+    }
+  }
+
   /**
    * Upload compressed image ByteArray to Supabase storage
    *
@@ -27,13 +61,8 @@ object FileUploadUtils {
       val fileName = "${folder}_${timestamp}_$randomSuffix.$extension"
       val path = if (folder.isNotEmpty()) "$folder/$fileName" else fileName
 
-      val uploadResponse = bucket.upload(
-        path = path,
-        data = imageBytes
-      )
-
-      val publicUrl = bucket.publicUrl(path)
-      Result.Success(publicUrl)
+      // Use unified helper
+      uploadBytes(path = path, data = imageBytes)
     } catch (e: Exception) {
       Result.Error(e.message ?: "Compressed image upload failed")
     }
@@ -56,14 +85,8 @@ object FileUploadUtils {
       val fileName = "${folder}_$timestamp.$fileExtension"
       val path = if (folder.isNotEmpty()) "$folder/$fileName" else fileName
 
-      val uploadResponse =
-        bucket.upload(
-          path = path,
-          data = file.readBytes()
-        )
-
-      val publicUrl = bucket.publicUrl(path)
-      Result.Success(publicUrl)
+      // Use unified helper
+      uploadBytes(path = path, data = file.readBytes())
     } catch (e: Exception) {
       Result.Error(e.message ?: "Image upload failed")
     }
@@ -81,13 +104,12 @@ object FileUploadUtils {
     val fileExtension = "webp"
     val fileName = "$timestamp.$fileExtension"
 
-    val uploadResponse =
-      bucket.upload(
-        path = fileName,
-        data = file.readBytes()
-      )
-
-    return bucket.publicUrl(uploadResponse.path)
+    // Use unified helper and throw on error to preserve legacy signature
+    return when (val res = uploadBytes(path = fileName, data = file.readBytes())) {
+      is Result.Success -> res.data
+      is Result.Error -> throw Exception(res.message)
+      else -> throw Exception("अज्ञात त्रुटि")
+    }
   }
 
   /**
@@ -108,26 +130,24 @@ object FileUploadUtils {
       val uploadedUrls = mutableListOf<String>()
 
       for (file in files) {
+        val bytes = file.readBytes()
         // Validate original file size (before any compression)
-        val originalFileSize = file.readBytes().size
+        val originalFileSize = bytes.size
         if (originalFileSize > maxSizeBytes) {
           return Result.Error("फ़ाइल ${file.name} का आकार ${maxFileSizeMB}MB से अधिक है")
         }
 
-        // Upload file
         val timestamp = Clock.System.now().epochSeconds
         val randomSuffix = (1000..9999).random()
         val fileExtension = "webp"
         val fileName = "${timestamp}_$randomSuffix.$fileExtension"
         val path = if (folder.isNotEmpty()) "$folder/$fileName" else fileName
 
-        val uploadResponse =
-          bucket.upload(
-            path = path,
-            data = file.readBytes()
-          )
-        val publicUrl = bucket.publicUrl(path)
-        uploadedUrls.add(publicUrl)
+        when (val res = uploadBytes(path = path, data = bytes)) {
+          is Result.Success -> uploadedUrls.add(res.data)
+          is Result.Error -> return Result.Error(res.message)
+          else -> return Result.Error("अज्ञात त्रुटि")
+        }
       }
 
       Result.Success(uploadedUrls)

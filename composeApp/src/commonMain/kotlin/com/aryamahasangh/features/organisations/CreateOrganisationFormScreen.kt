@@ -14,8 +14,9 @@ import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.components.*
 import com.aryamahasangh.navigation.LocalSetBackHandler
 import com.aryamahasangh.navigation.LocalSnackbarHostState
-import com.aryamahasangh.network.bucket
 import com.aryamahasangh.util.ImageCompressionService
+import com.aryamahasangh.util.Result
+import com.aryamahasangh.utils.FileUploadUtils
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 
@@ -147,16 +148,26 @@ fun NewOrganisationFormScreen(
               ImageCompressionService.compressSync(
                 file = file,
                 targetKb = 50, // 50KB for organization logos
-                maxLongEdge = 1920
+                maxLongEdge = 512
               )
             }
 
             val uploadResponse =
-              bucket.upload(
+              // bucket.upload(
+              //   path = "org_logo_${Clock.System.now().epochSeconds}.webp",
+              //   data = imageBytes
+              // )
+              FileUploadUtils.uploadBytes(
                 path = "org_logo_${Clock.System.now().epochSeconds}.webp",
                 data = imageBytes
               )
-            bucket.publicUrl(uploadResponse.path)
+            val logoUrl = when (uploadResponse) {
+              is Result.Success -> uploadResponse.data
+              is Result.Error -> throw Exception(uploadResponse.message)
+              else -> throw Exception("अज्ञात त्रुटि")
+            }
+            // bucket.publicUrl(uploadResponse.path)
+            logoUrl
           } else {
             // Use existing URL if available
             formData.logo.existingImageUrls.firstOrNull() ?: ""

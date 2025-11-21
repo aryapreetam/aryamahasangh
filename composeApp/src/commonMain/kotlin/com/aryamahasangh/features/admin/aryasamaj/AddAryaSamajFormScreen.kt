@@ -19,7 +19,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.components.*
-import com.aryamahasangh.features.activities.Member
 import com.aryamahasangh.navigation.LocalSnackbarHostState
 import com.aryamahasangh.ui.components.buttons.*
 
@@ -211,7 +210,7 @@ fun AddAryaSamajFormScreen(
     Spacer(modifier = Modifier.height(32.dp))
 
     Spacer(modifier = Modifier.height(24.dp))
-    SubmitButton(
+    SubmitButtonOld(
       text = if (isEditMode) "संपादित करें" else "आर्य समाज जोड़ें",
       onSubmit = {
         // Submit the form via ViewModel - ViewModel handles validation

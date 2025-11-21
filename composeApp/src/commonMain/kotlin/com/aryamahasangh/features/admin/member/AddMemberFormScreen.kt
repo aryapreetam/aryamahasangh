@@ -17,9 +17,9 @@ import com.aryamahasangh.features.activities.Member
 import com.aryamahasangh.features.admin.AdminViewModel
 import com.aryamahasangh.navigation.LocalSetBackHandler
 import com.aryamahasangh.navigation.LocalSnackbarHostState
-import com.aryamahasangh.network.bucket
 import com.aryamahasangh.ui.components.buttons.*
-import com.aryamahasangh.util.ImageCompressionService
+import com.aryamahasangh.utils.FileUploadUtils
+import com.aryamahasangh.util.Result
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.readBytes
 import kotlinx.coroutines.launch
@@ -311,12 +311,17 @@ fun AddMemberFormScreen(
               selectedProfileImage!!.readBytes()
             }
 
-            val uploadResponse = bucket.upload(
+            val uploadResponse = FileUploadUtils.uploadBytes(
               path = "profile_${Clock.System.now().epochSeconds}.webp",
               data = imageBytes
             )
-            finalImageUrl = bucket.publicUrl(uploadResponse.path)
-            uploadedImageUrl = finalImageUrl
+            val finalUrl = when (uploadResponse) {
+              is Result.Success -> uploadResponse.data
+              is Result.Error -> throw Exception(uploadResponse.message)
+              else -> throw Exception("अज्ञात त्रुटि")
+            }
+            finalImageUrl = finalUrl
+            uploadedImageUrl = finalUrl
           } catch (e: Exception) {
             imageUploadError = e.message
             showImageUploadFailureDialog = true
@@ -680,7 +685,7 @@ fun AddMemberFormScreen(
       // Submit Button
       item {
         Spacer(modifier = Modifier.height(24.dp))
-        SubmitButton(
+        SubmitButtonOld(
           text = if (isEditMode) "अपडेट करें" else "सहेजें",
           onSubmit = {
             // Execute the save member logic

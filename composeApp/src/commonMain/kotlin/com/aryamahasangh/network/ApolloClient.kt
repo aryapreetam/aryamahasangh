@@ -117,3 +117,4 @@ class LoggingApolloInterceptor : ApolloInterceptor {
 
 val resumableClient = supabaseClient.storage[AppConfig.STORAGE_BUCKET].resumable
 val bucket = supabaseClient.storage[AppConfig.STORAGE_BUCKET]
+

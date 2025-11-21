@@ -42,6 +42,8 @@ import com.aryamahasangh.navigation.LocalSnackbarHostState
 import com.aryamahasangh.network.bucket
 import com.aryamahasangh.screens.EditImageButton
 import com.aryamahasangh.util.ImageCompressionService
+import com.aryamahasangh.utils.FileUploadUtils
+import com.aryamahasangh.util.Result
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.FileKitType
@@ -202,11 +204,20 @@ fun OrganisationDetail(
                           )
 
                           val uploadResponse =
-                            bucket.upload(
+                            // bucket.upload(
+                            //   path = "org_logo_${Clock.System.now().epochSeconds}.webp",
+                            //   data = compressedBytes
+                            // )
+                            FileUploadUtils.uploadBytes(
                               path = "org_logo_${Clock.System.now().epochSeconds}.webp",
                               data = compressedBytes
                             )
-                          val imageUrl = bucket.publicUrl(uploadResponse.path)
+                          val imageUrl = when (uploadResponse) {
+                            is Result.Success -> uploadResponse.data
+                            is Result.Error -> throw Exception(uploadResponse.message)
+                            else -> throw Exception("अज्ञात त्रुटि")
+                          }
+                          // val imageUrl = bucket.publicUrl(uploadResponse.path)
 
                           // Cancel the upload progress snackbar
                           snackbarJob.cancel()

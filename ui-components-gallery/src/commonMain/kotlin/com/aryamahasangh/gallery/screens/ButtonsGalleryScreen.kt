@@ -234,7 +234,7 @@ fun AlwaysSuccessfulDemo() {
   var successCount by remember { mutableStateOf(0) }
 
   Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-    SubmitButton(
+    SubmitButtonOld(
       text = "डेटा संग्रहित करें",
       onSubmit = {
         delay(1000)
@@ -261,7 +261,7 @@ fun AlwaysFailsDemo() {
   var failureCount by remember { mutableStateOf(0) }
 
   Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-    SubmitButton(
+    SubmitButtonOld(
       text = "त्रुटि परीक्षण",
       onSubmit = {
         delay(1000)
@@ -294,7 +294,7 @@ fun RandomOutcomeDemo() {
   var failureCount by remember { mutableStateOf(0) }
 
   Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-    SubmitButton(
+    SubmitButtonOld(
       text = "रैंडम परीक्षण",
       onSubmit = {
         delay(1500)
@@ -328,7 +328,7 @@ fun FastOperationsDemo() {
   var operationCount by remember { mutableStateOf(0) }
 
   Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-    SubmitButton(
+    SubmitButtonOld(
       text = "तत्काल ऑपरेशन",
       onSubmit = {
         delay(200) // Very fast
@@ -353,7 +353,7 @@ fun SlowOperationsDemo() {
   var operationCount by remember { mutableStateOf(0) }
 
   Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-    SubmitButton(
+    SubmitButtonOld(
       text = "धीमा ऑपरेशन",
       onSubmit = {
         delay(3000) // Very slow
@@ -390,7 +390,7 @@ fun ValidationDemo() {
       Text("डेटा वैध है")
     }
 
-    SubmitButton(
+    SubmitButtonOld(
       text = "सत्यापन सहित प्रस्तुत करें",
       onSubmit = {
         println("Submitting...")
@@ -418,7 +418,7 @@ fun CustomStylingDemo() {
   var customCount by remember { mutableStateOf(0) }
 
   Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-    SubmitButton(
+    SubmitButtonOld(
       text = "कस्टम स्टाइल",
       onSubmit = {
         delay(1000)
@@ -454,7 +454,7 @@ fun ColorSchemesDemo() {
     // Default colors
     Text("Default Colors:", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-      SubmitButton(
+      SubmitButtonOld(
         text = "सफल",
         onSubmit = { delay(500) },
         config = SubmitButtonConfig(
@@ -463,7 +463,7 @@ fun ColorSchemesDemo() {
           successDuration = 2000L
         )
       )
-      SubmitButton(
+      SubmitButtonOld(
         text = "त्रुटि",
         onSubmit = {
           delay(500)
@@ -480,7 +480,7 @@ fun ColorSchemesDemo() {
     // Vibrant colors
     Text("Vibrant Colors:", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-      SubmitButton(
+      SubmitButtonOld(
         text = "सफल",
         onSubmit = { delay(500) },
         config = SubmitButtonConfig(
@@ -489,7 +489,7 @@ fun ColorSchemesDemo() {
           successDuration = 2000L
         )
       )
-      SubmitButton(
+      SubmitButtonOld(
         text = "त्रुटि",
         onSubmit = {
           delay(500)
@@ -506,7 +506,7 @@ fun ColorSchemesDemo() {
     // Soft colors
     Text("Soft Colors:", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-      SubmitButton(
+      SubmitButtonOld(
         text = "सफल",
         onSubmit = { delay(500) },
         config = SubmitButtonConfig(
@@ -515,7 +515,7 @@ fun ColorSchemesDemo() {
           successDuration = 2000L
         )
       )
-      SubmitButton(
+      SubmitButtonOld(
         text = "त्रुटि",
         onSubmit = {
           delay(500)
@@ -532,7 +532,7 @@ fun ColorSchemesDemo() {
     // Professional colors
     Text("Professional Colors:", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Medium)
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-      SubmitButton(
+      SubmitButtonOld(
         text = "सफल",
         onSubmit = { delay(500) },
         config = SubmitButtonConfig(
@@ -541,7 +541,7 @@ fun ColorSchemesDemo() {
           successDuration = 2000L
         )
       )
-      SubmitButton(
+      SubmitButtonOld(
         text = "त्रुटि",
         onSubmit = {
           delay(500)
@@ -563,7 +563,7 @@ fun RetryFunctionalityDemo() {
   var retryCount by remember { mutableStateOf(0) }
 
   Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-    SubmitButton(
+    SubmitButtonOld(
       text = "रिट्राई डेमो",
       onSubmit = {
         delay(1000)
@@ -618,7 +618,7 @@ fun InternationalizationDemo() {
       }
     }
 
-    SubmitButton(
+    SubmitButtonOld(
       text = if (language == "hindi") "प्रस्तुत करें" else "Submit",
       onSubmit = {
         delay(1000)
@@ -649,7 +649,7 @@ fun AnalyticsDemo() {
   var retryCount by remember { mutableStateOf(0) }
 
   Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-    SubmitButton(
+    SubmitButtonOld(
       text = "एनालिटिक्स ट्रैकिंग",
       onSubmit = {
         delay(1500)

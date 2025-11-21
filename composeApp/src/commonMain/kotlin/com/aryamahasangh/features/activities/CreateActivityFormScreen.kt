@@ -5,12 +5,10 @@ package com.aryamahasangh.features.activities
 
 // Removed MediaDocumentGrid - using DocumentGrid component instead
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -21,17 +19,10 @@ import androidx.compose.material3.ExposedDropdownMenuAnchorType.Companion.Primar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -39,19 +30,16 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import coil3.compose.AsyncImage
-import coil3.compose.LocalPlatformContext
-import coil3.request.ImageRequest
-import coil3.request.crossfade
 import com.aryamahasangh.components.*
 import com.aryamahasangh.isDesktop
 import com.aryamahasangh.navigation.LocalSetBackHandler
-import com.aryamahasangh.navigation.LocalSnackbarHostState
 import com.aryamahasangh.network.bucket
 import com.aryamahasangh.type.ActivityType
 import com.aryamahasangh.ui.components.buttons.*
 import com.aryamahasangh.util.GlobalMessageManager
-import io.github.vinceglb.filekit.readBytes
+import com.aryamahasangh.util.Result
+import com.aryamahasangh.utils.FileUploadUtils
+import io.github.vinceglb.filekit.name
 import kotlinx.coroutines.launch
 import kotlinx.datetime.*
 import kotlinx.datetime.Clock.System
@@ -101,7 +89,7 @@ fun CustomTextField(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomDatePickerDialog(
-  onDateSelected: (_root_ide_package_.kotlinx.datetime.LocalDate) -> Unit,
+  onDateSelected: (LocalDate) -> Unit,
   onDismissRequest: () -> Unit,
   disablePastDates: Boolean = true
 ) {
@@ -174,44 +162,47 @@ fun MultiSelectDropdown(
 ) {
   var expanded by remember { mutableStateOf(false) }
 
-  Column(modifier = modifier) { // Wrap the InputChip area in a Column
-    // Display Selected Options as Input Chips
+  Column(modifier = modifier) {
+    // Selected chips (use snapshot list to avoid concurrent modification during iteration)
+    val selectedSnapshot = remember(selectedOptions) { selectedOptions.toList() }
     FlowRow(
       modifier = Modifier.fillMaxWidth(),
       horizontalArrangement = Arrangement.spacedBy(4.dp),
-      verticalArrangement = Arrangement.spacedBy(-12.dp)
+      verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-      selectedOptions.forEach { option ->
-        InputChip(
-          selected = true,
-          onClick = { onSelectionChanged(selectedOptions - option) },
-          label = {
-            Text(
-              text = option.name,
-              maxLines = 1,
-              overflow = TextOverflow.Ellipsis
-            )
-          },
-          trailingIcon = {
-            Icon(
-              Icons.Default.Close,
-              contentDescription = null,
-              Modifier.size(InputChipDefaults.IconSize)
-            )
-          },
-          modifier = Modifier.padding(2.dp)
-        )
+      selectedSnapshot.forEach { option ->
+        key(option.id) { // assume Organisation has stable id
+          InputChip(
+            selected = true,
+            onClick = { onSelectionChanged(selectedOptions - option) },
+            label = {
+              Text(
+                text = option.name,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+              )
+            },
+            trailingIcon = {
+              Icon(
+                Icons.Default.Close,
+                contentDescription = null,
+                Modifier.size(InputChipDefaults.IconSize)
+              )
+            },
+            modifier = Modifier.padding(2.dp)
+          )
+        }
       }
     }
 
     ExposedDropdownMenuBox(
-      expanded = false,
+      expanded = expanded,
       onExpandedChange = { expanded = !expanded }
     ) {
       OutlinedTextField(
         readOnly = true,
         value = selectedOptions.joinToString(", ") { it.name },
-        onValueChange = { },
+        onValueChange = {},
         label = { Text(label) },
         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
         modifier = Modifier.fillMaxWidth().menuAnchor(PrimaryNotEditable, true),
@@ -226,23 +217,14 @@ fun MultiSelectDropdown(
           DropdownMenuItem(
             text = { Text(text = option.name) },
             onClick = {
-              onSelectionChanged(
-                if (option in selectedOptions) selectedOptions - option else selectedOptions + option
-              )
-//              expanded = false
+              val newSet = if (option in selectedOptions) selectedOptions - option else selectedOptions + option
+              onSelectionChanged(newSet)
+              // keep menu open for multi-select; remove next line to close on select
+              // expanded = false
             },
-            trailingIcon =
-              if (option in selectedOptions) {
-                {
-                  Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = "Selected",
-                    modifier = Modifier.size(20.dp)
-                  )
-                }
-              } else {
-                null
-              }
+            trailingIcon = if (option in selectedOptions) {
+              { Icon(Icons.Default.Check, contentDescription = "Selected", modifier = Modifier.size(20.dp)) }
+            } else null
           )
         }
       }
@@ -252,174 +234,39 @@ fun MultiSelectDropdown(
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-fun ContactPeopleDropdown(
-  modifier: Modifier,
-  label: String,
-  members: List<Member>,
-  selectedMembers: Set<Member>,
-  onSelectionChanged: (Set<Member>) -> Unit,
-  isError: Boolean = false,
-  supportingText: @Composable () -> Unit = {},
-  postMap: MutableMap<String, Pair<String, Int>>,
-  onFieldFocused: ((Float) -> Unit)? = null,
-  isSmallScreen: Boolean = false
+fun ActivityTypeSelector(
+  selectedType: ActivityType?,
+  onSelect: (ActivityType?) -> Unit,
+  showError: Boolean
 ) {
-  var expanded by remember { mutableStateOf(false) }
-  val context = LocalPlatformContext.current // Needed for Coil
-
-  Column(modifier = modifier) { // Wrap the InputChip area in a Column
-    // Display Selected Members as Input Chips
+  Column(modifier = Modifier.testTag("activityTypeSelector")) {
+    Text(text = "प्रकार :", style = MaterialTheme.typography.bodyMedium)
     FlowRow(
-      modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-      horizontalArrangement = Arrangement.spacedBy(4.dp)
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
+      verticalArrangement = Arrangement.spacedBy(0.dp)
     ) {
-      members.filter { it in selectedMembers }.forEachIndexed { index, member ->
-        var text by remember { mutableStateOf(postMap[member.id]?.first ?: "") }
-        InputChip(
-          selected = true,
-          onClick = {
-            // handled in close button
-          },
-          label = {
-            Row(
-              modifier = Modifier.padding(vertical = 12.dp),
-              Arrangement.spacedBy(8.dp)
-            ) {
-              if (!member.profileImage.isNullOrEmpty()) {
-                AsyncImage(
-                  model =
-                    ImageRequest.Builder(LocalPlatformContext.current)
-                      .data(member.profileImage)
-                      .crossfade(true)
-                      .build(),
-                  contentDescription = "Profile Image",
-                  modifier =
-                    Modifier
-                      .size(24.dp)
-                      .clip(CircleShape),
-                  contentScale = ContentScale.Crop
-                )
-              } else {
-                Icon(
-                  modifier = Modifier.size(24.dp),
-                  imageVector = Icons.Filled.Face,
-                  contentDescription = "Profile",
-                  tint = Color.Gray
-                )
-              }
-              Column {
-                Text(member.name)
-                var fieldCoordinates by remember { mutableStateOf(0f) }
-                OutlinedTextField(
-                  modifier =
-                    Modifier
-                      .width(200.dp)
-                      .onGloballyPositioned { coordinates ->
-                        fieldCoordinates = coordinates.positionInRoot().y
-                      }
-                      .onFocusChanged { focusState ->
-                        if (isSmallScreen && focusState.isFocused && onFieldFocused != null) {
-                          // Use stored coordinates
-                          onFieldFocused(fieldCoordinates)
-                        }
-                      },
-                  value = text,
-                  onValueChange = {
-                    text = it
-                    postMap[member.id] = Pair(it, index)
-                  },
-                  label = { Text("Role") },
-                  placeholder = { Text("संयोजक, कोषाध्यक्ष इत्यादि") }
-                )
-              }
-              Box(
-                modifier =
-                  Modifier.size(36.dp).clickable {
-                    onSelectionChanged(selectedMembers - member)
-                  },
-                contentAlignment = Alignment.Center
-              ) {
-                Icon(
-                  Icons.Default.Close,
-                  contentDescription = null,
-                  Modifier.size(24.dp)
-                )
-              }
-            }
-          },
-          // onDismiss = { onSelectionChanged(selectedMembers - member.id) },
-          modifier = Modifier.padding(2.dp)
+      ActivityType.knownEntries.forEach { type ->
+        FilterChip(
+          selected = selectedType == type,
+          onClick = { onSelect(if (selectedType == type) null else type) },
+          label = { Text(type.toDisplayName()) },
+          leadingIcon = if (selectedType == type) { { Icon(Icons.Filled.Done, contentDescription = null) } } else null,
+          border = FilterChipDefaults.filterChipBorder(
+            borderColor = MaterialTheme.colorScheme.outline,
+            selectedBorderColor = MaterialTheme.colorScheme.primary,
+            enabled = true,
+            selected = selectedType == type
+          )
         )
       }
     }
-
-    ExposedDropdownMenuBox(
-      expanded = expanded,
-      onExpandedChange = { expanded = !expanded },
-      modifier = Modifier.width(500.dp)
-    ) {
-      OutlinedTextField(
-        readOnly = true,
-        value = members.filter { it in selectedMembers }.joinToString(", ") { it.name },
-        onValueChange = { },
-        label = { Text(label) },
-        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-        modifier = Modifier.fillMaxWidth().menuAnchor(PrimaryNotEditable, true),
-        isError = isError,
-        supportingText = supportingText
+    if (showError) {
+      Text(
+        text = "Type is required",
+        color = MaterialTheme.colorScheme.error,
+        style = MaterialTheme.typography.bodySmall,
+        modifier = Modifier.padding(start = 16.dp)
       )
-      ExposedDropdownMenu(
-        expanded = expanded,
-        onDismissRequest = { expanded = false }
-      ) {
-        members.forEach { member ->
-          DropdownMenuItem(
-            text = { Text(text = member.name) },
-            onClick = {
-              onSelectionChanged(
-                if (member in selectedMembers) selectedMembers - member else selectedMembers + member
-              )
-//              expanded = false
-            },
-            leadingIcon = {
-              if (!member.profileImage.isNullOrEmpty()) {
-                AsyncImage(
-                  model =
-                    ImageRequest.Builder(LocalPlatformContext.current)
-                      .data(member.profileImage)
-                      .crossfade(true)
-                      .build(),
-                  contentDescription = "Profile Image",
-                  modifier =
-                    Modifier
-                      .size(36.dp)
-                      .clip(CircleShape),
-                  contentScale = ContentScale.Crop
-                )
-              } else {
-                Icon(
-                  modifier = Modifier.size(36.dp),
-                  imageVector = Icons.Filled.Face,
-                  contentDescription = "Profile",
-                  tint = Color.Gray
-                )
-              }
-            },
-            trailingIcon =
-              if (member in selectedMembers) {
-                {
-                  Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = "Selected",
-                    modifier = Modifier.size(20.dp)
-                  )
-                }
-              } else {
-                null
-              }
-          )
-        }
-      }
     }
   }
 }
@@ -463,7 +310,6 @@ fun TimePickerDialog(
   }
 }
 
-val genderAllowedDisplayOptions = GenderAllowed.entries.map { it.toDisplayName() } // List of display names
 
 @OptIn(ExperimentalLayoutApi::class)
 @ExperimentalMaterial3Api
@@ -501,98 +347,26 @@ private fun CreateActivityScreenContent(
   onCancel: () -> Unit = {},
   isSmallScreen: Boolean
 ) {
+  // --- State ---
   var organisations by remember { mutableStateOf(emptyList<Organisation>()) }
-  var members by remember { mutableStateOf(emptyList<Member>()) }
-
-  // State for editing activity
   var isLoadingActivity by remember { mutableStateOf(false) }
   var editingActivity by remember { mutableStateOf<OrganisationalActivity?>(null) }
 
-  // Collect organizations and members from ViewModel
-  val organisationsAndMembersState by viewModel.organisationsAndMembersState.collectAsState()
-
-  // Update local state when ViewModel state changes
-  LaunchedEffect(organisationsAndMembersState) {
-    organisations = organisationsAndMembersState.organisations
-    members = organisationsAndMembersState.members
-  }
-
-  // Load organizations and members when the screen is shown
-  LaunchedEffect(Unit) {
-    viewModel.loadOrganisationsAndMembers()
-  }
-
-  // State variables for form fields
+  // Form fields
   var name by remember { mutableStateOf("") }
   var nameError by remember { mutableStateOf(false) }
-
-  var selectedType by remember { mutableStateOf<ActivityType?>(null) } // Only one can be selected
-
+  var selectedType by remember { mutableStateOf<ActivityType?>(null) }
   var typesError by remember { mutableStateOf(false) }
-
   var shortDescription by remember { mutableStateOf("") }
   var shortDescriptionError by remember { mutableStateOf(false) }
-
   var description by remember { mutableStateOf("") }
   var descriptionError by remember { mutableStateOf(false) }
-
   var associatedOrganisations by remember { mutableStateOf(emptySet<Organisation>()) }
   var associatedOrganisationsError by remember { mutableStateOf(false) }
-
-  // Address-related states - replaced with AddressData
-  var includeAddress by remember { mutableStateOf(true) } // Default to true for non-CAMPAIGN types
+  var includeAddress by remember { mutableStateOf(true) }
   var addressData by remember { mutableStateOf(AddressData()) }
   var addressError by remember { mutableStateOf(false) }
-
-  // NEW: Self-validation state for AddressComponent
   var triggerAddressValidation by remember { mutableStateOf(false) }
-  var isAddressValid by remember { mutableStateOf(true) }
-
-  var stateErrorMessage by remember { mutableStateOf("") }
-  var districtErrorMessage by remember { mutableStateOf("") }
-
-  var latitudeError by remember { mutableStateOf<String?>(null) }
-  var longitudeError by remember { mutableStateOf<String?>(null) }
-
-  // Load activity details if editing
-  LaunchedEffect(editingActivityId) {
-    if (editingActivityId != null) {
-      isLoadingActivity = true
-      viewModel.loadActivityDetail(editingActivityId)
-    }
-  }
-
-  // Watch for activity details when editing
-  val activityDetailState by viewModel.activityDetailUiState.collectAsState()
-  LaunchedEffect(activityDetailState) {
-    if (editingActivityId != null && activityDetailState.activity != null) {
-      editingActivity = activityDetailState.activity
-      isLoadingActivity = false
-    }
-  }
-
-  // Update includeAddress when activity type changes
-  LaunchedEffect(selectedType) {
-    if (selectedType == ActivityType.CAMPAIGN) {
-      // Only set to false if we don't have an editing activity with address!
-      includeAddress = if (editingActivity != null &&
-        ((editingActivity?.addressId ?: "").isNotEmpty() && (editingActivity?.state ?: "").isNotEmpty())
-      ) {
-        true // activity has address, show
-      } else {
-        false // new or no address
-      }
-      if (!includeAddress) {
-        addressData = AddressData()
-        addressError = false
-        latitudeError = null
-        longitudeError = null
-      }
-    } else if (selectedType != null) {
-      includeAddress = true
-    }
-  }
-
   var startDate by remember { mutableStateOf<LocalDate?>(null) }
   var startTime by remember { mutableStateOf<LocalTime?>(null) }
   var endDate by remember { mutableStateOf<LocalDate?>(null) }
@@ -605,1075 +379,283 @@ private fun CreateActivityScreenContent(
   var startTimeError by remember { mutableStateOf(false) }
   var endDateError by remember { mutableStateOf(false) }
   var endTimeError by remember { mutableStateOf(false) }
-
   var startDateTimeErrorMessage by remember { mutableStateOf("") }
   var endDateTimeErrorMessage by remember { mutableStateOf("") }
-
-  // Image picker state - replaced with ImagePickerState
   var imagePickerState by remember { mutableStateOf(ImagePickerState()) }
-  // self-validation for image picker
   var triggerImageValidation by remember { mutableStateOf(false) }
   var imagePickerValid by remember { mutableStateOf(true) }
-
-  // Members state - replaced with MembersState
   var membersState by remember { mutableStateOf(MembersState()) }
   var contactPeopleError by remember { mutableStateOf(false) }
-
   var additionalInstructions by remember { mutableStateOf("") }
-
   var eventCapacity by remember { mutableStateOf("100") }
-  // Gender state - replaced with Gender enum
-  var genderAllowed by remember { mutableStateOf<Gender?>(Gender.ANY) }
-
-  // Add error states for event details
   var capacityError by remember { mutableStateOf<String?>(null) }
+  var genderAllowed by remember { mutableStateOf<Gender?>(Gender.ANY) }
   var genderAllowedError by remember { mutableStateOf<String?>(null) }
-  var genderAllowedExpanded by remember { mutableStateOf(false) }
-  // Focus requesters
   val capacityFocusRequester = remember { FocusRequester() }
-  val latitudeFocusRequester = remember { FocusRequester() }
-  val longitudeFocusRequester = remember { FocusRequester() }
-
   val focusManager = LocalFocusManager.current
-
-  // Initial form values
   var initialFormValues by remember { mutableStateOf<Map<String, Any>?>(null) }
-
-  // Unsaved changes tracking
   var showUnsavedChangesDialog by remember { mutableStateOf(false) }
 
-  fun hasUnsavedChanges(): Boolean {
-    if (initialFormValues == null) return false
-
-    val currentValues =
-      mapOf(
-        "name" to name,
-        "selectedType" to selectedType,
-        "shortDescription" to shortDescription,
-        "description" to description,
-        "associatedOrganisations" to associatedOrganisations,
-        "addressData" to addressData,
-        "startDate" to startDate,
-        "startTime" to startTime,
-        "endDate" to endDate,
-        "endTime" to endTime,
-        "membersState" to membersState,
-        "additionalInstructions" to additionalInstructions,
-        "eventCapacity" to eventCapacity,
-        "genderAllowed" to genderAllowed,
-        "imagePickerState" to imagePickerState
-      )
-
-    return currentValues != initialFormValues
-  }
-
-  // Handle back button
-  val setBackHandler = LocalSetBackHandler.current
-  DisposableEffect(Unit) {
-    val handler = {
-      if (hasUnsavedChanges()) {
-        showUnsavedChangesDialog = true
-      } else {
-        onCancel()
-      }
-    }
-    setBackHandler?.invoke(handler)
-    onDispose {
-      setBackHandler?.invoke(null)
-    }
-  }
-
-  // Collect form submission state from ViewModel
+  val organisationsAndMembersState by viewModel.organisationsAndMembersState.collectAsState()
   val formSubmissionState by viewModel.activityFormSubmissionState.collectAsState()
-  val isSubmitting = formSubmissionState.isSubmitting
   val createdActivityId by viewModel.createdActivityId.collectAsState()
-
   val scrollState = rememberScrollState()
+  val scope = rememberCoroutineScope()
+  // Remove unused keyboardController & lastFocusedFieldOffset
+  // val keyboardController = LocalSoftwareKeyboardController.current // removed
+  // var lastFocusedFieldOffset by remember { mutableStateOf(0f) } // removed
 
-  // Date Picker Dialog State
+  // Date & time picker dialog states (restored)
   val openStartDateDialog = remember { mutableStateOf(false) }
   val openEndDateDialog = remember { mutableStateOf(false) }
-
   val openStartTimeDialog = remember { mutableStateOf(false) }
   val openEndTimeDialog = remember { mutableStateOf(false) }
-  val scope = rememberCoroutineScope()
-  val snackbarHostState = LocalSnackbarHostState.current
-  var postMap by remember { mutableStateOf<MutableMap<String, Pair<String, Int>>>(mutableMapOf()) }
 
-  // Add keyboard-aware scrolling
-  val keyboardController = LocalSoftwareKeyboardController.current
-  var lastFocusedFieldOffset by remember { mutableStateOf(0f) }
+  // Date/time formatters defined BEFORE any LaunchedEffect usage
+  val dateFormatter: (LocalDate) -> String = { d -> "${d.dayOfMonth.toString().padStart(2,'0')}/${d.monthNumber.toString().padStart(2,'0')}/${d.year}" }
+  val timeFormatter: (LocalTime) -> String = { t -> "${t.hour.toString().padStart(2,'0')}:${t.minute.toString().padStart(2,'0')}" }
+  // Wrapper functions to satisfy existing calls referencing formatDate/formatTime
+  fun formatDate(d: LocalDate) = dateFormatter(d)
+  fun formatTime(t: LocalTime) = timeFormatter(t)
 
-  // Helper function to scroll to focused field
-  fun scrollToFocusedField(offset: Float) {
-    scope.launch {
-      // Small delay to ensure keyboard is shown
-      kotlinx.coroutines.delay(300)
-      // Calculate target scroll position to show field above keyboard
-      // Add extra padding (300dp) to ensure field is well above keyboard
-      val keyboardPadding = 300.dp.value
-      val viewportHeight = scrollState.viewportSize
-      val currentScroll = scrollState.value
-
-      // Calculate where the field should be positioned (above keyboard)
-      val targetFieldPosition = viewportHeight - keyboardPadding
-
-      // Calculate how much we need to scroll
-      val fieldBottomPosition = offset + 100 // Add some height for the field itself
-      val scrollNeeded = fieldBottomPosition - targetFieldPosition - currentScroll
-
-      if (scrollNeeded > 0) {
-        scrollState.animateScrollTo((currentScroll + scrollNeeded).toInt())
+  // --- Effects ---
+  LaunchedEffect(organisationsAndMembersState) {
+    organisations = organisationsAndMembersState.organisations
+  }
+  LaunchedEffect(Unit) { viewModel.loadOrganisationsAndMembers() }
+  LaunchedEffect(editingActivityId) {
+    if (editingActivityId != null) {
+      isLoadingActivity = true
+      viewModel.loadActivityDetail(editingActivityId)
+    }
+  }
+  LaunchedEffect(viewModel.activityDetailUiState.collectAsState().value) {
+    if (editingActivityId != null) {
+      val act = viewModel.activityDetailUiState.value.activity
+      if (act != null) {
+        editingActivity = act
+        isLoadingActivity = false
+        name = act.name
+        selectedType = act.type
+        includeAddress = if (act.type == ActivityType.CAMPAIGN) (act.addressId != null && act.addressId.isNotEmpty() && act.state.isNotEmpty()) else true
+        shortDescription = act.shortDescription
+        description = act.longDescription
+        associatedOrganisations = act.associatedOrganisations.map { it.organisation }.toSet()
+        addressData = AddressData(
+          location = act.latitude?.let { lat -> act.longitude?.let { lon -> LatLng(lat, lon) } },
+          address = act.address,
+          state = act.state,
+          district = act.district,
+          vidhansabha = "",
+          pincode = ""
+        )
+        startDate = act.startDatetime.date
+        startTime = act.startDatetime.time
+        startDateText = TextFieldValue(formatDate(startDate!!))
+        startTimeText = TextFieldValue(formatTime(startTime!!))
+        endDate = act.endDatetime.date
+        endTime = act.endDatetime.time
+        endDateText = TextFieldValue(formatDate(endDate!!))
+        endTimeText = TextFieldValue(formatTime(endTime!!))
+        membersState = MembersState(act.contactPeople.associate { it.member to (it.post to it.priority) })
+        additionalInstructions = act.additionalInstructions
+        eventCapacity = act.capacity.toString()
+        genderAllowed = Gender.valueOf(act.allowedGender)
+        imagePickerState = ImagePickerState(existingImageUrls = act.mediaFiles)
+        initialFormValues = mapOf("name" to name)
       }
     }
   }
-
-  // Date format
-  // Date format
-  val dateFormatter: (LocalDate) -> String = { date ->
-    "${date.dayOfMonth.toString().padStart(2, '0')}/${date.monthNumber.toString().padStart(2, '0')}/${date.year}"
-  }
-
-  // Time format
-  val timeFormatter: (LocalTime) -> String = { time ->
-    "${time.hour.toString().padStart(2, '0')}:${time.minute.toString().padStart(2, '0')}"
-  }
-
-  // Populate form with editing activity data
-  LaunchedEffect(editingActivity, members) {
-    if (editingActivity != null && members.isNotEmpty()) {
-      val activity = editingActivity!!
-      name = activity.name
-      selectedType = activity.type
-
-      // Determine if address was included based on whether addressId or address fields have values
-      includeAddress =
-        if (activity.type == ActivityType.CAMPAIGN) {
-          // For CAMPAIGN type, check if an address is linked (addressId is non-null and not empty)
-          activity.addressId != null && activity.addressId.isNotEmpty()  && activity.state.isNotEmpty()
-        } else {
-          // For other types, address is always included
-          true
-        }
-
-      shortDescription = activity.shortDescription
-      description = activity.longDescription
-      associatedOrganisations = activity.associatedOrganisations.map { it.organisation }.toSet()
-      
-      // Update address data
-      addressData = AddressData(
-        location = if (activity.latitude != null && activity.longitude != null) {
-          LatLng(activity.latitude!!, activity.longitude!!)
-        } else null,
-        address = activity.address,
-        state = activity.state,
-        district = activity.district,
-        vidhansabha = "",
-        pincode = ""
-      )
-
-      // Parse dates and times
-      startDate = activity.startDatetime.date
-      startTime = activity.startDatetime.time
-      startDateText = TextFieldValue(dateFormatter(startDate!!))
-      startTimeText = TextFieldValue(timeFormatter(startTime!!))
-
-      endDate = activity.endDatetime.date
-      endTime = activity.endDatetime.time
-      endDateText = TextFieldValue(dateFormatter(endDate!!))
-      endTimeText = TextFieldValue(timeFormatter(endTime!!))
-
-      // Convert contactPeople to MembersState
-      val membersMap = activity.contactPeople.associate { activityMember ->
-        // Find the full member object from the members list if available
-        val fullMember = members.find { it.id == activityMember.member.id } ?: activityMember.member
-        fullMember to Pair(activityMember.post, activityMember.priority)
-      }
-      membersState = MembersState(members = membersMap)
-
-      additionalInstructions = activity.additionalInstructions
-      eventCapacity = activity.capacity.toString()
-      //println(activity.allowedGender)
-      // Convert from allowedGender String to Gender
-      genderAllowed = Gender.valueOf(activity.allowedGender)
-
-      // Convert existing media URLs to ImagePickerState
-      imagePickerState = ImagePickerState(
-        newImages = emptyList(),
-        existingImageUrls = activity.mediaFiles,
-        deletedImageUrls = emptySet()
-      )
-
-      // Store initial values for unsaved changes detection
-      initialFormValues =
-        mapOf(
-          "name" to name,
-          "selectedType" to selectedType,
-          "shortDescription" to shortDescription,
-          "description" to description,
-          "associatedOrganisations" to associatedOrganisations,
-          "addressData" to addressData,
-          "startDate" to startDate,
-          "startTime" to startTime,
-          "endDate" to endDate,
-          "endTime" to endTime,
-          "membersState" to membersState,
-          "additionalInstructions" to additionalInstructions,
-          "eventCapacity" to eventCapacity,
-          "genderAllowed" to genderAllowed,
-          "imagePickerState" to imagePickerState
-        ) as Map<String, Any>
-    }
-  }
-
-  fun validateForm(): Boolean {
-    nameError = name.isEmpty()
-    typesError = selectedType == null
-    shortDescriptionError = shortDescription.isEmpty()
-    descriptionError = description.isEmpty()
-    associatedOrganisationsError = associatedOrganisations.isEmpty()
-
-    // Address validation using self-validating AddressComponent
-    val shouldValidateAddress = includeAddress || selectedType != ActivityType.CAMPAIGN
-    if (shouldValidateAddress) {
-      // Trigger AddressComponent validation
-      triggerAddressValidation = !triggerAddressValidation
-      // addressError will be set by onValidationResult callback
-    } else {
-      isAddressValid = true
+  LaunchedEffect(selectedType) {
+    if (selectedType == ActivityType.CAMPAIGN && editingActivity == null) {
+      includeAddress = false
+      addressData = AddressData()
       addressError = false
-    }
+    } else if (selectedType != null) includeAddress = true
+  }
 
+  // --- Helpers ---
+  fun validateForm(): Boolean {
+    nameError = name.isBlank()
+    typesError = selectedType == null
+    shortDescriptionError = shortDescription.isBlank()
+    descriptionError = description.isBlank()
+    associatedOrganisationsError = associatedOrganisations.isEmpty()
+    if (includeAddress || selectedType != ActivityType.CAMPAIGN) {
+      triggerAddressValidation = !triggerAddressValidation
+    } else addressError = false
     startDateError = startDate == null
     startTimeError = startTime == null
     endDateError = endDate == null
     endTimeError = endTime == null
-    
-    // Members validation using MembersComponent validation
-    val membersConfig = MembersConfig(isMandatory = true, minMembers = 1)
-    val membersValidationError = validateMembers(membersState, membersConfig)
-    contactPeopleError = membersValidationError != null
-
-    // Image validation using ImagePickerComponent self-validation
-    triggerImageValidation = !triggerImageValidation
-    // imagePickerValid will be set by onValidationResult callback
-
-    // Validate event details
-    var eventDetailsValid = true
-
-    // Validate capacity
-    val capInt = eventCapacity.toIntOrNull()
-    when {
-      eventCapacity.isBlank() -> {
-        capacityError = "क्षमता आवश्यक है."
-        eventDetailsValid = false
-      }
-
-      capInt == null -> {
-        capacityError = "कृपया मान्य संख्या दर्ज करें."
-        eventDetailsValid = false
-      }
-
-      capInt <= 0 -> {
-        capacityError = "क्षमता 0 से अधिक होनी चाहिए."
-        eventDetailsValid = false
-      }
-
-      else -> {
-        capacityError = null
-      }
+    capacityError = when {
+      eventCapacity.isBlank() -> "क्षमता आवश्यक है."
+      eventCapacity.toIntOrNull() == null -> "कृपया मान्य संख्या दर्ज करें."
+      eventCapacity.toInt() <= 0 -> "क्षमता 0 से अधिक होनी चाहिए."
+      else -> null
     }
-
-    if ((!startDateError && !startTimeError && !endDateError && !endTimeError)) {
-      val currentDateTime = System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-      val startDateTime = startDate?.atTime(startTime!!)!!
-      val endDateTime = endDate?.atTime(endTime!!)!!
-
-      if (!(
-          startDateTime < endDateTime &&
-            startDateTime > currentDateTime && endDateTime > currentDateTime
-        )
-      ) {
-        if (startDateTime >= endDateTime) {
-          startDateError = true
-          startTimeError = true
-          endDateError = true
-          endTimeError = true
-          startDateTimeErrorMessage = "Start datetime should be before end datetime"
-          endDateTimeErrorMessage = "Start datetime should be before end datetime"
-        } else if (startDateTime <= currentDateTime) {
-          startDateError = true
-          startTimeError = true
-          startDateTimeErrorMessage = "Start datetime should be after current datetime"
-        } else if (endDateTime <= currentDateTime) {
-          endDateError = true
-          endTimeError = true
-          endDateTimeErrorMessage = "End datetime should be after current datetime"
-        } else {
-          startDateError = false
-          startTimeError = false
-          endDateError = false
-          endTimeError = false
-          startDateTimeErrorMessage = ""
-          endDateTimeErrorMessage = ""
+    val validDates = !startDateError && !endDateError && !startTimeError && !endTimeError
+    if (validDates) {
+      val now = System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+      val sd = startDate!!.atTime(startTime!!)
+      val ed = endDate!!.atTime(endTime!!)
+      if (!(sd < ed && sd > now && ed > now)) {
+        when {
+          sd >= ed -> { startDateError = true; startTimeError = true; endDateError = true; endTimeError = true; startDateTimeErrorMessage = "Start datetime should be before end"; endDateTimeErrorMessage = startDateTimeErrorMessage }
+          sd <= now -> { startDateError = true; startTimeError = true; startDateTimeErrorMessage = "Start must be future" }
+          ed <= now -> { endDateError = true; endTimeError = true; endDateTimeErrorMessage = "End must be future" }
         }
-      } else {
-        startDateError = false
-        startTimeError = false
-        endDateError = false
-        endTimeError = false
-        startDateTimeErrorMessage = ""
-        endDateTimeErrorMessage = ""
-      }
+      } else { startDateTimeErrorMessage = ""; endDateTimeErrorMessage = "" }
     }
-
-    return !(
-      nameError || typesError || shortDescriptionError || descriptionError || associatedOrganisationsError ||
-        addressError || startDateError || startTimeError ||
-        endDateError || endTimeError || contactPeopleError || !eventDetailsValid || !imagePickerValid
-    )
+    triggerImageValidation = !triggerImageValidation
+    val eventDetailsValid = capacityError == null
+    return !(nameError || typesError || shortDescriptionError || descriptionError || associatedOrganisationsError || addressError || startDateError || startTimeError || endDateError || endTimeError || contactPeopleError || !eventDetailsValid || !imagePickerValid)
   }
 
-
-  /**
-   * Processes media files for activity submission.
-   * - Keeps existing URLs except those marked for deletion.
-   * - Uploads any new files and appends their URLs.
-   * - Removes deleted media if needed (not implemented here).
-   * This logic closely matches the original submitForm logic.
-   */
-  // Media files processing: upload new files, keep existing non-deleted ones
   suspend fun processMediaFiles(): List<String> {
-    val attachedImages = mutableListOf<String>()
-
-    // Keep existing files that weren't deleted
-    attachedImages.addAll(imagePickerState.getActiveImageUrls())
-
-    // Delete files marked for deletion from bucket
+    val attached = mutableListOf<String>()
+    attached += imagePickerState.getActiveImageUrls()
     if (imagePickerState.deletedImageUrls.isNotEmpty()) {
-      try {
-        val filesToDelete = imagePickerState.deletedImageUrls.map { url ->
-          url.substringAfterLast("/")
-        }.toList()
-        bucket.delete(filesToDelete)
-      } catch (e: Exception) {
-        GlobalMessageManager.showError("चित्र हटाने में त्रुटि: ${e.message}")
-        // Continue with the update even if deletion fails
-      }
+      try { bucket.delete(imagePickerState.deletedImageUrls.map { it.substringAfterLast('/') }) } catch (_: Exception) { GlobalMessageManager.showError("चित्र हटाने में त्रुटि") }
     }
-
-    // Upload new files
     try {
       imagePickerState.newImages.forEach { file ->
-        val imageBytes = if (imagePickerState.hasCompressedData(file)) {
-          imagePickerState.getCompressedBytes(file)!!
-        } else {
-          file.readBytes()
+        val ext = file.name.substringAfterLast('.', "").lowercase()
+        require(ext in listOf("jpg","jpeg","png","webp")) { "केवल चित्र" }
+        val bytes = imagePickerState.getCompressedBytes(file) ?: com.aryamahasangh.util.ImageCompressionService.compressSync(file, targetKb = 100, maxLongEdge = 1024)
+        if (bytes.size > 512*1024) error("चित्र बहुत बड़ा है")
+        when (val resp = FileUploadUtils.uploadBytes(path = "activity_${System.now().epochSeconds}.webp", data = bytes)) {
+          is Result.Success -> attached += resp.data
+          is Result.Error -> error(resp.message)
+          else -> { /* ignore other states */ }
         }
-        val uploadResponse = bucket.upload(
-          path = "activity_${System.now().epochSeconds}.webp",
-          data = imageBytes
-        )
-        attachedImages.add(bucket.publicUrl(uploadResponse.path))
       }
-    } catch (e: Exception) {
-      throw Exception("चित्र अपलोड करने में त्रुटि। कृपया पुनः प्रयास करें")
-    }
-
-    return attachedImages
+    } catch (_: Exception) { error("चित्र अपलोड त्रुटि") }
+    return attached
   }
 
-  // Show loading while fetching activity details
+  // Back handling
+  val setBackHandler = LocalSetBackHandler.current
+  DisposableEffect(Unit) {
+    val handler: () -> Unit = { if (initialFormValues != null && name != initialFormValues!!["name"]) showUnsavedChangesDialog = true else onCancel() }
+    setBackHandler?.invoke(handler)
+    onDispose { setBackHandler?.invoke(null) }
+  }
+
   if (isLoadingActivity) {
-    Box(
-      modifier = Modifier.fillMaxSize(),
-      contentAlignment = Alignment.Center
-    ) {
-      Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-      ) {
-        CircularProgressIndicator()
-        Text("गतिविधि विवरण लोड हो रहा है...")
-      }
-    }
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Column(horizontalAlignment = Alignment.CenterHorizontally) { CircularProgressIndicator(); Text("गतिविधि विवरण लोड हो रहा है...") } }
     return
   }
 
-  Box(modifier = Modifier.fillMaxSize()) {
+  Box(Modifier.fillMaxSize()) {
     Column(
-      modifier =
-        Modifier
-          .fillMaxSize()
-          .padding(12.dp)
-          .verticalScroll(scrollState)
-          .let { if (isSmallScreen) it.imePadding() else it } // Add IME padding only on mobile
+      Modifier
+        .fillMaxSize()
+        .padding(12.dp)
+        .verticalScroll(scrollState)
+        .let { if (isSmallScreen) it.imePadding() else it }
     ) {
-      // Header with Cancel button
-      Row(
-        modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-      ) {
-        Text(
-          text = if (editingActivityId != null) "गतिविधि संपादित करें" else "नई गतिविधि बनाएं",
-          style = MaterialTheme.typography.headlineSmall
-        )
-        TextButton(
-          onClick = {
-            if (hasUnsavedChanges()) {
-              showUnsavedChangesDialog = true
-            } else {
-              onCancel()
-            }
-          }
-        ) {
-          Text("निरस्त करें")
-        }
+      // Header
+      Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+        Text(if (editingActivityId != null) "गतिविधि संपादित करें" else "नई गतिविधि बनाएं", style = MaterialTheme.typography.headlineSmall)
+        TextButton(onClick = { if (initialFormValues != null && name != initialFormValues!!["name"]) showUnsavedChangesDialog = true else onCancel() }) { Text("निरस्त करें") }
       }
       // Name
-      OutlinedTextField(
-        value = name,
-        onValueChange = { name = it },
-        label = { Text("नाम") },
-        modifier =
-          Modifier
-            .width(500.dp),
-        isError = nameError,
-        supportingText = {
-          if (nameError) {
-            Text("Name is required")
-          }
-        },
-        maxLines = 1,
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
-      )
-
-      Column {
-        // ActivityType (Filter Chips)
-        Text(text = "प्रकार :", style = MaterialTheme.typography.bodyMedium)
-        FlowRow(
-          horizontalArrangement = Arrangement.spacedBy(8.dp),
-          verticalArrangement = Arrangement.spacedBy(0.dp)
-        ) {
-          ActivityType.knownEntries.forEach { type ->
-            FilterChip(
-              selected = (selectedType == type), // Check for equality, not `in`
-              onClick = {
-                selectedType =
-                  if (selectedType == type) {
-                    null // Unselect if already selected
-                  } else {
-                    type // Select new type and unselect the older
-                  }
-                typesError = selectedType == null // Update error status
-              },
-              label = { Text(type.toDisplayName()) },
-              leadingIcon =
-                if (selectedType == type) {
-                  {
-                    Icon(
-                      imageVector = Icons.Filled.Done,
-                      contentDescription = "Selected",
-                      modifier = Modifier.size(FilterChipDefaults.IconSize)
-                    )
-                  }
-                } else {
-                  null
-                },
-              border =
-                FilterChipDefaults.filterChipBorder(
-                  borderColor = MaterialTheme.colorScheme.outline,
-                  selectedBorderColor = MaterialTheme.colorScheme.primary,
-                  enabled = selectedType == type,
-                  selected = selectedType == type
-                )
-            )
-          }
-        }
-        if (typesError) {
-          Text(
-            text = "Type is required",
-            color = MaterialTheme.colorScheme.error,
-            style = MaterialTheme.typography.bodySmall,
-            modifier = Modifier.padding(start = 16.dp)
-          )
-        }
-      }
-
-      // Short Description
-      OutlinedTextField(
-        value = shortDescription,
-        onValueChange = {
-          if (it.length <= 100) {
-            shortDescription = it
-            shortDescriptionError = false // Clear error on valid input
-          }
-        },
-        label = { Text("संक्षिप्त विवरण") },
-        modifier = Modifier.width(500.dp),
-        isError = shortDescriptionError,
-        supportingText = { if (shortDescriptionError) Text("Short Description is required") },
-        maxLines = 1,
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
-      )
-
+      OutlinedTextField(name, { name = it; nameError = false }, label = { Text("नाम") }, modifier = Modifier.width(500.dp), isError = nameError, supportingText = { if (nameError) Text("Name is required") }, maxLines = 1, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next))
+      // Type selector
+      ActivityTypeSelector(selectedType = selectedType, onSelect = { t -> selectedType = t; typesError = (t == null) }, showError = typesError)
+      // Short description
+      OutlinedTextField(shortDescription, { if (it.length <= 100) { shortDescription = it; shortDescriptionError = false } }, label = { Text("संक्षिप्त विवरण") }, modifier = Modifier.width(500.dp), isError = shortDescriptionError, supportingText = { if (shortDescriptionError) Text("Short Description is required") }, maxLines = 1, keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next))
       // Description
-      OutlinedTextField(
-        value = description,
-        onValueChange = {
-          if (it.length <= 1000) {
-            description = it
-            descriptionError = false // Clear error on valid input
-          }
-        },
-        label = { Text("विस्तृत विवरण") },
-        modifier = Modifier.width(500.dp),
-        minLines = 3,
-        maxLines = 30,
-        isError = descriptionError,
-        supportingText = { if (descriptionError) Text("Description is required") },
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default)
+      OutlinedTextField(description, { if (it.length <= 1000) { description = it; descriptionError = false } }, label = { Text("विस्तृत विवरण") }, modifier = Modifier.width(500.dp), minLines = 3, maxLines = 30, isError = descriptionError, supportingText = { if (descriptionError) Text("Description is required") })
+      // Organisations
+      MultiSelectDropdown(Modifier.width(500.dp), label = "संबधित संस्थाएं", options = organisations, selectedOptions = associatedOrganisations, onSelectionChanged = { associatedOrganisations = it; associatedOrganisationsError = it.isEmpty() }, isError = associatedOrganisationsError, supportingText = { if (associatedOrganisationsError) Text("Associated Organisation is required") })
+      // Address toggle
+      if (selectedType == ActivityType.CAMPAIGN) Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(bottom = 8.dp)) {
+        Checkbox(includeAddress, { includeAddress = it }, modifier = Modifier.testTag("AddAddressCheckbox")); Text("स्थान जोड़ें", modifier = Modifier.testTag("AddAddressCheckboxLabel")) }
+      if (includeAddress || selectedType != ActivityType.CAMPAIGN) AddressComponent(
+        addressData = addressData,
+        onAddressChange = { addressData = it },
+        fieldsConfig = AddressFieldsConfig(showLocation = true, showAddress = true, showState = true, showDistrict = true, showVidhansabha = false, showPincode = false, mandatoryLocation = true, mandatoryAddress = true, mandatoryState = true, mandatoryDistrict = true, mandatoryVidhansabha = false, mandatoryPincode = false),
+        validateFields = triggerAddressValidation,
+        onValidationResult = { valid -> addressError = !valid },
+        modifier = Modifier.testTag("AddressFieldsGroup"),
+        onFieldFocused = if (isSmallScreen) { ofs -> scope.launch { scrollState.animateScrollTo(ofs.toInt()) } } else null,
+        isSmallScreen = isSmallScreen
       )
-
-      // Associated Organisations
-      MultiSelectDropdown(
-        modifier = Modifier.width(500.dp),
-        label = "संबधित संस्थाएं",
-        options = organisations,
-        selectedOptions = associatedOrganisations,
-        onSelectionChanged = {
-          associatedOrganisations = it
-          associatedOrganisationsError = it.isEmpty() // Update error on selection change
-        },
-        isError = associatedOrganisationsError,
-        supportingText = { if (associatedOrganisationsError) Text("Associated Organisation is required") }
-      )
-
-      // Address Section
-      if (selectedType == ActivityType.CAMPAIGN) {
-        Row(
-          verticalAlignment = Alignment.CenterVertically,
-          modifier = Modifier.padding(bottom = 8.dp)
-        ) {
-          Checkbox(
-            checked = includeAddress,
-            onCheckedChange = { includeAddress = it },
-            modifier = Modifier.testTag("AddAddressCheckbox")
-          )
-          Text(
-            text = "स्थान जोड़ें",
-            modifier = Modifier.testTag("AddAddressCheckboxLabel")
-          )
-        }
-      }
-
-      if (includeAddress || selectedType != ActivityType.CAMPAIGN) {
-        // Use AddressComponent with self-validation
-        AddressComponent(
-          addressData = addressData,
-          onAddressChange = { newAddressData ->
-            addressData = newAddressData
-          },
-          fieldsConfig = AddressFieldsConfig(
-            showLocation = true,
-            showAddress = true,
-            showState = true,
-            showDistrict = true,
-            showVidhansabha = false,
-            showPincode = false,
-            // Configure mandatory fields based on whether address is included
-            mandatoryLocation = includeAddress || selectedType != ActivityType.CAMPAIGN,
-            mandatoryAddress = includeAddress || selectedType != ActivityType.CAMPAIGN,
-            mandatoryState = includeAddress || selectedType != ActivityType.CAMPAIGN,
-            mandatoryDistrict = includeAddress || selectedType != ActivityType.CAMPAIGN,
-            mandatoryVidhansabha = false,
-            mandatoryPincode = false
-          ),
-          validateFields = triggerAddressValidation,
-          onValidationResult = { isValid ->
-            isAddressValid = isValid
-            addressError = !isValid
-          },
-          modifier = Modifier.testTag("AddressFieldsGroup"),
-          onFieldFocused = if (isSmallScreen) { offset -> scrollToFocusedField(offset) } else null,
-          isSmallScreen = isSmallScreen
-        )
-      }
-      FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(16.dp)
-      ) {
+      // Date-Time row
+      FlowRow(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
         Column {
-          Text(text = "प्रारंभ:", style = MaterialTheme.typography.bodyMedium)
-          Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-          ) {
-            CustomTextField(
-              value = startDateText,
-              label = "दिनांक",
-              modifier = Modifier.width(180.dp),
-              readOnly = true,
-              onClick = { openStartDateDialog.value = true },
-              isError = startDateError,
-              supportingText = {
-                if (startDateError) {
-                  Text(
-                    if (startDateTimeErrorMessage.isEmpty()) "Start date is required" else startDateTimeErrorMessage
-                  )
-                }
-              }
-            )
-
-            CustomTextField(
-              value = startTimeText,
-              label = "समय",
-              modifier = Modifier.width(180.dp),
-              readOnly = true,
-              onClick = { openStartTimeDialog.value = true },
-              isError = startTimeError,
-              supportingText = {
-                if (startTimeError) {
-                  Text(
-                    if (startDateTimeErrorMessage.isEmpty()) "Start time is required" else startDateTimeErrorMessage
-                  )
-                }
-              }
-            )
-          }
-        }
-
-        Column {
-          Text(text = "समाप्ति:", style = MaterialTheme.typography.bodyMedium)
-          // End Date and Time
+          Text("प्रारंभ:")
           Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            CustomTextField(
-              value = endDateText,
-              label = "दिनांक",
-              modifier = Modifier.width(180.dp),
-              readOnly = true,
-              onClick = { openEndDateDialog.value = true },
-              isError = endDateError,
-              supportingText = {
-                if (endDateError) {
-                  Text(
-                    if (endDateTimeErrorMessage.isEmpty()) "End date is required" else endDateTimeErrorMessage
-                  )
-                }
-              }
-            )
-
-            CustomTextField(
-              value = endTimeText,
-              label = "समय",
-              modifier = Modifier.width(180.dp),
-              readOnly = true,
-              onClick = { openEndTimeDialog.value = true },
-              isError = endTimeError,
-              supportingText = {
-                if (endTimeError) {
-                  Text(
-                    if (endDateTimeErrorMessage.isEmpty()) "End time is required" else endDateTimeErrorMessage
-                  )
-                }
-              }
-            )
+            CustomTextField(startDateText, "दिनांक", Modifier.width(180.dp), readOnly = true, onClick = { openStartDateDialog.value = true }, isError = startDateError, supportingText = { if (startDateError) Text(if (startDateTimeErrorMessage.isEmpty()) "Start date is required" else startDateTimeErrorMessage) })
+            CustomTextField(startTimeText, "समय", Modifier.width(180.dp), readOnly = true, onClick = { openStartTimeDialog.value = true }, isError = startTimeError, supportingText = { if (startTimeError) Text(if (startDateTimeErrorMessage.isEmpty()) "Start time is required" else startDateTimeErrorMessage) })
+          }
+        }
+        Column {
+          Text("समाप्ति:")
+          Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            CustomTextField(endDateText, "दिनांक", Modifier.width(180.dp), readOnly = true, onClick = { openEndDateDialog.value = true }, isError = endDateError, supportingText = { if (endDateError) Text(if (endDateTimeErrorMessage.isEmpty()) "End date is required" else endDateTimeErrorMessage) })
+            CustomTextField(endTimeText, "समय", Modifier.width(180.dp), readOnly = true, onClick = { openEndTimeDialog.value = true }, isError = endTimeError, supportingText = { if (endTimeError) Text(if (endDateTimeErrorMessage.isEmpty()) "End time is required" else endDateTimeErrorMessage) })
           }
         }
       }
-
-      // Event Details Section (inline components)
-      Column(
-        modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-      ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-          // Gender Dropdown using reusable component
-          GenderDropdown(
-            value = genderAllowed,
-            onValueChange = { newGender ->
-              genderAllowed = newGender
-              genderAllowedError = null
-            },
-            label = "सत्र में प्रवेश",
-            modifier = Modifier.width(150.dp),
-            isError = genderAllowedError != null,
-            supportingText = { genderAllowedError?.let { Text(it, color = MaterialTheme.colorScheme.error) } },
-            // NEW: Use GenderAllowed display names
-            customDisplayNames = mapOf(
-              Gender.MALE to GenderAllowed.MALE.toDisplayName(),
-              Gender.FEMALE to GenderAllowed.FEMALE.toDisplayName(),
-              Gender.ANY to GenderAllowed.ANY.toDisplayName()
-            )
-          )
-
-          // Capacity
-          OutlinedTextField(
-            value = eventCapacity,
-            onValueChange = {
-              if (it.isEmpty() || it.all { char -> char.isDigit() }) {
-                eventCapacity = it
-                capacityError = null
-              }
-            },
-            label = { Text("क्षमता") },
-            modifier = Modifier.width(150.dp).focusRequester(capacityFocusRequester),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next),
-            keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }),
-            isError = capacityError != null,
-            supportingText = { capacityError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }
-          )
-        }
+      // Event details
+      Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 16.dp)) {
+        GenderDropdown(genderAllowed, { g -> genderAllowed = g; genderAllowedError = null }, label = "सत्र में प्रवेश", modifier = Modifier.width(150.dp), isError = genderAllowedError != null, supportingText = { genderAllowedError?.let { Text(it, color = MaterialTheme.colorScheme.error) } }, customDisplayNames = mapOf(Gender.MALE to GenderAllowed.MALE.toDisplayName(), Gender.FEMALE to GenderAllowed.FEMALE.toDisplayName(), Gender.ANY to GenderAllowed.ANY.toDisplayName()))
+        OutlinedTextField(eventCapacity, { if (it.isEmpty() || it.all { c -> c.isDigit() }) { eventCapacity = it; capacityError = null } }, label = { Text("क्षमता") }, modifier = Modifier.width(150.dp).focusRequester(capacityFocusRequester), singleLine = true, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = ImeAction.Next), keyboardActions = KeyboardActions(onNext = { focusManager.moveFocus(FocusDirection.Next) }), isError = capacityError != null, supportingText = { capacityError?.let { Text(it, color = MaterialTheme.colorScheme.error) } })
       }
-
-//      Text(
-//        modifier = Modifier.padding(top = 8.dp),
-//        text = "संबधित चित्र एवं पत्रिकाएं:",
-//        style = MaterialTheme.typography.labelLarge
-//      )
-//
-//      // Custom grid to show both existing and new files
-//      Column(horizontalAlignment = Alignment.Start) {
-//        val totalItems =
-//          (imagePickerState.getActiveImageUrls().size - imagePickerState.deletedImageUrls.size) + imagePickerState.newImages.size
-//        if (totalItems == 0) {
-//          Icon(
-//            imageVector = Icons.Filled.PhotoLibrary,
-//            contentDescription = "Selected",
-//            modifier = Modifier.size(96.dp).padding(16.dp),
-//            tint = MaterialTheme.colorScheme.outlineVariant
-//          )
-//        }
-//        FlowRow(
-//          verticalArrangement = Arrangement.spacedBy(8.dp),
-//          horizontalArrangement = Arrangement.spacedBy(8.dp)
-//        ) {
-//          // Show existing media files with PhotoItem-like styling
-//          for (url in imagePickerState.getActiveImageUrls().filterNot { it in imagePickerState.deletedImageUrls }) {
-//            val docName = url.substringAfterLast("/")
-//            Box(modifier = Modifier.width(120.dp).padding(8.dp)) {
-//              Column {
-//                Surface(
-//                  modifier =
-//                    Modifier
-//                      .size(100.dp)
-//                      .clip(shape = MaterialTheme.shapes.medium)
-//                ) {
-//                  Box(modifier = Modifier.fillMaxSize()) {
-//                    AsyncImage(
-//                      model = url,
-//                      contentDescription = docName,
-//                      contentScale = ContentScale.Crop,
-//                      modifier = Modifier.fillMaxSize()
-//                    )
-//
-//                    Surface(
-//                      color = MaterialTheme.colorScheme.surfaceVariant,
-//                      shape = CircleShape,
-//                      modifier = Modifier.align(Alignment.TopEnd).padding(4.dp)
-//                    ) {
-//                      IconButton(
-//                        onClick = {
-//                          // Mark URL for deletion
-//                          imagePickerState =
-//                            imagePickerState.copy(deletedImageUrls = imagePickerState.deletedImageUrls + url)
-//                          scope.launch {
-//                            snackbarHostState.showSnackbar("चित्र हटाने के लिए चिह्नित किया गया")
-//                          }
-//                        },
-//                        modifier = Modifier.size(36.dp)
-//                      ) {
-//                        Icon(
-//                          Icons.Default.Close,
-//                          modifier = Modifier.size(22.dp),
-//                          contentDescription = "Remove",
-//                          tint = MaterialTheme.colorScheme.onSurfaceVariant
-//                        )
-//                      }
-//                    }
-//                  }
-//                }
-//                Text(
-//                  text = docName.take(15),
-//                  maxLines = 2,
-//                  style = MaterialTheme.typography.labelSmall,
-//                  modifier = Modifier.padding(4.dp)
-//                )
-//              }
-//            }
-//          }
-//
-//          // Show new documents
-//          for (document in imagePickerState.newImages) {
-//            val docName = document.name
-//            Box(modifier = Modifier.width(120.dp).padding(8.dp)) {
-//              Column {
-//                PhotoItem(document, onRemoveFile = {
-//                  imagePickerState =
-//                    imagePickerState.copy(newImages = imagePickerState.newImages.filter { it != document })
-//                })
-//                Text(
-//                  text = docName,
-//                  maxLines = 2,
-//                  style = MaterialTheme.typography.labelSmall,
-//                  modifier = Modifier.padding(4.dp)
-//                )
-//              }
-//            }
-//          }
-//        }
-//        if (attachedDocumentsError) {
-//          Text(text = attachedDocumentsErrorMessage, color = MaterialTheme.colorScheme.error)
-//        }
-//      }
-
-      ImagePickerComponent(
-        state = imagePickerState,
-        onStateChange = { newImagePickerState ->
-          imagePickerState = newImagePickerState
-        },
-        config = ImagePickerConfig(
-          label = "गतिविधि चित्र",
-          allowMultiple = true,
-          maxImages = 10,
-          type = ImagePickerType.IMAGE_AND_DOCUMENT,
-          isMandatory = false,
-          enableBackgroundCompression = true,
-          compressionTargetKb = 100, // 100KB for activity images
-          showCompressionProgress = true
-        ),
-        validateFields = triggerImageValidation,
-        onValidationResult = { valid ->
-          imagePickerValid = valid
-        }
-      )
-      Spacer(modifier = Modifier.height(24.dp))
-      // Contact People - Replace with MembersComponent
-      MembersComponent(
-        state = membersState,
-        onStateChange = { newMembersState ->
-          membersState = newMembersState
-          contactPeopleError = newMembersState.members.isEmpty()
-        },
-        config = MembersConfig(
-          label = "संपर्क सूत्र",
-          addButtonText = "संपर्क व्यक्ति जोड़ें",
-          postLabel = "भूमिका",
-          postPlaceholder = "संयोजक, कोषाध्यक्ष इत्यादि",
-          isMandatory = true,
-          editMode = MembersEditMode.GROUPED,
-          enableReordering = true
-        ),
-        error = if (contactPeopleError) "कम से कम एक संपर्क व्यक्ति आवश्यक है" else null,
-        modifier = Modifier
-          .fillMaxWidth()
-          .onGloballyPositioned { coordinates ->
-            lastFocusedFieldOffset = coordinates.positionInRoot().y
-          }
-      )
-
-      // Additional Instructions
-      OutlinedTextField(
-        value = additionalInstructions,
-        onValueChange = {
-          if (it.length <= 1000) {
-            additionalInstructions = it
-          }
-        },
-        label = { Text("अतिरिक्त निर्देश") },
-        modifier =
-          Modifier
-            .width(500.dp)
-            .onGloballyPositioned { coordinates ->
-              lastFocusedFieldOffset = coordinates.positionInRoot().y
-            }
-            .onFocusChanged { focusState ->
-              if (isSmallScreen && focusState.isFocused) {
-                scrollToFocusedField(lastFocusedFieldOffset)
-              }
-            },
-        minLines = 3,
-        maxLines = 10,
-        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default)
-      )
-
-      // Removed 300dp spacer since we now handle keyboard scrolling for individual fields
-
-      // Submit Button
-      Spacer(modifier = Modifier.height(24.dp))
-      SubmitButton(
+      // Images
+      ImagePickerComponent(state = imagePickerState, onStateChange = { imagePickerState = it }, config = ImagePickerConfig(label = "गतिविधि चित्र", allowMultiple = true, maxImages = 10, type = ImagePickerType.IMAGE, isMandatory = false, enableBackgroundCompression = true, compressionTargetKb = 100, showCompressionProgress = true), validateFields = triggerImageValidation, onValidationResult = { v -> imagePickerValid = v })
+      Spacer(Modifier.height(24.dp))
+      // Members
+      MembersComponent(state = membersState, onStateChange = { membersState = it; contactPeopleError = it.members.isEmpty() }, config = MembersConfig(label = "संपर्क सूत्र", addButtonText = "संपर्क व्यक्ति जोड़ें", postLabel = "भूमिका", postPlaceholder = "संयोजक, कोषाध्यक्ष इत्यादि", isMandatory = true, editMode = MembersEditMode.GROUPED, enableReordering = true), error = if (contactPeopleError) "कम से कम एक संपर्क व्यक्ति आवश्यक है" else null)
+      // Instructions
+      OutlinedTextField(additionalInstructions, { if (it.length <= 1000) additionalInstructions = it }, label = { Text("अतिरिक्त निर्देश") }, modifier = Modifier.width(500.dp), minLines = 3, maxLines = 10)
+      Spacer(Modifier.height(24.dp))
+      SubmitButtonOld(
         text = if (editingActivityId != null) "अद्यतन करें" else "गतिविधि बनाएं",
         onSubmit = {
-          // Process media files and create activity data
-          val processedMediaFiles = processMediaFiles()
-
-          val activityData = ActivityInputData(
+          val media = processMediaFiles()
+          val data = ActivityInputData(
             name = name,
             shortDescription = shortDescription,
             longDescription = description,
             type = selectedType!!,
-            addressId = if (!includeAddress && selectedType == ActivityType.CAMPAIGN) null else activityDetailState.activity?.addressId,
+            addressId = if (!includeAddress && selectedType == ActivityType.CAMPAIGN) null else editingActivity?.addressId,
             address = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.address else "",
             state = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.state else "",
             district = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.district else "",
             associatedOrganisations = associatedOrganisations.toList(),
-            startDatetime = startDate?.atTime(startTime!!)!!,
-            endDatetime = endDate?.atTime(endTime!!)!!,
-            mediaFiles = processedMediaFiles,
-            contactPeople = membersState.members.map {
-              val (role, priority) = it.value
-              ActivityMember(it.key.id, role, it.key, priority)
-            },
+            startDatetime = startDate!!.atTime(startTime!!),
+            endDatetime = endDate!!.atTime(endTime!!),
+            mediaFiles = media,
+            contactPeople = membersState.members.map { (m, rp) -> ActivityMember(m.id, rp.first, m, rp.second) },
             additionalInstructions = additionalInstructions,
             capacity = eventCapacity.toIntOrNull() ?: 0,
-            allowedGender = when (genderAllowed) {
-              Gender.ANY -> GenderAllowed.ANY
-              Gender.MALE -> GenderAllowed.MALE
-              Gender.FEMALE -> GenderAllowed.FEMALE
-              null -> GenderAllowed.ANY
-            },
+            allowedGender = when (genderAllowed) { Gender.ANY -> GenderAllowed.ANY; Gender.MALE -> GenderAllowed.MALE; Gender.FEMALE -> GenderAllowed.FEMALE; null -> GenderAllowed.ANY },
             latitude = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.location?.latitude else null,
             longitude = if (includeAddress || selectedType != ActivityType.CAMPAIGN) addressData.location?.longitude else null
           )
-
-          // Submit to ViewModel
-          if (editingActivityId != null) {
-            viewModel.updateActivitySmart(editingActivityId, activityData)
-          } else {
-            viewModel.createActivity(activityData)
-          }
-
-          // Mark for refresh
+          if (editingActivityId != null) viewModel.updateActivitySmart(editingActivityId, data) else viewModel.createActivity(data)
           ActivitiesPageState.markForRefresh()
         },
-        config = SubmitButtonConfig(
-          fillMaxWidth = false,
-          validator = {
-            if (!validateForm()) SubmissionError.ValidationFailed else null
-          },
-          texts = SubmitButtonTexts(
-            submittingText = if (editingActivityId != null) "अद्यतन हो रही है..." else "बनाई जा रही है...",
-            successText = if (editingActivityId != null) "अद्यतन सफल!" else "सफल!"
-          )
-        ),
+        config = SubmitButtonConfig(fillMaxWidth = false, validator = { if (!validateForm()) SubmissionError.ValidationFailed else null }, texts = SubmitButtonTexts(submittingText = if (editingActivityId != null) "अद्यतन हो रही है..." else "बनाई जा रही है...", successText = if (editingActivityId != null) "अद्यतन सफल!" else "सफल!")),
         callbacks = object : SubmitCallbacks {
-          override fun onSuccess() {
-            // Navigate immediately on success
-            if (editingActivityId != null) {
-              onActivitySaved(editingActivityId)
-            } else {
-              // Get the created activity ID from ViewModel
-              val activityId = viewModel.createdActivityId.value ?: editingActivityId!!
-              onActivitySaved(activityId)
-            }
-          }
-
-          override fun onError(error: SubmissionError) {
-            // The GlobalMessageManager is already used in the ViewModel for errors
-            // So we don't need to show additional error messages here
-          }
+          override fun onSuccess() { val id = editingActivityId ?: viewModel.createdActivityId.value ?: return; onActivitySaved(id) }
+          override fun onError(error: SubmissionError) { }
         }
       )
-
-      // Handle form submission result
-      LaunchedEffect(formSubmissionState) {
-        when {
-          formSubmissionState.isSuccess -> {
-            if (editingActivityId != null) {
-              // Navigate immediately to activity details after successful update
-              onActivitySaved(editingActivityId)
-            } else {
-              // Handle new activity creation - navigate immediately
-              createdActivityId?.let { activityId ->
-                onActivitySaved(activityId)
-              }
-            }
-          }
-
-          formSubmissionState.error != null -> {
-            // Error messages are now handled by GlobalMessageManager in ViewModel
-            // Keep local error display for form-specific validation errors if needed
-          }
-        }
-      }
-
-      // Unsaved changes dialog
-      if (showUnsavedChangesDialog) {
-        AlertDialog(
-          onDismissRequest = { showUnsavedChangesDialog = false },
-          title = { Text("असंचयिक परिवर्तन") },
-          text = { Text("आपके परिवर्तन संचयित नहीं है। क्या आप इसे त्यागना चाहते हैं?") },
-          confirmButton = {
-            TextButton(
-              onClick = {
-                showUnsavedChangesDialog = false
-                onCancel()
-              }
-            ) {
-              Text("जी हाँ")
-            }
-          },
-          dismissButton = {
-            TextButton(onClick = { showUnsavedChangesDialog = false }) {
-              Text("नहीं")
-            }
-          }
-        )
-      }
-
-      // Date and Time Picker Dialogs
-      if (openStartDateDialog.value) {
-        CustomDatePickerDialog(
-          onDateSelected = { selectedDate ->
-            startDate = selectedDate
-            startDateText = TextFieldValue(dateFormatter(selectedDate))
-            startDateError = false
-            openStartDateDialog.value = false
-          },
-          onDismissRequest = { openStartDateDialog.value = false }
-        )
-      }
-
-      if (openEndDateDialog.value) {
-        CustomDatePickerDialog(
-          onDateSelected = { selectedDate ->
-            endDate = selectedDate
-            endDateText = TextFieldValue(dateFormatter(selectedDate))
-            endDateError = false
-            openEndDateDialog.value = false
-          },
-          onDismissRequest = { openEndDateDialog.value = false }
-        )
-      }
-      if (openStartTimeDialog.value) {
-        TimePickerDialog(
-          onTimeSelected = { selectedTime ->
-            startTime = selectedTime
-            startTimeText = TextFieldValue(timeFormatter(selectedTime))
-            startTimeError = false
-            openStartTimeDialog.value = false
-          },
-          onDismissRequest = { openStartTimeDialog.value = false }
-        )
-      }
-
-      if (openEndTimeDialog.value) {
-        TimePickerDialog(
-          onTimeSelected = { selectedTime ->
-            endTime = selectedTime
-            endTimeText = TextFieldValue(timeFormatter(selectedTime))
-            endTimeError = false
-            openEndTimeDialog.value = false
-          },
-          onDismissRequest = { openEndTimeDialog.value = false }
-        )
-      }
-
-      // Map Location Picker Dialog - removed as AddressComponent handles this internally
-      // The AddressComponent contains its own MapLocationPickerDialog
+      LaunchedEffect(formSubmissionState.isSuccess) { if (formSubmissionState.isSuccess) { val id = editingActivityId ?: createdActivityId ?: return@LaunchedEffect; onActivitySaved(id) } }
+      if (showUnsavedChangesDialog) AlertDialog(onDismissRequest = { showUnsavedChangesDialog = false }, title = { Text("असंचयिक परिवर्तन") }, text = { Text("आपके परिवर्तन संचयित नहीं है। क्या आप इसे त्यागना चाहते हैं?") }, confirmButton = { TextButton(onClick = { showUnsavedChangesDialog = false; onCancel() }) { Text("जी हाँ") } }, dismissButton = { TextButton(onClick = { showUnsavedChangesDialog = false }) { Text("नहीं") } })
+      if (openStartDateDialog.value) CustomDatePickerDialog(onDateSelected = { d -> startDate = d; startDateText = TextFieldValue(formatDate(d)); startDateError = false; openStartDateDialog.value = false }, onDismissRequest = { openStartDateDialog.value = false })
+      if (openEndDateDialog.value) CustomDatePickerDialog(onDateSelected = { d -> endDate = d; endDateText = TextFieldValue(formatDate(d)); endDateError = false; openEndDateDialog.value = false }, onDismissRequest = { openEndDateDialog.value = false })
+      if (openStartTimeDialog.value) TimePickerDialog(onTimeSelected = { t -> startTime = t; startTimeText = TextFieldValue(formatTime(t)); startTimeError = false; openStartTimeDialog.value = false }, onDismissRequest = { openStartTimeDialog.value = false })
+      if (openEndTimeDialog.value) TimePickerDialog(onTimeSelected = { t -> endTime = t; endTimeText = TextFieldValue(formatTime(t)); endTimeError = false; openEndTimeDialog.value = false }, onDismissRequest = { openEndTimeDialog.value = false })
     }
   }
 }
+
 
 // --- Preview ---
 // Preview removed since we inlined the components
