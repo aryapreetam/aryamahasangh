@@ -1,0 +1,83 @@
+AryaMahasangh iOS CLI Archive Guide
+Variables:
+  APP_NAME=AryaMahasangh
+  SCHEME=iosApp
+  PROJECT=iosApp/iosApp.xcodeproj
+  BUNDLE_ID=com.aryamahasangh
+  TEAM_ID=ZKAG3ZRSRL (Apple Developer Team ID)
+  VERSION (marketing version) e.g. 1.0.16
+  BUILD_NUMBER (internal build) increment each submission
+  APPLE_ID (your App Store Connect login email)
+  APP_SPECIFIC_PW (app-specific password from appleid.apple.com)
+  API_KEY / API_ISSUER (App Store Connect API key credentials alternative to Apple ID)
+
+Quick one-shot build (no upload):
+  ./scripts/ios-archive.sh -v 1.0.16 -b 16
+Upload via Apple ID:
+  ./scripts/ios-archive.sh -v 1.0.16 -b 16 -u you@example.com -p xxxx-xxxx-xxxx
+Upload via API key:
+  ./scripts/ios-archive.sh -v 1.0.16 -b 16 --api-key KEYID --api-issuer ISSUERID
+
+Preflight Checks:
+  1. xcode-select -p                # Ensure CLI tools
+  2. open iosApp/iosApp.xcodeproj (optional just to verify signing)
+  3. Ensure certificates & profiles: Xcode -> Settings -> Accounts (automatic signing is enabled)
+  4. Ensure Info.plist version matches desired release.
+  5. Run ./gradlew :composeApp:embedAndSignAppleFrameworkForXcode manually if you want to warm caches.
+
+If Out Of Memory occurs:
+  - Close Xcode GUI and run script headless.
+  - Prebuild Kotlin framework & set OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED=YES (script does this) to prevent duplicate Gradle invocation.
+  - Add in gradle.properties: org.gradle.jvmargs=-Xmx2g -XX:MaxMetaspaceSize=512m
+  - Disable parallelization: script sets -parallelizeTargets NO.
+  - Increase swap: sudo sysctl vm.swapusage (macOS manages automatically; ensure enough disk free > 20GB)
+  - Use a larger machine (16GB+ RAM) for heavy KMP builds.
+
+Manual Commands (expanded):
+Clean derived data:
+  rm -rf ~/Library/Developer/Xcode/DerivedData/*
+
+Prebuild Kotlin framework:
+  ./gradlew :composeApp:embedAndSignAppleFrameworkForXcode -Pconfiguration=Release
+  export OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED=YES
+
+Archive:
+  xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -configuration Release \
+    -destination 'generic/platform=iOS' -archivePath build/ios/AryaMahasangh.xcarchive \
+    -parallelizeTargets NO clean archive | xcpretty
+
+Export:
+  xcodebuild -exportArchive -archivePath build/ios/AryaMahasangh.xcarchive \
+    -exportOptionsPlist build/ios/ExportOptions.plist -exportPath build/ios/export | xcpretty
+
+Upload (API key):
+  xcrun altool --upload-app -f build/ios/export/AryaMahasangh.ipa -t ios --apiKey KEYID --apiIssuer ISSUERID
+Upload (Apple ID):
+  xcrun altool --upload-app -f build/ios/export/AryaMahasangh.ipa -t ios -u you@example.com -p app-specific-password
+Upload (Transporter alternative):
+  /Applications/Transporter.app/Contents/itms/bin/transporter -m upload -u you@example.com -p app-specific-password -f build/ios/export/AryaMahasangh.ipa -primaryBundleId com.aryamahasangh
+
+Version Bump Only:
+  /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString 1.0.16" iosApp/iosApp/Info.plist
+  /usr/libexec/PlistBuddy -c "Set :CFBundleVersion 16" iosApp/iosApp/Info.plist
+
+Troubleshooting:
+  - Codesign errors: run 'security find-identity -v -p codesigning' ensure valid iPhone Distribution certificate.
+  - Provisioning: let Automatic Signing generate profile; or set PROVISIONING_PROFILE_SPECIFIER manually.
+  - Kotlin duplicate symbol: clean build 'rm -rf composeApp/build shared/build'.
+  - Missing IPA: check export logs, look for "ERROR ITMS-" messages.
+  - Login required: run 'xcrun altool --list-providers -u APPLE_ID -p APP_SPECIFIC_PW' to verify credentials.
+
+Edge Cases:
+  - First archive may regenerate Swift bridging headers; re-run if failure.
+  - If using Xcode Cloud or CI, ensure environment variable OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED=YES and run Gradle first.
+  - For TestFlight only (internal testing) you can use method 'app-store' (TestFlight is part of App Store distribution) or create separate ExportOptions.
+
+Security:
+  - Do not commit API keys or passwords; use environment variables / CI secrets.
+  - local.properties contains environment-specific Supabase keys; ensure iOS build does not embed secrets unintended for prod.
+
+Next Steps After Upload:
+  - App Store Connect: add screenshots, metadata, submit for review.
+  - Increment BUILD_NUMBER for each subsequent upload keeping VERSION same until new marketing release.
+

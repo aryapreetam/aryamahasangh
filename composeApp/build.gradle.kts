@@ -105,6 +105,8 @@ kotlin {
     iosTarget.binaries.framework {
       baseName = "ComposeApp"
       isStatic = true
+      // Explicit bundle ID to avoid inference & warning
+      freeCompilerArgs += listOf("-Xbinary=bundleId=com.aryamahasangh")
     }
   }
 
@@ -381,6 +383,12 @@ compose.desktop {
       "-Dapp.environment=$environment"
     )
   }
+}
+
+// Workaround: disable failing Compose resource sync tasks outside Xcode
+// This prevents the missing outputDir configuration error.
+tasks.matching { it.name.startsWith("syncComposeResourcesForIos") }.configureEach {
+  enabled = false
 }
 
 // Ensure ALL Kotlin compile tasks that read the shared secrets output run AFTER the secrets generators.
