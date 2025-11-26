@@ -15,12 +15,18 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import aryamahasangh.composeapp.generated.resources.Res
 import aryamahasangh.composeapp.generated.resources.mahasangh_logo_without_background
 import com.aryamahasangh.LocalIsAuthenticated
@@ -30,6 +36,7 @@ import com.aryamahasangh.navigation.Screen
 import com.aryamahasangh.utils.WithTooltip
 import org.jetbrains.compose.resources.painterResource
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AboutUs(
   showDetailedAboutUs: (String) -> Unit,
@@ -60,26 +67,53 @@ fun AboutUs(
       verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
       item {
-        Column(
-          modifier = Modifier.fillMaxWidth().clickable {
-            uiState.organisation?.id?.let { id ->
-              showDetailedAboutUs(id)
-            }
-          },
-          verticalArrangement = Arrangement.spacedBy(16.dp),
-          horizontalAlignment = Alignment.CenterHorizontally
+        Box(
+          modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+              uiState.organisation?.id?.let { id ->
+                showDetailedAboutUs(id)
+              }
+            },
+          contentAlignment = Alignment.Center
         ) {
+          // --- LAYER 1: The Watermark Logo (Slightly reduced alpha) ---
           Image(
             painter = painterResource(resource = Res.drawable.mahasangh_logo_without_background),
-            contentDescription = "logo आर्य महासंघ",
-            modifier = Modifier.size(128.dp)
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            modifier = Modifier
+              .matchParentSize()
+              // Reduced alpha slightly to 0.3f (from 0.35f)
+              .alpha(0.15f),
+            // Desaturate the image to grayscale to remove distracting colors
+            colorFilter = ColorFilter.colorMatrix(
+              ColorMatrix(
+                floatArrayOf(
+                  0.33f, 0.33f, 0.33f, 0f, 0f,
+                  0.33f, 0.33f, 0.33f, 0f, 0f,
+                  0.33f, 0.33f, 0.33f, 0f, 0f,
+                  0f, 0f, 0f, 1f, 0f
+                )
+              )
+            )
           )
+
+          // --- LAYER 3: The Text (Now on top of the new backing) ---
           Text(
             modifier = Modifier
               .semantics { contentDescription = "about_intro_paragraph" }
-              .testTag("about_intro_paragraph"),
+              .testTag("about_intro_paragraph")
+              // Padding here controls the spacing between text and the edge of its parent (the main Box)
+              .padding(vertical = 16.dp, horizontal = 4.dp),
             text = uiState.organisation?.description
-              ?: "सनातन धर्म का साक्षात् प्रतिनिधि 'आर्य' ही होता है। आर्य ही धर्म को जीता है, समाज को मर्यादाओं में बांधता है और राष्ट्र को सम्पूर्ण भू-मण्डल में प्रतिष्ठित करता है। आर्य के जीवन में अनेकता नहीं एकता रहती है अर्थात् एक ईश्वर, एक धर्म, एक धर्मग्रन्थ और एक उपासना पद्धति। ऐसे आर्यजन लाखों की संख्या में मिलकर संगठित, सुव्यवस्थित और सुनियोजित रीति से आगे बढ़ रहे हैं - आर्यावर्त की ओर--- यही है - आर्य महासंघ ।।"
+              ?: "सनातन धर्म का साक्षात् प्रतिनिधि 'आर्य' ही होता है। आर्य ही धर्म को जीता है, समाज को मर्यादाओं में बांधता है और राष्ट्र को सम्पूर्ण भू-मण्डल में प्रतिष्ठित करता है। आर्य के जीवन में अनेकता नहीं एकता रहती है अर्थात् एक ईश्वर, एक धर्म, एक धर्मग्रन्थ और एक उपासना पद्धति। ऐसे आर्यजन लाखों की संख्या में मिलकर संगठित, सुव्यवस्थित और सुनियोजित रीति से आगे बढ़ रहे हैं - आर्यावर्त की ओर--- यही है - आर्य महासंघ ।।",
+            style = MaterialTheme.typography.bodyLarge.copy(
+              textAlign = TextAlign.Justify,
+              color = MaterialTheme.colorScheme.onSurface,
+              lineHeight = 24.sp,
+              fontWeight = FontWeight.Bold
+            )
           )
         }
       }
@@ -102,12 +136,6 @@ private fun QuickLinksSection(
   organisationNames: List<OrganisationName>
 ) {
   // Section Header
-  Text(
-    text = "उपलब्ध सुविधाएँ",
-    style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-    color = MaterialTheme.colorScheme.primary,
-    modifier = Modifier.padding(vertical = 8.dp)
-  )
   Column(
     modifier = Modifier.fillMaxWidth(),
     verticalArrangement = Arrangement.spacedBy(16.dp)

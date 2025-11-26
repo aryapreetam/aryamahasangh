@@ -19,7 +19,7 @@ plugins {
   alias(libs.plugins.kotlinx.serialization)
   alias(libs.plugins.apollo)
   alias(libs.plugins.ktlint)
-//  alias(libs.plugins.kmp.secrets.plugin)
+  alias(libs.plugins.sentry)
 }
 
 // Load secrets from local.properties for build-time operations

@@ -35,6 +35,9 @@ object AppConfig {
       else -> Secrets.dev_supabase_url
     }
 
+  val sentryDsn: String
+    get() = Secrets.sentry
+
   val supabaseKey: String
     get() = when (environment) {
       "prod" -> Secrets.prod_supabase_key

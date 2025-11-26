@@ -1,8 +1,8 @@
 package com.aryamahasangh.util
 
+import com.aryamahasangh.imgcompress.CompressionConfig
 import com.aryamahasangh.imgcompress.ImageCompressor
 import com.aryamahasangh.imgcompress.ImageData
-import com.aryamahasangh.imgcompress.CompressionConfig
 import com.aryamahasangh.imgcompress.ResizeOptions
 import com.aryamahasangh.isIos
 import io.github.vinceglb.filekit.PlatformFile
@@ -26,14 +26,41 @@ object ImageCompressionService {
 
   // iOS quality loop using kmpCompressImage (already suspending)
   private suspend fun compressIosQualityLoop(original: ByteArray, maxLongEdge: Int, targetKb: Int, minQuality: Int = 20): ByteArray {
-    val qualities = listOf(70, 60, 50, 45, 40, 35, 30, 25, minQuality)
+    val targetBytes = targetKb * 1024
+    val maxAcceptableBytes = (targetKb * 1.2 * 1024).toInt()  // Allow up to 30% above target
+    
+    // Progressive quality reduction with reasonable steps to preserve quality
+    val qualities = listOf(75, 65, 60, 55, 50, 45, 40, 35, 30, 25)
     var last = original
+    var bestMatch = original  // Track best result that's under maxAcceptable
+    
     for (q in qualities) {
-      val attempt = try { kmpCompressImage(original, q, maxLongEdge, maxLongEdge) } catch (_: Exception) { continue }
+      val attempt = try { 
+        kmpCompressImage(original, q, maxLongEdge, maxLongEdge) 
+      } catch (_: Exception) { 
+        continue 
+      }
       last = attempt
-      if (attempt.size <= targetKb * 1024) return attempt
+      
+      // If within acceptable range (target to target+30%), return immediately
+      if (attempt.size in targetBytes..maxAcceptableBytes) {
+        return attempt
+      }
+      
+      // Track the best match that's under maxAcceptable
+      if (attempt.size <= maxAcceptableBytes && 
+          (bestMatch.contentEquals(original) || attempt.size > bestMatch.size)) {
+        bestMatch = attempt
+      }
+      
+      // If we went below target significantly, return previous attempt if it was closer
+      if (attempt.size < targetBytes * 0.7 && !bestMatch.contentEquals(original)) {
+        return bestMatch
+      }
     }
-    return last
+    
+    // Return best match if we found one, otherwise last attempt
+    return if (!bestMatch.contentEquals(original)) bestMatch else last
   }
 
   /**
@@ -42,7 +69,7 @@ object ImageCompressionService {
   suspend fun compressSync(
     file: PlatformFile,
     targetKb: Int,
-    maxLongEdge: Int = 2560
+    maxLongEdge: Int = 1024
   ): ByteArray {
     val bytes = compressGeneral(file, targetKb = targetKb, maxLongEdge = maxLongEdge)
     return if (bytes.isNotEmpty()) bytes else try { file.readBytes() } catch (_: Exception) { ByteArray(0) }

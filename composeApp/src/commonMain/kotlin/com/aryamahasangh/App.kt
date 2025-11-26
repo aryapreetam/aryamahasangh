@@ -2,17 +2,14 @@ package com.aryamahasangh
 
 import AppTheme
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import aryamahasangh.composeapp.generated.resources.Res
-import aryamahasangh.composeapp.generated.resources.family_add
 import coil3.ImageLoader
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.network.ktor3.KtorNetworkFetcherFactory
@@ -22,14 +19,11 @@ import com.aryamahasangh.components.OngoingIcon
 import com.aryamahasangh.di.KoinInitializer
 import com.aryamahasangh.navigation.AppDrawer
 import com.aryamahasangh.network.supabaseClient
-import com.aryamahasangh.utils.WithTooltip
 import io.github.jan.supabase.annotations.SupabaseExperimental
 import io.github.jan.supabase.coil.coil3
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import org.jetbrains.compose.resources.vectorResource
-import org.jetbrains.compose.ui.tooling.preview.Preview
 
 // CompositionLocal for Authentication State
 val LocalIsAuthenticated = compositionLocalOf { false }
@@ -132,32 +126,32 @@ private fun initializeCoilImageLoader() {
   }
 }
 
-@Preview
-@Composable
-fun Test() {
-  Column {
-    Icon(
-      modifier = Modifier.size(96.dp),
-      imageVector = vectorResource(Res.drawable.family_add),
-      contentDescription = "fdf",
-      tint = MaterialTheme.colorScheme.primary
-    )
-    WithTooltip(tooltip = "नया परिवार जोड़ें") {
-      IconButton(
-        onClick = {},
-        modifier =
-          Modifier
-            .size(48.dp) // or your desired size
-            .clip(RectangleShape)
-      ) {
-        Icon(
-          imageVector = vectorResource(Res.drawable.family_add),
-          contentDescription = "नया परिवार जोड़ें"
-        )
-      }
-    }
-  }
-}
+//@Preview
+//@Composable
+//fun Test() {
+//  Column {
+//    Icon(
+//      modifier = Modifier.size(96.dp),
+//      imageVector = vectorResource(Res.drawable.family_add),
+//      contentDescription = "fdf",
+//      tint = MaterialTheme.colorScheme.primary
+//    )
+//    WithTooltip(tooltip = "नया परिवार जोड़ें") {
+//      IconButton(
+//        onClick = {},
+//        modifier =
+//          Modifier
+//            .size(48.dp) // or your desired size
+//            .clip(RectangleShape)
+//      ) {
+//        Icon(
+//          imageVector = vectorResource(Res.drawable.family_add),
+//          contentDescription = "नया परिवार जोड़ें"
+//        )
+//      }
+//    }
+//  }
+//}
 
 class CounterViewModel {
   private val _count = MutableStateFlow(0)

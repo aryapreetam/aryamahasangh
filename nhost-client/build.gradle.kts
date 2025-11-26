@@ -110,8 +110,9 @@ kotlin {
       }
     }
 
+    // Create iosMain intermediate source set for iOS targets
     val iosMain by creating {
-      dependsOn(commonMain)
+      // No need for explicit dependsOn - hierarchy template handles it
       dependencies {
         implementation(libs.ktor.client.darwin)
       }
@@ -129,14 +130,8 @@ kotlin {
       }
     }
 
-    // Configure iOS source sets
-    val iosX64Main by getting
-    val iosArm64Main by getting
-    val iosSimulatorArm64Main by getting
-
-    iosX64Main.dependsOn(iosMain)
-    iosArm64Main.dependsOn(iosMain)
-    iosSimulatorArm64Main.dependsOn(iosMain)
+    // Configure iOS source sets - using default hierarchy template
+    // No manual dependsOn needed with Kotlin 2.0+
   }
 }
 

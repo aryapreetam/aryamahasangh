@@ -20,10 +20,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.aryamahasangh.imgcompress.CompressionConfig
-import com.aryamahasangh.imgcompress.ImageCompressor
-import com.aryamahasangh.imgcompress.ImageData
-import com.aryamahasangh.imgcompress.ResizeOptions
+import com.aryamahasangh.util.ImageCompressionService
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.FileKitType
@@ -77,7 +74,11 @@ data class ImagePickerConfig(
 
   val effectiveCompressionTarget: Int
     get() = when (type) {
-      ImagePickerType.PROFILE_PHOTO -> profilePhotoTargetKb
+      ImagePickerType.PROFILE_PHOTO -> {
+        // If compressionTargetKb is explicitly set (not default 100), use it
+        // Otherwise use profilePhotoTargetKb
+        if (compressionTargetKb != 100) compressionTargetKb else profilePhotoTargetKb
+      }
       else -> compressionTargetKb
     }
 }
@@ -200,16 +201,17 @@ fun ImagePickerComponent(
           val processedFiles = filesToKeep.mapIndexed { idx, file ->
             if (file.name.substringAfterLast('.').lowercase() in listOf("jpg", "jpeg", "png", "webp")) {
               try {
-                val originalBytes = file.readBytes()
-                val mimeType = determineMimeType(file.name)
-
-                val compressed = ImageCompressor.compress(
-                  input = ImageData(originalBytes, mimeType),
-                  config = CompressionConfig.ByTargetSize(config.effectiveCompressionTarget),
-                  resize = ResizeOptions(maxLongEdgePx = 2560)
+                // Use smaller maxLongEdge for profile photos and logos (400px)
+                // Use larger maxLongEdge for regular images (1024px)
+                val maxEdge = if (config.type == ImagePickerType.PROFILE_PHOTO) 400 else 1024
+                
+                val compressedBytes = ImageCompressionService.compressGeneral(
+                  file = file,
+                  targetKb = config.effectiveCompressionTarget,
+                  maxLongEdge = maxEdge
                 )
 
-                compressionResults[file] = compressed.bytes
+                compressionResults[file] = compressedBytes
                 compressionProgress = ((idx + 1) * 100) / filesToKeep.size
                 file
               } catch (e: Exception) {
