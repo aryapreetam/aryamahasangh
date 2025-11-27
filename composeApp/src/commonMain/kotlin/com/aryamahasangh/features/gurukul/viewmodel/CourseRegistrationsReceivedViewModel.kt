@@ -1,12 +1,11 @@
 package com.aryamahasangh.features.gurukul.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.aryamahasangh.features.arya_nirman.convertDates
 import com.aryamahasangh.features.gurukul.data.GurukulRepository
 import com.aryamahasangh.features.gurukul.domain.models.Course
 import com.aryamahasangh.type.GenderFilter
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -59,7 +58,7 @@ class CourseRegistrationsReceivedViewModel(
   }
 
   private fun loadCourses() {
-    CoroutineScope(Dispatchers.Main).launch {
+    viewModelScope.launch {
       _uiState.value = _uiState.value.copy(isLoading = true, isError = false)
       try {
         // Use getAllCourses to fetch all courses (past, present, future) sorted by date descending
@@ -75,7 +74,7 @@ class CourseRegistrationsReceivedViewModel(
   }
 
   fun loadRegistrations(courseId: String) {
-    CoroutineScope(Dispatchers.Main).launch {
+    viewModelScope.launch {
       _uiState.value = _uiState.value.copy(isLoading = true)
       try {
         val result = gurukulRepository.getCourseRegistrationsForActivity(courseId)
