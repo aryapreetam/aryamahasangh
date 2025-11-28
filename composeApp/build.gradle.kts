@@ -511,3 +511,13 @@ tasks.withType<Detekt>().configureEach {
     markdown.required.set(true)
   }
 }
+
+// Disable Sentry Cocoa linking for CI/CD environments
+// Sentry framework is only available when building through Xcode locally with SPM
+if (System.getenv("CI") == "TRUE" || System.getenv("CI_XCODE_PROJECT") != null) {
+  configure<io.sentry.kotlin.multiplatform.gradle.SentryPluginExtension> {
+    autoInstallation {
+      enabled.set(false)
+    }
+  }
+}
