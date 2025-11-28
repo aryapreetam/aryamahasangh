@@ -33,7 +33,7 @@ fun OrganisationalMembersScreen(
   onNavigateToEditMember: (String) -> Unit = {}, // Add edit navigation
 ) {
   val uiState by viewModel.membersUiState.collectAsState()
-  val snackbarHostState = LocalSnackbarHostState.current
+  val snackbarHostState = LocalSnackbarHostState.current ?: return
   val scope = rememberCoroutineScope()
   var showDeleteDialog by remember { mutableStateOf<MemberShort?>(null) }
   val keyboardController = LocalSoftwareKeyboardController.current

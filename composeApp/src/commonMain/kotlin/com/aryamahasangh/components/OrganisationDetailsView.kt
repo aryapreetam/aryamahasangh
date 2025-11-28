@@ -177,7 +177,7 @@ fun OrganisationDetail(
             if (isLoggedIn) {
               Row(modifier = Modifier.padding()) {
                 val scope = rememberCoroutineScope()
-                val snackbarHostState = LocalSnackbarHostState.current
+                val snackbarHostState = LocalSnackbarHostState.current ?: return@Row
                 val launcher =
                   rememberFilePickerLauncher(
                     type = FileKitType.File(extensions = listOf("png", "jpg", "jpeg", "webp")),

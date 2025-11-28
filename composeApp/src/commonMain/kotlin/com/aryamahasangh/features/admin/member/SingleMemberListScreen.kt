@@ -73,7 +73,7 @@ fun SingleMemberListScreen(
   onDeleteMember: (String) -> Unit = {},
   onDataChanged: () -> Unit = {}
 ) {
-  val snackbarHostState = LocalSnackbarHostState.current
+  val snackbarHostState = LocalSnackbarHostState.current ?: return
   val uiState by viewModel.ekalAryaUiState.collectAsState()
   val deleteState by viewModel.deleteMemberState.collectAsState()
   val windowInfo = currentWindowAdaptiveInfo()

@@ -54,6 +54,7 @@ kmp-secrets-plugin = "1.3.0"
 filekit = "0.12.0"
 accompanist = "0.36.0"
 sentry = "0.21.0"
+detekt = "2.0.0-alpha.1"
 
 [libraries]
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coilCompose" }
@@ -161,3 +162,4 @@ apollo = { id = "com.apollographql.apollo", version.ref = "apollo" }
 ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
 kmp-secrets-plugin = { id = "io.github.tarasovvp.kmp-secrets-plugin", version.ref = "kmp-secrets-plugin"}
 sentry = { id = "io.sentry.kotlin.multiplatform.gradle", version.ref = "sentry"}
+detekt = { id = "dev.detekt", version.ref = "detekt" }

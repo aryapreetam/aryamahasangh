@@ -47,7 +47,7 @@ fun NewOrganisationFormScreen(
   var showUnsavedChangesDialog by remember { mutableStateOf(false) }
 
   val scope = rememberCoroutineScope()
-  val snackbarHostState = LocalSnackbarHostState.current
+  val snackbarHostState = LocalSnackbarHostState.current ?: return
   val isLoggedIn = LocalIsAuthenticated.current
 
   // Initial form values for unsaved changes detection

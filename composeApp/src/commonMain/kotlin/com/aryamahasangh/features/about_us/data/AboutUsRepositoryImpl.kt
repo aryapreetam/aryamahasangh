@@ -78,7 +78,10 @@ class AboutUsRepositoryImpl(private val apolloClient: ApolloClient) : AboutUsRep
             val errorMessage = response.errors?.firstOrNull()?.message ?: "Unknown error occurred"
             throw Exception(errorMessage)
           }
-          val org = response.data?.organisationCollection?.edges?.first()!!.node
+          
+          val org = response.data?.organisationCollection?.edges?.firstOrNull()?.node
+            ?: throw Exception("Organisation '${name}' not found")
+          
           OrganisationDetail(
             id = org.id,
             name = org.name,

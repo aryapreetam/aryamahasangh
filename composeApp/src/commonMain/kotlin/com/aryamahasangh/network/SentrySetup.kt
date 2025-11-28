@@ -6,7 +6,7 @@ fun initializeSentry() {
   Sentry.init { options ->
     options.dsn = AppConfig.sentryDsn
     options.attachStackTrace = true
-    options.enableAppHangTracking = true
+    options.enableAppHangTracking = false
     options.maxBreadcrumbs = 100
     // Adds request headers and IP for users, for more info visit:
     // https://docs.sentry.io/platforms/kotlin/guides/kotlin-multiplatform/data-management/data-collected/

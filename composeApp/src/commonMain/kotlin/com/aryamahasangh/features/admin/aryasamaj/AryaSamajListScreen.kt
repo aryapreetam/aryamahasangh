@@ -66,7 +66,7 @@ fun AryaSamajListScreen(
   onDeleteAryaSamaj: (String) -> Unit = {},
   onDataChanged: () -> Unit = {}
 ) {
-  val snackbarHostState = LocalSnackbarHostState.current
+  val snackbarHostState = LocalSnackbarHostState.current ?: return
   val uiState by viewModel.listUiState.collectAsState()
   val scope = rememberCoroutineScope()
   val windowInfo = currentWindowAdaptiveInfo()

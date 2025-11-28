@@ -35,7 +35,7 @@ fun AddMemberFormScreen(
   onNavigateToMemberDetail: (memberId: String) -> Unit
 ) {
   val uiState by viewModel.memberDetailUiState.collectAsState()
-  val snackbarHostState = LocalSnackbarHostState.current
+  val snackbarHostState = LocalSnackbarHostState.current ?: return
   val setBackHandler = LocalSetBackHandler.current
   val scope = rememberCoroutineScope()
   val focusManager = LocalFocusManager.current

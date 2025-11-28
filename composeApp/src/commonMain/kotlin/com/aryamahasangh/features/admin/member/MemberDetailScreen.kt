@@ -78,7 +78,7 @@ fun MemberDetailScreen(
   onNavigateToEdit: (String) -> Unit = {} // Add navigation to edit
 ) {
   val uiState by viewModel.memberDetailUiState.collectAsState()
-  val snackbarHostState = LocalSnackbarHostState.current
+  val snackbarHostState = LocalSnackbarHostState.current ?: return
 
   LaunchedEffect(memberId) {
     viewModel.loadMemberDetail(memberId)

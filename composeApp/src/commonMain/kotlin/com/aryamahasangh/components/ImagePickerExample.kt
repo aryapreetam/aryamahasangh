@@ -854,7 +854,7 @@ fun ActivityFormWithImagePickerExample() {
   var imageState by remember { mutableStateOf(ImagePickerState()) }
   var showErrors by remember { mutableStateOf(false) }
   val scope = rememberCoroutineScope()
-  val snackbarHostState = LocalSnackbarHostState.current
+  val snackbarHostState = LocalSnackbarHostState.current ?: return
 
   val imageConfig =
     ImagePickerConfig(

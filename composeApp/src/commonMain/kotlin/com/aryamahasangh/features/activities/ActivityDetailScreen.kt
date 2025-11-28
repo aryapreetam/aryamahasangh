@@ -53,7 +53,7 @@ fun ActivityDetailScreen(
   // Remove incorrect section tracking - this screen is part of Activities section
   // ActivitiesPageState.enterActivitiesSection()
   
-  val snackbarHostState = LocalSnackbarHostState.current
+  val snackbarHostState = LocalSnackbarHostState.current ?: return
 
   val isLoggedIn = LocalIsAuthenticated.current
 
@@ -161,7 +161,7 @@ fun ActivityDetailScreen(
 fun UserProfileListItem(user: UserProfile, modifier: Modifier = Modifier) {
   // Using Material 3 ListItem for standard list item appearance and structure
   val uriHandler = LocalUriHandler.current
-  val snackbarHostState = LocalSnackbarHostState.current
+  val snackbarHostState = LocalSnackbarHostState.current ?: return
   val scope = rememberCoroutineScope()
   ListItem(
     modifier = modifier.widthIn(max = 500.dp),
@@ -824,7 +824,7 @@ fun ContactPersonItem(contactPerson: ActivityMember) {
       color = Color.LightGray
     )
     val uriHandler = LocalUriHandler.current
-    val snackbarHostState = LocalSnackbarHostState.current
+    val snackbarHostState = LocalSnackbarHostState.current ?: return
     val scope = rememberCoroutineScope()
     IconButton(
       onClick = {

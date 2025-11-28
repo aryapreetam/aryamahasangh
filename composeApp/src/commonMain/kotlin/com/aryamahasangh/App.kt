@@ -28,12 +28,6 @@ import kotlinx.coroutines.flow.asStateFlow
 // CompositionLocal for Authentication State
 val LocalIsAuthenticated = compositionLocalOf { false }
 
-// Initialize Koin for dependency injection
-private val initKoin by lazy {
-  KoinInitializer.init()
-  true // Return a value to satisfy the lazy property
-}
-
 @Composable
 fun App() {
 
@@ -41,12 +35,30 @@ fun App() {
 
   val demo = false // Set to true to show form components example
   if (!demo) {
-    // Ensure Koin is initialized
-    initKoin
+    // Initialize Koin eagerly before composition to ensure proper initialization order
+    // Wrapped in remember to ensure it only runs once
+    remember {
+      try {
+        KoinInitializer.init()
+        println("Koin initialized successfully")
+        true
+      } catch (e: Exception) {
+        println("Error initializing Koin: ${e.message}")
+        e.printStackTrace()
+        false
+      }
+    }
 
     // Initialize session management when app starts
     LaunchedEffect(Unit) {
-      SessionManager.initialize()
+      try {
+        SessionManager.initialize()
+        println("SessionManager initialized successfully")
+      } catch (e: Exception) {
+        println("Error initializing SessionManager: ${e.message}")
+        e.printStackTrace()
+        // Non-fatal: user can still use app, just won't have restored session
+      }
     }
 
     // Observe authentication state
@@ -125,33 +137,6 @@ private fun initializeCoilImageLoader() {
       }.build()
   }
 }
-
-//@Preview
-//@Composable
-//fun Test() {
-//  Column {
-//    Icon(
-//      modifier = Modifier.size(96.dp),
-//      imageVector = vectorResource(Res.drawable.family_add),
-//      contentDescription = "fdf",
-//      tint = MaterialTheme.colorScheme.primary
-//    )
-//    WithTooltip(tooltip = "नया परिवार जोड़ें") {
-//      IconButton(
-//        onClick = {},
-//        modifier =
-//          Modifier
-//            .size(48.dp) // or your desired size
-//            .clip(RectangleShape)
-//      ) {
-//        Icon(
-//          imageVector = vectorResource(Res.drawable.family_add),
-//          contentDescription = "नया परिवार जोड़ें"
-//        )
-//      }
-//    }
-//  }
-//}
 
 class CounterViewModel {
   private val _count = MutableStateFlow(0)

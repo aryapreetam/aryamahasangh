@@ -1,6 +1,7 @@
 @file:OptIn(ExperimentalComposeLibrary::class, ApolloExperimental::class)
 
 import com.apollographql.apollo.annotations.ApolloExperimental
+import dev.detekt.gradle.Detekt
 import org.jetbrains.compose.ExperimentalComposeLibrary
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
@@ -20,6 +21,7 @@ plugins {
   alias(libs.plugins.apollo)
   alias(libs.plugins.ktlint)
   alias(libs.plugins.sentry)
+  alias(libs.plugins.detekt)
 }
 
 // Load secrets from local.properties for build-time operations
@@ -485,5 +487,27 @@ tasks.named("desktopTest", org.gradle.api.tasks.testing.Test::class).configure {
     events("passed", "skipped", "failed")
     exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
     showStandardStreams = true
+  }
+}
+
+detekt {
+  toolVersion = "2.0.0-alpha.1"
+  config.setFrom(file("$rootDir/config/detekt/detekt.yml"))
+  buildUponDefaultConfig = false         // IMPORTANT
+  allRules = false                       // IMPORTANT
+  source = files(
+    "src/commonMain/kotlin",
+    "src/androidMain/kotlin",
+    "src/desktopMain/kotlin",
+    "src/iosMain/kotlin",
+    "src/wasmJsMain/kotlin"
+  )
+}
+tasks.withType<Detekt>().configureEach {
+  reports {
+    checkstyle.required.set(true)
+    html.required.set(true)
+    sarif.required.set(true)
+    markdown.required.set(true)
   }
 }

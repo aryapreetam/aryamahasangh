@@ -25,7 +25,7 @@ fun OrgDetailScreen(
   onTriggerSearch: (String) -> Unit = {}
 ) {
   val scope = rememberCoroutineScope()
-  val snackbarHostState = LocalSnackbarHostState.current
+  val snackbarHostState = LocalSnackbarHostState.current ?: return
   val isAuthenticated = LocalIsAuthenticated.current
 
   // Load organisation details

@@ -31,7 +31,7 @@ fun CreateOverviewFormScreen(
   onSuccess: () -> Unit,
   viewModel: ActivitiesViewModel = koinInject()
 ) {
-  val snackbarHostState = LocalSnackbarHostState.current
+  val snackbarHostState = LocalSnackbarHostState.current ?: return
   val keyboardController = LocalSoftwareKeyboardController.current
   val scope = rememberCoroutineScope()
 

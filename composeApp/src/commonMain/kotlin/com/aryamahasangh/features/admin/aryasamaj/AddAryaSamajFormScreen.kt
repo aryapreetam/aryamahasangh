@@ -32,7 +32,7 @@ fun AddAryaSamajFormScreen(
   onNavigateToAryaSamajDetails: (String) -> Unit = {}
 ) {
   val isAuthenticated = LocalIsAuthenticated.current
-  val snackbarHostState = LocalSnackbarHostState.current
+  val snackbarHostState = LocalSnackbarHostState.current ?: return
   val formUiState by viewModel.formUiState.collectAsState()
 
   // Initialize form state

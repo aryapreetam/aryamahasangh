@@ -618,7 +618,11 @@ private fun CreateActivityScreenContent(
       }
     }
 
-    if (failure != null) throw IllegalStateException(failure)
+    // If there was a failure, show error and return empty list instead of throwing
+    if (failure != null) {
+      GlobalMessageManager.showError(failure!!)
+      return emptyList()
+    }
 
     // Perform deletions after successful new uploads
     if (imagePickerState.deletedImageUrls.isNotEmpty()) {

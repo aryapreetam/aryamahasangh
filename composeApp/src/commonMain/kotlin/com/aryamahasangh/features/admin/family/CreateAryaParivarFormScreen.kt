@@ -44,7 +44,7 @@ fun CreateAryaParivarFormScreen(
   editingFamilyId: String? = null
 ) {
   val uiState by viewModel.createFamilyUiState.collectAsState()
-  val snackbarHostState = LocalSnackbarHostState.current
+  val snackbarHostState = LocalSnackbarHostState.current ?: return
   val focusManager = LocalFocusManager.current
 
   // Check if we're in edit mode

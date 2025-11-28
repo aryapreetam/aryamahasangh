@@ -181,7 +181,7 @@ fun UpcomingActivitiesForm(
   setEditMode: (Boolean) -> Unit = {}
 ) {
   val scope = rememberCoroutineScope()
-  val snackbarHostState = LocalSnackbarHostState.current
+  val snackbarHostState = LocalSnackbarHostState.current ?: return
   val isLoggedIn = LocalIsAuthenticated.current
   var selectedState by remember { mutableStateOf<String>("") }
   var selectedDistrict by remember { mutableStateOf<String>("") }

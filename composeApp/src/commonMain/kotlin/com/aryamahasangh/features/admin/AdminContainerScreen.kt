@@ -42,7 +42,7 @@ fun AdminContainerScreen(
   val ekalAryaUiState by viewModel.ekalAryaUiState.collectAsState()
   val aryaSamajUiState by aryaSamajViewModel.listUiState.collectAsState()
   val familyUiState by familyViewModel.familiesUiState.collectAsState()
-  val snackbarHostState = LocalSnackbarHostState.current
+  val snackbarHostState = LocalSnackbarHostState.current ?: return
 
 
   LaunchedEffect(Unit) {

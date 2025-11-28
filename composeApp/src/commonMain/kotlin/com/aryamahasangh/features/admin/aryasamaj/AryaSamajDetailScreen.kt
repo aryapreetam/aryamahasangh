@@ -39,7 +39,7 @@ fun AryaSamajDetailScreen(
   onTriggerSearch: (String) -> Unit = {}
 ) {
   val isAuthenticated = LocalIsAuthenticated.current
-  val snackbarHostState = LocalSnackbarHostState.current
+  val snackbarHostState = LocalSnackbarHostState.current ?: return
   val detailUiState by viewModel.detailUiState.collectAsState()
 
   LaunchedEffect(aryaSamajId) {

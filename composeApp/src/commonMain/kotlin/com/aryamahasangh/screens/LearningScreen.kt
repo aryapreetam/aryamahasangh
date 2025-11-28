@@ -62,7 +62,7 @@ fun LearningScreen(
   }
 
   val scope = rememberCoroutineScope()
-  val snackbarHostState = LocalSnackbarHostState.current
+  val snackbarHostState = LocalSnackbarHostState.current ?: return
 
   // Collect UI state from ViewModel
   val uiState by viewModel.uiState.collectAsState()

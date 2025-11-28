@@ -33,7 +33,7 @@ fun FamilyDetailScreen(
   onNavigateBack: () -> Unit,
   onEditFamily: () -> Unit = {}
 ) {
-  val snackbarHostState = LocalSnackbarHostState.current
+  val snackbarHostState = LocalSnackbarHostState.current ?: return
   val uriHandler = LocalUriHandler.current
   val familyDetailUiState by viewModel.familyDetailUiState.collectAsState()
 

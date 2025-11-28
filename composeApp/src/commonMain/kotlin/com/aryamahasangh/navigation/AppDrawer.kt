@@ -37,7 +37,7 @@ object CourseRegistrationContext {
 }
 
 val LocalSnackbarHostState =
-  compositionLocalOf<SnackbarHostState> { error("SnackbarHostState is not found") }
+  staticCompositionLocalOf<SnackbarHostState?> { null }
 
 // CompositionLocal for custom back navigation handling
 val LocalBackHandler = compositionLocalOf<(() -> Unit)?> { null }
@@ -486,14 +486,24 @@ fun MainContent(
   // State for custom back handler
   var customBackHandler by remember { mutableStateOf<(() -> Unit)?>(null) }
 
-  // Function to set the custom back handler
+  // Function to set the custom back handler with error handling for iOS C++ interop
   fun setCustomBackHandler(handler: (() -> Unit)?) {
-    customBackHandler = handler
+    try {
+      customBackHandler = handler
+    } catch (e: Exception) {
+      println("Error setting custom back handler: ${e.message}")
+      // Fallback: clear the handler if setting fails
+      customBackHandler = null
+    }
   }
 
   LaunchedEffect(currentDestination) {
     println("currentRoute: $currentDestination")
-    customBackHandler = null // Clear any custom back handler when destination changes
+    try {
+      customBackHandler = null // Clear any custom back handler when destination changes
+    } catch (e: Exception) {
+      println("Error clearing custom back handler: ${e.message}")
+    }
   }
 
   // Global message observation
@@ -613,12 +623,22 @@ fun MainContent(
           if (shouldShowBack) {
             val backHandler = LocalBackHandler.current
             IconButton(onClick = {
-              if (customBackHandler != null) {
-                customBackHandler!!.invoke()
-              } else if (backHandler != null) {
-                backHandler()
-              } else {
-                navController.navigateUp()
+              try {
+                if (customBackHandler != null) {
+                  customBackHandler!!.invoke()
+                } else if (backHandler != null) {
+                  backHandler()
+                } else {
+                  navController.navigateUp()
+                }
+              } catch (e: Exception) {
+                println("Error invoking back handler: ${e.message}")
+                // Fallback: use default navigation
+                try {
+                  navController.navigateUp()
+                } catch (navError: Exception) {
+                  println("Error navigating up: ${navError.message}")
+                }
               }
             }, modifier = Modifier.semantics { contentDescription = "nav_back" }.testTag("nav_back")) {
               Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "nav_back")

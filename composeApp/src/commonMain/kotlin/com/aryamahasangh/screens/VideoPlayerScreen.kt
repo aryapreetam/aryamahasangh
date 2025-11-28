@@ -20,7 +20,7 @@ fun VideoDetailsScreen(
   viewModel: LearningViewModel
 ) {
   val scope = rememberCoroutineScope()
-  val snackbarHostState = LocalSnackbarHostState.current
+  val snackbarHostState = LocalSnackbarHostState.current ?: return
 
   // Load learning item details
   LaunchedEffect(learningItemId) {

@@ -23,7 +23,7 @@ fun OrgsScreen(
   onNavigateToCreateOrganisation: (Int) -> Unit = {},
   viewModel: OrganisationsViewModel
 ) {
-  val snackbarHostState = LocalSnackbarHostState.current
+  val snackbarHostState = LocalSnackbarHostState.current ?: return
   val isLoggedIn = LocalIsAuthenticated.current
   val scope = rememberCoroutineScope()
 
