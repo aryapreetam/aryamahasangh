@@ -39,20 +39,7 @@ EOF
     echo "   sentry: ${sentry:-<not set>}"
 fi
 
-# Download Apollo schema (if needed)
-echo "Downloading Apollo GraphQL schema..."
-./gradlew downloadApolloSchema --stacktrace || echo "⚠️  Schema download failed, continuing..."
-
-# Pre-build the Kotlin framework to cache dependencies
-echo "Pre-building Kotlin framework for iOS..."
-echo "Configuration: \${CONFIGURATION:-Release}"
-echo "SDK: \${SDK_NAME:-iphoneos}"
-
-./gradlew :composeApp:embedAndSignAppleFrameworkForXcode \
-    --stacktrace \
-    --info \
-    || echo "⚠️  Pre-build failed, Xcode will retry during build phase"
-
 echo "================================"
 echo "Post-clone script completed"
+echo "Gradle tasks will run during Xcode build phase"
 echo "================================"
