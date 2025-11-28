@@ -511,3 +511,12 @@ tasks.withType<Detekt>().configureEach {
     markdown.required.set(true)
   }
 }
+
+
+sentryKmp {
+  linker {
+    frameworkPath.set(
+      rootDir.resolve("sentry/Sentry.xcframework").absolutePath
+    )
+  }
+}

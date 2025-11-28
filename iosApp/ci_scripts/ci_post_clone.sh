@@ -52,12 +52,20 @@ EOF
     echo "   sentry: ${sentry:-<not set>}"
 fi
 
-# Disable Sentry auto-installation for CI builds
-echo "Configuring gradle.properties for CI build..."
-echo "" >> gradle.properties
-echo "# CI Build Configuration" >> gradle.properties
-echo "sentry.kmp.autoinstall.enabled=false" >> gradle.properties
-echo "✅ Disabled Sentry auto-installation for CI"
+echo "================================"
+echo "Downloading Sentry Cocoa framework"
+echo "================================"
+
+SENTRY_VERSION="8.57.3"
+SENTRY_URL="https://github.com/getsentry/sentry-cocoa/releases/download/$SENTRY_VERSION/Sentry.xcframework.zip"
+
+echo "Downloading Sentry.xcframework (v$SENTRY_VERSION)..."
+curl -L "$SENTRY_URL" -o sentry.zip
+
+echo "Unzipping..."
+unzip -o sentry.zip -d sentry
+
+echo "Sentry.xcframework available at: $(pwd)/sentry/Sentry.xcframework"
 
 echo "================================"
 echo "Post-clone script completed"
