@@ -52,6 +52,13 @@ EOF
     echo "   sentry: ${sentry:-<not set>}"
 fi
 
+# Disable Sentry auto-installation for CI builds
+echo "Configuring gradle.properties for CI build..."
+echo "" >> gradle.properties
+echo "# CI Build Configuration" >> gradle.properties
+echo "sentry.kmp.autoinstall.enabled=false" >> gradle.properties
+echo "✅ Disabled Sentry auto-installation for CI"
+
 echo "================================"
 echo "Post-clone script completed"
 echo "Gradle tasks will run during Xcode build phase"
