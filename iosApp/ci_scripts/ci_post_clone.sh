@@ -11,6 +11,19 @@ cd "$CI_PRIMARY_REPOSITORY_PATH"
 
 echo "Current directory: $(pwd)"
 
+# Install Java (required for Gradle/KMP builds)
+echo "Installing Java via Homebrew..."
+brew install openjdk@17
+
+# Add Java to PATH for this session
+echo "Setting up Java environment..."
+export PATH="/usr/local/opt/openjdk@17/bin:$PATH"
+export JAVA_HOME="$(/usr/local/opt/openjdk@17/bin/java -XshowSettings:properties -version 2>&1 | grep 'java.home' | awk '{print $3}')"
+
+# Verify Java installation
+echo "Java version:"
+java -version
+
 # Make gradlew executable
 echo "Making gradlew executable..."
 chmod +x ./gradlew
