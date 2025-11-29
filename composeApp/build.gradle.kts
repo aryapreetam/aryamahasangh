@@ -389,9 +389,9 @@ compose.desktop {
 
 // Workaround: disable failing Compose resource sync tasks outside Xcode
 // This prevents the missing outputDir configuration error.
-tasks.matching { it.name.startsWith("syncComposeResourcesForIos") }.configureEach {
-  enabled = false
-}
+//tasks.matching { it.name.startsWith("syncComposeResourcesForIos") }.configureEach {
+//  enabled = false
+//}
 
 // Ensure ALL Kotlin compile tasks that read the shared secrets output run AFTER the secrets generators.
 // Why this is necessary (Gradle 8 validation):
@@ -512,11 +512,13 @@ tasks.withType<Detekt>().configureEach {
   }
 }
 
-
-sentryKmp {
-  linker {
-    frameworkPath.set(
-      rootDir.resolve("sentry/Sentry.xcframework").absolutePath
-    )
+// required for xcode cloud
+ if (System.getenv("CI") == "TRUE" || System.getenv("CI_XCODE_PROJECT") != null) {
+  sentryKmp {
+    linker {
+      frameworkPath.set(
+        rootDir.resolve("sentry/Sentry.xcframework").absolutePath
+      )
+    }
   }
 }

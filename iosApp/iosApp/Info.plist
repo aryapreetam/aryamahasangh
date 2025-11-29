@@ -22,6 +22,8 @@
 	<string>17</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
 	<key>NSCameraUsageDescription</key>
 	<string>कैमरा से फोटो लेने के लिए अनुमति आवश्यक है</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>

@@ -76,3 +76,7 @@ export GRADLE_OPTS="-Xmx6144m -XX:MaxMetaspaceSize=1024m"
 export _JAVA_OPTIONS="-Xmx6144m -XX:MaxMetaspaceSize=1024m"
 export JAVA_TOOL_OPTIONS="-Xmx6144m -XX:MaxMetaspaceSize=1024m"
 export KOTLIN_OPTS="-Xmx6144m"
+
+echo "org.gradle.workers.max=1" >> gradle.properties
+echo "org.gradle.worker.max-memory=6144m" >> gradle.properties
+echo "org.gradle.jvmargs=-Xmx6144m -XX:MaxMetaspaceSize=1024m" >> gradle.properties
