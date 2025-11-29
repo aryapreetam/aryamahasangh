@@ -71,3 +71,8 @@ echo "================================"
 echo "Post-clone script completed"
 echo "Gradle tasks will run during Xcode build phase"
 echo "================================"
+
+export GRADLE_OPTS="-Xmx6144m -XX:MaxMetaspaceSize=1024m"
+export _JAVA_OPTIONS="-Xmx6144m -XX:MaxMetaspaceSize=1024m"
+export JAVA_TOOL_OPTIONS="-Xmx6144m -XX:MaxMetaspaceSize=1024m"
+export KOTLIN_OPTS="-Xmx6144m"
