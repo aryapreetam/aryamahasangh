@@ -175,18 +175,23 @@ fun App() {
 //    }
 //  }
 
-  // STEP 2: Initialize Koin FIRST (this triggers supabaseClient lazy init)
-  val koinInitialized = remember {
+  // STEP 2: Initialize Koin FIRST in a coroutine (async, prevents iOS deadlock)
+  // CRITICAL: Must use LaunchedEffect (async) not remember (sync)
+  // Synchronous initialization during composition causes iOS Keychain deadlock
+  var koinInitialized by remember { mutableStateOf(false) }
+
+  LaunchedEffect(Unit) {
     try {
       KoinInitializer.init()
       println("✅ Koin initialized successfully")
       println("✅ SupabaseClient initialized via Koin module")
-      true
+      koinInitialized = true
     } catch (e: Exception) {
       println("❌ Error initializing Koin: ${e.message}")
       e.printStackTrace()
       initializationError = "Koin initialization failed: ${e.message}"
-      false
+      // Allow degraded mode
+      initializationComplete = true
     }
   }
 
@@ -204,9 +209,6 @@ fun App() {
         // Non-fatal: user can still use app, just won't have restored session
         initializationComplete = true // Still allow app to continue
       }
-    } else {
-      // Koin failed, still allow app to run (degraded mode)
-      initializationComplete = true
     }
   }
 
