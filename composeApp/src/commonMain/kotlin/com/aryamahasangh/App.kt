@@ -12,6 +12,8 @@ import androidx.compose.ui.unit.dp
 import com.aryamahasangh.auth.SessionManager
 import com.aryamahasangh.di.KoinInitializer
 import com.aryamahasangh.navigation.AppDrawer
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 //// CompositionLocal for Authentication State
 val LocalIsAuthenticated = compositionLocalOf { false }
@@ -181,17 +183,19 @@ fun App() {
   var koinInitialized by remember { mutableStateOf(false) }
 
   LaunchedEffect(Unit) {
-    try {
-      KoinInitializer.init()
-      println("✅ Koin initialized successfully")
-      println("✅ SupabaseClient initialized via Koin module")
-      koinInitialized = true
-    } catch (e: Exception) {
-      println("❌ Error initializing Koin: ${e.message}")
-      e.printStackTrace()
-      initializationError = "Koin initialization failed: ${e.message}"
-      // Allow degraded mode
-      initializationComplete = true
+      withContext(Dispatchers.Default) {
+      try {
+        KoinInitializer.init()
+        println("✅ Koin initialized successfully")
+        println("✅ SupabaseClient initialized via Koin module")
+        koinInitialized = true
+      } catch (e: Exception) {
+        println("❌ Error initializing Koin: ${e.message}")
+        e.printStackTrace()
+        initializationError = "Koin initialization failed: ${e.message}"
+        // Allow degraded mode
+        initializationComplete = true
+      }
     }
   }
 
@@ -199,15 +203,17 @@ fun App() {
   // This ensures supabaseClient is already initialized
   LaunchedEffect(koinInitialized) {
     if (koinInitialized) {
-      try {
-        SessionManager.initialize()
-        println("✅ SessionManager initialized successfully")
-        initializationComplete = true
-      } catch (e: Exception) {
-        println("⚠️  Error initializing SessionManager: ${e.message}")
-        e.printStackTrace()
-        // Non-fatal: user can still use app, just won't have restored session
-        initializationComplete = true // Still allow app to continue
+        withContext(Dispatchers.Default) {
+        try {
+          SessionManager.initialize()
+          println("✅ SessionManager initialized successfully")
+          initializationComplete = true
+        } catch (e: Exception) {
+          println("⚠️  Error initializing SessionManager: ${e.message}")
+          e.printStackTrace()
+          // Non-fatal: user can still use app, just won't have restored session
+          initializationComplete = true // Still allow app to continue
+        }
       }
     }
   }
