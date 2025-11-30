@@ -14,11 +14,13 @@ import com.aryamahasangh.network.supabaseClient
 object SessionManager {
   /**
    * Flow that emits true when user is authenticated, false otherwise
+   * CRITICAL: Made lazy to prevent deadlock during iOS framework initialization
    */
-  val isAuthenticated: Flow<Boolean> =
+  val isAuthenticated: Flow<Boolean> by lazy {
     supabaseClient.auth.sessionStatus.map { status ->
       status is SessionStatus.Authenticated
     }
+  }
 
   /**
    * Get the current session synchronously (may be null if not authenticated)

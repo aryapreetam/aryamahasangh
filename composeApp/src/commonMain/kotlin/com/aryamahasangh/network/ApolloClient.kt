@@ -34,8 +34,11 @@ import kotlinx.serialization.json.Json
 /**
  * Supabase client configured using the generated Secrets object.
  * No hard-coded secrets - all configuration loaded from local.properties via KMP-Secrets-Plugin.
+ * 
+ * CRITICAL: Made lazy to prevent threading deadlocks during iOS framework static initialization.
+ * Background threads (Storage, Realtime, Auth) can cause race conditions if initialized eagerly.
  */
-val supabaseClient =
+val supabaseClient by lazy {
   createSupabaseClient(
     supabaseUrl = AppConfig.supabaseUrl,
     supabaseKey = AppConfig.supabaseKey
@@ -91,6 +94,7 @@ val supabaseClient =
         }
       )
   }
+}
 
 class ApolloHttpInterceptor : HttpInterceptor {
   override suspend fun intercept(
@@ -115,6 +119,6 @@ class LoggingApolloInterceptor : ApolloInterceptor {
   }
 }
 
-val resumableClient = supabaseClient.storage[AppConfig.STORAGE_BUCKET].resumable
-val bucket = supabaseClient.storage[AppConfig.STORAGE_BUCKET]
+val resumableClient by lazy { supabaseClient.storage[AppConfig.STORAGE_BUCKET].resumable }
+val bucket by lazy { supabaseClient.storage[AppConfig.STORAGE_BUCKET] }
 

@@ -1,15 +1,16 @@
 package com.aryamahasangh
 
-import AppTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.sp
+import com.aryamahasangh.network.initializeSentry
 
 //// CompositionLocal for Authentication State
 val LocalIsAuthenticated = compositionLocalOf { false }
@@ -158,9 +159,18 @@ val LocalIsAuthenticated = compositionLocalOf { false }
 
 @Composable
 fun App() {
-  AppTheme {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-      Text("Hello", fontSize = 32.sp, color = Color.Blue)
+  // Initialize Sentry once when app starts
+  LaunchedEffect(Unit) {
+    try {
+      initializeSentry()
+      println("Sentry initialized successfully")
+    } catch (e: Exception) {
+      println("Error initializing Sentry: ${e.message}")
+      // Non-fatal: app can continue without crash reporting
     }
+  }
+
+  Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Text("Hello", fontSize = 32.sp, color = Color.Blue)
   }
 }

@@ -35,7 +35,7 @@ if [ ! -f "local.properties" ]; then
     # Create local.properties with values from environment variables
     cat > local.properties << EOF
 # Auto-generated for Xcode Cloud CI
-app_version=${app_version:-1.0.6}
+app_version=${app_version:-1.0.17}
 dev_supabase_key=${dev_supabase_key:-}
 dev_supabase_url=${dev_supabase_url:-}
 staging_supabase_key=${staging_supabase_key:-}
@@ -80,3 +80,99 @@ export KOTLIN_OPTS="-Xmx6144m"
 echo "org.gradle.workers.max=1" >> gradle.properties
 echo "org.gradle.worker.max-memory=6144m" >> gradle.properties
 echo "org.gradle.jvmargs=-Xmx6144m -XX:MaxMetaspaceSize=1024m" >> gradle.properties
+
+echo "==============================="
+echo "Downloading ComposeApp XCFramework from GitHub Actions"
+echo "==============================="
+
+# -----------------------------
+# REQUIRE GITHUB TOKEN
+# -----------------------------
+if [ -z "$GITHUB_TOKEN_CI" ]; then
+  echo "⚠️  WARNING: Missing GITHUB_TOKEN_CI."
+  echo "Add a GitHub PAT with 'repo' scope in Xcode Cloud > Environment Variables."
+  echo "Skipping XCFramework download - build may fail if framework is needed."
+else
+  # -----------------------------
+  # FETCH LATEST SUCCESSFUL WORKFLOW RUN
+  # -----------------------------
+  REPO="aryapreetam/aryamahasangh"
+  WORKFLOW_FILE="build-ios-xcframework.yml"
+  ARTIFACT_NAME="ComposeApp.xcframework"
+
+  RUNS_API="https://api.github.com/repos/${REPO}/actions/workflows/${WORKFLOW_FILE}/runs"
+
+  echo "Fetching latest successful workflow run..."
+  RUN_ID=$(curl -s -H "Authorization: token ${GITHUB_TOKEN_CI}" "${RUNS_API}" \
+    | jq -r '.workflow_runs[] | select(.conclusion=="success") | .id' \
+    | head -n 1)
+
+  if [ -z "$RUN_ID" ] || [ "$RUN_ID" = "null" ]; then
+    echo "⚠️  WARNING: No successful workflow runs found for ${WORKFLOW_FILE}."
+    echo "Please run the 'Build iOS XCFramework' GitHub Action first."
+    echo "Continuing without XCFramework - build may fail."
+  else
+    echo "Latest successful run: $RUN_ID"
+
+    # -----------------------------
+    # LOCATE ARTIFACT DOWNLOAD URL
+    # -----------------------------
+    ARTIFACTS_API="https://api.github.com/repos/${REPO}/actions/runs/${RUN_ID}/artifacts"
+
+    echo "Fetching artifact metadata..."
+    ART_URL=$(curl -s -H "Authorization: token ${GITHUB_TOKEN_CI}" "${ARTIFACTS_API}" \
+      | jq -r --arg name "${ARTIFACT_NAME}" '.artifacts[] | select(.name == $name) | .archive_download_url')
+
+    if [ -z "$ART_URL" ] || [ "$ART_URL" = "null" ]; then
+      echo "⚠️  WARNING: Artifact '${ARTIFACT_NAME}' not found for run ${RUN_ID}."
+      echo "Available artifacts:"
+      curl -s -H "Authorization: token ${GITHUB_TOKEN_CI}" "${ARTIFACTS_API}" | jq '.artifacts[].name'
+      echo "Continuing without XCFramework - build may fail."
+    else
+      echo "Artifact found: $ART_URL"
+
+      # -----------------------------
+      # DOWNLOAD ZIP ARTIFACT
+      # -----------------------------
+      ZIP_FILE="${ARTIFACT_NAME}.zip"
+
+      echo "Downloading XCFramework artifact..."
+      curl -L \
+        -H "Authorization: token ${GITHUB_TOKEN_CI}" \
+        -H "Accept: application/vnd.github+json" \
+        "$ART_URL" \
+        -o "$ZIP_FILE"
+
+      echo "Download complete: $ZIP_FILE"
+
+      # -----------------------------
+      # UNZIP & PLACE INTO PROJECT
+      # -----------------------------
+      echo "Unzipping XCFramework..."
+      rm -rf xcframeworks
+      mkdir xcframeworks
+      unzip -o "$ZIP_FILE" -d xcframeworks
+
+      # Move XCFramework to sentry folder (alongside Sentry.xcframework)
+      echo "Placing XCFramework in sentry/ folder..."
+      rm -rf sentry/ComposeApp.xcframework
+      mv xcframeworks/ComposeApp.xcframework sentry/
+
+      echo "✅ XCFramework installed at:"
+      echo "   $(pwd)/sentry/ComposeApp.xcframework"
+      
+      # Verify framework structure
+      if [ -d "sentry/ComposeApp.xcframework" ]; then
+        echo "✅ XCFramework structure verified:"
+        ls -la sentry/ComposeApp.xcframework/
+      else
+        echo "❌ ERROR: XCFramework not found after extraction!"
+      fi
+    fi
+  fi
+fi
+
+echo "==============================="
+echo "XCFramework setup complete."
+echo "Xcode Cloud can now build the iOS app."
+echo "==============================="

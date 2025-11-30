@@ -3,9 +3,7 @@ import ComposeApp
 
 @main
 struct iOSApp: App {
-    init() {
-        SentrySetupKt.initializeSentry()
-    }
+    // Removed Sentry initialization from here - now done inside Kotlin App()
     var body: some Scene {
         WindowGroup {
             ContentView()

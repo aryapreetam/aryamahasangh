@@ -1,0 +1,100 @@
+name: Build iOS XCFramework (Apple Silicon)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-xcframework:
+    runs-on: macos-14        # Apple Silicon runner
+    timeout-minutes: 60      # Reduced from 120 - typical build takes 20-40 min
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Java 17 (Temurin)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Select Xcode version
+        run: |
+          sudo xcode-select --switch /Applications/Xcode.app
+          xcodebuild -version
+
+      - name: Create local.properties from secrets
+        run: |
+          cat > local.properties << EOF
+          app_version=1.0.17
+          environment=staging
+          dev_supabase_url=${{ secrets.DEV_SUPABASE_URL }}
+          dev_supabase_key=${{ secrets.DEV_SUPABASE_KEY }}
+          staging_supabase_url=${{ secrets.STAGING_SUPABASE_URL }}
+          staging_supabase_key=${{ secrets.STAGING_SUPABASE_KEY }}
+          prod_supabase_url=${{ secrets.PROD_SUPABASE_URL }}
+          prod_supabase_key=${{ secrets.PROD_SUPABASE_KEY }}
+          sentry=${{ secrets.SENTRY_DSN }}
+          EOF
+
+      - name: Cache Gradle & konan
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.konan
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/settings.gradle*','**/build.gradle*','**/*.gradle*','gradle.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Build iosArm64 framework (device)
+        run: ./gradlew :composeApp:linkReleaseFrameworkIosArm64 --no-daemon --stacktrace --info
+
+      - name: Build iosSimulatorArm64 framework (simulator)
+        run: ./gradlew :composeApp:linkReleaseFrameworkIosSimulatorArm64 --no-daemon --stacktrace --info
+
+      - name: Locate framework outputs
+        id: find
+        run: |
+          # Find the typical output directories produced by KMP
+          ARM_DIR=$(find composeApp/build -type d -path "*/iosArm64/releaseFramework" | head -n 1)
+          SIM_DIR=$(find composeApp/build -type d -path "*/iosSimulatorArm64/releaseFramework" | head -n 1)
+          echo "ARM_DIR=$ARM_DIR"
+          echo "SIM_DIR=$SIM_DIR"
+          if [ -z "$ARM_DIR" ] || [ -z "$SIM_DIR" ]; then
+            echo "Could not find framework outputs. Listing build tree for debug:"
+            ls -la composeApp/build || true
+            exit 1
+          fi
+          echo "arm_dir=$ARM_DIR" >> $GITHUB_OUTPUT
+          echo "sim_dir=$SIM_DIR" >> $GITHUB_OUTPUT
+
+      - name: Create XCFramework and zip it
+        run: |
+          ARM="${{ steps.find.outputs.arm_dir }}"
+          SIM="${{ steps.find.outputs.sim_dir }}"
+
+          mkdir -p composeApp/build/xcframework
+          xcodebuild -create-xcframework \
+            -framework "$ARM/ComposeApp.framework" \
+            -framework "$SIM/ComposeApp.framework" \
+            -output composeApp/build/xcframework/ComposeApp.xcframework
+
+          cd composeApp/build/xcframework
+          zip -r ComposeApp.xcframework.zip ComposeApp.xcframework
+
+      - name: Upload XCFramework artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ComposeApp.xcframework
+          path: composeApp/build/xcframework/ComposeApp.xcframework.zip
+
