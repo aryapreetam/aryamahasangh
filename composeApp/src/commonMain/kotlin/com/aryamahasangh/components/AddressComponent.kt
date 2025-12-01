@@ -200,9 +200,25 @@ fun AddressComponent(
 
   // State for reverse geocoding
   var isReverseGeocoding by remember { mutableStateOf(false) }
+  
+  // Track the reverse geocoding job to enable cancellation
+  var reverseGeocodingJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
 
   // Flag to track if reverse geocoding should be triggered (only for map-picked locations)
   var shouldTriggerReverseGeocoding by remember { mutableStateOf(false) }
+  
+  // Track if the component is active to prevent callbacks after disposal
+  var isComponentActive by remember { mutableStateOf(true) }
+  
+  // Cleanup when component is disposed
+  DisposableEffect(Unit) {
+    isComponentActive = true
+    onDispose {
+      isComponentActive = false
+      // Cancel any ongoing reverse geocoding
+      reverseGeocodingJob?.cancel()
+    }
+  }
 
   // Focus requesters for keyboard navigation
   val addressFocusRequester = remember { FocusRequester() }
@@ -228,6 +244,12 @@ fun AddressComponent(
     lat: Double,
     lon: Double
   ) {
+    // Don't start if component is no longer active
+    if (!isComponentActive) {
+      println("Skipping reverse geocoding - component is no longer active")
+      return
+    }
+    
     isReverseGeocoding = true
     try {
       println("Starting reverse geocoding for lat: $lat, lon: $lon")
@@ -380,7 +402,13 @@ fun AddressComponent(
 
               println("Final address data after reverse geocoding: $newAddressData")
               println("Location preserved: ${newAddressData.location}")
-              onAddressChange(newAddressData)
+              
+              // Only invoke callback if component is still active
+              if (isComponentActive) {
+                onAddressChange(newAddressData)
+              } else {
+                println("Skipping onAddressChange - component is no longer active")
+              }
 
               // If we successfully got and mapped data, don't try other languages
               if (mappedState.isNotBlank() || fullAddress.isNotBlank()) {
@@ -572,15 +600,21 @@ fun AddressComponent(
     // Map Location Picker Dialog
     if (showMapDialog) {
       MapLocationPickerDialog(
-        onDismiss = { showMapDialog = false },
+        onDismiss = { 
+          showMapDialog = false
+          // Cancel any ongoing reverse geocoding when dialog is dismissed
+          reverseGeocodingJob?.cancel()
+        },
         onLocationPicked = { latLng ->
           onAddressChange(addressData.copy(location = latLng))
           showMapDialog = false
 
           // Only trigger reverse geocoding if the location was set by the map picker
-          if (shouldTriggerReverseGeocoding) {
+          if (shouldTriggerReverseGeocoding && isComponentActive) {
             shouldTriggerReverseGeocoding = false
-            scope.launch {
+            // Cancel any previous job before starting a new one
+            reverseGeocodingJob?.cancel()
+            reverseGeocodingJob = scope.launch {
               reverseGeocode(latLng.latitude, latLng.longitude)
             }
           }
