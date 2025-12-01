@@ -2,6 +2,7 @@ package com.aryamahasangh
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
@@ -17,11 +18,21 @@ import platform.WebKit.*
 import platform.darwin.NSObject
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
+import kotlin.concurrent.Volatile
 
 @OptIn(ExperimentalForeignApi::class)
 @Composable
 actual fun WebView(url: String, onScriptResult: ((String) -> Unit)?) {
+  // Create message handler with proper lifecycle management
   val messageHandler = remember { LocationMessageHandler(onScriptResult) }
+  
+  // Dispose the message handler when the composable leaves the composition
+  DisposableEffect(messageHandler) {
+    onDispose {
+      // Invalidate the callback to prevent use after disposal
+      messageHandler.invalidate()
+    }
+  }
   
   UIKitView(
     factory = {
@@ -43,22 +54,26 @@ actual fun WebView(url: String, onScriptResult: ((String) -> Unit)?) {
         
         // Wrap message handler addition in try-catch to prevent C++ exceptions
         try {
-          configuration.userContentController.addScriptMessageHandler(
-            messageHandler,
-            "iosLocationHandler"
-          )
-          
-          // Inject JavaScript to intercept location updates
-          val script = WKUserScript(
-            source = """
-              window.postMessage = function(data) {
-                window.webkit.messageHandlers.iosLocationHandler.postMessage(data);
-              };
-            """.trimIndent(),
-            injectionTime = WKUserScriptInjectionTime.WKUserScriptInjectionTimeAtDocumentStart,
-            forMainFrameOnly = true
-          )
-          configuration.userContentController.addUserScript(script)
+          // Only add message handler if it hasn't been added before
+          if (!messageHandler.isRegistered) {
+            configuration.userContentController.addScriptMessageHandler(
+              messageHandler,
+              "iosLocationHandler"
+            )
+            messageHandler.markAsRegistered()
+            
+            // Inject JavaScript to intercept location updates
+            val script = WKUserScript(
+              source = """
+                window.postMessage = function(data) {
+                  window.webkit.messageHandlers.iosLocationHandler.postMessage(data);
+                };
+              """.trimIndent(),
+              injectionTime = WKUserScriptInjectionTime.WKUserScriptInjectionTimeAtDocumentStart,
+              forMainFrameOnly = true
+            )
+            configuration.userContentController.addUserScript(script)
+          }
         } catch (e: Exception) {
           println("Error setting up WebView message handler: ${e.message}")
         }
@@ -107,9 +122,15 @@ actual fun WebView(url: String, onScriptResult: ((String) -> Unit)?) {
           if (subview is WKWebView) {
             try {
               subview.stopLoading()
-              subview.configuration.userContentController.removeScriptMessageHandlerForName(
-                "iosLocationHandler"
-              )
+              
+              // Only remove if the message handler was registered
+              if (messageHandler.isRegistered) {
+                subview.configuration.userContentController.removeScriptMessageHandlerForName(
+                  "iosLocationHandler"
+                )
+                messageHandler.markAsUnregistered()
+              }
+              
               subview.removeFromSuperview()
             } catch (e: Exception) {
               println("Error cleaning up WebView: ${e.message}")
@@ -132,14 +153,46 @@ actual fun WebView(url: String, onScriptResult: ((String) -> Unit)?) {
 private class LocationMessageHandler(
   private val onScriptResult: ((String) -> Unit)?
 ) : NSObject(), WKScriptMessageHandlerProtocol {
+  
+  @Volatile
+  private var isValid: Boolean = true
+  
+  @Volatile
+  private var registered: Boolean = false
+  
+  val isRegistered: Boolean
+    get() = registered
+  
+  fun markAsRegistered() {
+    registered = true
+  }
+  
+  fun markAsUnregistered() {
+    registered = false
+  }
+  
+  fun invalidate() {
+    isValid = false
+  }
+  
   override fun userContentController(
     userContentController: WKUserContentController,
     didReceiveScriptMessage: WKScriptMessage
   ) {
+    // Check if the handler is still valid before processing
+    if (!isValid) {
+      println("LocationMessageHandler: Ignoring message, handler is invalidated")
+      return
+    }
+    
     val message = didReceiveScriptMessage.body as? NSString
     if (message != null) {
       println("Received location update in iOS bridge: $message")
-      onScriptResult?.invoke(message.toString())
+      try {
+        onScriptResult?.invoke(message.toString())
+      } catch (e: Exception) {
+        println("Error invoking onScriptResult callback: ${e.message}")
+      }
     }
   }
 }

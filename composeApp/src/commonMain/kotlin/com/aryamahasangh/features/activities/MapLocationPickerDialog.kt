@@ -20,6 +20,7 @@ import io.ktor.client.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.doubleOrNull
@@ -35,13 +36,23 @@ fun MapLocationPickerDialog(
   val scope = rememberCoroutineScope()
   var location by remember { mutableStateOf<LatLng?>(null) }
   var selectedLocation by remember { mutableStateOf<LatLng?>(null) }
+  var locationFetchJob by remember { mutableStateOf<Job?>(null) }
 
   // Trigger location fetch only once when dialog appears
   LaunchedEffect(Unit) {
-    scope.launch {
+    locationFetchJob = scope.launch {
       location = getCurrentLocation()
     }
   }
+  
+  // Cleanup when dialog is disposed
+  DisposableEffect(Unit) {
+    onDispose {
+      // Cancel any ongoing location fetch
+      locationFetchJob?.cancel()
+    }
+  }
+  
   Dialog(
     onDismissRequest = onDismiss,
     properties =
@@ -84,21 +95,35 @@ fun MapLocationPickerDialog(
           println("current location: $location")
           if (location != null) {
             val html = generate(location?.latitude ?: 0.0, location?.longitude ?: 0.0)
+            
+            // Track if the WebView is active
+            var isWebViewActive by remember { mutableStateOf(true) }
+            
+            // Cleanup WebView when it's no longer active
+            DisposableEffect(Unit) {
+              isWebViewActive = true
+              onDispose {
+                isWebViewActive = false
+              }
+            }
+            
             WebView(
               url = html,
               onScriptResult = { result ->
-//                println(result)
-                try {
-                  val json = Json.parseToJsonElement(result).jsonObject
-                  val lat = json["lat"]?.jsonPrimitive?.doubleOrNull
-                  val lng = json["lng"]?.jsonPrimitive?.doubleOrNull
-                  if (lat != null && lng != null) {
-                    selectedLocation = LatLng(lat, lng)
-                    logger.info { "selected location: ${selectedLocation!!.latitude}, ${selectedLocation!!.longitude} " }
+                // Only process results if WebView is still active
+                if (isWebViewActive) {
+                  try {
+                    val json = Json.parseToJsonElement(result).jsonObject
+                    val lat = json["lat"]?.jsonPrimitive?.doubleOrNull
+                    val lng = json["lng"]?.jsonPrimitive?.doubleOrNull
+                    if (lat != null && lng != null) {
+                      selectedLocation = LatLng(lat, lng)
+                      logger.info { "selected location: ${selectedLocation!!.latitude}, ${selectedLocation!!.longitude} " }
+                    }
+                  } catch (e: Exception) {
+                    logger.error { e.message ?: "Error parsing location" }
+                    println("Error parsing location: ${e.message}")
                   }
-                } catch (e: Exception) {
-                  logger.error { e.message ?: "Error parsing location" }
-                  println("Error parsing location: ${e.message}")
                 }
               }
             )
