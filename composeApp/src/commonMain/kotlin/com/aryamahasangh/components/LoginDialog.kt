@@ -6,32 +6,33 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import io.github.jan.supabase.auth.auth
-import io.github.jan.supabase.auth.providers.builtin.Email
-import kotlinx.coroutines.launch
-import com.aryamahasangh.auth.SessionManager
-import com.aryamahasangh.network.supabaseClient
+import com.aryamahasangh.viewmodel.LoginViewModel
+import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun LoginDialog(
   onDismiss: () -> Unit,
-  onLoginSuccess: () -> Unit
+  onLoginSuccess: () -> Unit,
+  viewModel: LoginViewModel = koinViewModel()
 ) {
-  var phoneNumber by remember { mutableStateOf("") }
-  var password by remember { mutableStateOf("") }
-  var phoneError by remember { mutableStateOf(false) }
-  var phoneErrorMessage by remember { mutableStateOf("Phone number is required") }
-  var passwordError by remember { mutableStateOf(false) }
-  var passwordErrorMessage by remember { mutableStateOf("Password is required (min 6 chars)") }
-  var isLoggingIn by remember { mutableStateOf(false) }
-  var generalError by remember { mutableStateOf<String?>(null) }
-  val coroutineScope = rememberCoroutineScope()
+  val state by viewModel.uiState.collectAsState()
+
+  // Handle login success side effect
+  LaunchedEffect(state.isLoginSuccessful) {
+    if (state.isLoginSuccessful) {
+      onLoginSuccess()
+      onDismiss()
+    }
+  }
 
   AlertDialog(
     onDismissRequest = onDismiss,
@@ -42,46 +43,31 @@ fun LoginDialog(
         verticalArrangement = Arrangement.spacedBy(4.dp)
       ) {
         OutlinedTextField(
-          value = phoneNumber,
-          onValueChange = { input ->
-            // Only allow digits and common phone number separators
-            if (input.length <= 15 && input.matches(Regex("^[0-9+\\-() ]*$"))) {
-              phoneNumber = input
-            }
-            if (phoneError && input.isNotEmpty()) {
-              phoneError = false
-            }
-          },
+          value = state.phoneNumber,
+          onValueChange = viewModel::onPhoneNumberChange,
           label = { Text("Username") },
           leadingIcon = { Icon(Icons.Filled.Phone, contentDescription = "Phone") },
-          isError = phoneError,
-          supportingText = { if (phoneError) Text(phoneErrorMessage) },
+          isError = state.phoneError != null,
+          supportingText = { state.phoneError?.let { Text(it) } },
           modifier = Modifier.fillMaxWidth(),
           singleLine = true,
           keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
         )
 
         OutlinedTextField(
-          value = password,
-          onValueChange = {
-            if (it.length <= 30) {
-              password = it
-            }
-            if (passwordError && it.length >= 6) {
-              passwordError = false
-            }
-          },
+          value = state.password,
+          onValueChange = viewModel::onPasswordChange,
           label = { Text("Password") },
           leadingIcon = { Icon(Icons.Filled.Lock, contentDescription = "Password") },
           visualTransformation = PasswordVisualTransformation(),
-          isError = passwordError,
-          supportingText = { if (passwordError) Text(passwordErrorMessage) },
+          isError = state.passwordError != null,
+          supportingText = { state.passwordError?.let { Text(it) } },
           modifier = Modifier.fillMaxWidth(),
           singleLine = true,
           keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
         )
 
-        generalError?.let {
+        state.error?.let {
           Text(
             text = it,
             color = MaterialTheme.colorScheme.error,
@@ -92,53 +78,10 @@ fun LoginDialog(
     },
     confirmButton = {
       Button(
-        onClick = {
-          val isValidPassword = password.isNotEmpty() && password.length >= 6
-          phoneError = phoneNumber.isEmpty()
-          passwordError = !isValidPassword
-
-          if (!phoneError && !passwordError) {
-            isLoggingIn = true
-            generalError = null
-            coroutineScope.launch {
-              try {
-                // Ensure any existing session is cleaned up first
-                // This handles edge cases where local logout happened but server session remains
-                SessionManager.ensureCleanLogin()
-
-                // Now proceed with login
-                supabaseClient.auth.signInWith(Email) {
-                  email = "$phoneNumber@aryamahasangh.com"
-                  this.password = password
-                }
-                // If we reach here, login was successful
-                onLoginSuccess()
-                onDismiss()
-              } catch (e: Exception) {
-                // Handle authentication errors
-                generalError =
-                  when {
-                    e.message?.contains("Invalid login credentials") == true ->
-                      "गलत username या password"
-
-                    e.message?.contains("Email not confirmed") == true ->
-                      "username की पुष्टि नहीं हुई है"
-
-                    e.message?.contains("User not found") == true ->
-                      "user नहीं मिला"
-
-                    else ->
-                      e.message ?: "लॉगिन में त्रुटि हुई"
-                  }
-              } finally {
-                isLoggingIn = false
-              }
-            }
-          }
-        },
-        enabled = !isLoggingIn
+        onClick = viewModel::login,
+        enabled = !state.isLoading
       ) {
-        if (isLoggingIn) {
+        if (state.isLoading) {
           Row(verticalAlignment = Alignment.CenterVertically) {
             CircularProgressIndicator(modifier = Modifier.size(16.dp))
             Spacer(Modifier.width(8.dp))

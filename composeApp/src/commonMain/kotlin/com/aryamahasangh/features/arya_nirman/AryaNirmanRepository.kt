@@ -1,12 +1,18 @@
 package com.aryamahasangh.features.arya_nirman
 
-import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
 import com.apollographql.apollo.cache.normalized.FetchPolicy
 import com.apollographql.apollo.cache.normalized.cacheInfo
 import com.apollographql.apollo.cache.normalized.fetchPolicy
 import com.apollographql.apollo.cache.normalized.isFromCache
+import com.aryamahasangh.RegisterForSatrMutation
+import com.aryamahasangh.UpcomingSatrActivitiesQuery
+import com.aryamahasangh.features.activities.toDomain
+import com.aryamahasangh.util.Result
+import com.aryamahasangh.util.safeCall
+import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.annotations.SupabaseExperimental
+import io.github.jan.supabase.graphql.graphql
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Count
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
@@ -17,12 +23,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.datetime.Clock
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
-import com.aryamahasangh.RegisterForSatrMutation
-import com.aryamahasangh.UpcomingSatrActivitiesQuery
-import com.aryamahasangh.features.activities.toDomain
-import com.aryamahasangh.network.supabaseClient
-import com.aryamahasangh.util.Result
-import com.aryamahasangh.util.safeCall
 
 interface AryaNirmanRepository {
   suspend fun getUpcomingActivities(): Flow<Result<List<UpcomingActivity>>>
@@ -37,12 +37,12 @@ interface AryaNirmanRepository {
   suspend fun getRegistrationCountByActivityId(activityId: String): Long?
 }
 
-class AryaNirmanRepositoryImpl(private val apolloClient: ApolloClient) : AryaNirmanRepository {
+class AryaNirmanRepositoryImpl(private val supabaseClient: SupabaseClient) : AryaNirmanRepository {
   override suspend fun getUpcomingActivities(): Flow<Result<List<UpcomingActivity>>> =
     flow {
       emit(Result.Loading)
 
-      apolloClient.query(UpcomingSatrActivitiesQuery(currentDateTime = Clock.System.now()))
+      supabaseClient.graphql.apolloClient.query(UpcomingSatrActivitiesQuery(currentDateTime = Clock.System.now()))
         .fetchPolicy(FetchPolicy.CacheAndNetwork)
         .toFlow()
         .collect { response ->
@@ -85,7 +85,7 @@ class AryaNirmanRepositoryImpl(private val apolloClient: ApolloClient) : AryaNir
       val result =
         safeCall {
           val response =
-            apolloClient.mutation(
+            supabaseClient.graphql.apolloClient.mutation(
               RegisterForSatrMutation(
                 fullName = data.fullName,
                 gender = data.gender.name,

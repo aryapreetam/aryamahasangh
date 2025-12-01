@@ -1,19 +1,12 @@
 package com.aryamahasangh
 
 import AppTheme
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import com.aryamahasangh.auth.SessionManager
+import com.aryamahasangh.di.AppBootstrap
 import com.aryamahasangh.di.KoinInitializer
 import com.aryamahasangh.navigation.AppDrawer
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import org.koin.mp.KoinPlatform.getKoin
 
 //// CompositionLocal for Authentication State
 val LocalIsAuthenticated = compositionLocalOf { false }
@@ -162,94 +155,12 @@ val LocalIsAuthenticated = compositionLocalOf { false }
 
 @Composable
 fun App() {
-  // Track initialization state
-  var initializationComplete by remember { mutableStateOf(false) }
-  var initializationError by remember { mutableStateOf<String?>(null) }
-
-  // STEP 1: Initialize Sentry (safe, no dependencies)
-//  LaunchedEffect(Unit) {
-//    try {
-//      initializeSentry()
-//      println("✅ Sentry initialized successfully")
-//    } catch (e: Exception) {
-//      println("⚠️  Error initializing Sentry: ${e.message}")
-//      // Non-fatal: app can continue without crash reporting
-//    }
-//  }
-
-  // STEP 2: Initialize Koin FIRST in a coroutine (async, prevents iOS deadlock)
-  // CRITICAL: Must use LaunchedEffect (async) not remember (sync)
-  // Synchronous initialization during composition causes iOS Keychain deadlock
-  var koinInitialized by remember { mutableStateOf(false) }
-
-  LaunchedEffect(Unit) {
-    try {
-      // CRITICAL: Must run on Main thread because Koin modules access AppConfig (iOS Keychain)
-      // Accessing Keychain from background thread during startup causes C++ exception on iOS
-      KoinInitializer.init()
-      println("✅ Koin initialized successfully")
-      println("✅ SupabaseClient initialized via Koin module")
-      koinInitialized = true
-    } catch (e: Exception) {
-      println("❌ Error initializing Koin: ${e.message}")
-      e.printStackTrace()
-      initializationError = "Koin initialization failed: ${e.message}"
-      // Allow degraded mode
-      initializationComplete = true
-    }
+  if(!isIos){
+    KoinInitializer.start()
+    AppBootstrap.initialize()
   }
-
-  // STEP 3: Initialize SessionManager ONLY AFTER Koin is ready
-  // This ensures supabaseClient is already initialized
-  LaunchedEffect(koinInitialized) {
-    if (koinInitialized) {
-      try {
-        // SessionManager accesses supabaseClient which may trigger Keychain access
-        // Keep on Main thread for safety
-        SessionManager.initialize()
-        println("✅ SessionManager initialized successfully")
-        initializationComplete = true
-      } catch (e: Exception) {
-        println("⚠️  Error initializing SessionManager: ${e.message}")
-        e.printStackTrace()
-        // Non-fatal: user can still use app, just won't have restored session
-        initializationComplete = true // Still allow app to continue
-      }
-    }
-  }
-
-  // STEP 4: Show loading or error state during initialization
-  if (!initializationComplete) {
-    AppTheme {
-      Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-      ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-          if (initializationError != null) {
-            Text(
-              "⚠️ Initialization Error",
-              style = MaterialTheme.typography.headlineSmall,
-              color = MaterialTheme.colorScheme.error
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-              initializationError ?: "",
-              style = MaterialTheme.typography.bodyMedium
-            )
-          } else {
-            CircularProgressIndicator()
-            Spacer(modifier = Modifier.height(16.dp))
-            Text("Initializing...")
-          }
-        }
-      }
-    }
-    return  // Don't proceed until initialization is complete
-  }
-
-  // STEP 5: Observe authentication state (ONLY after supabaseClient is initialized)
-  val isAuthenticated by SessionManager.isAuthenticated.collectAsState(initial = false)
+  val sessionManager: SessionManager = getKoin().get()
+  val isAuthenticated by sessionManager.isAuthenticated.collectAsState(initial = false)
 
   AppTheme {
     // Provide authentication state to the entire app

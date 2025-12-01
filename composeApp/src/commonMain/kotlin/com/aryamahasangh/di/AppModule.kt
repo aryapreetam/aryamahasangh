@@ -1,5 +1,6 @@
 package com.aryamahasangh.di
 
+import com.aryamahasangh.auth.SessionManager
 import com.aryamahasangh.features.gurukul.data.GurukulRepository
 import com.aryamahasangh.features.gurukul.data.GurukulRepositoryImpl
 import com.aryamahasangh.features.gurukul.data.ImageUploadRepository
@@ -20,10 +21,11 @@ val appModule =
     // CRITICAL: Use factory with fully qualified access (no import!)
     // Importing supabaseClient at file level triggers initialization during file loading
     // Direct access causes Keychain access during Koin module definition (too early on iOS)
-    factory { 
-      // Access supabaseClient only when this dependency is requested, not during module loading
-      com.aryamahasangh.network.supabaseClient.graphql.apolloClient 
-    }
+    single { com.aryamahasangh.network.supabaseClient.graphql.apolloClient }
+
+    // Provide SupabaseClient
+    single { com.aryamahasangh.network.supabaseClient }
+    single { SessionManager(get()) }
 
     // Provide NHost Apollo Client as a qualified dependency
     //single(named("nhost")) { nhostApolloClient }

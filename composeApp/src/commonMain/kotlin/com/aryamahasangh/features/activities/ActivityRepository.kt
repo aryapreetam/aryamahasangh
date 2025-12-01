@@ -1,6 +1,5 @@
 package com.aryamahasangh.features.activities
 
-import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
 import com.apollographql.apollo.cache.normalized.*
 import com.apollographql.apollo.exception.CacheMissException
@@ -8,12 +7,13 @@ import com.aryamahasangh.*
 import com.aryamahasangh.features.admin.PaginatedRepository
 import com.aryamahasangh.features.admin.PaginationResult
 import com.aryamahasangh.fragment.ActivityWithStatus
-import com.aryamahasangh.network.supabaseClient
 import com.aryamahasangh.type.*
 import com.aryamahasangh.util.GlobalMessageManager
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.util.safeCall
+import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.annotations.SupabaseExperimental
+import io.github.jan.supabase.graphql.graphql
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.filter.FilterOperation
 import io.github.jan.supabase.postgrest.query.filter.FilterOperator
@@ -97,7 +97,7 @@ interface ActivityRepository : PaginatedRepository<ActivityWithStatus> {
  * Implementation of ActivityRepository that uses Apollo GraphQL client
  */
 class ActivityRepositoryImpl(
-  private val apolloClient: ApolloClient
+  private val supabaseClient: SupabaseClient
 ) : ActivityRepository {
 
   override suspend fun getItemsPaginated(
@@ -107,7 +107,7 @@ class ActivityRepositoryImpl(
   ): Flow<PaginationResult<ActivityWithStatus>> = flow {
     emit(PaginationResult.Loading())
 
-    apolloClient.query(
+    supabaseClient.graphql.apolloClient.query(
       GetActivitiesQuery(
         first = pageSize,
         after = Optional.presentIfNotNull(cursor),
@@ -162,7 +162,7 @@ class ActivityRepositoryImpl(
   ): Flow<PaginationResult<ActivityWithStatus>> = flow {
     emit(PaginationResult.Loading())
     
-    apolloClient.query(
+    supabaseClient.graphql.apolloClient.query(
       SearchActivitiesQuery(
         searchTerm = "%$searchTerm%",
         first = pageSize,
@@ -209,7 +209,7 @@ class ActivityRepositoryImpl(
     flow {
       emit(Result.Loading)
 
-      apolloClient.query(OrganisationalActivityDetailByIdQuery(id))
+      supabaseClient.graphql.apolloClient.query(OrganisationalActivityDetailByIdQuery(id))
         .fetchPolicy(FetchPolicy.NetworkFirst)
         .toFlow()
         .collect { response ->
@@ -237,7 +237,7 @@ class ActivityRepositoryImpl(
 
   override suspend fun deleteActivity(id: String): Result<Boolean> {
     return safeCall {
-      val response = apolloClient.mutation(DeleteActivityMutation(id)).execute()
+      val response = supabaseClient.graphql.apolloClient.mutation(DeleteActivityMutation(id)).execute()
       if (response.hasErrors()) {
         val errorMessage = response.errors?.firstOrNull()?.message ?: "Unknown error occurred"
         // Check for database constraint violations
@@ -257,7 +257,7 @@ class ActivityRepositoryImpl(
 
       val success = affectedCount > 0
       if (success) {
-        apolloClient.apolloStore.clearAll()
+        supabaseClient.graphql.apolloClient.apolloStore.clearAll()
       }
       success
     }
@@ -275,7 +275,7 @@ class ActivityRepositoryImpl(
       address.pincode("")
       val addressMutation = address.build()
       if(addressMutation.state.isNotEmpty() && addressMutation.district.isNotEmpty()) {
-        val addressResp = apolloClient.mutation(addressMutation).execute()
+        val addressResp = supabaseClient.graphql.apolloClient.mutation(addressMutation).execute()
         if (addressResp.hasErrors()) {
           throw Exception(addressResp.errors?.firstOrNull()?.message ?: "Unknown error occurred")
         }
@@ -286,7 +286,7 @@ class ActivityRepositoryImpl(
         inputWithAddressData = activityInputData.copy(addressId = Optional.present(addressId))
       }
        
-      val response = apolloClient.mutation(AddOrganisationActivityMutation(inputWithAddressData)).execute()
+      val response = supabaseClient.graphql.apolloClient.mutation(AddOrganisationActivityMutation(inputWithAddressData)).execute()
       if (response.hasErrors()) {
         throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
       }
@@ -311,7 +311,7 @@ class ActivityRepositoryImpl(
         } catch (e: Exception) {
           throw Exception("Unknown error occurred ${e.message}")
         }
-        apolloClient.apolloStore.clearAll()
+        supabaseClient.graphql.apolloClient.apolloStore.clearAll()
         return@safeCall activityId
       }
       throw Exception("Failed to create activity")
@@ -332,7 +332,7 @@ class ActivityRepositoryImpl(
     // If adding a new address
     if (originalActivity?.addressId == null && (newActivityData.address.isNotBlank() || newActivityData.state.isNotBlank() || newActivityData.district.isNotBlank())) {
       println("Adding a new address")
-      val resp = apolloClient.mutation(
+      val resp = supabaseClient.graphql.apolloClient.mutation(
             CreateAddressMutation.Builder()
               .basicAddress(newActivityData.address)
                 .state(newActivityData.state)
@@ -348,17 +348,17 @@ class ActivityRepositoryImpl(
             GlobalMessageManager.showError("पता जोड़ने में त्रुटि, पुनः प्रयास करें")
             return@safeCall false
         }
-        apolloClient.mutation(AddAddressToActivityMutation(activityId, newId)).execute()
+        supabaseClient.graphql.apolloClient.mutation(AddAddressToActivityMutation(activityId, newId)).execute()
         addressIdForUpdate = newId
     }
     // If removing address
     else if (origAddr != null && (newActivityData.addressId == null || (newActivityData.address.isBlank() && newActivityData.state.isBlank() && newActivityData.district.isBlank()))) {
       println("Removing address")
 
-      val removeAddressResp = apolloClient.mutation(RemoveAddressFromActivityMutation(activityId)).execute()
+      val removeAddressResp = supabaseClient.graphql.apolloClient.mutation(RemoveAddressFromActivityMutation(activityId)).execute()
 
       // original addressId non-null guaranteed
-        val delResp = apolloClient.mutation(DeleteAddressMutation(origAddrId!!)).execute()
+        val delResp = supabaseClient.graphql.apolloClient.mutation(DeleteAddressMutation(origAddrId!!)).execute()
       println(delResp)
         if (delResp.hasErrors()) {
           println("Address removal failed ${delResp.errors?.firstOrNull()?.message}")
@@ -385,7 +385,7 @@ class ActivityRepositoryImpl(
     )) {
       println("Updating address")
         // Only update changed address fields
-        val updResp = apolloClient.mutation(
+        val updResp = supabaseClient.graphql.apolloClient.mutation(
             UpdateAddressMutation.Builder()
                 .id(origAddrId!!)
               .basicAddress(newActivityData.address)
@@ -417,7 +417,7 @@ class ActivityRepositoryImpl(
     }
 
     val requestJson = Json.encodeToString(updateRequest)
-    val response = apolloClient.mutation(
+    val response = supabaseClient.graphql.apolloClient.mutation(
         UpdateActivityDetailsSmartMutation(requestJson)
     ).execute()
     if (response.hasErrors()) {
@@ -462,7 +462,7 @@ class ActivityRepositoryImpl(
                   post = Optional.present(member.post),
                   priority = Optional.present(member.priority)
                 )
-                val resp = apolloClient.mutation(
+                val resp = supabaseClient.graphql.apolloClient.mutation(
                     AddActivityMemberMutation.Builder().input(input).build()
                 ).execute()
               println(resp)
@@ -474,7 +474,7 @@ class ActivityRepositoryImpl(
             // Remove
             for (member in toRemove) {
                 // We need activityMemberId, assuming stored in member.id
-                val resp = apolloClient.mutation(
+                val resp = supabaseClient.graphql.apolloClient.mutation(
                     RemoveActivityMemberMutation.Builder().activityMemberId(member.id).build()
                 ).execute()
               println(resp)
@@ -485,7 +485,7 @@ class ActivityRepositoryImpl(
             }
             // Update (assuming member.id is activityMemberId for update, adjust if another id is needed)
             for (member in toUpdate) {
-                val resp = apolloClient.mutation(
+                val resp = supabaseClient.graphql.apolloClient.mutation(
                     UpdateActivityMemberMutation.Builder()
                       .activityMemberId(member.id)
                       .activityMemberUpdateInput(
@@ -501,7 +501,7 @@ class ActivityRepositoryImpl(
                     return@safeCall false
                 }
             }
-            apolloClient.apolloStore.clearAll()
+            supabaseClient.graphql.apolloClient.apolloStore.clearAll()
             true
         } else {
             throw Exception(
@@ -513,7 +513,7 @@ class ActivityRepositoryImpl(
         println("Activity update failed: $e")
         val responseString = responseData.toString()
         if (responseString.contains("\"success\":true")) {
-            apolloClient.apolloStore.clearAll()
+            supabaseClient.graphql.apolloClient.apolloStore.clearAll()
             true
         } else {
             throw Exception("Activity update failed: $responseString")
@@ -635,7 +635,7 @@ class ActivityRepositoryImpl(
 
   override suspend fun getOrganisationsAndMembers(): Result<OrganisationsAndMembers> {
     return safeCall {
-      val response = apolloClient.query(OrganisationsAndMembersQuery()).execute()
+      val response = supabaseClient.graphql.apolloClient.query(OrganisationsAndMembersQuery()).execute()
       if (response.hasErrors()) {
         throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
       }
@@ -663,7 +663,7 @@ class ActivityRepositoryImpl(
 
   override suspend fun getRegisteredUsers(id: String): Result<List<UserProfile>> {
     return safeCall {
-      val response = apolloClient.query(RegistrationsForActivityQuery(id)).execute()
+      val response = supabaseClient.graphql.apolloClient.query(RegistrationsForActivityQuery(id)).execute()
       if (response.hasErrors()) {
         throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
       }
@@ -709,7 +709,7 @@ class ActivityRepositoryImpl(
       val result =
         safeCall {
           val response =
-            apolloClient.mutation(
+            supabaseClient.graphql.apolloClient.mutation(
               AddActivityOverviewMutation(
                 activityId,
                 overview,
@@ -737,7 +737,7 @@ class ActivityRepositoryImpl(
 
     // Build filter logic here
     val filter = buildFilter(searchTerm, filterOptions)
-    apolloClient.query(
+    supabaseClient.graphql.apolloClient.query(
       GetActivitiesQuery(
         first = pageSize,
         after = Optional.presentIfNotNull(cursor),

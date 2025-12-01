@@ -1,6 +1,5 @@
 package com.aryamahasangh.features.organisations
 
-import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
 import com.apollographql.apollo.cache.normalized.FetchPolicy
 import com.apollographql.apollo.cache.normalized.cacheInfo
@@ -9,12 +8,13 @@ import com.apollographql.apollo.cache.normalized.isFromCache
 import com.apollographql.apollo.exception.CacheMissException
 import com.aryamahasangh.*
 import com.aryamahasangh.features.activities.Member
-import com.aryamahasangh.network.supabaseClient
 import com.aryamahasangh.type.OrganisationFilter
 import com.aryamahasangh.type.OrganisationalMemberInsertInput
 import com.aryamahasangh.type.StringFilter
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.util.safeCall
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.graphql.graphql
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -86,12 +86,12 @@ interface OrganisationsRepository {
 /**
  * Implementation of OrganisationsRepository that uses Apollo GraphQL client
  */
-class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : OrganisationsRepository {
+class OrganisationsRepositoryImpl(private val supabaseClient: SupabaseClient) : OrganisationsRepository {
   override fun getOrganisations(): Flow<Result<List<OrganisationWithDescription>>> =
     flow {
       emit(Result.Loading)
 
-      apolloClient.query(OrganisationsQuery())
+      supabaseClient.graphql.apolloClient.query(OrganisationsQuery())
         .fetchPolicy(FetchPolicy.CacheAndNetwork)
         .toFlow()
         .collect { response ->
@@ -120,7 +120,7 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
     flow {
       emit(Result.Loading)
 
-      apolloClient.query(
+      supabaseClient.graphql.apolloClient.query(
         OrganisationQuery(
           filter =
             Optional.present(
@@ -185,7 +185,7 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
       val result =
         safeCall {
           val response =
-            apolloClient.mutation(
+            supabaseClient.graphql.apolloClient.mutation(
               UpdateOrganisationLogoMutation(orgId, imageUrl)
             ).execute()
           if (response.hasErrors()) {
@@ -206,7 +206,7 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
       val result =
         safeCall {
           val response =
-            apolloClient.mutation(
+            supabaseClient.graphql.apolloClient.mutation(
               UpdateOrganisationDescriptionMutation(id = orgId, description = description)
             ).execute()
           if (response.hasErrors()) {
@@ -229,7 +229,7 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
       val result =
         safeCall {
           val response =
-            apolloClient.mutation(
+            supabaseClient.graphql.apolloClient.mutation(
               AddMemberToOrganisationMutation(
                 memberId = memberId,
                 organisationId = organisationId,
@@ -252,7 +252,7 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
       val result =
         safeCall {
           val response =
-            apolloClient.mutation(
+            supabaseClient.graphql.apolloClient.mutation(
               RemoveMemberFromOrganisationMutation(organisationalMemberId = organisationalMemberId)
             ).execute()
           if (response.hasErrors()) {
@@ -273,7 +273,7 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
       val result =
         safeCall {
           val response =
-            apolloClient.mutation(
+            supabaseClient.graphql.apolloClient.mutation(
               UpdateOrganisationalMemberPostMutation(
                 organisationalMemberId = organisationalMemberId,
                 post = post
@@ -297,7 +297,7 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
       val result =
         safeCall {
           val response =
-            apolloClient.mutation(
+            supabaseClient.graphql.apolloClient.mutation(
               UpdateOrganisationalMemberPriorityMutation(
                 organisationalMemberId = organisationalMemberId,
                 priority = priority
@@ -363,7 +363,7 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
       val result =
         safeCall {
           val response =
-            apolloClient.mutation(
+            supabaseClient.graphql.apolloClient.mutation(
               CreateOrganisationMutation(name, logoUrl, description, priority)
             ).execute()
           if (response.hasErrors()) {
@@ -386,7 +386,7 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
                 }
 
               val memberInsertResult =
-                apolloClient.mutation(AddMembersToOrganisationMutation(organisationalMembers)).execute()
+                supabaseClient.graphql.apolloClient.mutation(AddMembersToOrganisationMutation(organisationalMembers)).execute()
               if (memberInsertResult.hasErrors()) {
                 throw Exception(
                   memberInsertResult.errors?.firstOrNull()?.message ?: "Error adding members to organisation"
@@ -413,7 +413,7 @@ class OrganisationsRepositoryImpl(private val apolloClient: ApolloClient) : Orga
       emit(Result.Loading)
       val result =
         safeCall {
-          val response = apolloClient.mutation(RemoveOrganisationMutation(organisationId)).execute()
+          val response = supabaseClient.graphql.apolloClient.mutation(RemoveOrganisationMutation(organisationId)).execute()
           if (response.hasErrors()) {
             throw Exception(response.errors?.firstOrNull()?.message ?: "Unknown error occurred")
           }

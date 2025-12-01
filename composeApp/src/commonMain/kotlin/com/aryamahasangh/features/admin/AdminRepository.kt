@@ -1,6 +1,5 @@
 package com.aryamahasangh.features.admin
 
-import com.apollographql.apollo.ApolloClient
 import com.apollographql.apollo.api.Optional
 import com.apollographql.apollo.cache.normalized.*
 import com.aryamahasangh.*
@@ -9,11 +8,12 @@ import com.aryamahasangh.components.Gender
 import com.aryamahasangh.features.activities.Member
 import com.aryamahasangh.fragment.AryaSamajFields
 import com.aryamahasangh.fragment.MemberInOrganisationShort
-import com.aryamahasangh.network.supabaseClient
 import com.aryamahasangh.type.GenderFilter
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.util.safeCall
+import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.annotations.SupabaseExperimental
+import io.github.jan.supabase.graphql.graphql
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.realtime.selectAsFlow
 import kotlinx.coroutines.flow.Flow
@@ -169,7 +169,7 @@ interface AdminRepository : PaginatedRepository<MemberShort> {
 
 }
 
-class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminRepository {
+class AdminRepositoryImpl(private val supabaseClient: SupabaseClient) : AdminRepository {
 
   override suspend fun searchOrganisationalMembers(query: String): Flow<Result<List<MemberInOrganisationShort>>> =
     flow {
@@ -177,7 +177,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
       val result =
         safeCall {
           val response =
-            apolloClient.query(SearchOrganisationalMembersQuery("%$query%")).execute()
+            supabaseClient.graphql.apolloClient.query(SearchOrganisationalMembersQuery("%$query%")).execute()
           if (response.hasErrors()) {
             throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Unknown error occurred")
           }
@@ -201,7 +201,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
       emit(Result.Loading)
       val result =
         safeCall {
-          val response = apolloClient.query(CountsForAdminContainerQuery()).execute()
+          val response = supabaseClient.graphql.apolloClient.query(CountsForAdminContainerQuery()).execute()
           if (response.hasErrors()) {
             throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Unknown error occurred")
           }
@@ -223,7 +223,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
     flow {
       emit(Result.Loading)
 
-      apolloClient.query(MembersInOrganisationQuery())
+      supabaseClient.graphql.apolloClient.query(MembersInOrganisationQuery())
         .fetchPolicy(FetchPolicy.CacheAndNetwork)
         .toFlow()
         .collect { response ->
@@ -256,7 +256,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
       emit(Result.Loading)
       val result =
         safeCall {
-          val response = apolloClient.query(MembersCountQuery()).execute()
+          val response = supabaseClient.graphql.apolloClient.query(MembersCountQuery()).execute()
 //          var count = 0L
 //          try {
 //            count = supabaseClient.from("member_in_organisation").select { Count.EXACT }.countOrNull() ?: 0L
@@ -273,7 +273,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
     flow {
       emit(Result.Loading)
 
-      apolloClient.query(MemberDetailQuery(id))
+      supabaseClient.graphql.apolloClient.query(MemberDetailQuery(id))
         .fetchPolicy(FetchPolicy.CacheAndNetwork)
         .toFlow()
         .collect { response ->
@@ -408,7 +408,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
       emit(Result.Loading)
       val result =
         safeCall {
-          val response = apolloClient.query(SearchMembersQuery("%$query%")).execute()
+          val response = supabaseClient.graphql.apolloClient.query(SearchMembersQuery("%$query%")).execute()
           if (response.hasErrors()) {
             throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Unknown error occurred")
           }
@@ -433,7 +433,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
       val result =
         safeCall {
           val response =
-            apolloClient.query(SearchMembersQuery("%$query%")).execute()
+            supabaseClient.graphql.apolloClient.query(SearchMembersQuery("%$query%")).execute()
 
           if (response.hasErrors()) {
             throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Unknown error occurred")
@@ -458,7 +458,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
       emit(Result.Loading)
       val result =
         safeCall {
-          val response = apolloClient.mutation(DeleteMemberMutation(memberId)).execute()
+          val response = supabaseClient.graphql.apolloClient.mutation(DeleteMemberMutation(memberId)).execute()
           if (response.hasErrors()) {
             val errorMessage = response.errors?.firstOrNull()?.message ?: "Unknown error occurred"
             val userFriendlyMessage = when {
@@ -481,7 +481,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
             throw Exception("सदस्य नहीं मिला या पहले से ही हटा दिया गया है")
           }
 
-          apolloClient.apolloStore.clearAll()
+          supabaseClient.graphql.apolloClient.apolloStore.clearAll()
 
           true
         }
@@ -525,7 +525,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
       emit(Result.Loading)
       val result =
         safeCall {
-          val response = apolloClient.mutation(
+          val response = supabaseClient.graphql.apolloClient.mutation(
             UpdateMemberDetailsComprehensiveMutation(
               memberId = memberId,
               name = Optional.presentIfNotNull(name),
@@ -572,7 +572,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
             throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Update failed")
           }
           // CRITICAL: Clear Apollo cache after successful deletion
-          apolloClient.apolloStore.clearAll()
+          supabaseClient.graphql.apolloClient.apolloStore.clearAll()
           true
         }
       emit(result)
@@ -587,7 +587,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
       val result =
         safeCall {
           val response =
-            apolloClient.mutation(
+            supabaseClient.graphql.apolloClient.mutation(
               UpdateMemberPhotoMutation(
                 memberId = memberId,
                 profileImageUrl = photoUrl
@@ -615,7 +615,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
       val result =
         safeCall {
           val response =
-            apolloClient.mutation(
+            supabaseClient.graphql.apolloClient.mutation(
               CreateAddressMutation(
                 basicAddress = basicAddress,
                 state = state,
@@ -646,7 +646,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
       emit(Result.Loading)
       val result =
         safeCall {
-          val response = apolloClient.query(AryaSamajsQuery()).execute()
+          val response = supabaseClient.graphql.apolloClient.query(AryaSamajsQuery()).execute()
           if (response.hasErrors()) {
             throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Unknown error occurred")
           }
@@ -675,7 +675,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
         safeCall {
           // For now, just return all AryaSamajs and filter client-side
           // You can implement a proper search query later if needed
-          val response = apolloClient.query(AryaSamajsQuery()).execute()
+          val response = supabaseClient.graphql.apolloClient.query(AryaSamajsQuery()).execute()
           if (response.hasErrors()) {
             throw Exception(response.errors?.firstOrNull()?.message?.let { "$it" } ?: "Unknown error occurred")
           }
@@ -710,7 +710,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
     flow {
       emit(Result.Loading)
 
-      apolloClient.query(EkalAryaMembersQuery(first = 1000, after = Optional.Absent))
+      supabaseClient.graphql.apolloClient.query(EkalAryaMembersQuery(first = 1000, after = Optional.Absent))
         .fetchPolicy(FetchPolicy.CacheAndNetwork)
         .toFlow()
         .collect { response ->
@@ -744,7 +744,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
       emit(Result.Loading)
       val result =
         safeCall {
-          val response = apolloClient.query(
+          val response = supabaseClient.graphql.apolloClient.query(
             SearchEkalAryaMembersQuery(
               first = 1000,
               after = Optional.Absent,
@@ -777,7 +777,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
     flow {
       emit(PaginationResult.Loading())
 
-      apolloClient.query(
+      supabaseClient.graphql.apolloClient.query(
         EkalAryaMembersQuery(
           first = pageSize,
           after = Optional.presentIfNotNull(cursor)
@@ -837,7 +837,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
     flow {
       emit(PaginationResult.Loading())
       val result = safeCall {
-        val response = apolloClient.query(
+        val response = supabaseClient.graphql.apolloClient.query(
           SearchEkalAryaMembersQuery(
             first = pageSize,
             after = Optional.presentIfNotNull(cursor),
@@ -905,7 +905,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
       val result =
         safeCall {
           val response =
-            apolloClient.mutation(
+            supabaseClient.graphql.apolloClient.mutation(
               InsertMemberDetailsMutation(
                 name = name,
                 phoneNumber = phoneNumber,
@@ -1036,7 +1036,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
     flow {
       emit(PaginationResult.Loading())
 
-      apolloClient.query(
+      supabaseClient.graphql.apolloClient.query(
         EkalAryaMembersQuery(
           first = pageSize,
           after = Optional.presentIfNotNull(cursor)
@@ -1098,7 +1098,7 @@ class AdminRepositoryImpl(private val apolloClient: ApolloClient) : AdminReposit
     flow {
       emit(PaginationResult.Loading())
       val result = safeCall {
-        val response = apolloClient.query(
+        val response = supabaseClient.graphql.apolloClient.query(
           SearchEkalAryaMembersQuery(
             first = pageSize,
             after = Optional.presentIfNotNull(cursor),

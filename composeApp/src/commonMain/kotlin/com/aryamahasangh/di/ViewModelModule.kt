@@ -1,6 +1,7 @@
 package com.aryamahasangh.di
 
 import com.aryamahasangh.features.about_us.ui.AboutUsViewModel
+import com.aryamahasangh.viewmodel.LoginViewModel
 import com.aryamahasangh.features.activities.ActivitiesViewModel
 import com.aryamahasangh.features.admin.AdminViewModel
 import com.aryamahasangh.features.admin.aryasamaj.AryaSamajSelectorViewModel
@@ -28,6 +29,9 @@ val viewModelModule =
   module {
     // Provide ActivitiesViewModel
     factoryOf(::ActivitiesViewModel)
+
+    // Provide LoginViewModel
+    factoryOf(::LoginViewModel)
 
     // Provide LearningViewModel
     factoryOf(::LearningViewModel)

@@ -1,17 +1,17 @@
 package com.aryamahasangh.auth
 
+import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.SignOutScope
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import com.aryamahasangh.network.supabaseClient
 
 /**
  * Manages authentication session state across the application.
  * Handles secure session persistence across app restarts on all platforms.
  */
-object SessionManager {
+class SessionManager(private val supabaseClient: SupabaseClient) {
   /**
    * Flow that emits true when user is authenticated, false otherwise
    * CRITICAL: Made lazy to prevent deadlock during iOS framework initialization

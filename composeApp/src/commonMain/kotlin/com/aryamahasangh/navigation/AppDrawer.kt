@@ -29,6 +29,7 @@ import com.aryamahasangh.util.*
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
+import org.koin.compose.koinInject
 
 // Track which Gurukul section originated the CourseRegistrationForm navigation
 object CourseRegistrationContext {
@@ -45,18 +46,21 @@ val LocalBackHandler = compositionLocalOf<(() -> Unit)?> { null }
 // CompositionLocal for setting custom back handler
 val LocalSetBackHandler = compositionLocalOf<((() -> Unit)?) -> Unit> { {} }
 
+
+
 @Composable
 fun AppDrawer() {
+  val sessionManager = koinInject<SessionManager>()
   BoxWithConstraints(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val navController = rememberNavController()
     val isLargeScreen = maxWidth > 840.dp
     if (isLargeScreen) {
       Box(modifier = Modifier.width(1280.dp)) {
-        LargeScreens(drawerState, navController)
+        LargeScreens(drawerState, navController, sessionManager)
       }
     } else {
-      SmallScreens(drawerState, navController)
+      SmallScreens(drawerState, navController, sessionManager)
     }
   }
 }
@@ -411,7 +415,8 @@ private fun checkIfSelected(
 @Composable
 fun LargeScreens(
   drawerState: DrawerState,
-  navController: NavHostController
+  navController: NavHostController,
+  sessionManager: SessionManager
 ) {
   PermanentNavigationDrawer(
     drawerContent = {
@@ -424,7 +429,7 @@ fun LargeScreens(
       VerticalDivider(
         modifier = Modifier.padding(top = 4.dp, bottom = 4.dp, end = 4.dp)
       )
-      MainContent(drawerState, navController)
+      MainContent(drawerState, navController, sessionManager)
     }
   }
 }
@@ -433,7 +438,8 @@ fun LargeScreens(
 @Composable
 fun SmallScreens(
   drawerState: DrawerState,
-  navController: NavHostController
+  navController: NavHostController,
+  sessionManager: SessionManager
 ) {
   ModalNavigationDrawer(
     drawerState = drawerState,
@@ -443,7 +449,7 @@ fun SmallScreens(
       }
     },
     content = {
-      MainContent(drawerState, navController)
+      MainContent(drawerState, navController, sessionManager)
     }
   )
 }
@@ -467,7 +473,8 @@ fun getScreenTitle(route: String?): String {
 @Composable
 fun MainContent(
   drawerState: DrawerState,
-  navController: NavHostController
+  navController: NavHostController,
+  sessionManager: SessionManager
 ) {
   val scope = rememberCoroutineScope()
 
@@ -809,9 +816,8 @@ fun MainContent(
           onClick = {
             scope.launch {
               logoutAttempts++
-
               // Use SessionManager to sign out
-              val result = SessionManager.signOut()
+              val result = sessionManager.signOut()
 
               result.fold(
                 onSuccess = {
