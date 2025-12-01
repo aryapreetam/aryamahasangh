@@ -29,7 +29,7 @@ import com.aryamahasangh.util.*
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.painterResource
-import org.koin.compose.koinInject
+import org.koin.mp.KoinPlatform.getKoin
 
 // Track which Gurukul section originated the CourseRegistrationForm navigation
 object CourseRegistrationContext {
@@ -47,20 +47,35 @@ val LocalBackHandler = compositionLocalOf<(() -> Unit)?> { null }
 val LocalSetBackHandler = compositionLocalOf<((() -> Unit)?) -> Unit> { {} }
 
 
+//// CompositionLocal for Authentication State
 
 @Composable
 fun AppDrawer() {
-  val sessionManager = koinInject<SessionManager>()
-  BoxWithConstraints(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    val navController = rememberNavController()
-    val isLargeScreen = maxWidth > 840.dp
-    if (isLargeScreen) {
-      Box(modifier = Modifier.width(1280.dp)) {
-        LargeScreens(drawerState, navController, sessionManager)
+  // Defer SessionManager creation on iOS to avoid synchronous SupabaseClient/Keychain 
+  // access during first composition frame
+  var sessionManager by remember { mutableStateOf<SessionManager?>(null) }
+  val isAuthenticated by (sessionManager?.isAuthenticated ?: kotlinx.coroutines.flow.flowOf(false))
+    .collectAsState(initial = false)
+  
+  LaunchedEffect(Unit) {
+    // Get SessionManager asynchronously after first frame to ensure safe iOS initialization
+    sessionManager = getKoin().get()
+  }
+
+  // Provide authentication state to entire navigation tree
+  CompositionLocalProvider(LocalIsAuthenticated provides isAuthenticated) {
+    BoxWithConstraints(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+      val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+      val navController = rememberNavController()
+      val isLargeScreen = maxWidth > 840.dp
+      if (isLargeScreen) {
+        Box(modifier = Modifier.width(1280.dp)) {
+          // Only pass sessionManager to components that need it
+          LargeScreens(drawerState, navController, sessionManager)
+        }
+      } else {
+        SmallScreens(drawerState, navController, sessionManager)
       }
-    } else {
-      SmallScreens(drawerState, navController, sessionManager)
     }
   }
 }
@@ -416,7 +431,7 @@ private fun checkIfSelected(
 fun LargeScreens(
   drawerState: DrawerState,
   navController: NavHostController,
-  sessionManager: SessionManager
+  sessionManager: SessionManager?
 ) {
   PermanentNavigationDrawer(
     drawerContent = {
@@ -439,7 +454,7 @@ fun LargeScreens(
 fun SmallScreens(
   drawerState: DrawerState,
   navController: NavHostController,
-  sessionManager: SessionManager
+  sessionManager: SessionManager?
 ) {
   ModalNavigationDrawer(
     drawerState = drawerState,
@@ -474,7 +489,7 @@ fun getScreenTitle(route: String?): String {
 fun MainContent(
   drawerState: DrawerState,
   navController: NavHostController,
-  sessionManager: SessionManager
+  sessionManager: SessionManager?
 ) {
   val scope = rememberCoroutineScope()
 
@@ -815,6 +830,12 @@ fun MainContent(
         TextButton(
           onClick = {
             scope.launch {
+              // Ensure SessionManager is loaded before logout
+              if (sessionManager == null) {
+                snackbarHostState.showSnackbar("कृपया थोड़ा इंतज़ार करें...")
+                return@launch
+              }
+              
               logoutAttempts++
               // Use SessionManager to sign out
               val result = sessionManager.signOut()

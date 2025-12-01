@@ -1,14 +1,12 @@
 package com.aryamahasangh
 
 import AppTheme
-import androidx.compose.runtime.*
-import com.aryamahasangh.auth.SessionManager
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import com.aryamahasangh.di.AppBootstrap
 import com.aryamahasangh.di.KoinInitializer
 import com.aryamahasangh.navigation.AppDrawer
-import org.koin.mp.KoinPlatform.getKoin
 
-//// CompositionLocal for Authentication State
 val LocalIsAuthenticated = compositionLocalOf { false }
 //
 //@Composable
@@ -155,18 +153,14 @@ val LocalIsAuthenticated = compositionLocalOf { false }
 
 @Composable
 fun App() {
+  // Non-iOS platforms handle their own initialization
   if(!isIos){
     KoinInitializer.start()
     AppBootstrap.initialize()
   }
-  val sessionManager: SessionManager = getKoin().get()
-  val isAuthenticated by sessionManager.isAuthenticated.collectAsState(initial = false)
 
   AppTheme {
-    // Provide authentication state to the entire app
-    CompositionLocalProvider(LocalIsAuthenticated provides isAuthenticated) {
-      // Always show AppDrawer - login is optional
-      AppDrawer()
-    }
+    // AppDrawer handles all session management and provides auth state
+    AppDrawer()
   }
 }

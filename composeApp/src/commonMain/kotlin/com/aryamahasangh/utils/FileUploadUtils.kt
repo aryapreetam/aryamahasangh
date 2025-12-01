@@ -1,6 +1,5 @@
 package com.aryamahasangh.utils
 
-import com.aryamahasangh.network.bucket
 import com.aryamahasangh.util.Result
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.name
@@ -17,8 +16,10 @@ object FileUploadUtils {
     data: ByteArray
   ): Result<String> {
     return try {
-      bucket.upload(path = path, data = data)
-      val publicUrl = bucket.publicUrl(path)
+      // Access bucket via fully qualified name to avoid top-level import
+      // This prevents any risk of early initialization on iOS
+      com.aryamahasangh.network.bucket.upload(path = path, data = data)
+      val publicUrl = com.aryamahasangh.network.bucket.publicUrl(path)
       Result.Success(publicUrl)
     } catch (e: Exception) {
       Result.Error(e.message ?: "फ़ाइल अपलोड करने में त्रुटि")
@@ -154,7 +155,7 @@ object FileUploadUtils {
           url.substringAfterLast("/")
         }
 
-      bucket.delete(filePaths)
+      com.aryamahasangh.network.bucket.delete(filePaths)
       Result.Success(Unit)
     } catch (e: Exception) {
       Result.Error("फ़ाइल हटाने में त्रुटि: ${e.message}")

@@ -3,12 +3,8 @@ import ComposeApp
 
 @main
 struct iOSApp: App {
-    init(){
-        SentrySetupKt.initializeSentry()
-        KoinInitializer.shared.start { _ in }
-        // Start session bootstrap
-        AppBootstrap.shared.initialize()
-    }
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
@@ -16,10 +12,12 @@ struct iOSApp: App {
     }
 }
 
-// class AppDelegate: NSObject, UIApplicationDelegate {
-//     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
-//         SentrySetupKt.initializeSentry()
-//
-//         return true
-//     }
-// }
+class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        SentrySetupKt.initializeSentry()
+        KoinInitializer.shared.start { _ in }
+        // Start session bootstrap
+        AppBootstrap.shared.initialize()
+        return true
+    }
+}
