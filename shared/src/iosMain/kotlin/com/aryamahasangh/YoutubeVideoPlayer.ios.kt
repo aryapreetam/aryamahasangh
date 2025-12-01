@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.interop.UIKitView
+import androidx.compose.ui.viewinterop.UIKitView
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.cinterop.readValue
 import platform.CoreGraphics.CGRectZero
@@ -34,7 +34,7 @@ actual fun YoutubeVideoPlayer(videoUrl: String) {
             // Ensure update happens on main thread
             val updateAction = {
                 try {
-                    if (webView.isLoading) {
+                    if (webView.isLoading()) {
                         webView.stopLoading()
                     }
                     
