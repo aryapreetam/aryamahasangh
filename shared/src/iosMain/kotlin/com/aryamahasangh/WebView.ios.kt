@@ -114,13 +114,13 @@ actual fun WebView(url: String, onScriptResult: ((String) -> Unit)?) {
             try {
               subview.stopLoading()
               
-              // Only remove if the message handler was registered
-              if (messageHandler.isRegistered) {
-                subview.configuration.userContentController.removeScriptMessageHandlerForName(
-                  "iosLocationHandler"
-                )
-                messageHandler.markAsUnregistered()
-              }
+//              // Only remove if the message handler was registered
+//              if (messageHandler.isRegistered) {
+//                subview.configuration.userContentController.removeScriptMessageHandlerForName(
+//                  "iosLocationHandler"
+//                )
+//                messageHandler.markAsUnregistered()
+//              }
               
               subview.removeFromSuperview()
             } catch (e: Exception) {

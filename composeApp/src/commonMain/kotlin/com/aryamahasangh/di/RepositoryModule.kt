@@ -38,9 +38,8 @@ val repositoryModule =
     // Provide LearningRepository
     singleOf(::LearningRepositoryImpl) { bind<LearningRepository>() }
 
-    // Provide AboutUsRepository with NHost ApolloClient
-    //single<AboutUsRepository> { AboutUsRepositoryImpl(get(qualifier = named("nhost"))) }
-    single<AboutUsRepository> { AboutUsRepositoryImpl(get()) }
+    // Provide AboutUsRepository
+    singleOf(::AboutUsRepositoryImpl) { bind<AboutUsRepository>() }
     // Provide OrganisationsRepository
     singleOf(::OrganisationsRepositoryImpl) { bind<OrganisationsRepository>() }
 

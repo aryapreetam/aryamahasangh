@@ -33,7 +33,7 @@ val viewModelModule =
     factoryOf(::LearningViewModel)
 
     // Provide AboutUsViewModel (new feature)
-    factory { AboutUsViewModel(get(), get()) }
+    factoryOf(::AboutUsViewModel)
 
     // Provide OrganisationsViewModel
     factoryOf(::OrganisationsViewModel)

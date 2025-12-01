@@ -183,19 +183,19 @@ fun App() {
   var koinInitialized by remember { mutableStateOf(false) }
 
   LaunchedEffect(Unit) {
-      withContext(Dispatchers.Default) {
-      try {
-        KoinInitializer.init()
-        println("✅ Koin initialized successfully")
-        println("✅ SupabaseClient initialized via Koin module")
-        koinInitialized = true
-      } catch (e: Exception) {
-        println("❌ Error initializing Koin: ${e.message}")
-        e.printStackTrace()
-        initializationError = "Koin initialization failed: ${e.message}"
-        // Allow degraded mode
-        initializationComplete = true
-      }
+    try {
+      // CRITICAL: Must run on Main thread because Koin modules access AppConfig (iOS Keychain)
+      // Accessing Keychain from background thread during startup causes C++ exception on iOS
+      KoinInitializer.init()
+      println("✅ Koin initialized successfully")
+      println("✅ SupabaseClient initialized via Koin module")
+      koinInitialized = true
+    } catch (e: Exception) {
+      println("❌ Error initializing Koin: ${e.message}")
+      e.printStackTrace()
+      initializationError = "Koin initialization failed: ${e.message}"
+      // Allow degraded mode
+      initializationComplete = true
     }
   }
 
@@ -203,17 +203,17 @@ fun App() {
   // This ensures supabaseClient is already initialized
   LaunchedEffect(koinInitialized) {
     if (koinInitialized) {
-        withContext(Dispatchers.Default) {
-        try {
-          SessionManager.initialize()
-          println("✅ SessionManager initialized successfully")
-          initializationComplete = true
-        } catch (e: Exception) {
-          println("⚠️  Error initializing SessionManager: ${e.message}")
-          e.printStackTrace()
-          // Non-fatal: user can still use app, just won't have restored session
-          initializationComplete = true // Still allow app to continue
-        }
+      try {
+        // SessionManager accesses supabaseClient which may trigger Keychain access
+        // Keep on Main thread for safety
+        SessionManager.initialize()
+        println("✅ SessionManager initialized successfully")
+        initializationComplete = true
+      } catch (e: Exception) {
+        println("⚠️  Error initializing SessionManager: ${e.message}")
+        e.printStackTrace()
+        // Non-fatal: user can still use app, just won't have restored session
+        initializationComplete = true // Still allow app to continue
       }
     }
   }

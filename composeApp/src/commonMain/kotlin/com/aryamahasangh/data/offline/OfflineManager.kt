@@ -67,10 +67,13 @@ class OfflineManager(
 
   /**
    * Update network connectivity state
+   * Thread-safe: Ensures state updates happen on Main dispatcher for iOS compatibility
    */
-  fun updateNetworkState(isConnected: Boolean) {
-    _networkState.value = if (isConnected) NetworkState.CONNECTED else NetworkState.DISCONNECTED
-    _isOnline.value = isConnected
+  suspend fun updateNetworkState(isConnected: Boolean) {
+    kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main.immediate) {
+      _networkState.value = if (isConnected) NetworkState.CONNECTED else NetworkState.DISCONNECTED
+      _isOnline.value = isConnected
+    }
 
     if (isConnected) {
       // Trigger sync when coming back online
