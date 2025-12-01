@@ -24,7 +24,7 @@ import com.aryamahasangh.features.public_arya_samaj.AryaSamajHomeRepository
 import com.aryamahasangh.features.public_arya_samaj.AryaSamajHomeRepositoryImpl
 import com.aryamahasangh.repository.*
 import org.koin.core.module.dsl.bind
-import org.koin.core.module.dsl.singleOf
+import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
 
 /**
@@ -33,29 +33,29 @@ import org.koin.dsl.module
 val repositoryModule =
   module {
     // Provide ActivityRepository
-    singleOf(::ActivityRepositoryImpl) { bind<ActivityRepository>() }
+    factoryOf(::ActivityRepositoryImpl) { bind<ActivityRepository>() }
 
     // Provide LearningRepository
-    singleOf(::LearningRepositoryImpl) { bind<LearningRepository>() }
+    factoryOf(::LearningRepositoryImpl) { bind<LearningRepository>() }
 
     // Provide AboutUsRepository
-    singleOf(::AboutUsRepositoryImpl) { bind<AboutUsRepository>() }
+    factoryOf(::AboutUsRepositoryImpl) { bind<AboutUsRepository>() }
     // Provide OrganisationsRepository
-    singleOf(::OrganisationsRepositoryImpl) { bind<OrganisationsRepository>() }
+    factoryOf(::OrganisationsRepositoryImpl) { bind<OrganisationsRepository>() }
 
     // Provide AdmissionsRepository
-    singleOf(::AdmissionsRepositoryImpl) { bind<AdmissionsRepository>() }
+    factoryOf(::AdmissionsRepositoryImpl) { bind<AdmissionsRepository>() }
 
     // Provide JoinUsRepository
-    singleOf(::JoinUsRepositoryImpl) { bind<JoinUsRepository>() }
+    factoryOf(::JoinUsRepositoryImpl) { bind<JoinUsRepository>() }
 
-    singleOf(::BookOrderRepositoryImpl) { bind<BookOrderRepository>() }
-    singleOf(::AryaNirmanRepositoryImpl) { bind<AryaNirmanRepository>() }
-    singleOf(::AdminRepositoryImpl) { bind<AdminRepository>() }
-    singleOf(::AryaSamajRepositoryImpl) { bind<AryaSamajRepository>() }
-    singleOf(::AryaSamajSelectorRepositoryImpl) { bind<AryaSamajSelectorRepository>() }
-    singleOf(::AryaSamajHomeRepositoryImpl) { bind<AryaSamajHomeRepository>() }
-    singleOf(::FamilyRepositoryImpl) { bind<FamilyRepository>() }
-    singleOf(::MembersSelectorRepositoryImpl) { bind<MembersSelectorRepository>() }
-    singleOf(::GurukulRepositoryImpl) { bind<GurukulRepository>() }
+    factoryOf(::BookOrderRepositoryImpl) { bind<BookOrderRepository>() }
+    factoryOf(::AryaNirmanRepositoryImpl) { bind<AryaNirmanRepository>() }
+    factoryOf(::AdminRepositoryImpl) { bind<AdminRepository>() }
+    factoryOf(::AryaSamajRepositoryImpl) { bind<AryaSamajRepository>() }
+    factoryOf(::AryaSamajSelectorRepositoryImpl) { bind<AryaSamajSelectorRepository>() }
+    factoryOf(::AryaSamajHomeRepositoryImpl) { bind<AryaSamajHomeRepository>() }
+    factoryOf(::FamilyRepositoryImpl) { bind<FamilyRepository>() }
+    factoryOf(::MembersSelectorRepositoryImpl) { bind<MembersSelectorRepository>() }
+    factoryOf(::GurukulRepositoryImpl) { bind<GurukulRepository>() }
   }
