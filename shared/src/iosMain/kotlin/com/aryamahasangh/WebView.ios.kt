@@ -2,8 +2,6 @@ package com.aryamahasangh
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.UIKitInteropProperties
 import androidx.compose.ui.viewinterop.UIKitView
@@ -23,17 +21,6 @@ import kotlin.concurrent.Volatile
 @OptIn(ExperimentalForeignApi::class)
 @Composable
 actual fun WebView(url: String, onScriptResult: ((String) -> Unit)?) {
-  // Create message handler with proper lifecycle management
-  val messageHandler = remember { LocationMessageHandler(onScriptResult) }
-  
-  // Dispose the message handler when the composable leaves the composition
-  DisposableEffect(messageHandler) {
-    onDispose {
-      // Invalidate the callback to prevent use after disposal
-      messageHandler.invalidate()
-    }
-  }
-  
   UIKitView(
     factory = {
       val container = UIView()
@@ -44,6 +31,10 @@ actual fun WebView(url: String, onScriptResult: ((String) -> Unit)?) {
         allowsAirPlayForMediaPlayback = true
         allowsPictureInPictureMediaPlayback = true
       }
+      
+      // Create message handler inside factory to ensure it's properly tied to this WebView instance
+      // This prevents reuse issues during orientation changes and ensures proper cleanup
+      val messageHandler = LocationMessageHandler(onScriptResult)
       
       // Create WKWebView inside the factory to ensure proper lifecycle management
       val webView = WKWebView(CGRectZero.readValue(), config).apply {
