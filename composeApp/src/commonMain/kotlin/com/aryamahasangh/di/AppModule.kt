@@ -6,7 +6,6 @@ import com.aryamahasangh.features.gurukul.data.ImageUploadRepository
 import com.aryamahasangh.features.gurukul.data.ImageUploadRepositoryImpl
 import com.aryamahasangh.features.gurukul.domain.usecase.RegisterForCourseUseCase
 import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationViewModel
-import com.aryamahasangh.network.supabaseClient
 import io.github.jan.supabase.graphql.graphql
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.bind
@@ -18,12 +17,12 @@ import org.koin.dsl.module
  */
 val appModule =
   module {
-    // CRITICAL: Use factory instead of single with direct access
-    // This defers supabaseClient initialization until it's actually requested
+    // CRITICAL: Use factory with fully qualified access (no import!)
+    // Importing supabaseClient at file level triggers initialization during file loading
     // Direct access causes Keychain access during Koin module definition (too early on iOS)
     factory { 
       // Access supabaseClient only when this dependency is requested, not during module loading
-      supabaseClient.graphql.apolloClient 
+      com.aryamahasangh.network.supabaseClient.graphql.apolloClient 
     }
 
     // Provide NHost Apollo Client as a qualified dependency
