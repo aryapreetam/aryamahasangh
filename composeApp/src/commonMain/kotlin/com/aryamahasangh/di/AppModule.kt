@@ -18,14 +18,19 @@ import org.koin.dsl.module
  */
 val appModule =
   module {
-    // CRITICAL: Use factory with fully qualified access (no import!)
-    // Importing supabaseClient at file level triggers initialization during file loading
-    // Direct access causes Keychain access during Koin module definition (too early on iOS)
-    single { com.aryamahasangh.network.supabaseClient.graphql.apolloClient }
+    // CRITICAL iOS FIX: Use factory instead of single to prevent eager initialization
+    // Sentry analysis confirmed that 'single' causes eager evaluation during Koin start on iOS,
+    // triggering premature Keychain/NSUserDefaults access.
+    // 'factory' ensures initialization happens ONLY when requested by AppDrawer (after UI is up).
+    
+    // Provide ApolloClient (factory)
+    factory { com.aryamahasangh.network.supabaseClient.graphql.apolloClient }
 
-    // Provide SupabaseClient
-    single { com.aryamahasangh.network.supabaseClient }
-    single { SessionManager(get()) }
+    // Provide SupabaseClient (factory)
+    factory { com.aryamahasangh.network.supabaseClient }
+    
+    // Provide SessionManager (factory)
+    factory { SessionManager(get()) }
 
     // Provide NHost Apollo Client as a qualified dependency
     //single(named("nhost")) { nhostApolloClient }
