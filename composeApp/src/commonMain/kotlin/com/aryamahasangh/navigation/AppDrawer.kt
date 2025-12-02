@@ -25,6 +25,7 @@ import aryamahasangh.composeapp.generated.resources.*
 import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.auth.SessionManager
 import com.aryamahasangh.components.LoginDialog
+import com.aryamahasangh.isIos
 import com.aryamahasangh.util.*
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.DrawableResource
@@ -58,6 +59,12 @@ fun AppDrawer() {
     .collectAsState(initial = false)
   
   LaunchedEffect(Unit) {
+    // CRITICAL iOS FIX: Add delay before accessing SessionManager
+    // This ensures the iOS Keychain is fully ready before Auth tries to autoLoadFromStorage
+    // Using conservative 1000ms for guaranteed stability, can be reduced after testing
+    if (isIos) {
+      kotlinx.coroutines.delay(1000) // 1 second delay on iOS only
+    }
     // Get SessionManager asynchronously after first frame to ensure safe iOS initialization
     sessionManager = getKoin().get()
   }

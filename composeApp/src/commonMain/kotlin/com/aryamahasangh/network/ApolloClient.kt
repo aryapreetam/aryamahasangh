@@ -43,11 +43,9 @@ val supabaseClient by lazy {
     supabaseUrl = AppConfig.supabaseUrl,
     supabaseKey = AppConfig.supabaseKey
   ) {
-    install(Storage) {
-      resumable {
-        cache = SettingsResumableCache()
-      }
-    }
+    install(Storage)
+    // Resumable cache removed - it accesses NSUserDefaults too early on iOS
+    // and resumable uploads are not used in this app
     install(Coil3Integration)
     install(Postgrest)
     install(Realtime)
@@ -119,6 +117,6 @@ class LoggingApolloInterceptor : ApolloInterceptor {
   }
 }
 
-val resumableClient by lazy { supabaseClient.storage[AppConfig.STORAGE_BUCKET].resumable }
+// val resumableClient by lazy { supabaseClient.storage[AppConfig.STORAGE_BUCKET].resumable }
 val bucket by lazy { supabaseClient.storage[AppConfig.STORAGE_BUCKET] }
 
