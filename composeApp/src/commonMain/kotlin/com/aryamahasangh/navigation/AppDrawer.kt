@@ -25,7 +25,6 @@ import aryamahasangh.composeapp.generated.resources.*
 import com.aryamahasangh.LocalIsAuthenticated
 import com.aryamahasangh.auth.SessionManager
 import com.aryamahasangh.components.LoginDialog
-import com.aryamahasangh.isIos
 import com.aryamahasangh.util.*
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.DrawableResource
@@ -52,16 +51,22 @@ val LocalSetBackHandler = compositionLocalOf<((() -> Unit)?) -> Unit> { {} }
 
 @Composable
 fun AppDrawer() {
-  // Defer SessionManager creation on iOS to avoid synchronous SupabaseClient/Keychain 
-  // access during first composition frame
+  // Defer SessionManager creation AND auth state collection on iOS
+  // to avoid synchronous SupabaseClient/Keychain access during composition
   var sessionManager by remember { mutableStateOf<SessionManager?>(null) }
-  val isAuthenticated by (sessionManager?.isAuthenticated ?: kotlinx.coroutines.flow.flowOf(false))
-    .collectAsState(initial = false)
+  var isAuthenticated by remember { mutableStateOf(false) }
   
   LaunchedEffect(Unit) {
     // Get SessionManager asynchronously after first frame
-    // AppBootstrap is NOT called on iOS to avoid duplicate SessionManager creation
-    sessionManager = getKoin().get()
+    val manager = getKoin().get<SessionManager>()
+    sessionManager = manager
+    
+    // Collect authentication state
+    // On iOS: autoLoadFromStorage is disabled, so this won't trigger Keychain crash
+    // On Android: autoLoadFromStorage works normally
+    manager.isAuthenticated.collect { authenticated ->
+      isAuthenticated = authenticated
+    }
   }
 
   // Provide authentication state to entire navigation tree

@@ -53,13 +53,17 @@ val supabaseClient by lazy {
       // Use PKCE flow for better security (especially important for mobile/web)
       flowType = FlowType.PKCE
 
-      // Enable automatic session refresh
-      autoLoadFromStorage = true
+      // CRITICAL iOS FIX: Disable autoLoadFromStorage on iOS
+      // The Keychain access during SupabaseClient initialization causes NSObject lifecycle crash
+      // This is a known KMP limitation - Keychain isn't safe to access during early init
+      // Trade-off: Users must login on each app launch on iOS
+      // TODO: Implement manual session restoration after app is fully initialized
+      autoLoadFromStorage = !com.aryamahasangh.isIos()
       alwaysAutoRefresh = true
 
       // Platform-specific secure storage is automatically handled by the SDK:
-      // - Android: Uses EncryptedSharedPreferences
-      // - iOS: Uses Keychain
+      // - Android: Uses EncryptedSharedPreferences (auto-loads ✅)
+      // - iOS: Uses Keychain (manual load required ⚠️)
       // - Web: Uses memory storage (no localStorage for security)
       // - Desktop: Uses platform-specific secure storage
     }
