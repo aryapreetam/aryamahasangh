@@ -16,8 +16,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         SentrySetupKt.initializeSentry()
         KoinInitializer.shared.start { _ in }
-        // Start session bootstrap
-        AppBootstrap.shared.initialize()
+        // NOTE: AppBootstrap.initialize() is NOT called on iOS
+        // AppDrawer handles SessionManager initialization to avoid duplicate creation and deadlocks
         return true
     }
 }
