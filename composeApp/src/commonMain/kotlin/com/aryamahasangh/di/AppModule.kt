@@ -10,7 +10,7 @@ import com.aryamahasangh.features.gurukul.viewmodel.CourseRegistrationViewModel
 import io.github.jan.supabase.graphql.graphql
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.bind
-import org.koin.core.module.dsl.singleOf
+import org.koin.core.module.dsl.factoryOf
 import org.koin.dsl.module
 
 /**
@@ -54,8 +54,8 @@ fun getAppModules(): List<Module> {
 
 val GurukulCourseRegistrationModule = module {
   // Use the existing ApolloClient instead of creating a new one
-  singleOf(::ImageUploadRepositoryImpl) { bind<ImageUploadRepository>() }
-  singleOf(::GurukulRepositoryImpl) { bind<GurukulRepository>() }
+  factoryOf(::ImageUploadRepositoryImpl) { bind<ImageUploadRepository>() }
+  factoryOf(::GurukulRepositoryImpl) { bind<GurukulRepository>() }
   factory { RegisterForCourseUseCase(get(), get()) }
   // We use GlobalMessageManager directly as it's a Kotlin object singleton
   factory { (activityId: String) ->

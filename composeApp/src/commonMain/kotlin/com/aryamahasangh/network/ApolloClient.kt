@@ -25,7 +25,6 @@ import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.serializer.KotlinXSerializer
 import io.github.jan.supabase.storage.Storage
-import io.github.jan.supabase.storage.resumable.SettingsResumableCache
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onEach
@@ -58,7 +57,7 @@ val supabaseClient by lazy {
       // This is a known KMP limitation - Keychain isn't safe to access during early init
       // Trade-off: Users must login on each app launch on iOS
       // TODO: Implement manual session restoration after app is fully initialized
-      autoLoadFromStorage = !com.aryamahasangh.isIos()
+      autoLoadFromStorage = false//!isIos
       alwaysAutoRefresh = true
 
       // Platform-specific secure storage is automatically handled by the SDK:
