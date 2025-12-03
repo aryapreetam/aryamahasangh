@@ -6,7 +6,7 @@ import io.sentry.kotlin.multiplatform.Sentry
 fun initializeSentry() {
   Sentry.init { options ->
     options.dsn = AppConfig.sentryDsn
-    if(isIos()) {
+    if(isIos) {
       options.attachStackTrace = false
       options.enableAppHangTracking = false
       options.enableAutoSessionTracking = false

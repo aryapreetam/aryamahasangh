@@ -78,7 +78,7 @@ object ImageCompressionService {
   suspend fun compressGeneral(file: PlatformFile, targetKb: Int = 100, maxLongEdge: Int = 1024): ByteArray {
     val bytes = try { file.readBytes() } catch (_: Exception) { return ByteArray(0) }
     val mime = determineMimeType(file.name)
-    return if (isIos()) {
+    return if (isIos) {
       val iosCompressed = compressIosQualityLoop(bytes, maxLongEdge, targetKb)
       iosCompressed
     } else {

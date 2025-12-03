@@ -42,7 +42,7 @@ fun openDirections(
       }
     }
 
-    isIos() -> {
+    isIos -> {
       // For iOS, use Apple Maps URL scheme
       val appleMapsUrl = "maps://?daddr=$latitude,$longitude&dirflg=d"
       try {

@@ -1,8 +1,8 @@
 package com.aryamahasangh
 
 import AppTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.*
 import com.aryamahasangh.di.AppBootstrap
 import com.aryamahasangh.di.KoinInitializer
 import com.aryamahasangh.navigation.AppDrawer
@@ -153,12 +153,41 @@ val LocalIsAuthenticated = compositionLocalOf { false }
 
 @Composable
 fun App() {
-  // Non-iOS platforms handle their own initialization
-  if(!isIos){
+  // State to track initialization completion
+  var isInitialized by remember { mutableStateOf(false) }
+  
+  // Defer ALL initialization to LaunchedEffect for iOS safety
+  // This happens AFTER first frame, ensuring iOS runtime is fully ready
+  LaunchedEffect(Unit) {
+    // Step 1: Initialize Sentry (crash reporting)
+    // Safe here because we're at runtime, not static init
+    com.aryamahasangh.network.initializeSentry()
+    
+    // Step 2: Initialize Koin (dependency injection)
+    // Lazy singletons are safe now - no static/AppDelegate phase issues
     KoinInitializer.start()
-    AppBootstrap.initialize()
+    
+    // Step 3: Initialize AppBootstrap (non-iOS only)
+    // iOS uses AppDrawer for SessionManager initialization
+    if (!isIos) {
+      AppBootstrap.initialize()
+    }
+    
+    isInitialized = true
   }
-
+  
+  // Show loading indicator while initialization is in progress
+  if (!isInitialized) {
+    androidx.compose.foundation.layout.Box(
+      modifier = androidx.compose.ui.Modifier.fillMaxSize(),
+      contentAlignment = androidx.compose.ui.Alignment.Center
+    ) {
+      androidx.compose.material3.CircularProgressIndicator()
+    }
+    return
+  }
+  
+  // Proceed with app UI once initialization is complete
   AppTheme {
     // AppDrawer handles all session management and provides auth state
     AppDrawer()

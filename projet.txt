@@ -17,7 +17,13 @@ With the help of all above organisations, Arya Mahasangh ultimate goal is to ful
 
 for anyone to become part of Arya Mahasangh, they first need to attend two days workshop(arya prashikshan satr or आर्य प्रशिक्षण सत्र) organised by nirmatri sabha. after completing the workshop, they are evaluated by the acharya(the person/teacher who conducted the workshop), if the candidate is fit to become an Arya, they are given a sacred thread(yajnopavit or यज्ञोपवित). after initiation, they are expected to follow the principles of Arya Samaj and work towards its goals. They are expected to become more active in the organisation & advance his path in the organisation(by becoming a vedic preacher(उपदेशक), spokesperson(प्रवक्ता), teacher also called achary(आचार्य)).
 
+AryaMahasangh's app(Android, ios, web, and desktop) is created to facilitate proper working of the organisation.
 
+Below are the app features:
+1. home page: this shows brief info about the organisation, what's currently happening in the organisation and links to all functionalities(some sections are hidden for unauthenticated users) of the app.
+2. activities: shows all the activities(current, future, and past) in the organisation
+3. organisations: information of all the organisations that are part of AryaMahasangh. all crud operations are available for logged in users
+3.
 
 
 
