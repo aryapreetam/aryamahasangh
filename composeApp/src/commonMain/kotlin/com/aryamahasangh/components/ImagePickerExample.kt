@@ -29,6 +29,7 @@ import io.github.vinceglb.filekit.dialogs.FileKitType
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.readBytes
+import org.koin.compose.koinInject
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import org.jetbrains.compose.ui.tooling.preview.Preview
@@ -384,6 +385,7 @@ private fun EditModeImagePickerExample() {
 private fun ImageCompressorExample(
   modifier: Modifier = Modifier
 ) {
+  val fileUploadUtils = koinInject<FileUploadUtils>()
   val scope = rememberCoroutineScope()
   val uriHandler = LocalUriHandler.current
   var picked: PlatformFile? by remember { mutableStateOf(null) }
@@ -628,7 +630,7 @@ private fun ImageCompressorExample(
             isUploading = true
             try {
               val compressedImage = compressed ?: return@launch
-              val result = FileUploadUtils.uploadCompressedImage(
+              val result = fileUploadUtils.uploadCompressedImage(
                 imageBytes = compressedImage.bytes,
                 folder = "test"
               )

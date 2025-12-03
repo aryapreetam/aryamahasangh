@@ -23,20 +23,22 @@ val appModule =
     // triggering premature Keychain/NSUserDefaults access.
     // 'factory' ensures initialization happens ONLY when requested by AppDrawer (after UI is up).
     
-    // Provide ApolloClient (factory)
-    factory { com.aryamahasangh.network.supabaseClient.graphql.apolloClient }
+    // Provide SupabaseClient (single)
+    // CRITICAL: Use single to ensure only one instance is created.
+    // Since it's inside a module and nothing requests it at startup, it's lazy.
+    single { com.aryamahasangh.network.createAppSupabaseClient() }
 
-    // Provide SupabaseClient (factory)
-    factory { com.aryamahasangh.network.supabaseClient }
-    
+    // Provide ApolloClient (factory)
+    factory { get<io.github.jan.supabase.SupabaseClient>().graphql.apolloClient }
+
+    // Provide FileUploadUtils (factory)
+    factory { com.aryamahasangh.utils.FileUploadUtils(get()) }
+
     // Provide SessionManager (factory)
     factory { SessionManager(get()) }
 
     // Provide NHost Apollo Client as a qualified dependency
     //single(named("nhost")) { nhostApolloClient }
-
-    // NOTE: FileUploadUtils is a singleton object, access directly, don't register in Koin
-    // Registering it would cause eager evaluation and potential Keychain access
   }
 
 /**

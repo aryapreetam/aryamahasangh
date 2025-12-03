@@ -39,7 +39,6 @@ import com.aryamahasangh.features.organisations.OrganisationDescriptionState
 import com.aryamahasangh.features.organisations.OrganisationLogoState
 import com.aryamahasangh.features.organisations.OrganisationalMember
 import com.aryamahasangh.navigation.LocalSnackbarHostState
-import com.aryamahasangh.network.bucket
 import com.aryamahasangh.screens.EditImageButton
 import com.aryamahasangh.util.ImageCompressionService
 import com.aryamahasangh.utils.FileUploadUtils
@@ -47,6 +46,7 @@ import com.aryamahasangh.util.Result
 import io.github.vinceglb.filekit.dialogs.compose.rememberFilePickerLauncher
 import io.github.vinceglb.filekit.dialogs.FileKitMode
 import io.github.vinceglb.filekit.dialogs.FileKitType
+import org.koin.compose.koinInject
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
@@ -92,6 +92,7 @@ fun OrganisationDetail(
   onTriggerSearch: (String) -> Unit = {}
 ) {
   val isLoggedIn = LocalIsAuthenticated.current
+  val fileUploadUtils = koinInject<FileUploadUtils>()
   var showDeleteDialog by remember { mutableStateOf<OrganisationalMember?>(null) }
   var showUpdatePostDialog by remember { mutableStateOf<OrganisationalMember?>(null) }
   var updatedPost by remember { mutableStateOf("") }
@@ -206,7 +207,7 @@ fun OrganisationDetail(
                             //   path = "org_logo_${Clock.System.now().epochSeconds}.webp",
                             //   data = compressedBytes
                             // )
-                            FileUploadUtils.uploadBytes(
+                            fileUploadUtils.uploadBytes(
                               path = "org_logo_${Clock.System.now().epochSeconds}.webp",
                               data = compressedBytes
                             )

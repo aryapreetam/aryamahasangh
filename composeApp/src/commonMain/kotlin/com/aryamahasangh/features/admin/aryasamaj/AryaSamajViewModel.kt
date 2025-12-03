@@ -67,7 +67,8 @@ data class AryaSamajFormUiState(
 }
 
 class AryaSamajViewModel(
-  private val repository: AryaSamajRepository
+  private val repository: AryaSamajRepository,
+  private val fileUploadUtils: FileUploadUtils
 ) : ViewModel() {
   private val _listUiState = MutableStateFlow(AryaSamajListUiState())
   val listUiState: StateFlow<AryaSamajListUiState> = _listUiState.asStateFlow()
@@ -289,7 +290,7 @@ class AryaSamajViewModel(
                 maxLongEdge = 1024
               )
             }
-            val uploadResponse = FileUploadUtils.uploadBytes(
+            val uploadResponse = fileUploadUtils.uploadBytes(
               path = "arya_samaj_$randomNum.webp",
               data = imageBytes
             )

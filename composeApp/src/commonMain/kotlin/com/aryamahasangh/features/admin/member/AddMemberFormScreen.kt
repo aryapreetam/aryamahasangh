@@ -25,6 +25,7 @@ import io.github.vinceglb.filekit.readBytes
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.datetime.LocalDate
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,6 +35,7 @@ fun AddMemberFormScreen(
   memberId: String? = null, // New parameter for edit mode
   onNavigateToMemberDetail: (memberId: String) -> Unit
 ) {
+  val fileUploadUtils = koinInject<FileUploadUtils>()
   val uiState by viewModel.memberDetailUiState.collectAsState()
   val snackbarHostState = LocalSnackbarHostState.current ?: return
   val setBackHandler = LocalSetBackHandler.current
@@ -313,7 +315,7 @@ fun AddMemberFormScreen(
               )
             }
 
-            val uploadResponse = FileUploadUtils.uploadBytes(
+            val uploadResponse = fileUploadUtils.uploadBytes(
               path = "profile_${Clock.System.now().epochSeconds}.webp",
               data = imageBytes
             )

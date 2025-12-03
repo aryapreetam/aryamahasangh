@@ -33,13 +33,15 @@ import androidx.compose.ui.window.Dialog
 import com.aryamahasangh.components.*
 import com.aryamahasangh.isDesktop
 import com.aryamahasangh.navigation.LocalSetBackHandler
-import com.aryamahasangh.network.bucket
 import com.aryamahasangh.type.ActivityType
+import com.aryamahasangh.config.AppConfig
+import io.github.jan.supabase.SupabaseClient
 import com.aryamahasangh.ui.components.buttons.*
 import com.aryamahasangh.util.GlobalMessageManager
 import com.aryamahasangh.util.ImageCompressionService
 import com.aryamahasangh.util.Result
 import com.aryamahasangh.utils.FileUploadUtils
+import io.github.jan.supabase.storage.storage
 import io.github.vinceglb.filekit.PlatformFile
 import io.github.vinceglb.filekit.name
 import kotlinx.coroutines.launch
@@ -350,6 +352,9 @@ private fun CreateActivityScreenContent(
   onCancel: () -> Unit = {},
   isSmallScreen: Boolean
 ) {
+  val supabaseClient = koinInject<SupabaseClient>()
+  val bucket = supabaseClient.storage[AppConfig.STORAGE_BUCKET]
+  val fileUploadUtils = koinInject<FileUploadUtils>()
   // --- State ---
   var organisations by remember { mutableStateOf(emptyList<Organisation>()) }
   var isLoadingActivity by remember { mutableStateOf(false) }
@@ -576,13 +581,14 @@ private fun CreateActivityScreenContent(
       var attempt = 0
       var lastError: String? = null
       while (attempt < 2) {
-        when (val uploadResult = FileUploadUtils.uploadBytes(path, compressed)) {
+
+        when (val uploadResponse = fileUploadUtils.uploadBytes(path, compressed)) {
           is Result.Success -> {
-            attached += uploadResult.data
+            attached += uploadResponse.data
             return true
           }
           is Result.Error -> {
-            val msg = uploadResult.message ?: "त्रुटि"
+            val msg = uploadResponse.message ?: "त्रुटि"
             // Detect Darwin EMSGSIZE scenario heuristically
             if (msg.contains("Message too long", ignoreCase = true) && attempt == 0) {
               // Re-compress smaller and retry once

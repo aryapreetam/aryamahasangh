@@ -19,6 +19,7 @@ import com.aryamahasangh.util.Result
 import com.aryamahasangh.utils.FileUploadUtils
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import org.koin.compose.koinInject
 
 data class OrganisationFormData(
   val name: String = "",
@@ -42,6 +43,7 @@ fun NewOrganisationFormScreen(
   onOrganisationCreated: (String) -> Unit = {},
   onCancel: () -> Unit = {}
 ) {
+  val fileUploadUtils = koinInject<FileUploadUtils>()
   var formData by remember { mutableStateOf(OrganisationFormData()) }
   var errors by remember { mutableStateOf(OrganisationFormErrors()) }
   var showUnsavedChangesDialog by remember { mutableStateOf(false) }
@@ -150,7 +152,7 @@ fun NewOrganisationFormScreen(
             }
 
             val uploadResponse =
-              FileUploadUtils.uploadBytes(
+              fileUploadUtils.uploadBytes(
                 path = "org_logo_${Clock.System.now().epochSeconds}.webp",
                 data = imageBytes
               )

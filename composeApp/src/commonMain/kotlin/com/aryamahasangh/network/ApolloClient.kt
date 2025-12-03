@@ -16,8 +16,10 @@ import com.apollographql.apollo.network.http.HttpInterceptorChain
 import com.aryamahasangh.config.AppConfig
 import com.aryamahasangh.type.Date
 import com.aryamahasangh.type.Datetime
+import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.auth.FlowType
+import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.coil.Coil3Integration
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.graphql.GraphQL
@@ -25,29 +27,25 @@ import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.realtime.Realtime
 import io.github.jan.supabase.serializer.KotlinXSerializer
 import io.github.jan.supabase.storage.Storage
-import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onEach
 import kotlinx.serialization.json.Json
 
+// CRITICAL REFACTOR: Removed global variables to prevent iOS launch crash.
+// SupabaseClient is now created via createAppSupabaseClient() and managed by Koin.
+
 /**
- * Supabase client configured using the generated Secrets object.
- * No hard-coded secrets - all configuration loaded from local.properties via KMP-Secrets-Plugin.
- * 
- * CRITICAL: Made lazy to prevent threading deadlocks during iOS framework static initialization.
- * Background threads (Storage, Realtime, Auth) can cause race conditions if initialized eagerly.
+ * Creates and configures the SupabaseClient instance.
+ * This should be called ONLY by the Koin module to ensure lazy initialization.
  */
-val supabaseClient by lazy {
-  createSupabaseClient(
+fun createAppSupabaseClient(): SupabaseClient {
+  // Create SupabaseClient with provider lambda to resolve circular dependency
+  lateinit var client: SupabaseClient
+  
+  client = createSupabaseClient(
     supabaseUrl = AppConfig.supabaseUrl,
     supabaseKey = AppConfig.supabaseKey
   ) {
-    install(Storage)
-    // Resumable cache removed - it accesses NSUserDefaults too early on iOS
-    // and resumable uploads are not used in this app
-    install(Coil3Integration)
-    install(Postgrest)
-    install(Realtime)
     install(Auth) {
       // Use PKCE flow for better security (especially important for mobile/web)
       flowType = FlowType.PKCE
@@ -57,18 +55,18 @@ val supabaseClient by lazy {
       // This is a known KMP limitation - Keychain isn't safe to access during early init
       // Trade-off: Users must login on each app launch on iOS
       // TODO: Implement manual session restoration after app is fully initialized
-      autoLoadFromStorage = false//!isIos
+      autoLoadFromStorage = false //!isIos
       alwaysAutoRefresh = true
-
-      // Platform-specific secure storage is automatically handled by the SDK:
-      // - Android: Uses EncryptedSharedPreferences (auto-loads ✅)
-      // - iOS: Uses Keychain (manual load required ⚠️)
-      // - Web: Uses memory storage (no localStorage for security)
-      // - Desktop: Uses platform-specific secure storage
     }
+    
+    install(Storage)
+    install(Coil3Integration)
+    install(Postgrest)
+    install(Realtime)
+    
     install(GraphQL) {
       apolloConfiguration {
-        addHttpInterceptor(httpInterceptor = ApolloHttpInterceptor())
+        addHttpInterceptor(httpInterceptor = ApolloHttpInterceptor { client })
         addInterceptor(interceptor = LoggingApolloInterceptor())
         addCustomScalarAdapter(
           customScalarType = Datetime.type,
@@ -81,28 +79,41 @@ val supabaseClient by lazy {
         normalizedCache(
           normalizedCacheFactory = MemoryCacheFactory(
             maxSizeBytes = 10 * 1024 * 1024,
-            expireAfterMillis = 5 * 60 * 1000L // ✅ 5 minutes
+            expireAfterMillis = 5 * 60 * 1000L // 5 minutes
           )
         )
       }
     }
-    defaultSerializer =
-      KotlinXSerializer(
-        Json {
-          ignoreUnknownKeys = true // Avoid errors if unknown fields are received
-          encodeDefaults = true
-          prettyPrint = true
-        }
-      )
+    
+    defaultSerializer = KotlinXSerializer(
+      Json {
+        ignoreUnknownKeys = true
+        encodeDefaults = true
+        prettyPrint = true
+      }
+    )
   }
+  
+  return client
 }
 
-class ApolloHttpInterceptor : HttpInterceptor {
+class ApolloHttpInterceptor(private val supabaseClientProvider: () -> SupabaseClient) : HttpInterceptor {
   override suspend fun intercept(
     request: HttpRequest,
     chain: HttpInterceptorChain
   ): HttpResponse {
-    return chain.proceed(request)
+    val supabaseClient = supabaseClientProvider()
+    val accessToken = supabaseClient.auth.currentAccessTokenOrNull()
+    
+    val modifiedRequest = if (accessToken != null) {
+      request.newBuilder()
+        .addHeader("Authorization", "Bearer $accessToken")
+        .build()
+    } else {
+      request
+    }
+    
+    return chain.proceed(modifiedRequest)
   }
 }
 
@@ -120,6 +131,5 @@ class LoggingApolloInterceptor : ApolloInterceptor {
   }
 }
 
-// val resumableClient by lazy { supabaseClient.storage[AppConfig.STORAGE_BUCKET].resumable }
-val bucket by lazy { supabaseClient.storage[AppConfig.STORAGE_BUCKET] }
-
+// REMOVED: Global bucket variable that was causing iOS crash
+// Use FileUploadUtils (injected) or SupabaseClient (injected) instead

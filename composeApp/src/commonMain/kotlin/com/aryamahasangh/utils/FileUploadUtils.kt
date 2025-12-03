@@ -6,7 +6,14 @@ import io.github.vinceglb.filekit.name
 import io.github.vinceglb.filekit.readBytes
 import kotlinx.datetime.Clock
 
-object FileUploadUtils {
+import com.aryamahasangh.config.AppConfig
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.storage.storage
+
+class FileUploadUtils(private val supabaseClient: SupabaseClient) {
+  
+  private val bucket by lazy { supabaseClient.storage[AppConfig.STORAGE_BUCKET] }
+
   /**
    * Low-level helper: upload raw bytes to a specific storage path.
    * Returns public URL on success, Result.Error on failure.
@@ -16,10 +23,9 @@ object FileUploadUtils {
     data: ByteArray
   ): Result<String> {
     return try {
-      // Access bucket via fully qualified name to avoid top-level import
-      // This prevents any risk of early initialization on iOS
-      com.aryamahasangh.network.bucket.upload(path = path, data = data)
-      val publicUrl = com.aryamahasangh.network.bucket.publicUrl(path)
+      // Access bucket via injected client
+      bucket.upload(path = path, data = data)
+      val publicUrl = bucket.publicUrl(path)
       Result.Success(publicUrl)
     } catch (e: Exception) {
       Result.Error(e.message ?: "फ़ाइल अपलोड करने में त्रुटि")
@@ -155,7 +161,7 @@ object FileUploadUtils {
           url.substringAfterLast("/")
         }
 
-      com.aryamahasangh.network.bucket.delete(filePaths)
+      bucket.delete(filePaths)
       Result.Success(Unit)
     } catch (e: Exception) {
       Result.Error("फ़ाइल हटाने में त्रुटि: ${e.message}")

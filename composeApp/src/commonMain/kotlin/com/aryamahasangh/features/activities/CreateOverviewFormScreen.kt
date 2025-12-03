@@ -31,6 +31,7 @@ fun CreateOverviewFormScreen(
   onSuccess: () -> Unit,
   viewModel: ActivitiesViewModel = koinInject()
 ) {
+  val fileUploadUtils = koinInject<FileUploadUtils>()
   val snackbarHostState = LocalSnackbarHostState.current ?: return
   val keyboardController = LocalSoftwareKeyboardController.current
   val scope = rememberCoroutineScope()
@@ -131,7 +132,7 @@ fun CreateOverviewFormScreen(
             file.readBytes()
           }
 
-          val uploadResult = FileUploadUtils.uploadCompressedImage(
+          val uploadResult = fileUploadUtils.uploadCompressedImage(
             imageBytes = imageBytes,
             folder = "activity_overview",
             extension = "webp"
